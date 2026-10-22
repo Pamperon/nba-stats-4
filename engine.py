@@ -6,6 +6,8 @@ from zoneinfo import ZoneInfo
 from functools import lru_cache
 from cachetools import TTLCache, cached
 import os, re, requests, pandas as pd
+import logging
+logger = logging.getLogger(__name__)
 BASE = "https://api.oddspapi.io/v4"
 ROME_TZ = ZoneInfo("Europe/Rome")
 API_KEY = os.getenv("ODDSPAPI_API_KEY", "")
@@ -594,6 +596,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
     I filtri sono soltanto per la vista, mai per il CSV completo.
     """
     results, issues, raw_audit, filter_audit = [], [], [], []
+    fixture_reports = []
     index = finder_player_index(int(season[:4]) + 1)
     props_by_player = {}
     player_logs = {}
@@ -603,10 +606,13 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
         match_name = f"{fixture.get('participant1Name', '?')} - {fixture.get('participant2Name', '?')}"
         if progress_callback:
             progress_callback(0.25 * idx / max(len(fixtures), 1), f"Quote: {match_name}")
+        report = {"id": fid, "partita": match_name, "stato": "in_elaborazione", "linee": 0, "dettaglio": ""}
+        fixture_reports.append(report)
+        count_before = quote_count
         try:
             stored = odds_cache.get(fid)
             odds = stored if stored is not None else get_odds(fid)
-            odds_cache[fid] = odds
+            # Cache only validated, successfully parsed fixtures (after processing).
             raw_audit.extend(odds_source_audit(odds, catalog, match_name))
             for market_label in MARKETS:
                 parsed, _ = parse_odds(odds, catalog, market_label)
@@ -633,8 +639,23 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                         price = float(row["Over"])
                         quote_count += 1
                         props_by_player.setdefault(player_name, []).append((match_name, market_label, line, price, reason))
+            report["linee"] = quote_count - count_before
+            report["stato"] = "ok" if report["linee"] else "vuota"
+            if not report["linee"]:
+                report["dettaglio"] = "Nessuna linea Bet365 elaborabile"
+                issues.append(f"{match_name}: nessuna linea Bet365 elaborabile")
+            else:
+                odds_cache[fid] = odds
         except Exception as exc:
-            issues.append(f"Quote non disponibili per {match_name}: {type(exc).__name__}")
+            # Discard partial results for this fixture; avoid silently counting incomplete games.
+            quote_count = count_before
+            for name in list(props_by_player):
+                props_by_player[name] = [v for v in props_by_player[name] if v[0] != match_name]
+                if not props_by_player[name]:
+                    del props_by_player[name]
+            report.update(stato="errore", linee=0, dettaglio=f"{type(exc).__name__}: {str(exc)[:160]}")
+            logger.exception("Quote fixture %s failed", fid)
+            issues.append(f"{match_name}: {report['dettaglio']}")
     for idx, (player_name, props) in enumerate(props_by_player.items()):
         if progress_callback:
             progress_callback(0.25 + 0.75 * idx / max(len(props_by_player), 1),
@@ -701,7 +722,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
         progress_callback(1.0, "Analisi completata")
     results.sort(key=lambda r: (r["Prob. stimata %"] is not None,
                                 r["Prob. stimata %"] if r["Prob. stimata %"] is not None else -1), reverse=True)
-    return results, issues, quote_count, len(props_by_player), raw_audit, filter_audit, player_logs
+    return results, issues, quote_count, len(props_by_player), raw_audit, filter_audit, player_logs, fixture_reports
 
 def _ratio_hits(value):
     """Parse observed hit count; leave missing/malformed values unavailable."""
