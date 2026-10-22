@@ -44,13 +44,13 @@ def do_scan(job_id, date):
         catalog = engine.get_markets()
         def progress(p, label):
             with lock: jobs[job_id].update(progress=round(p*100),stage=label)
-        rows, issues, odds_count, player_count, raw, filtered, logs = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress)
+        rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress)
         serialized_logs = {}
         for name, log in logs.items():
             records=log.copy();records['GAME_DATE']=records['GAME_DATE'].dt.strftime('%Y-%m-%d')
             serialized_logs[name]=records.where(pd.notna(records),None).to_dict('records')
         with lock:
-            jobs[job_id].update(state='done',progress=100,stage='Completata',results=rows,issues=issues,player_logs=serialized_logs,fixture_count=len(fixtures),player_count=player_count,season=season)
+            jobs[job_id].update(state='partial' if any(r['stato'] != 'ok' for r in fixture_reports) else 'done',progress=100,stage='Parziale' if any(r['stato'] != 'ok' for r in fixture_reports) else 'Completata',results=rows,issues=issues,fixture_reports=fixture_reports,player_logs=serialized_logs,fixture_count=len(fixtures),player_count=player_count,season=season)
     except Exception as exc:
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
 
@@ -77,7 +77,7 @@ def scan_result(job_id: str):
 @app.get('/api/scan/{job_id}/csv', dependencies=[Depends(auth)])
 def scan_csv(job_id: str):
     with lock: job=jobs.get(job_id)
-    if not job or job['state']!='done': raise HTTPException(404,'Analisi non disponibile')
+    if not job or job['state'] not in ('done','partial'): raise HTTPException(404,'Analisi non disponibile')
     data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
     return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="nba_stats_4_completo.csv"'})
 
