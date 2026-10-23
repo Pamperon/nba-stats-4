@@ -38,7 +38,27 @@ $('date').addEventListener('change',async()=>{
  }
 });
 const number=x=>Number(x)||0;function eligible(){return (data?.results||[]).filter(r=>r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
-function render(){if(!data){$('metrics').innerHTML='';$('pick').innerHTML='<h2>Singola del giorno</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p>';$('rows').innerHTML='';return;}const rows=data.results||[];$('metrics').innerHTML=[['Partite',data.fixture_count],['Linee',rows.length],['Giocatori',data.player_count],['Aggiornamento',data.saved_at?new Date(data.saved_at).toLocaleString('it-IT'):'Salvato']].map(([a,b])=>`<div class="metric"><small>${a}</small><strong>${b}</strong></div>`).join('');let candidates=eligible().filter(r=>{let hit=s=>{let m=String(r['Ultime '+s]).match(/^(\d+)\/(\d+)$/);return m&&Number(m[2])===s&&Number(m[1])/s>=.8};return number(r['Prob. stimata %'])>=75&&number(r['Partite'])>=20&&number(r['Stagione %'])>=70&&hit(5)&&hit(10)&&hit(20)&&number(r['Minuti medi'])>=20&&number(r['Minuti ultime 5'])>=.8*number(r['Minuti medi'])&&number(r['Prob. stimata %'])-100/number(r['Quota'])>=3});let p=candidates[0];$('pick').innerHTML=p?`<h2>Prima candidata da verificare</h2><h3>${esc(p.Giocatore)} · Over ${p.Linea} ${p.Mercato}</h3><p>${esc(p.Partita)} · quota ${p.Quota} · stima ${p['Prob. stimata %']}% · ultime 20: ${p['Ultime 20']}</p><p class="note">Stima NON calibrata. Verifica disponibilità e minutaggio.</p>`:'<h2>Singola del giorno</h2><p>Nessuna candidata supera tutti i criteri nella fascia selezionata.</p>';renderFinder()}
+function candidateAvatar(row){
+ const name=String(row.Giocatore||'');
+ const initials=name.trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toUpperCase();
+ const id=String(row['ESPN ID']||'');
+ const valid=/^[0-9]{1,12}$/.test(id);
+ return '<div class="pick-avatar'+(valid?' has-photo':'')+'">'+
+   (valid?'<img loading="lazy" decoding="async" src="/api/players/headshot/'+encodeURIComponent(id)+'" alt="Foto di '+esc(name)+'" onerror="this.remove();this.parentElement.classList.remove(\'has-photo\')">':'')+
+   '<span>'+esc(initials)+'</span></div>';
+}
+function render(){
+ if(!data){$('metrics').innerHTML='';$('pick').innerHTML='<h2>Singola del giorno</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p>';$('rows').innerHTML='';return;}
+ const rows=data.results||[];
+ $('metrics').innerHTML=[['PARTITE',data.fixture_count],['GIOCATORI',data.player_count],['QUOTE',rows.length]].map(([label,value])=>'<div class="metric"><small>'+label+'</small><strong>'+fmt(value)+'</strong></div>').join('');
+ const candidates=eligible().filter(r=>{
+  const hit=n=>{const m=String(r['Ultime '+n]).match(/^(\d+)\/(\d+)$/);return m&&Number(m[2])===n&&Number(m[1])/n>=.8};
+  return number(r['Prob. stimata %'])>=75&&number(r['Partite'])>=20&&number(r['Stagione %'])>=70&&hit(5)&&hit(10)&&hit(20)&&number(r['Minuti medi'])>=20&&number(r['Minuti ultime 5'])>=.8*number(r['Minuti medi'])&&number(r['Prob. stimata %'])-100/number(r['Quota'])>=3;
+ });
+ const p=candidates[0];
+ $('pick').innerHTML=p?'<h2>Prima candidata da verificare</h2><div class="pick-profile">'+candidateAvatar(p)+'<div class="pick-profile-info"><h3>'+esc(p.Giocatore)+'</h3><p>'+esc(p.Partita)+'</p><div class="pick-market">OVER '+esc(p.Linea)+' '+esc(p.Mercato)+'</div></div></div><div class="pick-values"><div><small>QUOTA</small><strong>'+esc(p.Quota)+'</strong></div><div><small>STIMA</small><strong>'+esc(p['Prob. stimata %'])+'%</strong></div></div><p class="note">Stima empirica non calibrata. Verifica quota e disponibilità prima di giocare.</p>':'<h2>Singola del giorno</h2><p>Nessuna candidata supera tutti i criteri nella fascia selezionata.</p>';
+ renderFinder();
+}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${r.Quota}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('')}
 // Both tabs share one set of filtering values; editing either keeps the other in sync.
