@@ -110,3 +110,11 @@
 @keyframes date-loading-spin{to{transform:rotate(360deg)}}
 #app.date-is-loading #dashboard,#app.date-is-loading #finder{display:none!important}
 @media(prefers-reduced-motion:reduce){.date-loading-spinner{animation:none}}
+
+/* Three compact player-stat metrics on one row, including narrow Android screens. */
+#player-summary.player-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#player-summary.player-summary-grid .metric{min-width:0;padding:13px 9px;text-align:center;margin-bottom:12px}
+#player-summary.player-summary-grid .metric small{font-size:clamp(9px,2.5vw,12px);line-height:1.25;overflow-wrap:anywhere}
+#player-summary.player-summary-grid .metric strong{font-size:clamp(16px,4.2vw,25px);white-space:nowrap}
+#player-loading[hidden]{display:none}
+#player.player-is-loading #player-profile,#player.player-is-loading #player-summary,#player.player-is-loading #player-chart-title,#player.player-is-loading #chart{display:none!important}
