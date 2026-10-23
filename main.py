@@ -43,6 +43,14 @@ def health():
 def session():
     return {'authenticated': True, 'database_configured': storage.configured()}
 
+@app.post('/api/storage/self-test', dependencies=[Depends(auth)])
+def storage_self_test():
+    try:
+        return storage.self_test()
+    except Exception:
+        logger.exception('Database self-test failed')
+        raise HTTPException(503, 'Test database fallito; controlla i log Render')
+
 @app.get('/api/fixtures', dependencies=[Depends(auth)])
 def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     try:
