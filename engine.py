@@ -769,68 +769,80 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             report.update(stato="errore", linee=0, dettaglio=f"{type(exc).__name__}: {str(exc)[:160]}")
             logger.exception("Quote fixture %s failed", fid)
             issues.append(f"{match_name}: {report['dettaglio']}")
-    for idx, (player_name, props) in enumerate(props_by_player.items()):
-        if progress_callback:
-            progress_callback(0.25 + 0.75 * idx / max(len(props_by_player), 1),
-                              f"ESPN: {idx + 1}/{len(props_by_player)} — {player_name}")
-        athlete = index.get(normalized_name(player_name))
-        games = None
-        error = "Giocatore non identificato su ESPN" if athlete is None else ""
-        if athlete is not None:
-            try:
-                previous_season = f"{int(season[:4])-1}-{str(int(season[:4]))[-2:]}"
-                parts = []
-                for reference_season in (season, previous_season):
-                    part = selected_game_log(athlete["id"], reference_season, "Regular season", athlete["team_id"])
-                    if not part.empty:
-                        part = prepare_game_log(part, athlete["team_id"], reference_season, require_dates=False)
-                        part["ANNO_STAGIONE"] = reference_season
-                        parts.append(part)
-                if not parts:
-                    error = "Nessuna partita ESPN nelle ultime due stagioni"
-                else:
-                    games = pd.concat(parts, ignore_index=True)
-                    games["GAME_DATE"] = pd.to_datetime(games["GAME_DATE"], errors="coerce", utc=True)
-                    if games["GAME_DATE"].isna().any():
-                        error = "Date ESPN incomplete: cronologia non verificabile"
-                        games = None
+    from concurrent.futures import ThreadPoolExecutor
+    player_items = list(props_by_player.items())
+
+    def load_player(item):
+        player_name, _props = item
+            athlete = index.get(normalized_name(player_name))
+            games = None
+            error = "Giocatore non identificato su ESPN" if athlete is None else ""
+            if athlete is not None:
+                try:
+                    previous_season = f"{int(season[:4])-1}-{str(int(season[:4]))[-2:]}"
+                    parts = []
+                    for reference_season in (season, previous_season):
+                        part = selected_game_log(athlete["id"], reference_season, "Regular season", athlete["team_id"])
+                        if not part.empty:
+                            part = prepare_game_log(part, athlete["team_id"], reference_season, require_dates=False)
+                            part["ANNO_STAGIONE"] = reference_season
+                            parts.append(part)
+                    if not parts:
+                        error = "Nessuna partita ESPN nelle ultime due stagioni"
                     else:
-                        games = (games.drop_duplicates(subset=["GAME_ID"], keep="first")
-                                      .sort_values("GAME_DATE", ascending=False).reset_index(drop=True))
-                        player_logs[player_name] = games
-            except Exception as exc:
-                error = f"Dati ESPN non disponibili ({type(exc).__name__})"
-                games = None
-        if error:
-            issues.append(f"{player_name}: {error}")
-        for match_name, market_label, line, price, reason in props:
-            stat = STATS[market_label]
-            row = {"Partita": match_name, "Giocatore": player_name,
-                   "Squadra": athlete.get("team_name", "Squadra non identificata") if athlete else "Squadra non identificata",
-                   "Mercato": stat,
-                   "Scelta": "Over", "Linea": line, "Quota": price,
-                   "Prob. stimata %": None, "Prob. implicita %": round(100 / price, 1),
-                   "Value stimato %": None, "Ultime 5": "—", "Ultime 10": "—",
-                   "Ultime 20": "—", "Stagione %": None, "Partite": 0, "Stagione attuale (n)": 0, "Stagione precedente (n)": 0,
-                   "Media": None, "Scarto medio": None, "Dev. standard": None,
-                   "Minuti medi": None, "Minuti ultime 5": None,
-                   "Stato analisi": "Non valutabile", "Nota": reason or error}
-            if games is not None and not games.empty:
-                details = finder_detailed_stats(games, stat, line)
-                row.update(details)
-                row["Stagione attuale (n)"] = int((games["ANNO_STAGIONE"] == season).sum())
-                row["Stagione precedente (n)"] = int((games["ANNO_STAGIONE"] != season).sum())
-                if len(games) < min_games:
-                    row["Nota"] = "; ".join(filter(None, [reason, f"Solo {len(games)} partite ESPN (minimo {min_games})"]))
-                elif not reason:
-                    estimate = finder_estimate_probability(games, stat, line, "Over")
-                    if estimate:
-                        prob = estimate["estimate"]
-                        row["Prob. stimata %"] = round(prob * 100, 1)
-                        row["Value stimato %"] = round((prob * price - 1) * 100, 1)
-                        row["Stato analisi"] = "Valutabile (stima empirica)"
-                        row["Nota"] = "Stima empirica NON calibrata; verifica quota e disponibilità"
-            results.append(row)
+                        games = pd.concat(parts, ignore_index=True)
+                        games["GAME_DATE"] = pd.to_datetime(games["GAME_DATE"], errors="coerce", utc=True)
+                        if games["GAME_DATE"].isna().any():
+                            error = "Date ESPN incomplete: cronologia non verificabile"
+                            games = None
+                        else:
+                            games = (games.drop_duplicates(subset=["GAME_ID"], keep="first")
+                                          .sort_values("GAME_DATE", ascending=False).reset_index(drop=True))
+                            player_logs[player_name] = games
+                except Exception as exc:
+                    error = f"Dati ESPN non disponibili ({type(exc).__name__})"
+                    games = None
+        return athlete, games, error
+
+    # Concurrent ESPN I/O, but preserve deterministic result and progress order.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        player_data = pool.map(load_player, player_items)
+        for idx, ((player_name, props), (athlete, games, error)) in enumerate(zip(player_items, player_data)):
+            if progress_callback:
+                progress_callback(0.25 + 0.75 * idx / max(len(player_items), 1),
+                                  f"ESPN: {idx + 1}/{len(player_items)} — {player_name}")
+            if games is not None:
+                player_logs[player_name] = games
+            if error:
+                issues.append(f"{player_name}: {error}")
+            for match_name, market_label, line, price, reason in props:
+                stat = STATS[market_label]
+                row = {"Partita": match_name, "Giocatore": player_name,
+                       "Squadra": athlete.get("team_name", "Squadra non identificata") if athlete else "Squadra non identificata",
+                       "Mercato": stat,
+                       "Scelta": "Over", "Linea": line, "Quota": price,
+                       "Prob. stimata %": None, "Prob. implicita %": round(100 / price, 1),
+                       "Value stimato %": None, "Ultime 5": "—", "Ultime 10": "—",
+                       "Ultime 20": "—", "Stagione %": None, "Partite": 0, "Stagione attuale (n)": 0, "Stagione precedente (n)": 0,
+                       "Media": None, "Scarto medio": None, "Dev. standard": None,
+                       "Minuti medi": None, "Minuti ultime 5": None,
+                       "Stato analisi": "Non valutabile", "Nota": reason or error}
+                if games is not None and not games.empty:
+                    details = finder_detailed_stats(games, stat, line)
+                    row.update(details)
+                    row["Stagione attuale (n)"] = int((games["ANNO_STAGIONE"] == season).sum())
+                    row["Stagione precedente (n)"] = int((games["ANNO_STAGIONE"] != season).sum())
+                    if len(games) < min_games:
+                        row["Nota"] = "; ".join(filter(None, [reason, f"Solo {len(games)} partite ESPN (minimo {min_games})"]))
+                    elif not reason:
+                        estimate = finder_estimate_probability(games, stat, line, "Over")
+                        if estimate:
+                            prob = estimate["estimate"]
+                            row["Prob. stimata %"] = round(prob * 100, 1)
+                            row["Value stimato %"] = round((prob * price - 1) * 100, 1)
+                            row["Stato analisi"] = "Valutabile (stima empirica)"
+                            row["Nota"] = "Stima empirica NON calibrata; verifica quota e disponibilità"
+                results.append(row)
     if progress_callback:
         progress_callback(1.0, "Analisi completata")
     results.sort(key=lambda r: (r["Prob. stimata %"] is not None,
