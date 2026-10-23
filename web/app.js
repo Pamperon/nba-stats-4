@@ -80,6 +80,25 @@ async function fetchPlayerLog(team,id,season){
  playerLogPending.set(key,task);return task;
 }
 
+const portraitPreloads=new Map();
+let portraitPreloadTimer=null;
+function preloadTeamPortraits(team,selectedId){
+ if(portraitPreloadTimer!==null)clearTimeout(portraitPreloadTimer);
+ const ids=activeRoster.filter(p=>p.id!==selectedId).slice(0,5).map(p=>p.id);
+ let i=0;
+ function loadNext(){
+  if($('team').value!==team||i>=ids.length)return;
+  const id=ids[i++];
+  if(portraitPreloads.has(id)){loadNext();return}
+  const img=new Image();
+  img.decoding='async';
+  portraitPreloads.set(id,img);
+  img.onload=()=>{if($('team').value===team)portraitPreloadTimer=setTimeout(loadNext,150)};
+  img.onerror=()=>{portraitPreloads.delete(id);if($('team').value===team)portraitPreloadTimer=setTimeout(loadNext,400)};
+  img.src='/api/players/headshot/'+encodeURIComponent(id);
+ }
+ portraitPreloadTimer=setTimeout(loadNext,800);
+}
 const playerNum=x=>Number(x)||0;
 async function initPlayers(){
  const now=new Date(),year=now.getFullYear(),start=now.getMonth()>=9?year:year-1;
@@ -99,6 +118,7 @@ async function changeTeam(){
  activeRoster=payload.players||[];
  $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
  await changePlayer();
+ preloadTeamPortraits(team,$('playername').value);
  }catch(e){if(request===rosterRequest)$('player-status').textContent='Roster non disponibile ('+e.message+')';}
 }
 function renderPlayerSeason(){
