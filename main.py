@@ -193,6 +193,15 @@ def saved_dates():
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
 
+@app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
+def storage_cleanup():
+    """Protected, idempotent cleanup; does not contact OddsPapi."""
+    try:
+        return storage.cleanup_expired(retention_days=7)
+    except Exception:
+        logger.exception('NBA archive retention cleanup failed')
+        raise HTTPException(503, 'Pulizia archivio non riuscita')
+
 @app.post('/api/scan', dependencies=[Depends(auth)])
 def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     try: datetime.strptime(date,'%Y-%m-%d')
