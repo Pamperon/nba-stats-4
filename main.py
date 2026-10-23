@@ -209,6 +209,143 @@ def player_roster(team_id: str = Query(pattern=r'^[0-9]{1,8}$')):
         logger.exception('NBA roster unavailable')
         raise HTTPException(503, 'Roster ESPN temporaneamente non disponibile')
 
+@app.get('/api/players/profile')
+def player_profile(team_id: str = Query(pattern=r'^[0-9]{1,8}
+def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
+               athlete_id: str = Query(pattern=r'^[0-9]{1,12}$'),
+               season: str = Query(pattern=r'^[0-9]{4}$')):
+    try: return {**player_stats.player_log(team_id, athlete_id, season), 'odds_api_calls': 0}
+    except ValueError as exc: raise HTTPException(400, str(exc))
+    except Exception:
+        logger.exception('NBA game log unavailable')
+        raise HTTPException(503, 'Statistiche ESPN temporaneamente non disponibili')
+
+@app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
+def storage_cleanup():
+    """Protected, idempotent cleanup; does not contact OddsPapi."""
+    try:
+        return storage.cleanup_expired(retention_days=7)
+    except Exception:
+        logger.exception('NBA archive retention cleanup failed')
+        raise HTTPException(503, 'Pulizia archivio non riuscita')
+
+@app.post('/api/scan', dependencies=[Depends(auth)])
+def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    try: datetime.strptime(date,'%Y-%m-%d')
+    except ValueError: raise HTTPException(400,'Data non valida')
+    with lock:
+        for job_id, job in jobs.items():
+            if job['date']==date and job['state'] in ('queued','running'):
+                return {'job_id':job_id,'reused':True}
+        if any(job['state'] in ('queued','running') for job in jobs.values()):
+            raise HTTPException(409, 'Una scansione è già in corso')
+        if len(jobs)>15:
+            for old_id in list(jobs):
+                if jobs[old_id]['state'] not in ('queued','running'):
+                    del jobs[old_id]
+                if len(jobs)<=10: break
+        job_id=uuid.uuid4().hex
+        jobs[job_id]={'date':date,'state':'queued','progress':0,'stage':'In coda'}
+    threading.Thread(target=do_scan,args=(job_id,date),daemon=True).start()
+    return {'job_id':job_id,'reused':False}
+
+@app.get('/api/scan/{job_id}', dependencies=[Depends(auth)])
+def scan_result(job_id: str):
+    with lock:
+        job = dict(jobs[job_id]) if job_id in jobs else None
+    if job is not None:
+        return job
+    if storage.configured():
+        try:
+            saved = storage.latest()
+            if saved and saved.get('job_id') == job_id:
+                return saved
+        except Exception:
+            logger.exception('Cannot restore scan from database')
+    raise HTTPException(404,'Scansione non trovata')
+
+@app.get('/api/scan/{job_id}/csv', dependencies=[Depends(auth)])
+def scan_csv(job_id: str):
+    with lock: job=jobs.get(job_id)
+    if not job or job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
+    data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
+    return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="nba_stats_4_completo.csv"'})
+
+app.mount('/static',StaticFiles(directory='web'),name='static')
+@app.get('/')
+def index(): return FileResponse('web/index.html')
+),
+                   athlete_id: str = Query(pattern=r'^[0-9]{1,12}
+def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
+               athlete_id: str = Query(pattern=r'^[0-9]{1,12}$'),
+               season: str = Query(pattern=r'^[0-9]{4}$')):
+    try: return {**player_stats.player_log(team_id, athlete_id, season), 'odds_api_calls': 0}
+    except ValueError as exc: raise HTTPException(400, str(exc))
+    except Exception:
+        logger.exception('NBA game log unavailable')
+        raise HTTPException(503, 'Statistiche ESPN temporaneamente non disponibili')
+
+@app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
+def storage_cleanup():
+    """Protected, idempotent cleanup; does not contact OddsPapi."""
+    try:
+        return storage.cleanup_expired(retention_days=7)
+    except Exception:
+        logger.exception('NBA archive retention cleanup failed')
+        raise HTTPException(503, 'Pulizia archivio non riuscita')
+
+@app.post('/api/scan', dependencies=[Depends(auth)])
+def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    try: datetime.strptime(date,'%Y-%m-%d')
+    except ValueError: raise HTTPException(400,'Data non valida')
+    with lock:
+        for job_id, job in jobs.items():
+            if job['date']==date and job['state'] in ('queued','running'):
+                return {'job_id':job_id,'reused':True}
+        if any(job['state'] in ('queued','running') for job in jobs.values()):
+            raise HTTPException(409, 'Una scansione è già in corso')
+        if len(jobs)>15:
+            for old_id in list(jobs):
+                if jobs[old_id]['state'] not in ('queued','running'):
+                    del jobs[old_id]
+                if len(jobs)<=10: break
+        job_id=uuid.uuid4().hex
+        jobs[job_id]={'date':date,'state':'queued','progress':0,'stage':'In coda'}
+    threading.Thread(target=do_scan,args=(job_id,date),daemon=True).start()
+    return {'job_id':job_id,'reused':False}
+
+@app.get('/api/scan/{job_id}', dependencies=[Depends(auth)])
+def scan_result(job_id: str):
+    with lock:
+        job = dict(jobs[job_id]) if job_id in jobs else None
+    if job is not None:
+        return job
+    if storage.configured():
+        try:
+            saved = storage.latest()
+            if saved and saved.get('job_id') == job_id:
+                return saved
+        except Exception:
+            logger.exception('Cannot restore scan from database')
+    raise HTTPException(404,'Scansione non trovata')
+
+@app.get('/api/scan/{job_id}/csv', dependencies=[Depends(auth)])
+def scan_csv(job_id: str):
+    with lock: job=jobs.get(job_id)
+    if not job or job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
+    data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
+    return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="nba_stats_4_completo.csv"'})
+
+app.mount('/static',StaticFiles(directory='web'),name='static')
+@app.get('/')
+def index(): return FileResponse('web/index.html')
+)):
+    try: return {**player_stats.player_profile(team_id, athlete_id), 'odds_api_calls': 0}
+    except ValueError as exc: raise HTTPException(400, str(exc))
+    except Exception:
+        logger.exception('NBA athlete profile unavailable')
+        raise HTTPException(503, 'Profilo ESPN temporaneamente non disponibile')
+
 @app.get('/api/players/log')
 def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
                athlete_id: str = Query(pattern=r'^[0-9]{1,12}$'),
