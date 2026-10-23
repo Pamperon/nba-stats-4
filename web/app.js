@@ -88,12 +88,19 @@ async function loadPlayerProfile(request,team,id){
  $('player-display-name').textContent=name;
  $('player-meta').textContent=$('team').selectedOptions[0]?.textContent||'';
  $('player-initials').textContent=name.trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
- const photo=$('player-photo');
- photo.onload=null;photo.onerror=null;
- photo.style.display='none';photo.removeAttribute('src');
- // Same-origin endpoint avoids browser/CDN image delivery issues.
- photo.onload=()=>{if(request===playerRequest)photo.style.display='block'};
- photo.onerror=()=>{if(request===playerRequest){photo.style.display='none';photo.removeAttribute('src')}};
+ const avatar=$('player-photo').parentElement;
+ const oldPhoto=$('player-photo');
+ // Replace the node to discard callbacks from previously selected players.
+ const photo=document.createElement('img');
+ photo.id='player-photo';
+ photo.alt='Foto di '+name;
+ photo.loading='eager';
+ photo.decoding='async';
+ photo.referrerPolicy='no-referrer';
+ photo.onerror=()=>{if(request===playerRequest){photo.remove();avatar.classList.remove('has-photo')}};
+ photo.onload=()=>{if(request===playerRequest&&photo.naturalWidth>0)avatar.classList.add('has-photo')};
+ avatar.classList.remove('has-photo');
+ oldPhoto.replaceWith(photo);
  photo.src='/api/players/headshot/'+encodeURIComponent(id);
  renderPlayerSeason();
  try{
