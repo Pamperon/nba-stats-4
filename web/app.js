@@ -71,11 +71,15 @@ async function changePlayer(){
  drawPlayer();
  }catch(e){if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';}
 }
-function changeLine(){const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);
+function changeLine(){
+ const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);
  const median=values.length?values[Math.floor(values.length/2)]:10;
- const lines=[...new Set([0.5,2.5,4.5,6.5,9.5,12.5,14.5,16.5,19.5,24.5,29.5,34.5,39.5,Math.max(.5,Math.floor(median)+.5)])].sort((a,b)=>a-b);
+ const max=stat==='PTS'?79:stat==='REB'?39:29;
+ const lines=Array.from({length:max+1},(_,i)=>i+0.5);
  $('line').innerHTML=lines.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
- $('line').value=String(Math.max(.5,Math.floor(median)+.5));drawPlayer();}
+ $('line').value=String(Math.min(max+.5,Math.max(.5,Math.floor(median)+.5)));
+ drawPlayer();
+}
 function drawPlayer(){
  const mode=$('playermode').value,window=$('playerwindow').value,stat=$('stat').value,line=playerNum($('line').value);
  let games=playerGames.filter(g=>mode==='all'||String(g.SEASON_TYPE)===mode);
