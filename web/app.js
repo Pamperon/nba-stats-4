@@ -5,7 +5,7 @@ async function readLocalScan(date){const db=await scanDB();try{return await new 
 async function showLocalScan(date){try{const j=await readLocalScan(date);if(!j)return false;data=j;jobId='';render();$('status').textContent='Analisi salvata nel browser ('+date+') · '+j.results.length+' linee · nessuna chiamata API';return true}catch{return false}}
 const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
-async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId=j.job_id||'';if(j.date)$('date').value=j.date;render();$('status').textContent='Analisi cloud del '+(j.date||'giorno')+' · '+(j.results||[]).length+' linee · salvata '+(j.saved_at||'')+' · 0 chiamate OddsPapi';return true}catch{return false}}
+async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent='Analisi cloud del '+(j.date||'giorno')+' · '+(j.results||[]).length+' linee · salvata '+(j.saved_at||'')+' · 0 chiamate OddsPapi';return true}catch{return false}}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
 let dateSelectionRequest=0;
 $('date').addEventListener('change',async()=>{
@@ -16,7 +16,7 @@ $('date').addEventListener('change',async()=>{
   const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));
   const saved=await response.json();
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
-  data=saved;jobId=saved.job_id||'';render();
+  data=saved;jobId='';render();
   $('status').textContent='Analisi cloud del '+selected+' · '+(saved.results||[]).length+' linee · 0 chiamate OddsPapi';
  }catch(error){
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
@@ -41,4 +41,18 @@ function changeTeam(){let names=[...new Set(data.results.filter(r=>data.player_l
 function changePlayer(){let lines=[...new Set(data.results.filter(r=>r.Giocatore===$('playername').value&&r.Mercato===$('stat').value).map(r=>r.Linea))].sort((a,b)=>a-b);$('line').innerHTML=(lines.length?lines:[9.5]).map(x=>`<option>${x}</option>`).join('');drawPlayer()}
 function drawPlayer(){let logs=data?.player_logs?.[$('playername').value]||[],stat=$('stat').value,line=number($('line').value),list=logs.slice(0,20),hits=list.filter(g=>number(g[stat])>line).length;$('player-summary').innerHTML=`<div class="metric"><small>Over ultime 20</small><strong>${hits}/${list.length}</strong></div><div class="metric"><small>Frequenza osservata</small><strong>${list.length?(100*hits/list.length).toFixed(1)+'%':'—'}</strong></div>`;let max=Math.max(line+1,...list.map(g=>number(g[stat])),1);$('chart').innerHTML=list.slice().reverse().map(g=>{let val=number(g[stat]);return `<div class="barrow"><span>${esc((g.GAME_DATE||'').slice(5))}</span><div class="track"><div class="fill ${val>line?'':'under'}" style="width:${Math.min(100,val/max*100)}%"></div><div class="line" style="left:${Math.min(100,line/max*100)}%"></div></div><strong>${val}</strong></div>`}).join('')||'<p>Nessun game log disponibile</p>'}
 $('team').onchange=changeTeam;$('playername').onchange=changePlayer;$('stat').onchange=changePlayer;$('line').onchange=drawPlayer;
+async function initializeArchive(){
+ $('status').textContent='Caricamento giornate disponibili…';
+ try {
+  const response=await api('/api/saved/dates');
+  const payload=await response.json();
+  const dates=(payload.dates||[]).map(item=>item.date);
+  $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
+  if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';$('status').textContent='Nessuna analisi archiviata';return;}
+  const todayRome=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  $('date').value=dates.includes(todayRome)?todayRome:dates[0];
+  if(!await loadCloudScan($('date').value))$('status').textContent='Impossibile caricare le analisi salvate';
+ }catch(error){$('status').textContent='Archivio temporaneamente non disponibile · '+error.message;}
+}
+initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
