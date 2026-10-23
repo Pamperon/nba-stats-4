@@ -45,3 +45,5 @@
 #metrics .metric small{font-size:clamp(9px,2.3vw,12px);white-space:nowrap;letter-spacing:0}
 #metrics .metric strong{font-size:clamp(18px,5vw,27px);overflow-wrap:anywhere}
 #pick>.note{font-size:11px;line-height:1.4;color:#8da3be;margin-top:8px}
+
+#pick .pick-market{font-size:clamp(16px,3.5vw,19px);font-weight:800;letter-spacing:.35px;line-height:1.35}
