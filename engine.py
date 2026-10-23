@@ -282,29 +282,40 @@ def espn_roster(team_id, end_year=None):
     return espn_json(f"{ESPN_SITE}/teams/{team_id}/roster", **params)
 
 def roster_athletes(payload):
-    """Traverse ESPN roster shapes, including position groups and wrappers."""
+    """Extract actual ESPN athletes, never position/category metadata."""
     seen = set()
 
-    def visit(node):
+    def visit(node, athlete_context=False):
         if isinstance(node, list):
             for item in node:
-                yield from visit(item)
-        elif isinstance(node, dict):
-            # ESPN sometimes nests the athlete under an `athlete` key.
-            athlete = node.get("athlete")
-            if isinstance(athlete, dict):
-                yield from visit(athlete)
-            athlete_id = node.get("id")
-            name = node.get("displayName") or node.get("fullName") or node.get("name")
-            if athlete_id is not None and name and str(athlete_id).isdigit():
-                key = str(athlete_id)
-                if key not in seen:
-                    seen.add(key)
-                    yield {"id": key, "displayName": name}
-            # Some responses contain groups such as {"position":...,"items":...}.
-            for key, value in node.items():
-                if key != "athlete" and isinstance(value, (list, dict)):
-                    yield from visit(value)
+                yield from visit(item, athlete_context)
+            return
+        if not isinstance(node, dict):
+            return
+
+        # ESPN roster payloads can group athletes by position. Group IDs and
+        # labels (e.g. Guard, Center, Active) must never become player entries.
+        wrapped = node.get("athlete")
+        if isinstance(wrapped, dict):
+            yield from visit(wrapped, True)
+
+        athlete_id = node.get("id")
+        name = node.get("displayName") or node.get("fullName")
+        looks_like_athlete = athlete_context or (
+            isinstance(node.get("position"), dict)
+            or "jersey" in node or "headshot" in node
+            or "dateOfBirth" in node or "birthPlace" in node
+            or "height" in node or "weight" in node
+        )
+        if looks_like_athlete and athlete_id is not None and name and str(athlete_id).isdigit():
+            key = str(athlete_id)
+            if key not in seen:
+                seen.add(key)
+                yield {"id": key, "displayName": name}
+
+        for key, value in node.items():
+            if key != "athlete" and isinstance(value, (list, dict)):
+                yield from visit(value, athlete_context=(key == "athletes"))
 
     yield from visit(payload.get("athletes") or payload.get("items") or [])
 
