@@ -128,3 +128,16 @@ def self_test():
             raise
     return {"status": "ok", "write": True, "read": True, "cleanup": True,
             "odds_api_calls": 0}
+
+
+def available_dates():
+    """Distinct dates with saved analyses, newest first; no OddsPapi calls."""
+    if not configured():
+        return []
+    with connection() as conn:
+        rows = conn.execute("""
+            SELECT scan_date, MAX(created_at) AS last_saved
+            FROM nba_scan_snapshots
+            GROUP BY scan_date ORDER BY scan_date DESC
+        """).fetchall()
+    return [{"date": day.isoformat(), "saved_at": saved.isoformat()} for day, saved in rows]
