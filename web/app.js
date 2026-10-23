@@ -54,7 +54,12 @@ function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr>
  dashboard.addEventListener('change',()=>sync(dashboard));
 });
 $('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const rows=data.results,keys=Object.keys(rows[0]);const safe=v=>{const t=String(v??'');const guarded=/^[=+@\\-\\t\\r]/.test(t)?"'"+t:t;return '"'+guarded.replace(/"/g,'""')+'"'};const csv='\uFEFF'+[keys.map(safe).join(';'),...rows.map(r=>keys.map(k=>safe(r[k])).join(';'))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_salvato.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}try{const r=await api('/api/scan/'+jobId+'/csv');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_completo.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{alert('CSV non disponibile')}};
-let playerGames=[],playerRequest=0,rosterRequest=0;
+let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
+const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
+const PLAYER_CACHE_LIMIT=80;
+function cachePlayerLog(key,payload){playerLogCache.delete(key);playerLogCache.set(key,payload);if(playerLogCache.size>PLAYER_CACHE_LIMIT)playerLogCache.delete(playerLogCache.keys().next().value)}
+async function fetchPlayerLog(team,id,season){const key=[team,id,season].join(':');if(playerLogCache.has(key))return playerLogCache.get(key);if(playerLogPending.has(key))return playerLogPending.get(key);const params=new URLSearchParams({team_id:team,athlete_id:id,season});const task=api('/api/players/log?'+params).then(r=>r.json()).then(payload=>{cachePlayerLog(key,payload);return payload}).finally(()=>playerLogPending.delete(key));playerLogPending.set(key,task);return task}
+
 const playerNum=x=>Number(x)||0;
 async function initPlayers(){
  const now=new Date(),year=now.getFullYear(),start=now.getMonth()>=9?year:year-1;
@@ -71,7 +76,8 @@ async function changeTeam(){
  if(!team)return;
  try{const payload=await(await api('/api/players/roster?team_id='+encodeURIComponent(team))).json();
  if(request!==rosterRequest)return;
- $('playername').innerHTML=payload.players.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+ activeRoster=payload.players||[];
+ $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
  await changePlayer();
  }catch(e){if(request===rosterRequest)$('player-status').textContent='Roster non disponibile ('+e.message+')';}
 }
@@ -102,14 +108,9 @@ async function loadPlayerProfile(request,team,id){
  avatar.classList.remove('has-photo');
  oldPhoto.replaceWith(photo);
  photo.src='/api/players/headshot/'+encodeURIComponent(id);
+ const profile=activeRoster.find(p=>p.id===id);
+ if(profile){$('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ')}
  renderPlayerSeason();
- try{
-  const params=new URLSearchParams({team_id:team,athlete_id:id});
-  const profile=await(await api('/api/players/profile?'+params)).json();
-  if(request!==playerRequest)return;
-  $('player-display-name').textContent=profile.name||name;
-  $('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ');
- }catch(e){if(request===playerRequest)$('player-meta').textContent=($('team').selectedOptions[0]?.textContent||'')+' · Profilo ESPN non disponibile';}
 }
 async function changePlayer(){
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
@@ -118,7 +119,7 @@ async function changePlayer(){
  loadPlayerProfile(request,team,id);
  $('player-status').textContent='Caricamento game log ESPN…';
  try{const params=new URLSearchParams({team_id:team,athlete_id:id,season});
- const payload=await(await api('/api/players/log?'+params)).json();
+ const payload=await fetchPlayerLog(team,id,season);
  if(request!==playerRequest)return;
  playerGames=payload.games||[];
  renderPlayerSeason();
