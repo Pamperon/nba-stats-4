@@ -47,7 +47,25 @@ function candidateAvatar(row){
    (valid?'<img loading="lazy" decoding="async" src="/api/players/headshot/'+encodeURIComponent(id)+'" alt="Foto di '+esc(name)+'" onerror="this.remove();this.parentElement.classList.remove(\'has-photo\')">':'')+
    '<span>'+esc(initials)+'</span></div>';
 }
+let pickProfileRequest=0;
+async function enrichPickProfile(row){
+ const request=++pickProfileRequest;
+ const id=String(row['ESPN ID']||'');
+ const target=$('pick-player-meta');
+ if(!target||!/^\d+$/.test(id))return;
+ try{
+  const teams=(await(await api('/api/players/teams')).json()).teams||[];
+  const match=teams.find(t=>String(t.name||'').toLowerCase()===String(row.Squadra||'').toLowerCase());
+  const ordered=match?[match]:teams;
+  for(const team of ordered){
+   const roster=(await(await api('/api/players/roster?team_id='+encodeURIComponent(team.id))).json()).players||[];
+   const profile=roster.find(p=>String(p.id)===id);
+   if(profile){if(request===pickProfileRequest&&$('pick-player-meta'))$('pick-player-meta').textContent=[team.name,profile.position,profile.jersey?'#'+profile.jersey:''].filter(Boolean).join(' · ');return;}
+  }
+ }catch(e){/* Keep the team visible if ESPN metadata is unavailable. */}
+}
 function render(){
+ ++pickProfileRequest;
  if(!data){$('metrics').innerHTML='';$('pick').innerHTML='<h2>Singola del giorno</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p>';$('rows').innerHTML='';return;}
  const rows=data.results||[];
  $('metrics').innerHTML=[['PARTITE',data.fixture_count],['GIOCATORI',data.player_count],['QUOTE',rows.length]].map(([label,value])=>'<div class="metric"><small>'+label+'</small><strong>'+fmt(value)+'</strong></div>').join('');
@@ -56,7 +74,8 @@ function render(){
   return number(r['Prob. stimata %'])>=75&&number(r['Partite'])>=20&&number(r['Stagione %'])>=70&&hit(5)&&hit(10)&&hit(20)&&number(r['Minuti medi'])>=20&&number(r['Minuti ultime 5'])>=.8*number(r['Minuti medi'])&&number(r['Prob. stimata %'])-100/number(r['Quota'])>=3;
  });
  const p=candidates[0];
- $('pick').innerHTML=p?'<h2>Prima candidata da verificare</h2><div class="pick-profile">'+candidateAvatar(p)+'<div class="pick-profile-info"><h3>'+esc(p.Giocatore)+'</h3><p>'+esc(p.Partita)+'</p><div class="pick-market">OVER '+esc(p.Linea)+' '+esc(p.Mercato)+'</div></div></div><div class="pick-values"><div><small>QUOTA</small><strong>'+esc(p.Quota)+'</strong></div><div><small>STIMA</small><strong>'+esc(p['Prob. stimata %'])+'%</strong></div></div><p class="note">Stima empirica non calibrata. Verifica quota e disponibilità prima di giocare.</p>':'<h2>Singola del giorno</h2><p>Nessuna candidata supera tutti i criteri nella fascia selezionata.</p>';
+ $('pick').innerHTML=p?'<h2>Prima candidata da verificare</h2><div class="pick-profile">'+candidateAvatar(p)+'<div class="pick-profile-info"><h3>'+esc(p.Giocatore)+'</h3><p id="pick-player-meta">'+esc(p.Squadra||p.Partita)+'</p><div class="pick-market">OVER '+esc(p.Linea)+' '+esc(p.Mercato)+'</div></div></div><div class="pick-values"><div><small>QUOTA</small><strong>'+esc(p.Quota)+'</strong></div><div><small>STIMA</small><strong>'+esc(p['Prob. stimata %'])+'%</strong></div></div><p class="note">Stima empirica non calibrata. Verifica quota e disponibilità prima di giocare.</p>':'<h2>Singola del giorno</h2><p>Nessuna candidata supera tutti i criteri nella fascia selezionata.</p>';
+ if(p)enrichPickProfile(p);
  renderFinder();
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
