@@ -38,9 +38,11 @@ def roster(team_id):
         raise ValueError("Squadra NBA non valida")
     def build():
         players = engine.roster_athletes(engine.espn_roster(team_id))
-        return sorted([{"id": a["id"], "name": a["displayName"], "team_id": team_id}
+        return sorted([{"id": a["id"], "name": a["displayName"], "team_id": team_id,
+                        "position": a.get("position", ""), "jersey": a.get("jersey", ""),
+                        "height": a.get("height", ""), "weight": a.get("weight", "")}
                        for a in players], key=lambda p: p["name"])
-    return cached("nba:roster:v2:" + team_id, 12, build)
+    return cached("nba:roster:v3:" + team_id, 12, build)
 
 def player_log(team_id, athlete_id, season):
     if athlete_id not in {p["id"] for p in roster(team_id)}:
