@@ -137,7 +137,7 @@ function render(){
   return '<section class="panel pick-group"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+min.toFixed(2)+'–'+max.toFixed(2)+'</p>'+
   (complete?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>'+
   (count>1?'<div class="pick-combined"><span>Quota totale <strong>'+combined.toFixed(2).replace('.',',')+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span></div>':''):
-  '<p>Non ci sono '+count+' selezioni distinte che superano tutti i criteri statistici in questa fascia.</p>')+
+  '<p>Nessuna quota disponibile</p>')+
   '</section>';
  }).join('');
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
@@ -189,16 +189,31 @@ async function initPlayers(){
  await changeTeam();
  }catch(e){$('player-status').textContent='Catalogo NBA non disponibile ('+e.message+'). Ricarica la pagina.';}
 }
+function setPlayerLoading(loading){
+ $('player').classList.toggle('player-is-loading',loading);
+ $('player-loading').hidden=!loading;
+}
 async function changeTeam(){
- const request=++rosterRequest; ++playerRequest;const team=$('team').value;
- $('playername').innerHTML='';$('player-profile').hidden=true;$('player-status').textContent='Caricamento roster ESPN…';
- if(!team)return;
- try{const payload=await(await api('/api/players/roster?team_id='+encodeURIComponent(team))).json();
- if(request!==rosterRequest)return;
- activeRoster=payload.players||[];
- $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
- await changePlayer();
- }catch(e){if(request===rosterRequest)$('player-status').textContent='Roster non disponibile ('+e.message+')';}
+ const request=++rosterRequest;
+ ++playerRequest;
+ const team=$('team').value;
+ $('playername').innerHTML='';
+ $('player-profile').hidden=true;
+ $('player-status').textContent='';
+ if(!team){setPlayerLoading(false);return;}
+ setPlayerLoading(true);
+ try{
+  const payload=await(await api('/api/players/roster?team_id='+encodeURIComponent(team))).json();
+  if(request!==rosterRequest)return;
+  activeRoster=payload.players||[];
+  $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+  await changePlayer();
+ }catch(e){
+  if(request===rosterRequest){
+   setPlayerLoading(false);
+   $('player-status').textContent='Roster non disponibile ('+e.message+')';
+  }
+ }
 }
 function renderPlayerSeason(){
  const mode=$('playermode').value;
@@ -234,19 +249,25 @@ async function loadPlayerProfile(request,team,id){
 }
 async function changePlayer(){
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
- playerGames=[];$('player-summary').innerHTML='';$('chart').innerHTML='';
- if(!team||!id){$('player-profile').hidden=true;return;}
+ playerGames=[];
+ $('player-summary').innerHTML='';
+ $('chart').innerHTML='';
+ $('player-status').textContent='';
+ if(!team||!id){$('player-profile').hidden=true;setPlayerLoading(false);return;}
+ setPlayerLoading(true);
  loadPlayerProfile(request,team,id);
- $('player-status').textContent='Caricamento game log ESPN…';
- try{const params=new URLSearchParams({team_id:team,athlete_id:id,season});
- const payload=await fetchPlayerLog(team,id,season);
- if(request!==playerRequest)return;
- playerGames=payload.games||[];
- renderPlayerSeason();
- changeLine();
- $('player-status').textContent=playerGames.length?'Statistiche ESPN · nessuna chiamata OddsPapi':'Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
- drawPlayer();
- }catch(e){if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';}
+ try{
+  const payload=await fetchPlayerLog(team,id,season);
+  if(request!==playerRequest)return;
+  playerGames=payload.games||[];
+  renderPlayerSeason();
+  changeLine();
+  if(!playerGames.length)$('player-status').textContent='Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
+ }catch(e){
+  if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';
+ }finally{
+  if(request===playerRequest)setPlayerLoading(false);
+ }
 }
 function changeLine(){
  const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);
