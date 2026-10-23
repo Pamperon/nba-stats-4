@@ -52,15 +52,20 @@ async function enrichPickProfile(row){
  const request=++pickProfileRequest;
  const id=String(row['ESPN ID']||'');
  const target=$('pick-player-meta');
- if(!target||!/^\d+$/.test(id))return;
+ if(!target)return;
  try{
   const teams=(await(await api('/api/players/teams')).json()).teams||[];
   const match=teams.find(t=>String(t.name||'').toLowerCase()===String(row.Squadra||'').toLowerCase());
   const ordered=match?[match]:teams;
   for(const team of ordered){
    const roster=(await(await api('/api/players/roster?team_id='+encodeURIComponent(team.id))).json()).players||[];
-   const profile=roster.find(p=>String(p.id)===id);
-   if(profile){if(request===pickProfileRequest&&$('pick-player-meta'))$('pick-player-meta').textContent=[team.name,profile.position,profile.jersey?'#'+profile.jersey:''].filter(Boolean).join(' · ');return;}
+   const normalized=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+   const profile=roster.find(p=>(/^\d+$/.test(id)&&String(p.id)===id)||normalized(p.name)===normalized(row.Giocatore));
+   if(profile){if(request===pickProfileRequest&&$('pick-player-meta')){
+    $('pick-player-meta').textContent=[team.name,profile.position,profile.jersey?'#'+profile.jersey:''].filter(Boolean).join(' · ');
+    const avatar=$('pick').querySelector('.pick-avatar');
+    if(avatar&&/^\d+$/.test(String(profile.id))){const photo=document.createElement('img');photo.loading='lazy';photo.decoding='async';photo.alt='Foto di '+String(profile.name||row.Giocatore);photo.onload=()=>{if(request===pickProfileRequest)avatar.classList.add('has-photo')};photo.onerror=()=>{photo.remove();avatar.classList.remove('has-photo')};avatar.querySelector('img')?.remove();avatar.appendChild(photo);photo.src='/api/players/headshot/'+encodeURIComponent(profile.id)}
+   }return;}
   }
  }catch(e){/* Keep the team visible if ESPN metadata is unavailable. */}
 }
