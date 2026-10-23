@@ -258,12 +258,12 @@ def normalized_name(name):
 
 # Exact, reviewed OddsPapi -> ESPN aliases. Do not fuzzy-match different athletes.
 PLAYER_NAME_ALIASES = {
-    "johnsonmorez": "morezjohnsonjr",
-    "washingtonjrpj": "pjwashington",
-    "sarralexandre": "alexandresarr",
-    "smithjabari": "jabari smith jr",
-    "acuffdarius": "dariusacuffjr",
+    "morezjohnson": "morezjohnsonjr",
+    "pjwashingtonjr": "pjwashington",
+    "jabarismith": "jabarismithjr",
+    "dariusacuff": "dariusacuffjr",
 }
+
 
 def espn_player_key(odds_name):
     key = normalized_name(odds_name)
@@ -787,7 +787,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
 
     def load_player(item):
         player_name, _props = item
-        athlete = index.get(espn_player_key(player_name))
+        athlete = index.get(normalized_name(player_name)) or index.get(espn_player_key(player_name))
         games = None
         error = "Giocatore non identificato su ESPN" if athlete is None else ""
         if athlete is not None:
