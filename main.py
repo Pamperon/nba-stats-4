@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import engine
 
-app = FastAPI(title='NBA STATS 4.1', docs_url=None, redoc_url=None)
+app = FastAPI(title='NBA STATS 4.0', docs_url=None, redoc_url=None)
 TOKEN = os.getenv('NBA_STATS_ACCESS_TOKEN', '')
 if not TOKEN:
     raise RuntimeError('Set NBA_STATS_ACCESS_TOKEN before starting the server')
@@ -24,7 +24,7 @@ def auth(authorization: str = Header(default='')):
 
 @app.get('/api/health')
 def health():
-    return {'status':'ok', 'version':'4.1-test'}
+    return {'status':'ok', 'version':'4.0-optimized'}
 
 @app.get('/api/fixtures', dependencies=[Depends(auth)])
 def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
@@ -45,10 +45,7 @@ def do_scan(job_id, date):
         catalog = engine.get_markets()
         setup_seconds = round(time.monotonic() - started_at, 2)
         analysis_started = time.monotonic()
-        phase_seconds = {}
         def progress(p, label):
-            if p >= 0.25 and 'odds' not in phase_seconds:
-                phase_seconds['odds'] = round(time.monotonic() - analysis_started, 2)
             with lock: jobs[job_id].update(progress=round(p*100),stage=label)
         rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress)
         analysis_seconds = round(time.monotonic() - analysis_started, 2)
