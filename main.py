@@ -203,7 +203,7 @@ def player_teams():
         raise HTTPException(503, 'Squadre ESPN temporaneamente non disponibili')
 
 @app.get('/api/players/roster')
-def player_roster(team_id: str = Query(pattern=r'^\\d{1,8}, dependencies=[Depends(auth)])
+def player_roster(team_id: str = Query(pattern=r'^\d{1,8}, dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
     try:
@@ -267,7 +267,7 @@ def index(): return FileResponse('web/index.html')
         raise HTTPException(503, 'Roster ESPN temporaneamente non disponibile')
 
 @app.get('/api/players/log')
-def player_log(team_id: str = Query(pattern=r'^\\d{1,8}, dependencies=[Depends(auth)])
+def player_log(team_id: str = Query(pattern=r'^\d{1,8}, dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
     try:
@@ -322,7 +322,7 @@ app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')
 def index(): return FileResponse('web/index.html')
 ),
-               athlete_id: str = Query(pattern=r'^\\d{1,12}, dependencies=[Depends(auth)])
+               athlete_id: str = Query(pattern=r'^\d{1,12}, dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
     try:
@@ -377,7 +377,7 @@ app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')
 def index(): return FileResponse('web/index.html')
 ),
-               season: str = Query(pattern=r'^\\d{4}, dependencies=[Depends(auth)])
+               season: str = Query(pattern=r'^\d{4}, dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
     try:
