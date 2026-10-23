@@ -10,6 +10,30 @@ $('login').onclick=async()=>{token=$('token').value.trim();try{await api('/api/s
 $('logout').onclick=()=>{token='';data=null;$('auth').hidden=false;$('app').hidden=true};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
 $('db-test').onclick=async()=>{const b=$('db-test');b.disabled=true;$('status').textContent='Verifica database in corso (0 chiamate OddsPapi)…';try{const r=await api('/api/storage/self-test',{method:'POST'});const x=await r.json();$('status').textContent=x.status==='ok'?'DATABASE OK · scrittura, lettura e cancellazione verificate · 0 chiamate OddsPapi':'Test database non superato';}catch(e){$('status').textContent='TEST DATABASE FALLITO · '+e.message+' · controllare i log Render';}finally{b.disabled=false}};
+let dateSelectionRequest=0;
+$('date').addEventListener('change',async()=>{
+ const selected=$('date').value;
+ if(!token)return;
+ const request=++dateSelectionRequest;
+ $('status').textContent='Caricamento archivio del '+selected+'…';
+ try{
+  const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));
+  const saved=await response.json();
+  if(request!==dateSelectionRequest||$('date').value!==selected)return;
+  data=saved;jobId=saved.job_id||'';render();
+  $('status').textContent='Analisi cloud del '+selected+' · '+(saved.results||[]).length+' linee · 0 chiamate OddsPapi';
+ }catch(error){
+  if(request!==dateSelectionRequest||$('date').value!==selected)return;
+  if(error.message==='HTTP 404'){
+   if(await showLocalScan(selected))return;
+   data=null;jobId='';render();
+   $('status').textContent='Nessuna analisi salvata per il '+selected+' · 0 chiamate OddsPapi';
+  }else{
+   data=null;jobId='';render();
+   $('status').textContent='Impossibile consultare Supabase per il '+selected+' ('+error.message+') · riprova più tardi';
+  }
+ }
+});
 $('saved-scan').onclick=async()=>{if(!await loadCloudScan($('date').value)&&!await showLocalScan($('date').value))$('status').textContent='Nessuna analisi salvata per questa data su questo dispositivo.'};
 $('scan').onclick=async()=>{if($('scan').disabled)return;if(!confirm('Questa operazione può consumare chiamate OddsPapi. Vuoi davvero avviare una nuova scansione? Per consultare i risultati esistenti usa DATI SALVATI (0 API).'))return;$('scan').disabled=true;try{$('status').textContent='Richiesta scansione…';const r=await api('/api/scan?date='+$('date').value,{method:'POST'});jobId=(await r.json()).job_id;sessionStorage.setItem(savedKey,JSON.stringify({date:$('date').value,jobId}));poll()}catch(e){$('scan').disabled=false;$('status').textContent='Errore avvio: '+e.message}};
 async function poll(){try{let r=await api('/api/scan/'+jobId),j=await r.json();$('status').textContent=['done','partial'].includes(j.state)?(j.state==='partial'?'Analisi PARZIALE':'Analisi completata')+' · '+j.results.length+' linee':j.stage+' · '+j.progress+'%';if(['done','partial'].includes(j.state)){$('scan').disabled=false;data=j;render();await saveLocalScan(j);return}if(j.state==='save_failed'){$('scan').disabled=false;data=j;jobId='';render();$('status').textContent='ATTENZIONE: analisi completata ma NON salvata su Supabase. Scarica subito il CSV e non aggiornare la pagina.';return;}if(j.state==='error'){$('scan').disabled=false;return;}setTimeout(poll,2500)}catch(e){$('scan').disabled=false;if(e.message==='HTTP 404'){sessionStorage.removeItem(savedKey);if(!await showLocalScan($('date').value))$('status').textContent='Scansione interrotta: il server non conserva più questo lavoro (possibile riavvio Render). Non riavviare automaticamente.';}else{$('status').textContent='Connessione interrotta: '+e.message}}};
