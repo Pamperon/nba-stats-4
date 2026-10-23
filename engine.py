@@ -84,17 +84,49 @@ def bet365_line_allowed(row, stat):
             round(float(row["Linea"]), 2) in BET365_ALT_LINES[stat] and
             isinstance(row.get("Over"), (int, float)))
 
+# A single process-wide gate spaces OddsPapi calls without affecting ESPN.
+_ODDS_API_LOCK = threading.Lock()
+_ODDS_API_NEXT_AT = 0.0
+_ODDS_API_MIN_INTERVAL = 2.0
+
 def get_json(path, **params):
     if not API_KEY:
-        raise RuntimeError("Chiave OddsPapi assente in Streamlit Secrets.")
-    try:
-        resp = requests.get(f"{BASE}/{path}", params={**params, "apiKey": API_KEY, "language": "en"}, timeout=40)
-        resp.raise_for_status()
-        return resp.json()
-    except requests.RequestException as exc:
-        # Never reveal exception's request URL, which contains the API key.
-        status = getattr(getattr(exc, "response", None), "status_code", None)
-        raise RuntimeError(f"OddsPapi: errore HTTP {status or 'di connessione'}.") from None
+        raise RuntimeError("Chiave OddsPapi assente nella configurazione del servizio.")
+    global _ODDS_API_NEXT_AT
+    # Only one bounded retry for 429. Never retry other errors or consume
+    # an unbounded number of the remaining monthly API requests.
+    for attempt in range(2):
+        with _ODDS_API_LOCK:
+            wait = max(0.0, _ODDS_API_NEXT_AT - time.monotonic())
+            if wait:
+                time.sleep(wait)
+            _ODDS_API_NEXT_AT = time.monotonic() + _ODDS_API_MIN_INTERVAL
+            try:
+                resp = requests.get(
+                    f"{BASE}/{path}",
+                    params={**params, "apiKey": API_KEY, "language": "en"},
+                    timeout=40,
+                )
+            except requests.RequestException:
+                raise RuntimeError("OddsPapi: errore di connessione.") from None
+            if resp.status_code == 429 and attempt == 0:
+                header = resp.headers.get("Retry-After", "")
+                try:
+                    delay = max(2.0, min(float(header), 30.0))
+                except (TypeError, ValueError):
+                    delay = 8.0
+                # Do not retry a long cooldown automatically.
+                if delay >= 30.0:
+                    raise RuntimeError("OddsPapi: HTTP 429 (attendere prima di riprovare).")
+                _ODDS_API_NEXT_AT = max(_ODDS_API_NEXT_AT, time.monotonic() + delay)
+                continue
+            if not resp.ok:
+                raise RuntimeError(f"OddsPapi: errore HTTP {resp.status_code}.")
+            try:
+                return resp.json()
+            except ValueError:
+                raise RuntimeError("OddsPapi: risposta JSON non valida.") from None
+    raise RuntimeError("OddsPapi: HTTP 429 dopo il tentativo controllato.")
 
 @cached(TTLCache(maxsize=512,ttl=21600))
 def get_markets():
@@ -557,22 +589,34 @@ def finder_estimate_probability(log, stat, line, side):
             "avg": float(values.mean())}
 
 def finder_player_index(end_year):
-    """Read all current ESPN rosters once; return normalized-name lookup."""
-    index = {}
+    """Fetch team rosters with limited concurrency, preserving original team order."""
+    from concurrent.futures import ThreadPoolExecutor
+    teams = []
     for entry in espn_teams():
         team = entry.get("team", entry)
         team_id = str(team.get("id") or "")
-        if not team_id:
-            continue
+        if team_id:
+            teams.append((team_id, team))
+
+    def fetch_roster(item):
+        team_id, team = item
         try:
-            roster = espn_roster(team_id, None)
+            return team_id, team, espn_roster(team_id, None)
         except requests.RequestException:
-            continue
-        for athlete in roster_athletes(roster):
-            index.setdefault(normalized_name(athlete["displayName"]),
-                             {"id": athlete["id"], "team_id": team_id,
-                              "full_name": athlete["displayName"],
-                              "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"})
+            return team_id, team, None
+
+    index = {}
+    # Executor.map returns in input order: duplicate-name handling is unchanged.
+    # Four concurrent ESPN requests speed up startup without flooding the API.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for team_id, team, roster in pool.map(fetch_roster, teams):
+            if roster is None:
+                continue
+            for athlete in roster_athletes(roster):
+                index.setdefault(normalized_name(athlete["displayName"]),
+                                 {"id": athlete["id"], "team_id": team_id,
+                                  "full_name": athlete["displayName"],
+                                  "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"})
     return index
 
 def odds_source_audit(odds, catalog, match_name):
@@ -725,10 +769,11 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             report.update(stato="errore", linee=0, dettaglio=f"{type(exc).__name__}: {str(exc)[:160]}")
             logger.exception("Quote fixture %s failed", fid)
             issues.append(f"{match_name}: {report['dettaglio']}")
-    for idx, (player_name, props) in enumerate(props_by_player.items()):
-        if progress_callback:
-            progress_callback(0.25 + 0.75 * idx / max(len(props_by_player), 1),
-                              f"ESPN: {idx + 1}/{len(props_by_player)} — {player_name}")
+    from concurrent.futures import ThreadPoolExecutor
+    player_items = list(props_by_player.items())
+
+    def load_player(item):
+        player_name, _props = item
         athlete = index.get(normalized_name(player_name))
         games = None
         error = "Giocatore non identificato su ESPN" if athlete is None else ""
@@ -753,40 +798,50 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                     else:
                         games = (games.drop_duplicates(subset=["GAME_ID"], keep="first")
                                       .sort_values("GAME_DATE", ascending=False).reset_index(drop=True))
-                        player_logs[player_name] = games
             except Exception as exc:
                 error = f"Dati ESPN non disponibili ({type(exc).__name__})"
                 games = None
-        if error:
-            issues.append(f"{player_name}: {error}")
-        for match_name, market_label, line, price, reason in props:
-            stat = STATS[market_label]
-            row = {"Partita": match_name, "Giocatore": player_name,
-                   "Squadra": athlete.get("team_name", "Squadra non identificata") if athlete else "Squadra non identificata",
-                   "Mercato": stat,
-                   "Scelta": "Over", "Linea": line, "Quota": price,
-                   "Prob. stimata %": None, "Prob. implicita %": round(100 / price, 1),
-                   "Value stimato %": None, "Ultime 5": "—", "Ultime 10": "—",
-                   "Ultime 20": "—", "Stagione %": None, "Partite": 0, "Stagione attuale (n)": 0, "Stagione precedente (n)": 0,
-                   "Media": None, "Scarto medio": None, "Dev. standard": None,
-                   "Minuti medi": None, "Minuti ultime 5": None,
-                   "Stato analisi": "Non valutabile", "Nota": reason or error}
-            if games is not None and not games.empty:
-                details = finder_detailed_stats(games, stat, line)
-                row.update(details)
-                row["Stagione attuale (n)"] = int((games["ANNO_STAGIONE"] == season).sum())
-                row["Stagione precedente (n)"] = int((games["ANNO_STAGIONE"] != season).sum())
-                if len(games) < min_games:
-                    row["Nota"] = "; ".join(filter(None, [reason, f"Solo {len(games)} partite ESPN (minimo {min_games})"]))
-                elif not reason:
-                    estimate = finder_estimate_probability(games, stat, line, "Over")
-                    if estimate:
-                        prob = estimate["estimate"]
-                        row["Prob. stimata %"] = round(prob * 100, 1)
-                        row["Value stimato %"] = round((prob * price - 1) * 100, 1)
-                        row["Stato analisi"] = "Valutabile (stima empirica)"
-                        row["Nota"] = "Stima empirica NON calibrata; verifica quota e disponibilità"
-            results.append(row)
+        return athlete, games, error
+
+    # Concurrent ESPN I/O, but preserve deterministic result and progress order.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        player_data = pool.map(load_player, player_items)
+        for idx, ((player_name, props), (athlete, games, error)) in enumerate(zip(player_items, player_data)):
+            if progress_callback:
+                progress_callback(0.25 + 0.75 * idx / max(len(player_items), 1),
+                                  f"ESPN: {idx + 1}/{len(player_items)} — {player_name}")
+            if games is not None:
+                player_logs[player_name] = games
+            if error:
+                issues.append(f"{player_name}: {error}")
+            for match_name, market_label, line, price, reason in props:
+                stat = STATS[market_label]
+                row = {"Partita": match_name, "Giocatore": player_name,
+                       "Squadra": athlete.get("team_name", "Squadra non identificata") if athlete else "Squadra non identificata",
+                       "Mercato": stat,
+                       "Scelta": "Over", "Linea": line, "Quota": price,
+                       "Prob. stimata %": None, "Prob. implicita %": round(100 / price, 1),
+                       "Value stimato %": None, "Ultime 5": "—", "Ultime 10": "—",
+                       "Ultime 20": "—", "Stagione %": None, "Partite": 0, "Stagione attuale (n)": 0, "Stagione precedente (n)": 0,
+                       "Media": None, "Scarto medio": None, "Dev. standard": None,
+                       "Minuti medi": None, "Minuti ultime 5": None,
+                       "Stato analisi": "Non valutabile", "Nota": reason or error}
+                if games is not None and not games.empty:
+                    details = finder_detailed_stats(games, stat, line)
+                    row.update(details)
+                    row["Stagione attuale (n)"] = int((games["ANNO_STAGIONE"] == season).sum())
+                    row["Stagione precedente (n)"] = int((games["ANNO_STAGIONE"] != season).sum())
+                    if len(games) < min_games:
+                        row["Nota"] = "; ".join(filter(None, [reason, f"Solo {len(games)} partite ESPN (minimo {min_games})"]))
+                    elif not reason:
+                        estimate = finder_estimate_probability(games, stat, line, "Over")
+                        if estimate:
+                            prob = estimate["estimate"]
+                            row["Prob. stimata %"] = round(prob * 100, 1)
+                            row["Value stimato %"] = round((prob * price - 1) * 100, 1)
+                            row["Stato analisi"] = "Valutabile (stima empirica)"
+                            row["Nota"] = "Stima empirica NON calibrata; verifica quota e disponibilità"
+                results.append(row)
     if progress_callback:
         progress_callback(1.0, "Analisi completata")
     results.sort(key=lambda r: (r["Prob. stimata %"] is not None,
