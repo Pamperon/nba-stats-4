@@ -78,17 +78,31 @@ def do_scan(job_id, date):
         for name, log in logs.items():
             records=log.copy();records['GAME_DATE']=records['GAME_DATE'].dt.strftime('%Y-%m-%d')
             serialized_logs[name]=records.where(pd.notna(records),None).to_dict('records')
+        final_state = 'partial' if any(r['stato'] != 'ok' for r in fixture_reports) else 'done'
+        final_stage = 'Parziale' if final_state == 'partial' else 'Completata'
+        snapshot = {
+            'date': date, 'state': final_state, 'progress': 100, 'stage': final_stage,
+            'results': rows, 'issues': issues, 'fixture_reports': fixture_reports,
+            'player_logs': serialized_logs, 'fixture_count': len(fixtures),
+            'player_count': player_count, 'season': season,
+            'timings': {'preparazione_s': setup_seconds,
+                        'scansione_s': analysis_seconds,
+                        'totale_s': round(time.monotonic()-started_at, 2)}
+        }
         with lock:
-            jobs[job_id].update(state='partial' if any(r['stato'] != 'ok' for r in fixture_reports) else 'done',progress=100,stage='Parziale' if any(r['stato'] != 'ok' for r in fixture_reports) else 'Completata',results=rows,issues=issues,fixture_reports=fixture_reports,player_logs=serialized_logs,fixture_count=len(fixtures),player_count=player_count,season=season,timings={'preparazione_s':setup_seconds,'scansione_s':analysis_seconds,'totale_s':round(time.monotonic()-started_at,2)})
-        with lock:
-            snapshot = dict(jobs[job_id])
+            jobs[job_id].update(progress=99, stage='Salvataggio su Supabase…')
         try:
-            if storage.configured():
-                storage.save(job_id, snapshot)
+            if not storage.configured():
+                raise RuntimeError('DATABASE_URL non configurato')
+            storage.save(job_id, snapshot)
         except Exception:
-            logger.exception('Scan %s finished but PostgreSQL persistence failed', job_id)
+            logger.exception('Scan %s completed but cloud persistence failed', job_id)
             with lock:
-                jobs[job_id]['persistence_warning'] = 'Salvataggio cloud non riuscito; esporta subito il CSV'
+                jobs[job_id].update(snapshot, state='save_failed', progress=100,
+                                    stage='Analisi completata ma NON salvata su Supabase; esporta subito il CSV')
+            return
+        with lock:
+            jobs[job_id].update(snapshot, cloud_saved=True)
     except Exception as exc:
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
 
@@ -137,7 +151,7 @@ def scan_result(job_id: str):
 @app.get('/api/scan/{job_id}/csv', dependencies=[Depends(auth)])
 def scan_csv(job_id: str):
     with lock: job=jobs.get(job_id)
-    if not job or job['state'] not in ('done','partial'): raise HTTPException(404,'Analisi non disponibile')
+    if not job or job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
     data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
     return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="nba_stats_4_completo.csv"'})
 
