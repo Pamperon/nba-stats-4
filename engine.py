@@ -6,6 +6,8 @@ from zoneinfo import ZoneInfo
 from functools import lru_cache
 from cachetools import TTLCache, cached
 import os, re, requests, pandas as pd
+import json, time, threading
+from pathlib import Path
 import logging
 logger = logging.getLogger(__name__)
 BASE = "https://api.oddspapi.io/v4"
@@ -17,6 +19,66 @@ BET365_ALT_LINES = {"PTS": {float(n)+0.5 for n in range(4,100,5)}, "REB": {2.5,4
 ESPN_SITE = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba"
 ESPN_WEB = "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba"
 odds_cache = TTLCache(maxsize=200,ttl=86400)
+# Store only usable responses; never cache a temporary empty or suspended feed.
+# Optional local disk cache survives application process restarts when storage persists.
+_CACHE_LOCK = threading.RLock()
+_CACHE_DIR = Path(os.getenv("NBA_ODDS_CACHE_DIR", "/tmp/nba_stats_4_odds"))
+
+def _cache_read(fid):
+    with _CACHE_LOCK:
+        cached_value = odds_cache.get(fid)
+        if cached_value is not None:
+            return cached_value, "memory"
+        path = _CACHE_DIR / (re.sub(r"[^a-zA-Z0-9_-]", "", str(fid)) + ".json")
+        try:
+            if time.time() - path.stat().st_mtime > 86400:
+                return None, "none"
+            obj = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(obj, dict):
+                odds_cache[fid] = obj
+                return obj, "disk"
+        except (OSError, ValueError, TypeError):
+            pass
+        return None, "none"
+
+def _cache_write(fid, odds):
+    with _CACHE_LOCK:
+        odds_cache[fid] = odds
+        try:
+            _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            path = _CACHE_DIR / (re.sub(r"[^a-zA-Z0-9_-]", "", str(fid)) + ".json")
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(odds), encoding="utf-8")
+            tmp.replace(path)
+        except OSError:
+            pass
+
+def _odds_diagnostics(odds, catalog):
+    books = odds.get("bookmakerOdds") or {} if isinstance(odds, dict) else {}
+    book = books.get("bet365.it") or {}
+    markets = book.get("markets") or {}
+    result = {"bookmaker_presente": bool(book), "bookmaker_attivo": book.get("bookmakerIsActive"),
+              "bookmaker_sospeso": book.get("suspended"), "mercati_totali": len(markets),
+              "mercati_player_props": 0, "mercati_attivi": 0, "mercati_inattivi": 0,
+              "mercati_senza_catalogo": 0, "giocatori_attivi": 0, "quote_valide": 0}
+    wanted = {kind for kinds in MARKETS.values() for kind in kinds}
+    for mid, market in markets.items():
+        definition = catalog.get(str(mid))
+        if definition is None:
+            result["mercati_senza_catalogo"] += 1
+            continue
+        if definition.get("marketType") not in wanted:
+            continue
+        result["mercati_player_props"] += 1
+        result["mercati_attivi" if market.get("marketActive") is True else "mercati_inattivi"] += 1
+        for outcome in (market.get("outcomes") or {}).values():
+            for player in (outcome.get("players") or {}).values():
+                if player.get("active"):
+                    result["giocatori_attivi"] += 1
+                    if isinstance(player.get("price"), (int,float)) and player["price"] > 1:
+                        result["quote_valide"] += 1
+    return result
+
 def bet365_line_allowed(row, stat):
     return (row.get("Tipo") == "Soglia +" and
             round(float(row["Linea"]), 2) in BET365_ALT_LINES[stat] and
@@ -97,7 +159,6 @@ def fixture_is_completed(fixture):
         return True
     return False
 
-@cached(TTLCache(maxsize=512,ttl=86400))
 def get_odds(fixture_id, refresh_version=0):
     return get_json("odds", fixtureId=fixture_id, bookmakers="bet365.it", verbosity=3)
 
@@ -610,8 +671,11 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
         fixture_reports.append(report)
         count_before = quote_count
         try:
-            stored = odds_cache.get(fid)
-            odds = stored if stored is not None else get_odds(fid)
+            odds, source = _cache_read(fid)
+            if odds is None:
+                odds = get_odds(fid)
+            report["origine"] = source if source != "none" else "api"
+            report["diagnostica"] = _odds_diagnostics(odds, catalog)
             # Cache only validated, successfully parsed fixtures (after processing).
             raw_audit.extend(odds_source_audit(odds, catalog, match_name))
             for market_label in MARKETS:
@@ -642,10 +706,15 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             report["linee"] = quote_count - count_before
             report["stato"] = "ok" if report["linee"] else "vuota"
             if not report["linee"]:
-                report["dettaglio"] = "Nessuna linea Bet365 elaborabile"
+                d = report["diagnostica"]
+                report["dettaglio"] = (f"Feed: {d['mercati_totali']} mercati, "
+                                     f"{d['mercati_player_props']} props, "
+                                     f"{d['mercati_attivi']} attivi; "
+                                     f"bookmaker attivo={d['bookmaker_attivo']}, "
+                                     f"sospeso={d['bookmaker_sospeso']}")
                 issues.append(f"{match_name}: nessuna linea Bet365 elaborabile")
             else:
-                odds_cache[fid] = odds
+                _cache_write(fid, odds)
         except Exception as exc:
             # Discard partial results for this fixture; avoid silently counting incomplete games.
             quote_count = count_before
