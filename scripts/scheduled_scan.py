@@ -35,7 +35,7 @@ def run():
         schedule = call("/api/schedule?date=" + today)
         print("ESPN games for", today, ":", len(schedule.get("games", [])), flush=True)
         return
-    if now.hour not in SLOTS:
+    if os.environ.get("NBA_STATS_MANUAL_SCAN") != "1" and now.hour not in SLOTS:
         print("Not a Rome-time scan slot:", now.isoformat(), flush=True)
         return
     # Delay of a scheduled GitHub Actions run is expected; local-hour gate handles DST.
