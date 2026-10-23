@@ -84,17 +84,49 @@ def bet365_line_allowed(row, stat):
             round(float(row["Linea"]), 2) in BET365_ALT_LINES[stat] and
             isinstance(row.get("Over"), (int, float)))
 
+# A single process-wide gate spaces OddsPapi calls without affecting ESPN.
+_ODDS_API_LOCK = threading.Lock()
+_ODDS_API_NEXT_AT = 0.0
+_ODDS_API_MIN_INTERVAL = 2.0
+
 def get_json(path, **params):
     if not API_KEY:
-        raise RuntimeError("Chiave OddsPapi assente in Streamlit Secrets.")
-    try:
-        resp = requests.get(f"{BASE}/{path}", params={**params, "apiKey": API_KEY, "language": "en"}, timeout=40)
-        resp.raise_for_status()
-        return resp.json()
-    except requests.RequestException as exc:
-        # Never reveal exception's request URL, which contains the API key.
-        status = getattr(getattr(exc, "response", None), "status_code", None)
-        raise RuntimeError(f"OddsPapi: errore HTTP {status or 'di connessione'}.") from None
+        raise RuntimeError("Chiave OddsPapi assente nella configurazione del servizio.")
+    global _ODDS_API_NEXT_AT
+    # Only one bounded retry for 429. Never retry other errors or consume
+    # an unbounded number of the remaining monthly API requests.
+    for attempt in range(2):
+        with _ODDS_API_LOCK:
+            wait = max(0.0, _ODDS_API_NEXT_AT - time.monotonic())
+            if wait:
+                time.sleep(wait)
+            _ODDS_API_NEXT_AT = time.monotonic() + _ODDS_API_MIN_INTERVAL
+            try:
+                resp = requests.get(
+                    f"{BASE}/{path}",
+                    params={**params, "apiKey": API_KEY, "language": "en"},
+                    timeout=40,
+                )
+            except requests.RequestException:
+                raise RuntimeError("OddsPapi: errore di connessione.") from None
+            if resp.status_code == 429 and attempt == 0:
+                header = resp.headers.get("Retry-After", "")
+                try:
+                    delay = max(2.0, min(float(header), 30.0))
+                except (TypeError, ValueError):
+                    delay = 8.0
+                # Do not retry a long cooldown automatically.
+                if delay >= 30.0:
+                    raise RuntimeError("OddsPapi: HTTP 429 (attendere prima di riprovare).")
+                _ODDS_API_NEXT_AT = max(_ODDS_API_NEXT_AT, time.monotonic() + delay)
+                continue
+            if not resp.ok:
+                raise RuntimeError(f"OddsPapi: errore HTTP {resp.status_code}.")
+            try:
+                return resp.json()
+            except ValueError:
+                raise RuntimeError("OddsPapi: risposta JSON non valida.") from None
+    raise RuntimeError("OddsPapi: HTTP 429 dopo il tentativo controllato.")
 
 @cached(TTLCache(maxsize=512,ttl=21600))
 def get_markets():
