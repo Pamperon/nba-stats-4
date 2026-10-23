@@ -38,6 +38,13 @@ def run():
     if os.environ.get("NBA_STATS_MANUAL_SCAN") != "1" and now.hour not in SLOTS:
         print("Not a Rome-time scan slot:", now.isoformat(), flush=True)
         return
+    # Cleanup runs even when there are no upcoming games, using only Supabase.
+    # A temporary DB issue must not prevent the scheduled NBA scan.
+    try:
+        cleanup = call("/api/storage/cleanup", method="POST")
+        print("Archive cleanup:", cleanup, flush=True)
+    except Exception as exc:
+        print("Archive cleanup failed (scans continue):", exc, flush=True)
     # Delay of a scheduled GitHub Actions run is expected; local-hour gate handles DST.
     for offset in (0, 1):
         date = (now.date() + dt.timedelta(days=offset)).isoformat()
