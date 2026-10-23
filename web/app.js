@@ -3,29 +3,14 @@ function scanDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in windo
 async function saveLocalScan(j){try{const db=await scanDB();await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readwrite');tx.objectStore('scans').put(j,j.date);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();$('status').textContent+=' · copia salvata nel browser';}catch(e){$('status').textContent+=' · salvataggio locale non riuscito';}}
 async function readLocalScan(date){const db=await scanDB();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readonly');const r=tx.objectStore('scans').get(date);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}finally{db.close()}}
 async function showLocalScan(date){try{const j=await readLocalScan(date);if(!j)return false;data=j;jobId='';render();$('status').textContent='Analisi salvata nel browser ('+date+') · '+j.results.length+' linee · nessuna chiamata API';return true}catch{return false}}
-const today=new Date();$('date').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(today);const fmt=x=>x==null?'—':x;
-async function api(path,options={}){let r=await fetch(path,{...options,headers:{'Authorization':'Bearer '+token,...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
+const fmt=x=>x==null?'—':x;
+async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId=j.job_id||'';if(j.date)$('date').value=j.date;render();$('status').textContent='Analisi cloud del '+(j.date||'giorno')+' · '+(j.results||[]).length+' linee · salvata '+(j.saved_at||'')+' · 0 chiamate OddsPapi';return true}catch{return false}}
-$('login').onclick=async()=>{token=$('token').value.trim();try{await api('/api/session');$('auth').hidden=true;$('app').hidden=false;$('token').value='';if(!await loadCloudScan($('date').value)){data=null;jobId='';render();$('status').textContent='Nessuna quota ancora disponibile per il '+$('date').value+' · 0 chiamate OddsPapi'}await loadSchedule($('date').value)}catch{token='';alert('Token non valido o servizio non disponibile')}};
-$('logout').onclick=()=>{token='';data=null;$('auth').hidden=false;$('app').hidden=true};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
-async function loadSchedule(date){
- const panel=$('schedule');
- panel.hidden=false;panel.innerHTML='<h2>Partite del '+date+'</h2><p>Caricamento calendario ESPN…</p>';
- try{
-  const response=await api('/api/schedule?date='+encodeURIComponent(date));
-  const result=await response.json();
-  if($('date').value!==date)return;
-  const games=result.games||[];
-  panel.innerHTML='<h2>Partite del '+date+' · '+games.length+'</h2>'+(games.length?games.map(g=>'<p><b>'+esc(g.away)+' - '+esc(g.home)+'</b> · '+esc(g.time)+' (Italia)'+(g.status?' · '+esc(g.status):'')+'</p>').join(''):'<p>Nessuna partita NBA in programma.</p>')+'<p class="note">Calendario ESPN · 0 chiamate OddsPapi</p>';
- }catch(e){if($('date').value===date)panel.innerHTML='<h2>Partite del '+date+'</h2><p>Calendario ESPN momentaneamente non disponibile.</p>';}
-}
 let dateSelectionRequest=0;
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
- if(!token)return;
  const request=++dateSelectionRequest;
- loadSchedule(selected);
  $('status').textContent='Caricamento archivio del '+selected+'…';
  try{
   const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));
