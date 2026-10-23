@@ -48,7 +48,7 @@ async function initPlayers(){
  }catch(e){$('player-status').textContent='Catalogo NBA non disponibile ('+e.message+'). Ricarica la pagina.';}
 }
 async function changeTeam(){
- const request=++rosterRequest;const team=$('team').value;
+ const request=++rosterRequest; ++playerRequest;const team=$('team').value;
  $('playername').innerHTML='';$('player-status').textContent='Caricamento roster ESPN…';
  if(!team)return;
  try{const payload=await(await api('/api/players/roster?team_id='+encodeURIComponent(team))).json();
