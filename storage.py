@@ -3,6 +3,7 @@ import json
 import math
 import logging
 import os
+import uuid
 from datetime import datetime, timezone
 
 import psycopg
@@ -96,3 +97,34 @@ def latest(date=None):
         return None
     job_id, payload, created_at = row
     return {"job_id": job_id, "saved_at": created_at.isoformat(), **payload}
+
+def self_test():
+    """Insert, read back and delete one isolated synthetic record; no external APIs."""
+    if not configured():
+        raise RuntimeError("DATABASE_URL missing")
+    test_id = "storage-test-" + uuid.uuid4().hex
+    sample = {"date": "2000-01-01", "state": "done", "results": [],
+              "issues": [], "player_logs": {}, "fixture_reports": [],
+              "test_marker": test_id}
+    with connection() as conn:
+        try:
+            conn.execute("""
+                INSERT INTO nba_scan_snapshots(job_id, scan_date, state, payload)
+                VALUES (%s, %s, %s, %s)
+            """, (test_id, sample["date"], "done", Jsonb(sample)))
+            row = conn.execute("""
+                SELECT payload FROM nba_scan_snapshots WHERE job_id=%s
+            """, (test_id,)).fetchone()
+            if not row or row[0].get("test_marker") != test_id:
+                raise RuntimeError("Readback mismatch")
+            conn.execute("DELETE FROM nba_scan_snapshots WHERE job_id=%s", (test_id,))
+            remaining = conn.execute(
+                "SELECT 1 FROM nba_scan_snapshots WHERE job_id=%s", (test_id,)
+            ).fetchone()
+            if remaining:
+                raise RuntimeError("Cleanup failed")
+        except Exception:
+            conn.rollback()
+            raise
+    return {"status": "ok", "write": True, "read": True, "cleanup": True,
+            "odds_api_calls": 0}
