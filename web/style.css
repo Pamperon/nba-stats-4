@@ -63,3 +63,39 @@
 .pick-combined{display:flex;flex-wrap:wrap;gap:12px 26px;margin:15px 0 4px;font-size:13px;color:#b9cce2}
 .pick-combined strong{color:#eaf2ff;font-size:19px;margin-left:6px}
 .pick-group>.note{font-size:11px;line-height:1.4;margin:12px 0 0}
+
+/* Compact, app-first masthead. Existing date selector and tab logic stay unchanged. */
+.app-header{max-width:none;padding:15px max(16px,4vw);gap:14px;background:#101a2a}
+.app-header .brand{display:flex;align-items:center;gap:11px;min-width:0}
+.app-header .brand-icon{width:43px;height:43px;display:grid;place-items:center;border-radius:12px;background:#1a2d46;font-size:25px;flex:0 0 43px}
+.app-header .brand-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.app-header .brand-copy b{font-size:21px;line-height:1.1;letter-spacing:.2px;white-space:nowrap}
+.app-header .brand-copy small{font-size:9px;letter-spacing:1.2px;color:#8fa7c7;white-space:nowrap}
+.app-header .version-tag{flex-shrink:0;border-radius:18px;background:#1a2d46;padding:7px 12px;color:#9dbde5;font-size:12px;letter-spacing:.4px}
+.app-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,320px);gap:15px 25px;align-items:center;margin-bottom:19px}
+.app-hero .hero-intro{min-width:0}
+.app-hero .hero-intro>small{font-size:11px;letter-spacing:1.5px}
+.app-hero .hero-intro h1{font-size:clamp(25px,3.5vw,36px);margin:6px 0}
+.app-hero .hero-intro p{font-size:14px;margin:0;line-height:1.45}
+.app-hero .actions{display:block;min-width:0}
+.app-hero .date-control{display:flex;flex-direction:column;gap:9px;background:#16263b;border:1px solid #354862;border-radius:16px;padding:13px 16px;min-width:0}
+.app-hero .date-label{font-size:11px;font-weight:700;letter-spacing:1.2px;color:#9cb0cb}
+.app-hero .date-label span{font-size:16px;color:#f59a55;margin-right:6px}
+.app-hero #date{width:100%;min-width:0;padding:5px 22px 5px 0;border:0;background:transparent;color:#f2f6ff;font-size:clamp(16px,2.4vw,20px);font-weight:650;cursor:pointer}
+.app-hero #date:focus-visible{outline:2px solid #f59a55;outline-offset:4px}
+.app-hero .hero-source{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;color:#8fa7c7;font-size:11px}
+.app-hero .hero-source span:last-child{color:#86b8a5}
+@media(max-width:760px){
+ .app-header{padding:13px 16px}
+ .app-header .brand-copy b{font-size:20px}
+ .app-hero{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-bottom:16px}
+ .app-hero .hero-intro h1{font-size:29px}
+ .app-hero .hero-intro p{font-size:13px}
+ .app-hero .date-control{padding:12px 15px}
+ .app-hero #date{font-size:18px}
+}
+@media(max-width:370px){
+ .app-header .brand-copy b{font-size:17px}
+ .app-header .brand-copy small{font-size:8px;letter-spacing:.8px}
+ .app-header .version-tag{font-size:11px;padding:6px 9px}
+}
