@@ -18,3 +18,18 @@
 
 .player-avatar img{display:block;visibility:visible;opacity:1}
 .player-avatar.has-photo span{visibility:hidden}
+
+/* Dashboard candidate profile */
+.pick-profile{display:flex;align-items:center;gap:20px;margin:20px 0 16px;min-width:0}
+.pick-avatar{width:94px;height:94px;flex:0 0 94px;border-radius:50%;background:linear-gradient(140deg,#263c60,#15243b);border:2px solid #3b5779;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.pick-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+.pick-avatar span{font-size:27px;font-weight:800;color:#d8e7fb}
+.pick-profile-info{min-width:0}
+.pick-profile-info h3{margin:0 0 6px;font-size:clamp(20px,3vw,26px)}
+.pick-profile-info p{margin:0 0 9px;color:#9cb0cb;font-size:13px}
+.pick-market{font-size:13px;font-weight:800;letter-spacing:.6px;color:#f7aa71}
+.pick-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:440px;margin:12px 0 16px}
+.pick-values>div{border:1px solid #334966;border-radius:12px;background:#15243a;padding:15px 18px}
+.pick-values small{display:block;color:#9cb0cb;letter-spacing:.8px;font-size:11px}
+.pick-values strong{display:block;margin-top:5px;font-size:clamp(25px,4vw,34px)}
+@media(max-width:520px){.pick-profile{gap:13px}.pick-avatar{width:74px;height:74px;flex-basis:74px}.pick-values{max-width:none}}
