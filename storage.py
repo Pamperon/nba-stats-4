@@ -38,7 +38,36 @@ def initialize():
             CREATE INDEX IF NOT EXISTS nba_scan_snapshots_date_idx
             ON nba_scan_snapshots (scan_date, created_at DESC)
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS nba_player_cache (
+                cache_key TEXT PRIMARY KEY,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                payload JSONB NOT NULL
+            )
+        """)
     return True
+
+
+def cache_read(key, max_age_hours):
+    if not configured():
+        return None
+    with connection() as conn:
+        row = conn.execute("""
+            SELECT payload FROM nba_player_cache
+            WHERE cache_key=%s AND updated_at >= NOW() - (%s * INTERVAL '1 hour')
+        """, (key, max_age_hours)).fetchone()
+    return row[0] if row else None
+
+
+def cache_write(key, payload):
+    if not configured():
+        return
+    with connection() as conn:
+        conn.execute("""
+            INSERT INTO nba_player_cache(cache_key, payload)
+            VALUES (%s, %s) ON CONFLICT(cache_key) DO UPDATE
+            SET payload=EXCLUDED.payload, updated_at=NOW()
+        """, (key, Jsonb(_clean(payload))))
 
 
 def save(job_id, snapshot):
