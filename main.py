@@ -209,6 +209,23 @@ def player_roster(team_id: str = Query(pattern=r'^[0-9]{1,8}$')):
         logger.exception('NBA roster unavailable')
         raise HTTPException(503, 'Roster ESPN temporaneamente non disponibile')
 
+@app.get('/api/players/headshot/{athlete_id}')
+def player_headshot(athlete_id: int):
+    if athlete_id < 1 or athlete_id > 999999999999:
+        raise HTTPException(400, 'ID giocatore non valido')
+    url = f'https://a.espncdn.com/i/headshots/nba/players/full/{athlete_id}.png'
+    try:
+        response = requests.get(url, timeout=(5, 12), headers={'User-Agent': 'Mozilla/5.0'})
+        if response.status_code != 200 or not response.headers.get('Content-Type', '').startswith('image/'):
+            raise HTTPException(404, 'Fotografia ESPN non disponibile')
+        if len(response.content) > 2000000:
+            raise HTTPException(502, 'Immagine troppo grande')
+        return StreamingResponse(io.BytesIO(response.content), media_type=response.headers['Content-Type'],
+                                 headers={'Cache-Control': 'public, max-age=86400'})
+    except requests.RequestException:
+        logger.warning('ESPN headshot unavailable for athlete %s', athlete_id, exc_info=True)
+        raise HTTPException(503, 'Fotografia ESPN temporaneamente non disponibile')
+
 @app.get('/api/players/profile')
 def player_profile(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
                    athlete_id: str = Query(pattern=r'^[0-9]{1,12}$')):
