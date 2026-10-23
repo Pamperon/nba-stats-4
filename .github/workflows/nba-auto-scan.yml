@@ -1,0 +1,30 @@
+name: NBA STATS - scansioni automatiche
+
+on:
+  schedule:
+    # 00, 10, 14, 18, 21 Europe/Rome (CET/CEST).
+    # Include both UTC offsets; Python skips hours outside the Italian slots.
+    - cron: "0 8,9,12,13,16,17,19,20,22,23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-stats-auto-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check secret and scan upcoming games
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+        run: python scripts/scheduled_scan.py
