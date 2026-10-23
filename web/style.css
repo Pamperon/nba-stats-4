@@ -15,3 +15,6 @@
 .season-stat small{display:block;color:#a7c1df;font-size:10px;margin-bottom:4px}
 .season-stat strong{font-size:21px}
 @media(max-width:600px){.player-profile{gap:13px;padding:14px;align-items:flex-start}.player-avatar{flex-basis:88px;width:88px;height:88px}.player-avatar span{font-size:25px}.player-season-stats .season-stat{min-width:68px;padding:8px 10px}.season-stat strong{font-size:17px}}
+
+.player-avatar img{display:block;visibility:visible;opacity:1}
+.player-avatar.has-photo span{visibility:hidden}
