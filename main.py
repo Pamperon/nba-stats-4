@@ -10,6 +10,7 @@ import requests
 import engine
 import storage
 import player_stats
+from cachetools import TTLCache
 import logging
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,8 @@ if not engine.API_KEY:
 
 jobs = {}
 lock = threading.Lock()
+headshot_cache = TTLCache(maxsize=80, ttl=86400)
+headshot_lock = threading.RLock()
 
 @app.on_event('startup')
 def init_storage():
@@ -213,14 +216,23 @@ def player_roster(team_id: str = Query(pattern=r'^[0-9]{1,8}$')):
 def player_headshot(athlete_id: int):
     if athlete_id < 1 or athlete_id > 999999999999:
         raise HTTPException(400, 'ID giocatore non valido')
+    with headshot_lock:
+        cached = headshot_cache.get(athlete_id)
+    if cached is not None:
+        content, media_type = cached
+        return StreamingResponse(io.BytesIO(content), media_type=media_type,
+                                 headers={'Cache-Control': 'public, max-age=86400'})
     url = f'https://a.espncdn.com/i/headshots/nba/players/full/{athlete_id}.png'
     try:
         response = requests.get(url, timeout=(5, 12), headers={'User-Agent': 'Mozilla/5.0'})
-        if response.status_code != 200 or not response.headers.get('Content-Type', '').startswith('image/'):
+        media_type = response.headers.get('Content-Type', '')
+        if response.status_code != 200 or not media_type.startswith('image/'):
             raise HTTPException(404, 'Fotografia ESPN non disponibile')
         if len(response.content) > 2000000:
             raise HTTPException(502, 'Immagine troppo grande')
-        return StreamingResponse(io.BytesIO(response.content), media_type=response.headers['Content-Type'],
+        with headshot_lock:
+            headshot_cache[athlete_id] = (response.content, media_type)
+        return StreamingResponse(io.BytesIO(response.content), media_type=media_type,
                                  headers={'Cache-Control': 'public, max-age=86400'})
     except requests.RequestException:
         logger.warning('ESPN headshot unavailable for athlete %s', athlete_id, exc_info=True)
