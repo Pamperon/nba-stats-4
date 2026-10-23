@@ -67,7 +67,7 @@ async function initPlayers(){
 }
 async function changeTeam(){
  const request=++rosterRequest; ++playerRequest;const team=$('team').value;
- $('playername').innerHTML='';$('player-status').textContent='Caricamento roster ESPN…';
+ $('playername').innerHTML='';$('player-profile').hidden=true;$('player-status').textContent='Caricamento roster ESPN…';
  if(!team)return;
  try{const payload=await(await api('/api/players/roster?team_id='+encodeURIComponent(team))).json();
  if(request!==rosterRequest)return;
@@ -75,15 +75,45 @@ async function changeTeam(){
  await changePlayer();
  }catch(e){if(request===rosterRequest)$('player-status').textContent='Roster non disponibile ('+e.message+')';}
 }
+function renderPlayerSeason(){
+ const mode=$('playermode').value;
+ const games=playerGames.filter(g=>mode==='all'||String(g.SEASON_TYPE)===mode);
+ const avg=stat=>games.length?(games.reduce((total,g)=>total+playerNum(g[stat]),0)/games.length).toFixed(1):'—';
+ $('player-season-stats').innerHTML=[['PARTITE',games.length],['PTS',avg('PTS')],['REB',avg('REB')],['AST',avg('AST')]].map(([label,value])=>'<div class="season-stat"><small>'+label+'</small><strong>'+value+'</strong></div>').join('');
+}
+async function loadPlayerProfile(request,team,id){
+ const selected=$('playername').selectedOptions[0];
+ const name=selected?.textContent||'Giocatore NBA';
+ $('player-profile').hidden=false;
+ $('player-display-name').textContent=name;
+ $('player-meta').textContent=$('team').selectedOptions[0]?.textContent||'';
+ $('player-initials').textContent=name.split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+ const photo=$('player-photo');photo.removeAttribute('src');photo.style.display='none';
+ renderPlayerSeason();
+ try{
+  const params=new URLSearchParams({team_id:team,athlete_id:id});
+  const profile=await(await api('/api/players/profile?'+params)).json();
+  if(request!==playerRequest)return;
+  $('player-display-name').textContent=profile.name||name;
+  $('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ');
+  if(profile.headshot&&profile.headshot.startsWith('https://a.espncdn.com/')){
+   photo.onerror=()=>{photo.style.display='none';photo.removeAttribute('src')};
+   photo.onload=()=>{if(request===playerRequest)photo.style.display='block'};
+   photo.src=profile.headshot;
+  }
+ }catch(e){if(request===playerRequest)$('player-meta').textContent=($('team').selectedOptions[0]?.textContent||'')+' · Profilo ESPN non disponibile';}
+}
 async function changePlayer(){
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
  playerGames=[];$('player-summary').innerHTML='';$('chart').innerHTML='';
- if(!team||!id)return;
+ if(!team||!id){$('player-profile').hidden=true;return;}
+ loadPlayerProfile(request,team,id);
  $('player-status').textContent='Caricamento game log ESPN…';
  try{const params=new URLSearchParams({team_id:team,athlete_id:id,season});
  const payload=await(await api('/api/players/log?'+params)).json();
  if(request!==playerRequest)return;
  playerGames=payload.games||[];
+ renderPlayerSeason();
  changeLine();
  $('player-status').textContent=playerGames.length?'Statistiche ESPN · nessuna chiamata OddsPapi':'Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
  drawPlayer();
@@ -99,6 +129,7 @@ function changeLine(){
  drawPlayer();
 }
 function drawPlayer(){
+ renderPlayerSeason();
  const mode=$('playermode').value,window=$('playerwindow').value,stat=$('stat').value,line=playerNum($('line').value);
  let games=playerGames.filter(g=>mode==='all'||String(g.SEASON_TYPE)===mode);
  games=games.slice().sort((a,b)=>String(b.GAME_DATE||'').localeCompare(String(a.GAME_DATE||'')));
