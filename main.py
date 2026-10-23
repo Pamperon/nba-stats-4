@@ -213,6 +213,29 @@ def player_roster(team_id: str = Query(pattern=r'^[0-9]{1,8}$')):
         logger.exception('NBA roster unavailable')
         raise HTTPException(503, 'Roster ESPN temporaneamente non disponibile')
 
+# Read-only lookup for historical Dashboard picks without an ESPN athlete ID.
+# Uses the same ESPN name normalization and roster index as the analysis engine.
+pick_identity_cache = TTLCache(maxsize=1, ttl=21600)
+pick_identity_lock = threading.RLock()
+
+@app.get('/api/players/resolve')
+def resolve_pick_player(name: str = Query(min_length=2, max_length=100)):
+    key = engine.espn_player_key(name)
+    with pick_identity_lock:
+        index = pick_identity_cache.get('index')
+    if index is None:
+        try:
+            index = engine.finder_player_index(None)
+        except Exception:
+            logger.exception('Dashboard ESPN identity lookup failed')
+            raise HTTPException(503, 'Roster ESPN temporaneamente non disponibile')
+        with pick_identity_lock:
+            pick_identity_cache['index'] = index
+    player = index.get(key)
+    if not player:
+        raise HTTPException(404, 'Giocatore non identificato nel roster ESPN')
+    return {'id': str(player['id']), 'name': player['full_name'], 'team': player['team_name']}
+
 @app.get('/api/players/headshot/{athlete_id}')
 def player_headshot(athlete_id: int):
     if athlete_id < 1 or athlete_id > 999999999999:
