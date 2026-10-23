@@ -71,3 +71,32 @@ def player_log(team_id, athlete_id, season):
         return {"games": records, "season": season, "athlete_id": athlete_id}
     return cached("nba:log:v1:" + team_id + ":" + athlete_id + ":" + season,
                   6 if year >= current - 1 else 720, build)
+
+def player_profile(team_id, athlete_id):
+    """Verified roster athlete details from ESPN, no paid feeds."""
+    if athlete_id not in {p["id"] for p in roster(team_id)}:
+        raise ValueError("Giocatore non presente nel roster attuale")
+    def build():
+        info = engine.espn_json(f"{engine.ESPN_SITE}/athletes/{athlete_id}")
+        athlete = info.get("athlete", info)
+        if not isinstance(athlete, dict) or str(athlete.get("id")) != athlete_id:
+            raise ValueError("Profilo ESPN non valido")
+        position = athlete.get("position") or {}
+        if isinstance(position, dict):
+            position = position.get("displayName") or position.get("name") or position.get("abbreviation")
+        headshot = athlete.get("headshot") or {}
+        if isinstance(headshot, dict):
+            headshot = headshot.get("href") or ""
+        # ESPN CDN only; never pass arbitrary external URLs to the frontend.
+        if not isinstance(headshot, str) or not headshot.startswith("https://a.espncdn.com/"):
+            headshot = ""
+        return {
+            "id": athlete_id,
+            "name": athlete.get("displayName") or athlete.get("fullName") or "",
+            "position": position or "",
+            "jersey": str(athlete.get("jersey") or ""),
+            "headshot": headshot,
+            "height": athlete.get("displayHeight") or "",
+            "weight": athlete.get("displayWeight") or "",
+        }
+    return cached("nba:profile:v1:" + athlete_id, 168, build)
