@@ -57,8 +57,39 @@ $('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const row
 let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
 const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
 const PLAYER_CACHE_LIMIT=80;
-function cachePlayerLog(key,payload){playerLogCache.delete(key);playerLogCache.set(key,payload);if(playerLogCache.size>PLAYER_CACHE_LIMIT)playerLogCache.delete(playerLogCache.keys().next().value)}
-async function fetchPlayerLog(team,id,season){const key=[team,id,season].join(':');if(playerLogCache.has(key))return playerLogCache.get(key);if(playerLogPending.has(key))return playerLogPending.get(key);const params=new URLSearchParams({team_id:team,athlete_id:id,season});const task=api('/api/players/log?'+params).then(r=>r.json()).then(payload=>{cachePlayerLog(key,payload);return payload}).finally(()=>playerLogPending.delete(key));playerLogPending.set(key,task);return task}
+const PLAYER_CACHE_TTL=15*60*1000;
+function cachePlayerLog(key,payload){
+ playerLogCache.delete(key);playerLogCache.set(key,payload);
+ if(playerLogCache.size>PLAYER_CACHE_LIMIT)playerLogCache.delete(playerLogCache.keys().next().value);
+ try{sessionStorage.setItem('nba-player-log:'+key,JSON.stringify({at:Date.now(),payload}))}catch(e){}
+}
+function getPlayerLogCache(key){
+ if(playerLogCache.has(key))return playerLogCache.get(key);
+ try{
+  const raw=sessionStorage.getItem('nba-player-log:'+key);
+  if(raw){const item=JSON.parse(raw);if(Date.now()-item.at<PLAYER_CACHE_TTL){playerLogCache.set(key,item.payload);return item.payload}sessionStorage.removeItem('nba-player-log:'+key)}
+ }catch(e){}
+ return null;
+}
+async function fetchPlayerLog(team,id,season){
+ const key=[team,id,season].join(':');
+ const hit=getPlayerLogCache(key);if(hit!==null)return hit;
+ if(playerLogPending.has(key))return playerLogPending.get(key);
+ const params=new URLSearchParams({team_id:team,athlete_id:id,season});
+ const task=api('/api/players/log?'+params).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(payload=>{cachePlayerLog(key,payload);return payload}).finally(()=>playerLogPending.delete(key));
+ playerLogPending.set(key,task);return task;
+}
+function prefetchNearbyPlayer(team,id,season){
+ const index=activeRoster.findIndex(p=>p.id===id);
+ if(index<0)return;
+ const next=activeRoster[index+1]||activeRoster[index-1];
+ if(!next)return;
+ const key=[team,next.id,season].join(':');
+ if(getPlayerLogCache(key)===null&&!playerLogPending.has(key)){
+  const start=()=>{if($('team').value===team&&$('playerseason').value===season)fetchPlayerLog(team,next.id,season).catch(()=>{})};
+  if('requestIdleCallback' in window)requestIdleCallback(start,{timeout:3000});else setTimeout(start,900);
+ }
+}
 
 const playerNum=x=>Number(x)||0;
 async function initPlayers(){
@@ -107,6 +138,7 @@ async function loadPlayerProfile(request,team,id){
  photo.onload=()=>{if(request===playerRequest&&photo.naturalWidth>0)avatar.classList.add('has-photo')};
  avatar.classList.remove('has-photo');
  oldPhoto.replaceWith(photo);
+ photo.fetchPriority='high';
  photo.src='/api/players/headshot/'+encodeURIComponent(id);
  const profile=activeRoster.find(p=>p.id===id);
  if(profile){$('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ')}
@@ -126,6 +158,7 @@ async function changePlayer(){
  changeLine();
  $('player-status').textContent=playerGames.length?'Statistiche ESPN · nessuna chiamata OddsPapi':'Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
  drawPlayer();
+ prefetchNearbyPlayer(team,id,season);
  }catch(e){if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';}
 }
 function changeLine(){
