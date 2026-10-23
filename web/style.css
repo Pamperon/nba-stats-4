@@ -47,3 +47,19 @@
 #pick>.note{font-size:11px;line-height:1.4;color:#8da3be;margin-top:8px}
 
 #pick .pick-market{font-size:clamp(16px,3.5vw,19px);font-weight:800;letter-spacing:.35px;line-height:1.35}
+
+/* Dashboard recommendation groups */
+.pick-group{margin-top:16px}
+.pick-group-range{color:#a8bdd8;font-size:12px;margin:-8px 0 12px}
+.pick-group-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.pick-selection{min-width:0;border:1px solid #2d4561;border-radius:14px;padding:14px;background:#111e30}
+.pick-selection .pick-profile{gap:12px;margin:4px 0 12px}
+.pick-selection .pick-avatar{width:68px;height:68px;flex-basis:68px}
+.pick-selection .pick-profile-info h3{font-size:clamp(16px,2.5vw,20px)}
+.pick-selection .pick-market{font-size:clamp(14px,2.6vw,17px)}
+.pick-selection .pick-values{gap:8px;margin:10px 0 0}
+.pick-selection .pick-values>div{padding:10px 12px}
+.pick-selection .pick-values strong{font-size:22px}
+.pick-combined{display:flex;flex-wrap:wrap;gap:12px 26px;margin:15px 0 4px;font-size:13px;color:#b9cce2}
+.pick-combined strong{color:#eaf2ff;font-size:19px;margin-left:6px}
+.pick-group>.note{font-size:11px;line-height:1.4;margin:12px 0 0}
