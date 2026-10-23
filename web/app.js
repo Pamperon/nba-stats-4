@@ -122,7 +122,7 @@ function render(){
   (complete?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>'+
   (count>1?'<div class="pick-combined"><span>Quota totale <strong>'+combined.toFixed(2).replace('.',',')+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span></div>':''):
   '<p>Non ci sono '+count+' selezioni distinte che superano tutti i criteri statistici in questa fascia.</p>')+
-  '<p class="note">Stima empirica non calibrata. '+(count>1?'Probabilità combinata calcolata assumendo indipendenza; non è una previsione validata. ':'')+'Verifica quote e disponibilità.</p></section>';
+  '</section>';
  }).join('');
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
   group.querySelectorAll('.pick-selection').forEach((card,j)=>enrichPickProfile(pending[i][j],card,request));
