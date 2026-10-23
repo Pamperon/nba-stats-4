@@ -2,10 +2,16 @@ const $=id=>document.getElementById(id);let token='',jobId='',data=null;const sa
 function scanDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window))return reject(new Error('Archivio browser non disponibile'));const r=indexedDB.open(dbName,1);r.onupgradeneeded=()=>r.result.createObjectStore('scans');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
 async function saveLocalScan(j){try{const db=await scanDB();await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readwrite');tx.objectStore('scans').put(j,j.date);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();$('status').textContent+=' · copia salvata nel browser';}catch(e){$('status').textContent+=' · salvataggio locale non riuscito';}}
 async function readLocalScan(date){const db=await scanDB();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readonly');const r=tx.objectStore('scans').get(date);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}finally{db.close()}}
-async function showLocalScan(date){try{const j=await readLocalScan(date);if(!j)return false;data=j;jobId='';render();$('status').textContent='Analisi salvata nel browser ('+date+') · '+j.results.length+' linee · nessuna chiamata API';return true}catch{return false}}
+async function showLocalScan(date){try{const j=await readLocalScan(date);if(!j)return false;data=j;jobId='';render();$('status').textContent=updatedStatus(j,true);return true}catch{return false}}
+function updatedStatus(snapshot,local=false){
+ const saved=snapshot?.saved_at;
+ const when=saved?new Date(saved):null;
+ const formatted=when&&!Number.isNaN(when.getTime())?when.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'orario non disponibile';
+ return 'Ultimo aggiornamento effettuato: '+formatted+(local?' · copia locale':'');
+}
 const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
-async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent='Analisi cloud del '+(j.date||'giorno')+' · '+(j.results||[]).length+' linee · salvata '+(j.saved_at||'')+' · 0 chiamate OddsPapi';return true}catch{return false}}
+async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent=updatedStatus(j);return true}catch{return false}}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
 let dateSelectionRequest=0;
 $('date').addEventListener('change',async()=>{
@@ -17,7 +23,7 @@ $('date').addEventListener('change',async()=>{
   const saved=await response.json();
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
   data=saved;jobId='';render();
-  $('status').textContent='Analisi cloud del '+selected+' · '+(saved.results||[]).length+' linee · 0 chiamate OddsPapi';
+  $('status').textContent=updatedStatus(saved);
  }catch(error){
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
   if(error.message==='HTTP 404'){
@@ -34,7 +40,19 @@ const number=x=>Number(x)||0;function eligible(){return (data?.results||[]).filt
 function render(){if(!data){$('metrics').innerHTML='';$('pick').innerHTML='<h2>Singola del giorno</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p>';$('rows').innerHTML='';return;}const rows=data.results||[];$('metrics').innerHTML=[['Partite',data.fixture_count],['Linee',rows.length],['Giocatori',data.player_count],['Aggiornamento',data.saved_at?new Date(data.saved_at).toLocaleString('it-IT'):'Salvato']].map(([a,b])=>`<div class="metric"><small>${a}</small><strong>${b}</strong></div>`).join('');let candidates=eligible().filter(r=>{let hit=s=>{let m=String(r['Ultime '+s]).match(/^(\d+)\/(\d+)$/);return m&&Number(m[2])===s&&Number(m[1])/s>=.8};return number(r['Prob. stimata %'])>=75&&number(r['Partite'])>=20&&number(r['Stagione %'])>=70&&hit(5)&&hit(10)&&hit(20)&&number(r['Minuti medi'])>=20&&number(r['Minuti ultime 5'])>=.8*number(r['Minuti medi'])&&number(r['Prob. stimata %'])-100/number(r['Quota'])>=3});let p=candidates[0];$('pick').innerHTML=p?`<h2>Prima candidata da verificare</h2><h3>${esc(p.Giocatore)} · Over ${p.Linea} ${p.Mercato}</h3><p>${esc(p.Partita)} · quota ${p.Quota} · stima ${p['Prob. stimata %']}% · ultime 20: ${p['Ultime 20']}</p><p class="note">Stima NON calibrata. Verifica disponibilità e minutaggio.</p>`:'<h2>Singola del giorno</h2><p>Nessuna candidata supera tutti i criteri nella fascia selezionata.</p>';renderFinder()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${r.Quota}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('')}
-['oddmin','oddmax','market','probmin'].forEach(id=>$(id).addEventListener('change',()=>{if(data){renderFinder();render()}}));
+// Both tabs share one set of filtering values; editing either keeps the other in sync.
+['oddmin','oddmax','market','probmin'].forEach(id=>{
+ const primary=$(id),dashboard=$('dash-'+id);
+ const sync=source=>{
+  const other=source===primary?dashboard:primary;
+  other.value=source.value;
+  if(data)render();
+ };
+ primary.addEventListener('input',()=>sync(primary));
+ primary.addEventListener('change',()=>sync(primary));
+ dashboard.addEventListener('input',()=>sync(dashboard));
+ dashboard.addEventListener('change',()=>sync(dashboard));
+});
 $('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const rows=data.results,keys=Object.keys(rows[0]);const safe=v=>{const t=String(v??'');const guarded=/^[=+@\\-\\t\\r]/.test(t)?"'"+t:t;return '"'+guarded.replace(/"/g,'""')+'"'};const csv='\uFEFF'+[keys.map(safe).join(';'),...rows.map(r=>keys.map(k=>safe(r[k])).join(';'))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_salvato.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}try{const r=await api('/api/scan/'+jobId+'/csv');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_completo.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{alert('CSV non disponibile')}};
 let playerGames=[],playerRequest=0,rosterRequest=0;
 const playerNum=x=>Number(x)||0;
