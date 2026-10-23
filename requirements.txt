@@ -4,3 +4,4 @@ pandas>=2.2,<3
 requests>=2.31,<3
 cachetools>=5.5,<7
 psycopg[binary]>=3.2,<4
+Pillow>=11,<13
