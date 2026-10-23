@@ -33,3 +33,8 @@
 .pick-values small{display:block;color:#9cb0cb;letter-spacing:.8px;font-size:11px}
 .pick-values strong{display:block;margin-top:5px;font-size:clamp(25px,4vw,34px)}
 @media(max-width:520px){.pick-profile{gap:13px}.pick-avatar{width:74px;height:74px;flex-basis:74px}.pick-values{max-width:none}}
+
+/* Dashboard: status remains accessible to assistive technologies without a duplicate box. */
+#status[hidden]{display:none!important}
+.pick-values>div:last-child strong{color:#53c99a}
+.pick-avatar.has-photo span{visibility:hidden}
