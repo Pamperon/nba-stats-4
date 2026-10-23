@@ -853,6 +853,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             for match_name, market_label, line, price, reason in props:
                 stat = STATS[market_label]
                 row = {"Partita": match_name, "Giocatore": player_name,
+                       "ESPN ID": str(athlete.get("id", "")) if athlete else "",
                        "Squadra": athlete.get("team_name", "Squadra non identificata") if athlete else "Squadra non identificata",
                        "Mercato": stat,
                        "Scelta": "Over", "Linea": line, "Quota": price,
