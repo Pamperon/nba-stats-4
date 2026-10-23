@@ -40,7 +40,7 @@ def roster(team_id):
         players = engine.roster_athletes(engine.espn_roster(team_id))
         return sorted([{"id": a["id"], "name": a["displayName"], "team_id": team_id}
                        for a in players], key=lambda p: p["name"])
-    return cached("nba:roster:v1:" + team_id, 12, build)
+    return cached("nba:roster:v2:" + team_id, 12, build)
 
 def player_log(team_id, athlete_id, season):
     if athlete_id not in {p["id"] for p in roster(team_id)}:
