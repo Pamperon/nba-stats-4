@@ -87,8 +87,14 @@ async function loadPlayerProfile(request,team,id){
  $('player-profile').hidden=false;
  $('player-display-name').textContent=name;
  $('player-meta').textContent=$('team').selectedOptions[0]?.textContent||'';
- $('player-initials').textContent=name.split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
- const photo=$('player-photo');photo.removeAttribute('src');photo.style.display='none';
+ $('player-initials').textContent=name.trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+ const photo=$('player-photo');
+ photo.onload=null;photo.onerror=null;
+ photo.style.display='none';photo.removeAttribute('src');
+ // Same-origin endpoint avoids browser/CDN image delivery issues.
+ photo.onload=()=>{if(request===playerRequest)photo.style.display='block'};
+ photo.onerror=()=>{if(request===playerRequest){photo.style.display='none';photo.removeAttribute('src')}};
+ photo.src='/api/players/headshot/'+encodeURIComponent(id);
  renderPlayerSeason();
  try{
   const params=new URLSearchParams({team_id:team,athlete_id:id});
@@ -96,11 +102,6 @@ async function loadPlayerProfile(request,team,id){
   if(request!==playerRequest)return;
   $('player-display-name').textContent=profile.name||name;
   $('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ');
-  if(profile.headshot&&profile.headshot.startsWith('https://a.espncdn.com/')){
-   photo.onerror=()=>{photo.style.display='none';photo.removeAttribute('src')};
-   photo.onload=()=>{if(request===playerRequest)photo.style.display='block'};
-   photo.src=profile.headshot;
-  }
  }catch(e){if(request===playerRequest)$('player-meta').textContent=($('team').selectedOptions[0]?.textContent||'')+' · Profilo ESPN non disponibile';}
 }
 async function changePlayer(){
