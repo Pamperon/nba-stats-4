@@ -1,5 +1,6 @@
 """Persistent scan snapshots stored in Supabase PostgreSQL (server-side only)."""
 import json
+import math
 import logging
 import os
 from datetime import datetime, timezone
@@ -44,7 +45,7 @@ def save(job_id, snapshot):
     if snapshot.get("state") not in ("done", "partial"):
         raise ValueError("Only completed scan snapshots may be persisted")
     # Convert numpy/pandas scalars and nonfinite values safely via JSON serialization.
-    clean = json.loads(json.dumps(snapshot, default=_json_default, allow_nan=False))
+    clean = _clean(snapshot)
     with connection() as conn:
         conn.execute("""
             INSERT INTO nba_scan_snapshots(job_id, scan_date, state, payload)
@@ -53,6 +54,20 @@ def save(job_id, snapshot):
                 state=EXCLUDED.state, payload=EXCLUDED.payload
         """, (job_id, snapshot["date"], snapshot["state"], Jsonb(clean)))
     return True
+
+
+def _clean(value):
+    if isinstance(value, dict):
+        return {str(k): _clean(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_clean(v) for v in value]
+    if hasattr(value, 'item'):
+        return _clean(value.item())
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if hasattr(value, 'isoformat'):
+        return value.isoformat()
+    return value
 
 
 def _json_default(value):
