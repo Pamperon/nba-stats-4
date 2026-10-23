@@ -193,7 +193,7 @@ def saved_dates():
     if not storage.configured():
         raise HTTPException(503, 'Database non configurato')
     try:
-        return {'dates': [item for item in storage.available_dates() if item['date'] >= datetime.now(ZoneInfo('Europe/Rome')).date().isoformat() and visible_snapshot(storage.latest(item['date']))['results']], 'odds_api_calls': 0}
+        return {'dates': [item for item in storage.available_dates() if item['date'] >= datetime.now(ZoneInfo('Europe/Rome')).date().isoformat()], 'odds_api_calls': 0}
     except Exception:
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
