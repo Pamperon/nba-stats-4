@@ -99,3 +99,14 @@
  .app-header .brand-copy small{font-size:8px;letter-spacing:.8px}
  .app-header .version-tag{font-size:11px;padding:6px 9px}
 }
+
+/* Keep the date selector visually neutral after tapping on Android Chrome. */
+.app-hero #date:focus{outline:none;box-shadow:none}
+.app-hero #date:focus-visible{outline:2px solid #5292d9;outline-offset:3px}
+.app-hero .date-control:focus-within{border-color:#354862;box-shadow:none}
+.date-loading-panel[hidden]{display:none}
+.date-loading-panel{display:flex;align-items:center;gap:12px;margin:4px 0 18px;padding:20px;border:1px solid #354862;border-radius:15px;background:#16263b;color:#e8effa;font-weight:600}
+.date-loading-spinner{width:19px;height:19px;flex:0 0 19px;border:2px solid #536c8d;border-top-color:#f59a55;border-radius:50%;animation:date-loading-spin .75s linear infinite}
+@keyframes date-loading-spin{to{transform:rotate(360deg)}}
+#app.date-is-loading #dashboard,#app.date-is-loading #finder{display:none!important}
+@media(prefers-reduced-motion:reduce){.date-loading-spinner{animation:none}}
