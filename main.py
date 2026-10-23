@@ -141,7 +141,7 @@ def do_scan(job_id, date):
     except Exception as exc:
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
 
-@app.get('/api/saved/latest', dependencies=[Depends(auth)])
+@app.get('/api/saved/latest')
 def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$')):
     if not storage.configured():
         raise HTTPException(503, 'Database non configurato')
@@ -153,6 +153,16 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
     if not snapshot:
         raise HTTPException(404, 'Nessuna analisi salvata')
     return snapshot
+
+@app.get('/api/saved/dates')
+def saved_dates():
+    if not storage.configured():
+        raise HTTPException(503, 'Database non configurato')
+    try:
+        return {'dates': storage.available_dates(), 'odds_api_calls': 0}
+    except Exception:
+        logger.exception('Cannot list saved dates')
+        raise HTTPException(503, 'Archivio temporaneamente non disponibile')
 
 @app.post('/api/scan', dependencies=[Depends(auth)])
 def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
