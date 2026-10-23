@@ -311,7 +311,14 @@ def roster_athletes(payload):
             key = str(athlete_id)
             if key not in seen:
                 seen.add(key)
-                yield {"id": key, "displayName": name}
+                yield {
+                    "id": key,
+                    "displayName": name,
+                    "position": (node.get("position") or {}).get("displayName", "") if isinstance(node.get("position"), dict) else "",
+                    "jersey": str(node.get("jersey") or ""),
+                    "height": str(node.get("displayHeight") or ""),
+                    "weight": str(node.get("displayWeight") or ""),
+                }
 
         for key, value in node.items():
             if key != "athlete" and isinstance(value, (list, dict)):
