@@ -508,18 +508,27 @@ def espn_classified_game_log(athlete_id, season, team_id):
     An unclassified game is never silently called a playoff game.
     """
     end_year = int(season[:4]) + 1
-    frames = []
-    membership = {2: set(), 3: set()}
-    for requested_type in (None, 3):
+    # ESPN regular/all and playoff feeds are independent: fetch concurrently.
+    from concurrent.futures import ThreadPoolExecutor
+    def fetch_log(requested_type):
         params = {"season": end_year}
         if requested_type is not None:
             params["seasonType"] = requested_type
-        payload = espn_json(f"{ESPN_WEB}/athletes/{athlete_id}/gamelog", **params)
-        frame = espn_log_to_frame(payload)
-        if not frame.empty:
-            frames.append(frame)
-            if requested_type in (2, 3):
-                membership[requested_type].update(frame["GAME_ID"].astype(str))
+        return espn_log_to_frame(espn_json(f"{ESPN_WEB}/athletes/{athlete_id}/gamelog", **params))
+    def fetch_schedule():
+        if not team_id:
+            return {}
+        try:
+            return espn_schedule_competition_ids(team_id, end_year)
+        except (requests.RequestException, ValueError, TypeError):
+            return {}
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        all_future = pool.submit(fetch_log, None)
+        playoff_future = pool.submit(fetch_log, 3)
+        schedule_future = pool.submit(fetch_schedule)
+        frames = [frame for frame in (all_future.result(), playoff_future.result()) if not frame.empty]
+        schedule_types = schedule_future.result()
+    membership = {2: set(), 3: set()}
     columns = ["GAME_ID", "SEASON_TYPE", "GAME_DATE", "MATCHUP", "MIN", "PTS", "REB", "AST"]
     if not frames:
         return pd.DataFrame(columns=columns)
@@ -535,11 +544,7 @@ def espn_classified_game_log(athlete_id, season, team_id):
     games = games.drop_duplicates(subset=["GAME_ID"], keep="first").reset_index(drop=True)
     known = {event_id: next(iter(types)) for event_id, types in explicit.items() if len(types) == 1}
 
-    # Schedules provide corroboration when the game-log group lacks type info.
-    try:
-        schedule_types = espn_schedule_competition_ids(team_id, end_year) if team_id else {}
-    except (requests.RequestException, ValueError, TypeError):
-        schedule_types = {}
+    # Schedule classification was fetched concurrently with the ESPN game logs.
     for event_id, kind in schedule_types.items():
         if event_id not in known and kind in (2, 3):
             known[event_id] = kind
