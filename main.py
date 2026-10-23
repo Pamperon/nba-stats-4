@@ -1,5 +1,6 @@
 """FastAPI app. One process for the free-tier MVP; persistent jobs need external storage later."""
 import os, secrets, threading, uuid, io, time
+from PIL import Image
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, HTTPException, Header, Depends, Query
@@ -219,24 +220,32 @@ def player_headshot(athlete_id: int):
     with headshot_lock:
         cached = headshot_cache.get(athlete_id)
     if cached is not None:
-        content, media_type = cached
-        return StreamingResponse(io.BytesIO(content), media_type=media_type,
-                                 headers={'Cache-Control': 'public, max-age=86400'})
+        return StreamingResponse(io.BytesIO(cached), media_type='image/webp',
+                                 headers={'Cache-Control': 'public, max-age=604800, immutable'})
+    # The full-resolution ESPN PNG is wasteful for a small circular avatar.
+    # Resize and encode as WebP once, then cache the compact result.
     url = f'https://a.espncdn.com/i/headshots/nba/players/full/{athlete_id}.png'
     try:
-        response = requests.get(url, timeout=(5, 12), headers={'User-Agent': 'Mozilla/5.0'})
-        media_type = response.headers.get('Content-Type', '')
-        if response.status_code != 200 or not media_type.startswith('image/'):
+        response = requests.get(url, timeout=(4, 9), headers={'User-Agent': 'Mozilla/5.0'})
+        if response.status_code != 200 or not response.headers.get('Content-Type', '').startswith('image/'):
             raise HTTPException(404, 'Fotografia ESPN non disponibile')
         if len(response.content) > 2000000:
             raise HTTPException(502, 'Immagine troppo grande')
+        with Image.open(io.BytesIO(response.content)) as original:
+            original.thumbnail((180, 180), Image.Resampling.LANCZOS)
+            output = io.BytesIO()
+            original.convert('RGBA').save(output, format='WEBP', quality=76, method=3)
+            content = output.getvalue()
         with headshot_lock:
-            headshot_cache[athlete_id] = (response.content, media_type)
-        return StreamingResponse(io.BytesIO(response.content), media_type=media_type,
-                                 headers={'Cache-Control': 'public, max-age=86400'})
+            headshot_cache[athlete_id] = content
+        return StreamingResponse(io.BytesIO(content), media_type='image/webp',
+                                 headers={'Cache-Control': 'public, max-age=604800, immutable'})
     except requests.RequestException:
         logger.warning('ESPN headshot unavailable for athlete %s', athlete_id, exc_info=True)
         raise HTTPException(503, 'Fotografia ESPN temporaneamente non disponibile')
+    except (OSError, ValueError):
+        logger.warning('Invalid ESPN headshot for athlete %s', athlete_id, exc_info=True)
+        raise HTTPException(502, 'Fotografia ESPN non elaborabile')
 
 @app.get('/api/players/profile')
 def player_profile(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
