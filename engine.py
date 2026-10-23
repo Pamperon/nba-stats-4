@@ -798,7 +798,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                     else:
                         games = (games.drop_duplicates(subset=["GAME_ID"], keep="first")
                                       .sort_values("GAME_DATE", ascending=False).reset_index(drop=True))
-                    except Exception as exc:
+            except Exception as exc:
                 error = f"Dati ESPN non disponibili ({type(exc).__name__})"
                 games = None
         return athlete, games, error
