@@ -66,33 +66,22 @@ async function enrichPickProfile(row){
  const id=String(row['ESPN ID']||'').trim();
  const name=String(row.Giocatore||'').trim();
  const target=$('pick-player-meta');
- if(!target)return;
- if(/^\d{1,12}$/.test(id))setPickPhoto(id,name,request);
- const normalized=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
- const desired=normalized(name);
+ if(!target||!name)return;
+ if(/^\d{1,12}$/.test(id)){
+  setPickPhoto(id,name,request);
+  return;
+ }
+ // A single server-side lookup uses the same normalized ESPN index as the scanner.
+ // Avoid fetching all 30 rosters from the browser for historical saved picks.
  try{
-  const teams=(await(await api('/api/players/teams')).json()).teams||[];
-  const teamName=normalized(row.Squadra);
-  const ordered=teams.slice().sort((a,b)=>Number(normalized(b.name)===teamName)-Number(normalized(a.name)===teamName));
-  // Search rosters concurrently: saved analyses may not contain an ESPN ID.
-  // Limit concurrency to avoid excessive requests to the application's backend.
-  for(let offset=0;offset<ordered.length;offset+=5){
-   if(request!==pickProfileRequest)return;
-   const batch=ordered.slice(offset,offset+5);
-   const results=await Promise.all(batch.map(async team=>{
-    try{const payload=await(await api('/api/players/roster?team_id='+encodeURIComponent(team.id))).json();return {team,players:payload.players||[]}}catch{return {team,players:[]}}
-   }));
-   if(request!==pickProfileRequest)return;
-   for(const {team,players} of results){
-    const profile=players.find(p=>(/^\d+$/.test(id)&&String(p.id)===id)||normalized(p.name)===desired);
-    if(!profile)continue;
-    if($('pick-player-meta'))$('pick-player-meta').textContent=[team.name,profile.position,profile.jersey?'#'+profile.jersey:''].filter(Boolean).join(' · ');
-    setPickPhoto(profile.id,String(profile.name||name),request);
-    return;
-   }
-  }
-  console.warn('NBA STATS: player not found in current ESPN rosters',name);
- }catch(error){console.warn('NBA STATS: dashboard photo lookup failed',error)}
+  const response=await api('/api/players/resolve?name='+encodeURIComponent(name));
+  const profile=await response.json();
+  if(request!==pickProfileRequest)return;
+  if(profile.team&&$('pick-player-meta'))$('pick-player-meta').textContent=profile.team;
+  setPickPhoto(profile.id,profile.name||name,request);
+ }catch(error){
+  if(request===pickProfileRequest)console.warn('Dashboard ESPN player ID unavailable:',name,error.message);
+ }
 }
 function render(){
  ++pickProfileRequest;
