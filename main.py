@@ -1,5 +1,5 @@
 """FastAPI app. One process for the free-tier MVP; persistent jobs need external storage later."""
-import os, secrets, threading, uuid, io
+import os, secrets, threading, uuid, io, time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, HTTPException, Header, Depends, Query
@@ -24,7 +24,7 @@ def auth(authorization: str = Header(default='')):
 
 @app.get('/api/health')
 def health():
-    return {'status':'ok', 'version':'4.0-dev'}
+    return {'status':'ok', 'version':'4.0-optimized'}
 
 @app.get('/api/fixtures', dependencies=[Depends(auth)])
 def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
@@ -38,19 +38,23 @@ def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
 def do_scan(job_id, date):
     with lock: jobs[job_id]['state']='running'
     try:
+        started_at = time.monotonic()
         season = engine.current_nba_season(datetime.strptime(date,'%Y-%m-%d'))
         fixtures = [f for f in engine.get_fixtures(date) if not engine.fixture_is_completed(f)]
         if not fixtures: raise ValueError('Nessuna partita futura disponibile')
         catalog = engine.get_markets()
+        setup_seconds = round(time.monotonic() - started_at, 2)
+        analysis_started = time.monotonic()
         def progress(p, label):
             with lock: jobs[job_id].update(progress=round(p*100),stage=label)
         rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress)
+        analysis_seconds = round(time.monotonic() - analysis_started, 2)
         serialized_logs = {}
         for name, log in logs.items():
             records=log.copy();records['GAME_DATE']=records['GAME_DATE'].dt.strftime('%Y-%m-%d')
             serialized_logs[name]=records.where(pd.notna(records),None).to_dict('records')
         with lock:
-            jobs[job_id].update(state='partial' if any(r['stato'] != 'ok' for r in fixture_reports) else 'done',progress=100,stage='Parziale' if any(r['stato'] != 'ok' for r in fixture_reports) else 'Completata',results=rows,issues=issues,fixture_reports=fixture_reports,player_logs=serialized_logs,fixture_count=len(fixtures),player_count=player_count,season=season)
+            jobs[job_id].update(state='partial' if any(r['stato'] != 'ok' for r in fixture_reports) else 'done',progress=100,stage='Parziale' if any(r['stato'] != 'ok' for r in fixture_reports) else 'Completata',results=rows,issues=issues,fixture_reports=fixture_reports,player_logs=serialized_logs,fixture_count=len(fixtures),player_count=player_count,season=season,timings={'preparazione_s':setup_seconds,'scansione_s':analysis_seconds,'totale_s':round(time.monotonic()-started_at,2)})
     except Exception as exc:
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
 
