@@ -45,14 +45,20 @@ function candidateAvatar(row){
 }
 function setPickPhoto(id,name,request){
  const avatar=$('pick').querySelector('.pick-avatar');
- if(!avatar||!/^\d{1,12}$/.test(String(id||'')))return;
+ if(!avatar||!/^[0-9]{1,12}$/.test(String(id||'')))return;
+ const previous=avatar.querySelector('img');
  const photo=document.createElement('img');
- photo.alt='Foto di '+name;photo.loading='eager';photo.decoding='async';photo.referrerPolicy='no-referrer';
+ photo.alt='Foto di '+name;
+ photo.loading='eager';
+ photo.decoding='async';
+ photo.referrerPolicy='no-referrer';
  photo.onload=()=>{if(request===pickProfileRequest&&photo.naturalWidth>0)avatar.classList.add('has-photo')};
- photo.onerror=()=>{photo.remove();avatar.classList.remove('has-photo')};
- avatar.querySelector('img')?.remove();avatar.appendChild(photo);
- // Direct ESPN CDN avoids intermittent failures in the backend image proxy.
- photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png';
+ photo.onerror=()=>{if(request===pickProfileRequest){photo.remove();avatar.classList.remove('has-photo');console.warn('NBA STATS: headshot failed for',name,id)}};
+ avatar.classList.remove('has-photo');
+ if(previous)previous.replaceWith(photo);else avatar.appendChild(photo);
+ photo.fetchPriority='high';
+ // Identical photo endpoint used by Player Stats, verified to serve images.
+ photo.src='/api/players/headshot/'+encodeURIComponent(id);
 }
 let pickProfileRequest=0;
 async function enrichPickProfile(row){
