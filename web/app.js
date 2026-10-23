@@ -41,11 +41,18 @@ const number=x=>Number(x)||0;function eligible(){return (data?.results||[]).filt
 function candidateAvatar(row){
  const name=String(row.Giocatore||'');
  const initials=name.trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toUpperCase();
- const id=String(row['ESPN ID']||'');
- const valid=/^[0-9]{1,12}$/.test(id);
- return '<div class="pick-avatar'+(valid?' has-photo':'')+'">'+
-   (valid?'<img loading="lazy" decoding="async" src="/api/players/headshot/'+encodeURIComponent(id)+'" alt="Foto di '+esc(name)+'" onerror="this.remove();this.parentElement.classList.remove(\'has-photo\')">':'')+
-   '<span>'+esc(initials)+'</span></div>';
+ return '<div class="pick-avatar"><span>'+esc(initials)+'</span></div>';
+}
+function setPickPhoto(id,name,request){
+ const avatar=$('pick').querySelector('.pick-avatar');
+ if(!avatar||!/^\d{1,12}$/.test(String(id||'')))return;
+ const photo=document.createElement('img');
+ photo.alt='Foto di '+name;photo.loading='eager';photo.decoding='async';photo.referrerPolicy='no-referrer';
+ photo.onload=()=>{if(request===pickProfileRequest&&photo.naturalWidth>0)avatar.classList.add('has-photo')};
+ photo.onerror=()=>{photo.remove();avatar.classList.remove('has-photo')};
+ avatar.querySelector('img')?.remove();avatar.appendChild(photo);
+ // Direct ESPN CDN avoids intermittent failures in the backend image proxy.
+ photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png';
 }
 let pickProfileRequest=0;
 async function enrichPickProfile(row){
@@ -53,6 +60,7 @@ async function enrichPickProfile(row){
  const id=String(row['ESPN ID']||'');
  const target=$('pick-player-meta');
  if(!target)return;
+ if(/^\d{1,12}$/.test(id))setPickPhoto(id,String(row.Giocatore||''),request);
  try{
   const teams=(await(await api('/api/players/teams')).json()).teams||[];
   const match=teams.find(t=>String(t.name||'').toLowerCase()===String(row.Squadra||'').toLowerCase());
@@ -63,8 +71,7 @@ async function enrichPickProfile(row){
    const profile=roster.find(p=>(/^\d+$/.test(id)&&String(p.id)===id)||normalized(p.name)===normalized(row.Giocatore));
    if(profile){if(request===pickProfileRequest&&$('pick-player-meta')){
     $('pick-player-meta').textContent=[team.name,profile.position,profile.jersey?'#'+profile.jersey:''].filter(Boolean).join(' · ');
-    const avatar=$('pick').querySelector('.pick-avatar');
-    if(avatar&&/^\d+$/.test(String(profile.id))){const photo=document.createElement('img');photo.loading='lazy';photo.decoding='async';photo.alt='Foto di '+String(profile.name||row.Giocatore);photo.onload=()=>{if(request===pickProfileRequest)avatar.classList.add('has-photo')};photo.onerror=()=>{photo.remove();avatar.classList.remove('has-photo')};avatar.querySelector('img')?.remove();avatar.appendChild(photo);photo.src='/api/players/headshot/'+encodeURIComponent(profile.id)}
+    setPickPhoto(profile.id,String(profile.name||row.Giocatore),request);
    }return;}
   }
  }catch(e){/* Keep the team visible if ESPN metadata is unavailable. */}
@@ -79,7 +86,7 @@ function render(){
   return number(r['Prob. stimata %'])>=75&&number(r['Partite'])>=20&&number(r['Stagione %'])>=70&&hit(5)&&hit(10)&&hit(20)&&number(r['Minuti medi'])>=20&&number(r['Minuti ultime 5'])>=.8*number(r['Minuti medi'])&&number(r['Prob. stimata %'])-100/number(r['Quota'])>=3;
  });
  const p=candidates[0];
- $('pick').innerHTML=p?'<h2>Prima candidata da verificare</h2><div class="pick-profile">'+candidateAvatar(p)+'<div class="pick-profile-info"><h3>'+esc(p.Giocatore)+'</h3><p id="pick-player-meta">'+esc(p.Squadra||p.Partita)+'</p><div class="pick-market">OVER '+esc(p.Linea)+' '+esc(p.Mercato)+'</div></div></div><div class="pick-values"><div><small>QUOTA</small><strong>'+esc(p.Quota)+'</strong></div><div><small>STIMA</small><strong>'+esc(p['Prob. stimata %'])+'%</strong></div></div><p class="note">Stima empirica non calibrata. Verifica quota e disponibilità prima di giocare.</p>':'<h2>Singola del giorno</h2><p>Nessuna candidata supera tutti i criteri nella fascia selezionata.</p>';
+ $('pick').innerHTML=p?'<h2>Prima candidata da verificare</h2><div class="pick-profile">'+candidateAvatar(p)+'<div class="pick-profile-info"><h3>'+esc(p.Giocatore)+'</h3><p id="pick-player-meta">'+esc(p.Squadra||p.Partita)+'</p><div class="pick-market">OVER '+esc(p.Linea)+' '+esc(({PTS:'PUNTI',REB:'RIMBALZI',AST:'ASSIST'})[p.Mercato]||p.Mercato)+'</div></div></div><div class="pick-values"><div><small>QUOTA</small><strong>'+esc(p.Quota)+'</strong></div><div><small>STIMA</small><strong>'+esc(p['Prob. stimata %'])+'%</strong></div></div><p class="note">Stima empirica non calibrata. Verifica quota e disponibilità prima di giocare.</p>':'<h2>Singola del giorno</h2><p>Nessuna candidata supera tutti i criteri nella fascia selezionata.</p>';
  if(p)enrichPickProfile(p);
  renderFinder();
 }
