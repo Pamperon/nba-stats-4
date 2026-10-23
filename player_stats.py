@@ -1,5 +1,7 @@
 """Public NBA roster and independent ESPN player statistics. No OddsPapi calls."""
 import logging
+import threading
+from cachetools import TTLCache
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import engine
@@ -7,14 +9,24 @@ import storage
 
 logger = logging.getLogger(__name__)
 
+_memory_cache = TTLCache(maxsize=250, ttl=1800)
+_memory_lock = threading.RLock()
+
 def cached(key, hours, loader):
+    with _memory_lock:
+        if key in _memory_cache:
+            return _memory_cache[key]
     try:
         hit = storage.cache_read(key, hours)
         if hit is not None:
+            with _memory_lock:
+                _memory_cache[key] = hit
             return hit
     except Exception:
         logger.warning("Player cache read unavailable", exc_info=True)
     result = loader()
+    with _memory_lock:
+        _memory_cache[key] = result
     try:
         storage.cache_write(key, result)
     except Exception:
