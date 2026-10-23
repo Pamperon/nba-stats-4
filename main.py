@@ -39,6 +39,10 @@ def auth(authorization: str = Header(default='')):
 def health():
     return {'status':'ok', 'version':'4.0-optimized'}
 
+@app.get('/api/session', dependencies=[Depends(auth)])
+def session():
+    return {'authenticated': True, 'database_configured': storage.configured()}
+
 @app.get('/api/fixtures', dependencies=[Depends(auth)])
 def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     try:
