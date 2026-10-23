@@ -15,9 +15,16 @@ async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest
 let playerStatsInitialized=false;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
 let dateSelectionRequest=0;
+function setDateLoading(loading){
+ $('app').classList.toggle('date-is-loading',loading);
+ $('date-loading').hidden=!loading;
+}
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
  const request=++dateSelectionRequest;
+ // Android Chrome can retain the native focus ring after the date menu closes.
+ $('date').blur();
+ setDateLoading(true);
  $('status').textContent='Caricamento archivio del '+selected+'…';
  try{
   const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));
@@ -28,13 +35,22 @@ $('date').addEventListener('change',async()=>{
  }catch(error){
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
   if(error.message==='HTTP 404'){
-   if(await showLocalScan(selected))return;
-   data=null;jobId='';render();
-   $('status').textContent='Nessuna quota ancora disponibile per il '+selected+' · 0 chiamate OddsPapi';
+   // Read local data without letting an outdated request overwrite a newer date.
+   let local=null;
+   try{local=await readLocalScan(selected)}catch(e){}
+   if(request!==dateSelectionRequest||$('date').value!==selected)return;
+   if(local){
+    data=local;jobId='';render();$('status').textContent=updatedStatus(local,true);
+   }else{
+    data=null;jobId='';render();
+    $('status').textContent='Nessuna quota ancora disponibile per il '+selected+' · 0 chiamate OddsPapi';
+   }
   }else{
    data=null;jobId='';render();
    $('status').textContent='Impossibile consultare Supabase per il '+selected+' ('+error.message+') · riprova più tardi';
   }
+ }finally{
+  if(request===dateSelectionRequest&&$('date').value===selected)setDateLoading(false);
  }
 });
 const number=x=>Number(x)||0;function eligible(){return (data?.results||[]).filter(r=>r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
