@@ -12,7 +12,8 @@ function updatedStatus(snapshot,local=false){
 const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent=updatedStatus(j);return true}catch{return false}}
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
+let playerStatsInitialized=false;
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
 let dateSelectionRequest=0;
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
@@ -80,25 +81,6 @@ async function fetchPlayerLog(team,id,season){
  playerLogPending.set(key,task);return task;
 }
 
-const portraitPreloads=new Map();
-let portraitPreloadTimer=null;
-function preloadTeamPortraits(team,selectedId){
- if(portraitPreloadTimer!==null)clearTimeout(portraitPreloadTimer);
- const ids=activeRoster.filter(p=>p.id!==selectedId).slice(0,5).map(p=>p.id);
- let i=0;
- function loadNext(){
-  if($('team').value!==team||i>=ids.length)return;
-  const id=ids[i++];
-  if(portraitPreloads.has(id)){loadNext();return}
-  const img=new Image();
-  img.decoding='async';
-  portraitPreloads.set(id,img);
-  img.onload=()=>{if($('team').value===team)portraitPreloadTimer=setTimeout(loadNext,150)};
-  img.onerror=()=>{portraitPreloads.delete(id);if($('team').value===team)portraitPreloadTimer=setTimeout(loadNext,400)};
-  img.src='/api/players/headshot/'+encodeURIComponent(id);
- }
- portraitPreloadTimer=setTimeout(loadNext,800);
-}
 const playerNum=x=>Number(x)||0;
 async function initPlayers(){
  const now=new Date(),year=now.getFullYear(),start=now.getMonth()>=9?year:year-1;
@@ -118,7 +100,6 @@ async function changeTeam(){
  activeRoster=payload.players||[];
  $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
  await changePlayer();
- preloadTeamPortraits(team,$('playername').value);
  }catch(e){if(request===rosterRequest)$('player-status').textContent='Roster non disponibile ('+e.message+')';}
 }
 function renderPlayerSeason(){
@@ -206,5 +187,4 @@ async function initializeArchive(){
  }catch(error){$('status').textContent='Archivio temporaneamente non disponibile · '+error.message;}
 }
 initializeArchive();
-initPlayers();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
