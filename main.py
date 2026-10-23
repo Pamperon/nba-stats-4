@@ -77,7 +77,8 @@ def schedule(date: str):
                         'home': home.get('team', {}).get('displayName', ''),
                         'away': away.get('team', {}).get('displayName', ''),
                         'time': rome.strftime('%H:%M'),
-                        'status': event.get('status', {}).get('type', {}).get('description', '')
+                        'status': event.get('status', {}).get('type', {}).get('description', ''),
+                        'upcoming': event.get('status', {}).get('type', {}).get('state') == 'pre'
                     }
         return {'date': date, 'games': sorted(events.values(), key=lambda x: x['time']),
                 'source': 'ESPN', 'odds_api_calls': 0}
@@ -159,9 +160,15 @@ def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     except ValueError: raise HTTPException(400,'Data non valida')
     with lock:
         for job_id, job in jobs.items():
-            if job['date']==date and job['state'] in ('queued','running','done'):
+            if job['date']==date and job['state'] in ('queued','running'):
                 return {'job_id':job_id,'reused':True}
-        if len(jobs)>15: raise HTTPException(429,'Limite scansioni raggiunto; riavvia il servizio')
+        if any(job['state'] in ('queued','running') for job in jobs.values()):
+            raise HTTPException(409, 'Una scansione è già in corso')
+        if len(jobs)>15:
+            for old_id in list(jobs):
+                if jobs[old_id]['state'] not in ('queued','running'):
+                    del jobs[old_id]
+                if len(jobs)<=10: break
         job_id=uuid.uuid4().hex
         jobs[job_id]={'date':date,'state':'queued','progress':0,'stage':'In coda'}
     threading.Thread(target=do_scan,args=(job_id,date),daemon=True).start()
