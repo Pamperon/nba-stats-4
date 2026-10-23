@@ -141,6 +141,35 @@ def do_scan(job_id, date):
     except Exception as exc:
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
 
+def visible_snapshot(snapshot):
+    """Filter out started games from the public view, without OddsPapi calls."""
+    if not snapshot:
+        return None
+    day = snapshot.get('date')
+    if not day:
+        return None
+    try:
+        games = schedule(day)['games']
+    except Exception:
+        logger.exception('ESPN status unavailable; refusing to publish stale odds')
+        raise HTTPException(503, 'Stato partite non verificabile; riprova')
+    upcoming = set()
+    for game in games:
+        if game.get('upcoming'):
+            upcoming.add(frozenset((game['home'].casefold().strip(), game['away'].casefold().strip())))
+    def is_upcoming(row):
+        parts = str(row.get('Partita', '')).split(' - ')
+        return len(parts) == 2 and frozenset(p.casefold().strip() for p in parts) in upcoming
+    result = dict(snapshot)
+    result['results'] = [row for row in snapshot.get('results', []) if is_upcoming(row)]
+    players = {row.get('Giocatore') for row in result['results']}
+    result['player_logs'] = {name: log for name, log in snapshot.get('player_logs', {}).items() if name in players}
+    result['fixture_reports'] = []
+    result['issues'] = []
+    result['player_count'] = len(players)
+    result['fixture_count'] = len({row.get('Partita') for row in result['results']})
+    return result
+
 @app.get('/api/saved/latest')
 def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$')):
     if not storage.configured():
@@ -152,14 +181,14 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
         raise HTTPException(503, 'Archivio cloud temporaneamente non disponibile')
     if not snapshot:
         raise HTTPException(404, 'Nessuna analisi salvata')
-    return snapshot
+    return visible_snapshot(snapshot)
 
 @app.get('/api/saved/dates')
 def saved_dates():
     if not storage.configured():
         raise HTTPException(503, 'Database non configurato')
     try:
-        return {'dates': storage.available_dates(), 'odds_api_calls': 0}
+        return {'dates': [item for item in storage.available_dates() if visible_snapshot(storage.latest(item['date']))['results']], 'odds_api_calls': 0}
     except Exception:
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
