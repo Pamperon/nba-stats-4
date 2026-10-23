@@ -53,7 +53,39 @@ def storage_self_test():
         raise HTTPException(503, 'Test database fallito; controlla i log Render')
 
 @app.get('/api/schedule', dependencies=[Depends(auth)])
-def schedule(date: str = Query(pattern=r'^\\d{4}-\\d{2}-\\d{2}
+def schedule(date: str):
+    """NBA fixtures from ESPN only; zero OddsPapi calls."""
+    try:
+        day = datetime.strptime(date, '%Y-%m-%d')
+        events = {}
+        for offset in (-1, 0):
+            us_day = (day + timedelta(days=offset)).strftime('%Y%m%d')
+            response = requests.get(
+                'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+                params={'dates': us_day, 'limit': 100}, timeout=12)
+            response.raise_for_status()
+            for event in response.json().get('events', []):
+                start = datetime.fromisoformat(event['date'].replace('Z', '+00:00'))
+                rome = start.astimezone(ZoneInfo('Europe/Rome'))
+                if rome.strftime('%Y-%m-%d') != date:
+                    continue
+                teams = (event.get('competitions') or [{}])[0].get('competitors') or []
+                home = next((x for x in teams if x.get('homeAway') == 'home'), {})
+                away = next((x for x in teams if x.get('homeAway') == 'away'), {})
+                if home and away:
+                    events[str(event['id'])] = {
+                        'home': home.get('team', {}).get('displayName', ''),
+                        'away': away.get('team', {}).get('displayName', ''),
+                        'time': rome.strftime('%H:%M'),
+                        'status': event.get('status', {}).get('type', {}).get('description', '')
+                    }
+        return {'date': date, 'games': sorted(events.values(), key=lambda x: x['time']),
+                'source': 'ESPN', 'odds_api_calls': 0}
+    except Exception:
+        logger.exception('ESPN schedule unavailable for %s', date)
+        raise HTTPException(502, 'Calendario ESPN temporaneamente non disponibile')
+
+@app.get('/api/fixtures', dependencies=[Depends(auth)])
 def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     try:
         datetime.strptime(date,'%Y-%m-%d')
