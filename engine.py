@@ -589,22 +589,34 @@ def finder_estimate_probability(log, stat, line, side):
             "avg": float(values.mean())}
 
 def finder_player_index(end_year):
-    """Read all current ESPN rosters once; return normalized-name lookup."""
-    index = {}
+    """Fetch team rosters with limited concurrency, preserving original team order."""
+    from concurrent.futures import ThreadPoolExecutor
+    teams = []
     for entry in espn_teams():
         team = entry.get("team", entry)
         team_id = str(team.get("id") or "")
-        if not team_id:
-            continue
+        if team_id:
+            teams.append((team_id, team))
+
+    def fetch_roster(item):
+        team_id, team = item
         try:
-            roster = espn_roster(team_id, None)
+            return team_id, team, espn_roster(team_id, None)
         except requests.RequestException:
-            continue
-        for athlete in roster_athletes(roster):
-            index.setdefault(normalized_name(athlete["displayName"]),
-                             {"id": athlete["id"], "team_id": team_id,
-                              "full_name": athlete["displayName"],
-                              "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"})
+            return team_id, team, None
+
+    index = {}
+    # Executor.map returns in input order: duplicate-name handling is unchanged.
+    # Four concurrent ESPN requests speed up startup without flooding the API.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for team_id, team, roster in pool.map(fetch_roster, teams):
+            if roster is None:
+                continue
+            for athlete in roster_athletes(roster):
+                index.setdefault(normalized_name(athlete["displayName"]),
+                                 {"id": athlete["id"], "team_id": team_id,
+                                  "full_name": athlete["displayName"],
+                                  "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"})
     return index
 
 def odds_source_audit(odds, catalog, match_name):
