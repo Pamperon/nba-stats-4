@@ -25,6 +25,16 @@ def run():
     if not TOKEN:
         raise RuntimeError("GitHub secret NBA_STATS_ACCESS_TOKEN is missing")
     now = dt.datetime.now(ROME)
+    if os.environ.get("NBA_STATS_DRY_RUN") == "1":
+        print("SAFE TEST: no OddsPapi calls and no scan jobs", flush=True)
+        print("Rome time:", now.isoformat(), flush=True)
+        session = call("/api/session")
+        print("Authentication:", session.get("authenticated"), flush=True)
+        print("Database configured:", session.get("database_configured"), flush=True)
+        today = now.date().isoformat()
+        schedule = call("/api/schedule?date=" + today)
+        print("ESPN games for", today, ":", len(schedule.get("games", [])), flush=True)
+        return
     if now.hour not in SLOTS:
         print("Not a Rome-time scan slot:", now.isoformat(), flush=True)
         return
