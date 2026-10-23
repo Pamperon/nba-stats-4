@@ -79,17 +79,6 @@ async function fetchPlayerLog(team,id,season){
  const task=api('/api/players/log?'+params).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(payload=>{cachePlayerLog(key,payload);return payload}).finally(()=>playerLogPending.delete(key));
  playerLogPending.set(key,task);return task;
 }
-function prefetchNearbyPlayer(team,id,season){
- const index=activeRoster.findIndex(p=>p.id===id);
- if(index<0)return;
- const next=activeRoster[index+1]||activeRoster[index-1];
- if(!next)return;
- const key=[team,next.id,season].join(':');
- if(getPlayerLogCache(key)===null&&!playerLogPending.has(key)){
-  const start=()=>{if($('team').value===team&&$('playerseason').value===season)fetchPlayerLog(team,next.id,season).catch(()=>{})};
-  if('requestIdleCallback' in window)requestIdleCallback(start,{timeout:3000});else setTimeout(start,900);
- }
-}
 
 const playerNum=x=>Number(x)||0;
 async function initPlayers(){
@@ -158,7 +147,6 @@ async function changePlayer(){
  changeLine();
  $('player-status').textContent=playerGames.length?'Statistiche ESPN · nessuna chiamata OddsPapi':'Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
  drawPlayer();
- prefetchNearbyPlayer(team,id,season);
  }catch(e){if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';}
 }
 function changeLine(){
