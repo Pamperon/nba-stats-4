@@ -183,6 +183,32 @@ def earliest_completed(date):
     return None
 
 
+def calibration_retention_preview(retention_days=7):
+    """Read-only count of snapshots eligible for future pruning.
+
+    A date is eligible only if settled and old enough. No deletion is performed.
+    Unsettled archives are never considered safe to remove.
+    """
+    if not configured():
+        return {"eligible_dates":0,"eligible_snapshots":0,
+                "unsettled_snapshots":0,"deletion_enabled":False}
+    with connection() as conn:
+        row = conn.execute("""
+            SELECT COUNT(DISTINCT s.scan_date), COUNT(*)
+            FROM nba_scan_snapshots s
+            JOIN nba_calibration_settled c ON c.scan_date=s.scan_date
+            WHERE s.scan_date < CURRENT_DATE - (%s * INTERVAL '1 day')
+        """,(retention_days,)).fetchone()
+        unsettled = conn.execute("""
+            SELECT COUNT(*) FROM nba_scan_snapshots s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM nba_calibration_settled c
+                WHERE c.scan_date=s.scan_date)
+        """).fetchone()[0]
+    return {"eligible_dates":row[0],"eligible_snapshots":row[1],
+            "unsettled_snapshots":unsettled,"deletion_enabled":False}
+
+
 def self_test():
     """Insert, read back and delete one isolated synthetic record; no external APIs."""
     if not configured():
