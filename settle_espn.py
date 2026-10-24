@@ -67,6 +67,21 @@ def settle_archive(snapshot, scan_date):
             if key in lookup:
                 raise ValueError("Duplicate team across ESPN games")
             lookup[key] = (frozenset(engine.normalized_name(t) for t in teams),stats)
+    saved_at = snapshot.get("scan_finished_at") or snapshot.get("saved_at")
+    if not saved_at:
+        raise ValueError("Snapshot has no verifiable pregame timestamp")
+    from datetime import timezone
+    snapshot_time = datetime.fromisoformat(str(saved_at).replace("Z","+00:00"))
+    if snapshot_time.tzinfo is None:
+        raise ValueError("Timezone missing from snapshot timestamp")
+    snapshot_time = snapshot_time.astimezone(timezone.utc)
+    for event in events:
+        start = event.get("date")
+        if not start:
+            raise ValueError("ESPN event start time unavailable")
+        tipoff = datetime.fromisoformat(start.replace("Z","+00:00"))
+        if snapshot_time >= tipoff:
+            raise ValueError("Snapshot saved after at least one game's tipoff")
     rows = snapshot.get("results",[])
     if not rows:
         raise ValueError("No archived predictions")
