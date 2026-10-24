@@ -888,6 +888,14 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                 else:
                     games = pd.concat(parts, ignore_index=True)
                     games["GAME_DATE"] = pd.to_datetime(games["GAME_DATE"], errors="coerce", utc=True)
+                    # Never use a future or in-progress game to estimate a
+                    # pregame probability, even if ESPN publishes partial stats.
+                    cutoff = pd.Timestamp.now(tz="UTC")
+                    future_count = int((games["GAME_DATE"] >= cutoff).sum())
+                    if future_count:
+                        logger.warning("ESPN excluded %d future/in-progress rows athlete=%s",
+                                       future_count, athlete["id"])
+                        games = games.loc[games["GAME_DATE"] < cutoff].copy()
                     if games["GAME_DATE"].isna().any():
                         error = "Date ESPN incomplete: cronologia non verificabile"
                         games = None
