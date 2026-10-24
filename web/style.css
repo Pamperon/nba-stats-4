@@ -164,3 +164,13 @@
 .app-hero .actions{display:block;width:100%;max-width:340px}
 .app-hero .date-control{width:100%;margin:0}
 @media(max-width:760px){.app-hero{display:block;margin-bottom:12px}.app-hero .actions{max-width:none}.app-hero .date-control{padding:11px 14px}}
+
+/* Shared, space-efficient quote snapshot above the dashboard and finder. */
+#quote-summary[hidden]{display:none!important}
+#quote-summary{margin:0 0 13px;padding:10px 12px 8px;border:1px solid #293b54;border-radius:13px;background:#101d30}
+#quote-summary #metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#quote-summary #metrics .metric{margin:0;padding:8px 5px;border-radius:9px;box-shadow:none;background:#182b43;text-align:center}
+#quote-summary #metrics .metric small{font-size:10px;margin-bottom:3px;color:#a8bdd7}
+#quote-summary #metrics .metric strong{font-size:clamp(17px,4vw,23px);line-height:1.2}
+#quote-summary .quote-updated{padding:9px 2px 1px;text-align:center;font-size:11px;line-height:1.35;color:#a7bdd6}
+@media(max-width:370px){#quote-summary{padding:8px}#quote-summary #metrics{gap:5px}#quote-summary #metrics .metric small{font-size:9px}#quote-summary .quote-updated{font-size:10px}}
