@@ -1,0 +1,40 @@
+name: Calibration settlement diagnostic (no OddsPapi)
+on:
+  push:
+    paths:
+      - '.github/workflows/calibration-settlement-diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Audit and settle saved predictions only
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          base = "https://nba-stats-4.onrender.com"
+          token = os.environ.get("NBA_STATS_ACCESS_TOKEN")
+          if not token:
+              raise SystemExit("NBA_STATS_ACCESS_TOKEN secret not configured")
+          def call(path, method="GET"):
+              req = urllib.request.Request(base+path, method=method,
+                  headers={"Authorization":"Bearer "+token, "Accept":"application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=180) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as e:
+                  print("HTTP",e.code,"on",path,flush=True)
+                  raise
+          for day in ("2026-10-23","2026-10-24"):
+              result = call("/api/calibration/dry-run?date="+day)
+              print("AUDIT",day,json.dumps(result,ensure_ascii=False),flush=True)
+          result = call("/api/calibration/settle",method="POST")
+          print("SETTLEMENT",json.dumps(result,ensure_ascii=False),flush=True)
+          result = call("/api/calibration/summary")
+          print("SUMMARY",json.dumps(result,ensure_ascii=False),flush=True)
+          PY
