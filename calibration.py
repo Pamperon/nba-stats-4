@@ -139,7 +139,7 @@ def calibrated_probability(market, raw_probability, aggregates, min_samples=20,
     return max(0.001, min(0.999, p + max(-max_adjustment,
                                          min(max_adjustment, adjustment))))
 
-def approved_adjustments(daily_rows, min_days=3, min_verified=100,
+def approved_adjustments(daily_rows, min_days=2, min_verified=100,
                          min_improvement=0.001):
     """Return historical calibration bins only after walk-forward improvement.
 
