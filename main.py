@@ -432,7 +432,7 @@ def calibration_settle():
     processed = []
     for day in candidates[:2]:
         try:
-            snapshot = storage.latest(day)
+            snapshot = storage.earliest_completed(day)
             if not snapshot or not snapshot.get('results'):
                 processed.append({'date':day,'status':'empty'})
                 continue
