@@ -133,3 +133,12 @@
 #finder .finder-scroll::-webkit-scrollbar-thumb{background:#f49b58;border-radius:8px;border:2px solid #26364e}
 #finder .finder-scroll:focus-visible{outline:2px solid #f49b58;outline-offset:2px}
 @media(max-width:760px){#finder .filters label{flex:1 1 calc(50% - 9px);max-width:none;min-width:0}#finder .filters select{width:100%}}
+
+/* Second horizontal scrollbar above the quote results; synced with the table */
+#finder .finder-top-scroll{overflow-x:auto;overflow-y:hidden;height:17px;margin:0 0 7px;scrollbar-width:auto;scrollbar-color:#f49b58 #26364e}
+#finder .finder-top-scroll[hidden]{display:none}
+#finder .finder-top-scroll>div{height:1px}
+#finder .finder-top-scroll::-webkit-scrollbar{height:12px}
+#finder .finder-top-scroll::-webkit-scrollbar-track{background:#26364e;border-radius:8px}
+#finder .finder-top-scroll::-webkit-scrollbar-thumb{background:#f49b58;border:2px solid #26364e;border-radius:8px}
+#finder .finder-top-scroll:focus-visible{outline:2px solid #f49b58;outline-offset:2px}

@@ -169,14 +169,31 @@ const nbaTeams={
  'ATLANTA HAWKS':'ATL','BOSTON CELTICS':'BOS','BROOKLYN NETS':'BKN','CHARLOTTE HORNETS':'CHA','CHICAGO BULLS':'CHI','CLEVELAND CAVALIERS':'CLE','DALLAS MAVERICKS':'DAL','DENVER NUGGETS':'DEN','DETROIT PISTONS':'DET','GOLDEN STATE WARRIORS':'GSW','HOUSTON ROCKETS':'HOU','INDIANA PACERS':'IND','LOS ANGELES CLIPPERS':'LAC','LA CLIPPERS':'LAC','LOS ANGELES LAKERS':'LAL','LA LAKERS':'LAL','MEMPHIS GRIZZLIES':'MEM','MIAMI HEAT':'MIA','MILWAUKEE BUCKS':'MIL','MINNESOTA TIMBERWOLVES':'MIN','NEW ORLEANS PELICANS':'NOP','NEW YORK KNICKS':'NYK','OKLAHOMA CITY THUNDER':'OKC','ORLANDO MAGIC':'ORL','PHILADELPHIA 76ERS':'PHI','PHOENIX SUNS':'PHX','PORTLAND TRAIL BLAZERS':'POR','PORTLAND TRAIL BLAZERS':'POR','SACRAMENTO KINGS':'SAC','SAN ANTONIO SPURS':'SAS','TORONTO RAPTORS':'TOR','UTAH JAZZ':'UTA','WASHINGTON WIZARDS':'WAS'
 };
 function teamAbbrev(team){const key=String(team||'').trim().toUpperCase().replace(/\s+/g,' ');return nbaTeams[key]||(/^[A-Z]{3}$/.test(key)?key:'—')}
-function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('')}
+function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('');syncFinderScrollWidth()}
 // Value Finder filters affect only its own table; dashboard picks are independent.
+function syncFinderScrollWidth(){
+ const bottom=$('finder-scroll'),top=$('finder-top-scroll'),content=$('finder-top-scroll-content');
+ if(!bottom||!top||!content)return;
+ content.style.width=bottom.scrollWidth+'px';
+ top.hidden=bottom.scrollWidth<=bottom.clientWidth+1;
+}
+function initFinderTopScroll(){
+ const top=$('finder-top-scroll'),bottom=$('finder-scroll');
+ let syncing=false;
+ const sync=(from,to)=>{if(syncing)return;syncing=true;to.scrollLeft=from.scrollLeft;syncing=false};
+ top.addEventListener('scroll',()=>sync(top,bottom),{passive:true});
+ bottom.addEventListener('scroll',()=>sync(bottom,top),{passive:true});
+ if('ResizeObserver' in window){const observer=new ResizeObserver(syncFinderScrollWidth);observer.observe(bottom);observer.observe(bottom.querySelector('table'));}
+ window.addEventListener('resize',syncFinderScrollWidth);
+ syncFinderScrollWidth();
+}
+initFinderTopScroll();
 function initFinderSelects(){
  const odds=Array.from({length:179},(_,i)=>(1.10+i*0.05).toFixed(2));
  for(const id of ['oddmin','oddmax']){
   const select=$(id);
   select.innerHTML=odds.map(v=>'<option value="'+v+'">'+fmtOdd(v)+'</option>').join('');
-  select.value=id==='oddmin'?'1.10':'10.00';
+  select.value=id==='oddmin'?'1.10':'2.20';
  }
  const prob=$('probmin');
  prob.innerHTML=Array.from({length:21},(_,i)=>'<option value="'+(i*5)+'">'+(i*5)+'%</option>').join('');
