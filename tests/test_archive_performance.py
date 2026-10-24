@@ -23,6 +23,14 @@ class ArchivePerformanceTests(unittest.TestCase):
         self.assertEqual(result["verified_selections"],0)
         self.assertEqual(result["groups"],{})
 
+    def test_over_and_under_are_distinct_opportunities(self):
+        over = row(24.5, 1.8, 60)
+        under = dict(over, Scelta="Under", **{"Prob. stimata %": 65})
+        archive = [over, under]
+        result = summarize_unique_opportunities(archive, archive)
+        self.assertEqual(result["unique_player_market_games"], 2)
+        self.assertEqual(result["verified_selections"], 2)
+
     def test_distinct_players_remain_distinct(self):
         archive=[row(19.5,1.3,80),row(24.5,1.8,70),
                  row(19.5,1.4,80,name="Player Two")]
