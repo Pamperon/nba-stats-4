@@ -542,16 +542,18 @@ def espn_classified_game_log(athlete_id, season, team_id):
         if pd.notna(kind) and int(kind) in (2, 3):
             explicit.setdefault(event_id, set()).add(int(kind))
     games = games.drop_duplicates(subset=["GAME_ID"], keep="first").reset_index(drop=True)
+    conflicting = {event_id for event_id, types in explicit.items() if len(types) > 1}
     known = {event_id: next(iter(types)) for event_id, types in explicit.items() if len(types) == 1}
 
-    # Schedule classification was fetched concurrently with the ESPN game logs.
+    # An ESPN event reported as both regular and playoff must not be resolved
+    # by a schedule fallback. Exclude it until independent evidence is audited.
     for event_id, kind in schedule_types.items():
-        if event_id not in known and kind in (2, 3):
+        if event_id not in known and event_id not in conflicting and kind in (2, 3):
             known[event_id] = kind
 
     # Last resort: ask for an event summary, but only for unresolved games.
     for event_id in games["GAME_ID"].astype(str):
-        if event_id in known:
+        if event_id in known or event_id in conflicting:
             continue
         try:
             kind = espn_event_competition_type(event_id)
@@ -564,6 +566,10 @@ def espn_classified_game_log(athlete_id, season, team_id):
     # Do not raise for unknown classification: expose the uncertainty and exclude
     # those games from mode-specific analyses to avoid false Over/Under results.
     games.attrs["unclassified"] = int(games["SEASON_TYPE"].isna().sum())
+    games.attrs["conflicting"] = len(conflicting)
+    if conflicting:
+        logger.warning("ESPN conflicting season classification athlete=%s season=%s events=%s",
+                       athlete_id, season, sorted(conflicting))
     return games
 
 def selected_game_log(athlete_id, season, mode, team_id=None):
