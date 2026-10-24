@@ -69,7 +69,7 @@ jobs:
                       and delta is not None and delta >= 0.001)
           print("CALIBRATION_ELIGIBLE",json.dumps({"eligible":eligible,"days":validation.get("days"),
               "adjusted_predictions":validation.get("adjusted_predictions"),"brier_improvement":delta,
-              "note":"Eligibility is not proof of deployment or of a newly scanned snapshot"},flush=True)
+              "note":"Eligibility is not proof of deployment or of a newly scanned snapshot"}),flush=True)
           result = call("/api/calibration/settle",method="POST")
           print("SETTLEMENT",json.dumps(result,ensure_ascii=False),flush=True)
           try:
@@ -82,5 +82,6 @@ jobs:
           except urllib.error.HTTPError as e:
               if e.code == 404:
                   print("DEPLOY_PENDING: settlement status endpoint not deployed; verified settlement API results only",flush=True)
-              raise
+              else:
+                  raise
           PY
