@@ -132,6 +132,26 @@ def do_scan(job_id, date):
         def progress(p, label):
             with lock: jobs[job_id].update(progress=round(p*100),stage=label)
         rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress)
+        # Apply calibration only after independent walk-forward validation on
+        # previously settled days. Never block the scan on a calibration error.
+        calibration_status = {'active': False, 'adjusted': 0}
+        if storage.configured():
+            try:
+                import progressive_calibration
+                with storage.connection() as conn:
+                    history = conn.execute("""
+                        SELECT scan_date,market,probability_bin,n,wins,sum_p,sum_brier
+                        FROM nba_calibration_daily
+                        WHERE scan_date < %s
+                        ORDER BY scan_date,market,probability_bin
+                    """, (date,)).fetchall()
+                daily = [dict(date=day.isoformat(),market=market,
+                              probability_bin=bucket,n=n,wins=wins,sum_p=sp,
+                              sum_brier=sb)
+                         for day,market,bucket,n,wins,sp,sb in history]
+                rows, calibration_status = progressive_calibration.apply(rows, daily)
+            except Exception:
+                logger.exception('Progressive calibration unavailable; raw probabilities retained')
         analysis_seconds = round(time.monotonic() - analysis_started, 2)
         serialized_logs = {}
         for name, log in logs.items():
@@ -142,6 +162,7 @@ def do_scan(job_id, date):
         snapshot = {
             'date': date, 'state': final_state, 'progress': 100, 'stage': final_stage,
             'results': rows, 'issues': issues, 'fixture_reports': fixture_reports,
+            'calibration': calibration_status,
             'player_logs': serialized_logs, 'fixture_count': len(fixtures),
             'player_count': player_count, 'season': season,
             'scan_started_at': scan_started_at,
