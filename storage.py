@@ -45,7 +45,41 @@ def initialize():
                 payload JSONB NOT NULL
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS nba_scan_slots (
+                slot_key TEXT PRIMARY KEY,
+                status TEXT NOT NULL,
+                claimed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                finished_at TIMESTAMPTZ
+            )
+        """)
     return True
+
+
+def claim_slot(slot_key):
+    """Atomic reservation across GitHub runners; retry stale/failed claims."""
+    if not configured():
+        raise RuntimeError("Database required for scan deduplication")
+    with connection() as conn:
+        row = conn.execute("""
+            INSERT INTO nba_scan_slots(slot_key, status)
+            VALUES (%s, 'running')
+            ON CONFLICT(slot_key) DO UPDATE
+            SET status='running', claimed_at=NOW(), finished_at=NULL
+            WHERE nba_scan_slots.status='failed'
+               OR (nba_scan_slots.status='running'
+                   AND nba_scan_slots.claimed_at < NOW() - INTERVAL '80 minutes')
+            RETURNING slot_key
+        """, (slot_key,)).fetchone()
+    return bool(row)
+
+
+def finish_slot(slot_key, success):
+    with connection() as conn:
+        conn.execute("""
+            UPDATE nba_scan_slots SET status=%s, finished_at=NOW()
+            WHERE slot_key=%s AND status='running'
+        """, ('done' if success else 'failed', slot_key))
 
 
 def cache_read(key, max_age_hours):
