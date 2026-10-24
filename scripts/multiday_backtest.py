@@ -38,8 +38,8 @@ def analyze_dates(dates, session=requests):
     today = datetime.now(ZoneInfo("Europe/Rome")).date()
     for day in dates:
         parsed = date.fromisoformat(day)
-        if parsed >= today:
-            skipped.append({"date": day, "reason": "not_a_past_date"})
+        if parsed > today:
+            skipped.append({"date": day, "reason": "future_date"})
             continue
         try:
             response = session.get(URL, params={"date": day}, timeout=100)
