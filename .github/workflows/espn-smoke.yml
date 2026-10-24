@@ -1,5 +1,10 @@
 name: ESPN real-data smoke test
 on:
+  pull_request:
+    paths:
+      - 'settle_espn.py'
+      - 'scripts/espn_smoke_test.py'
+      - '.github/workflows/espn-smoke.yml'
   workflow_dispatch:
     inputs:
       rome_date:
@@ -17,5 +22,5 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Fetch final ESPN box scores (no database, no OddsPapi)
         env:
-          NBA_ROME_DATE: ${{ inputs.rome_date }}
+          NBA_ROME_DATE: ${{ inputs.rome_date || '2026-10-22' }}
         run: python -m scripts.espn_smoke_test --date "$NBA_ROME_DATE"
