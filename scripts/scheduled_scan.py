@@ -84,6 +84,13 @@ def execute_scan(now, slot, manual):
         print("Archive cleanup:", cleanup, flush=True)
     except Exception as exc:
         print("Archive cleanup failed (scans continue):", exc, flush=True)
+    # Settle older predictions from free ESPN box scores before scanning new odds.
+    # Fail open: a settlement outage must never block scheduled scans.
+    try:
+        report = call("/api/calibration/settle", method="POST", timeout=180)
+        print("Incremental calibration:", report, flush=True)
+    except Exception as exc:
+        print("Calibration deferred (scan continues):", exc, flush=True)
     # Delay of a scheduled GitHub Actions run is expected; local-hour gate handles DST.
     scan_day = slot.date() if not manual else now.date()
     for offset in (0, 1):
