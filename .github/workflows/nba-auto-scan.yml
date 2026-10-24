@@ -2,9 +2,9 @@ name: NBA STATS - scansioni automatiche
 
 on:
   schedule:
-    # Recovery heartbeat every 10 minutes: GitHub may delay or drop cron events.
+    # Recovery heartbeat every 10 minutes, offset from minute zero to reduce GitHub scheduler congestion.
     # Supabase atomic slot claims prevent repeated OddsPapi scans.
-    - cron: "*/10 * * * *"
+    - cron: "7,17,27,37,47,57 * * * *"
   workflow_dispatch:
     inputs:
       mode:
