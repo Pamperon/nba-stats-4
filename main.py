@@ -230,6 +230,9 @@ def saved_time(date: str):
             'scan_finished_at': snapshot.get('scan_finished_at', 'non registrato'),
             'status': snapshot.get('state', 'sconosciuto'),
             'odds_api_calls_scan': snapshot.get('odds_api_calls_scan', 'non registrato'),
+            'fixture_count': snapshot.get('fixture_count', 0),
+            'fixture_status_counts': {state: sum(1 for item in snapshot.get('fixture_reports', []) if item.get('stato') == state) for state in ('ok', 'vuota', 'errore', 'in_elaborazione')},
+            'fixture_reports': [{'id': item.get('id'), 'partita': item.get('partita'), 'stato': item.get('stato'), 'linee': item.get('linee', 0), 'dettaglio': item.get('dettaglio', '')} for item in snapshot.get('fixture_reports', [])],
             'odds_api_calls': 0
         }
     except HTTPException:
