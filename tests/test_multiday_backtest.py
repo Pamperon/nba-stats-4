@@ -36,6 +36,15 @@ class MultiDayBacktestTests(unittest.TestCase):
         self.assertIsNone(summary["doppia"]["roi"])
         self.assertEqual(summary["doppia"]["missing_results"], 1)
 
+    def test_today_is_checked_if_archive_available(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        today = datetime.now(ZoneInfo("Europe/Rome")).date().isoformat()
+        session = FakeSession()
+        report = analyze_dates([today], session)
+        self.assertEqual(session.called, [today])
+        self.assertEqual(report["days_skipped"][0]["reason"], "archive_unavailable")
+
     def test_unavailable_dates_are_skipped_without_guessing(self):
         session = FakeSession()
         report = analyze_dates(["2026-10-20", "2026-10-21"], session)
