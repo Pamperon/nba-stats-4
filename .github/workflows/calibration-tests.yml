@@ -6,6 +6,7 @@ on:
       - 'main.py'
       - 'engine.py'
       - 'tests/test_player_identity.py'
+      - 'tests/test_espn_coverage.py'
       - 'storage.py'
       - 'scripts/espn_smoke_test.py'
       - 'scripts/archive_audit.py'
@@ -33,4 +34,5 @@ jobs:
       - run: python -m unittest discover -s tests -p 'test_calendar_boundaries.py' -v
       - run: python -m unittest discover -s tests -p 'test_archive_audit.py' -v
       - run: python -m unittest discover -s tests -p 'test_player_identity.py' -v
+      - run: python -m unittest discover -s tests -p 'test_espn_coverage.py' -v
       - run: python -m compileall -q main.py storage.py settle_espn.py calibration.py calibration_validation.py scripts/espn_smoke_test.py
