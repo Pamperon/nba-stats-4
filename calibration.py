@@ -47,7 +47,7 @@ def aggregate(rows):
     for row in rows:
         try:
             market = str(row["Mercato"]).upper()
-            p = float(row["Prob. stimata %"]) / 100
+            p = float(row.get("Prob. grezza %", row["Prob. stimata %"])) / 100
             line = float(row["Linea"])
             actual = float(row["actual"])
             choice = str(row["Scelta"]).lower()
@@ -138,3 +138,29 @@ def calibrated_probability(market, raw_probability, aggregates, min_samples=200,
     adjustment = (r["observed"] - r["predicted"]) * r["n"] / (r["n"] + prior_strength)
     return max(0.001, min(0.999, p + max(-max_adjustment,
                                          min(max_adjustment, adjustment))))
+
+def approved_adjustments(daily_rows, min_days=7, min_verified=200,
+                         min_improvement=0.001):
+    """Return historical calibration bins only after walk-forward improvement.
+
+    Fail closed on insufficient samples, short history, or unvalidated lift.
+    The latest day's labels are never used for predictions on that day.
+    """
+    from calibration_validation import walk_forward
+    report = walk_forward(daily_rows)
+    if (report["days"] < min_days or report["n"] < min_verified
+            or report["adjusted_predictions"] < min_verified
+            or report["brier_original"] is None
+            or report["brier_candidate"] is None
+            or report["brier_original"] - report["brier_candidate"] < min_improvement):
+        return []
+    by_bin = {}
+    for r in daily_rows:
+        key = (r["market"], int(r["probability_bin"]))
+        stat = by_bin.setdefault(key, {"n":0,"wins":0,"sum_p":0.0})
+        for field in ("n","wins","sum_p"):
+            stat[field] += r[field]
+    return [{"market":market,"probability_bin":bucket,
+             "n":v["n"],"observed":v["wins"]/v["n"],
+             "predicted":v["sum_p"]/v["n"]}
+            for (market,bucket),v in by_bin.items() if v["n"]]
