@@ -47,6 +47,28 @@ class SettlementTests(unittest.TestCase):
         self.assertEqual(stats[(team, "id:111")]["PTS"], 27)
         self.assertEqual(stats[(team, settle_espn.engine.espn_player_key("Tatum, Jayson"))]["REB"], 8)
 
+    def test_wrong_espn_id_never_falls_back_to_matching_name(self):
+        snapshot = {"scan_finished_at": "2026-10-24T12:00:00+00:00", "results": [
+            {"Partita": "Boston Celtics - New York Knicks",
+             "Squadra": "Boston Celtics", "Giocatore": "Jayson Tatum",
+             "ESPN ID": "999999", "Mercato": "PTS", "Linea": 24.5,
+             "Scelta": "Over", "Prob. stimata %": 70},
+            {"Partita": "Boston Celtics - New York Knicks",
+             "Squadra": "Boston Celtics", "Giocatore": "Jayson Tatum",
+             "ESPN ID": "111", "Mercato": "PTS", "Linea": 24.5,
+             "Scelta": "Over", "Prob. stimata %": 70},
+            {"Partita": "Boston Celtics - New York Knicks",
+             "Squadra": "Boston Celtics", "Giocatore": "Tatum, Jayson",
+             "Mercato": "REB", "Linea": 7.5,
+             "Scelta": "Over", "Prob. stimata %": 70}
+        ]}
+        with patch.object(settle_espn, "final_events", return_value=[event()]), \
+             patch.object(settle_espn, "fetch", return_value=summary()):
+            verified, eligible = settle_espn.settle_archive(snapshot, "2026-10-24")
+        self.assertEqual(eligible, 3)
+        self.assertEqual(len(verified), 2)
+        self.assertEqual([r["actual"] for r in verified], [27, 8])
+
     def test_missing_archived_fixture_rejected(self):
         snapshot={"scan_finished_at":"2026-10-24T12:00:00+00:00",
                   "results":[{"Partita":"Boston Celtics - New York Knicks",
