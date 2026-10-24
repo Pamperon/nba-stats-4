@@ -205,7 +205,28 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
     return visible_snapshot(snapshot)
 
 @app.get('/api/saved/time')
-def saved_time(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}
+def saved_time(date: str):
+    try:
+        datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+    if not storage.configured():
+        raise HTTPException(503, 'Database non configurato')
+    try:
+        snapshot = storage.latest(date)
+        if not snapshot:
+            raise HTTPException(404, 'Nessuna analisi salvata')
+        timestamp = datetime.fromisoformat(snapshot['saved_at'])
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=ZoneInfo('UTC'))
+        return {'date': date, 'saved_at_italy': timestamp.astimezone(ZoneInfo('Europe/Rome')).strftime('%d/%m/%Y %H:%M:%S'), 'odds_api_calls': 0}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('Cannot read scan timestamp')
+        raise HTTPException(503, 'Orario scansione non disponibile')
+
+@app.get('/api/saved/dates')
 def saved_dates():
     if not storage.configured():
         raise HTTPException(503, 'Database non configurato')
