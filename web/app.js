@@ -87,14 +87,24 @@ async function enrichPickProfile(row,card,request){
   setPickPhoto(avatar,profile.id,profile.name||name,request);
  }catch(error){console.warn('Dashboard ESPN identity unavailable:',name,error.message)}
 }
-function reliablePick(row){
- const hit=n=>{const m=String(row['Ultime '+n]).match(/^(\d+)\/(\d+)$/);return m&&Number(m[2])===n&&Number(m[1])/n>=.8};
- return row['Stato analisi']==='Valutabile (stima empirica)'&&
- Number.isFinite(Number(row['Prob. stimata %']))&&number(row['Prob. stimata %'])>=75&&
- number(row['Partite'])>=20&&number(row['Stagione %'])>=70&&hit(5)&&hit(10)&&hit(20)&&
- number(row['Minuti medi'])>=20&&number(row['Minuti ultime 5'])>=.8*number(row['Minuti medi'])&&
- number(row['Prob. stimata %'])-100/number(row['Quota'])>=3;
+// Keep a minimum evidence floor without requiring 80% hits in every window.
+// Calibration estimates remain the source of probability, not the selection filter.
+function pickRejectionReasons(row){
+ const reasons=[];
+ const p=Number(row['Prob. stimata %']),odd=Number(row.Quota);
+ const games=Number(row['Partite']),season=Number(row['Stagione %']);
+ const minutes=Number(row['Minuti medi']),recent=Number(row['Minuti ultime 5']);
+ if(row['Stato analisi']!=='Valutabile (stima empirica)')reasons.push('analisi non valutabile');
+ if(!Number.isFinite(p)||p<=0||p>=100)reasons.push('stima non valida');
+ if(!Number.isFinite(odd)||odd<=1)reasons.push('quota non valida');
+ if(!Number.isFinite(games)||games<10)reasons.push('meno di 10 partite');
+ if(!Number.isFinite(season)||season<50)reasons.push('frequenza stagionale insufficiente');
+ if(!Number.isFinite(minutes)||minutes<15)reasons.push('minuti medi insufficienti');
+ if(!Number.isFinite(recent)||recent<0.65*minutes)reasons.push('minuti recenti in calo');
+ if(Number.isFinite(p)&&Number.isFinite(odd)&&odd>1&&p-100/odd<3)reasons.push('value insufficiente');
+ return reasons;
 }
+function reliablePick(row){return pickRejectionReasons(row).length===0;}
 function pickCandidates(rows,min,max,count){
  const sorted=rows.filter(r=>reliablePick(r)&&number(r.Quota)>=min&&number(r.Quota)<=max)
  .sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %'])||
@@ -107,6 +117,13 @@ function pickCandidates(rows,min,max,count){
   if(chosen.length===count)break;
  }
  return chosen;
+}
+function pickEmptyReason(rows,min,max,count,found){
+ const inRange=rows.filter(r=>Number(r.Quota)>=min&&Number(r.Quota)<=max);
+ if(!inRange.length)return 'Nessuna quota disponibile in questa fascia';
+ const rejected=inRange.filter(r=>!reliablePick(r));
+ if(found<count)return 'Nessuna selezione completa: '+found+' di '+count+' giocatori idonei ('+rejected.length+' esclusi dai controlli sui dati)';
+ return '';
 }
 function pickCard(row){
  return '<article class="pick-selection"><div class="pick-profile">'+candidateAvatar(row)+
@@ -137,7 +154,7 @@ function render(){
   return '<section class="panel pick-group"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+min.toFixed(2)+'–'+max.toFixed(2)+'</p>'+
   (complete?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>'+
   (count>1?'<div class="pick-combined"><span>Quota totale <strong>'+combined.toFixed(2).replace('.',',')+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span></div>':''):
-  '<p>Nessuna quota disponibile</p>')+
+  '<p>'+esc(pickEmptyReason(rows,min,max,count,chosen.length))+'</p>')+
   '</section>';
  }).join('');
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
