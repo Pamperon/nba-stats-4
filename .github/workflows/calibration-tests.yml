@@ -9,9 +9,11 @@ on:
       - 'tests/test_espn_coverage.py'
       - 'tests/test_espn_conflicts.py'
       - 'storage.py'
-      - 'scripts/espn_smoke_test.py'
+      - 'scripts/espn_smoke_test.py scripts/verify_archive.py'
       - 'scripts/archive_audit.py'
       - 'tests/test_archive_audit.py'
+      - 'scripts/verify_archive.py'
+      - 'tests/test_verify_archive.py'
       - 'settle_espn.py'
       - 'calibration_validation.py'
       - 'tests/test_calibration_validation.py'
@@ -34,6 +36,7 @@ jobs:
       - run: python -m unittest discover -s tests -p 'test_calibration_validation.py' -v
       - run: python -m unittest discover -s tests -p 'test_calendar_boundaries.py' -v
       - run: python -m unittest discover -s tests -p 'test_archive_audit.py' -v
+      - run: python -m unittest discover -s tests -p 'test_verify_archive.py' -v
       - run: python -m unittest discover -s tests -p 'test_player_identity.py' -v
       - run: python -m unittest discover -s tests -p 'test_espn_coverage.py' -v
       - run: python -m unittest discover -s tests -p 'test_espn_conflicts.py' -v
