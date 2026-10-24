@@ -46,6 +46,10 @@ class MultiDayBacktestTests(unittest.TestCase):
         self.assertEqual(summary["verified_legs"], 1)
         self.assertAlmostEqual(summary["brier_score"], 0.64)
         self.assertAlmostEqual(summary["mean_absolute_error"], 0.8)
+        self.assertEqual(summary["actual_hit_rate"], 0)
+        self.assertAlmostEqual(summary["mean_predicted_probability"], 0.8)
+        self.assertAlmostEqual(summary["calibration_gap"], 0.8)
+        self.assertFalse(summary["sample_sufficient"])
 
     def test_today_is_checked_if_archive_available(self):
         from datetime import datetime
