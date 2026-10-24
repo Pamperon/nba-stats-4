@@ -785,6 +785,11 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
     """
     results, issues, raw_audit, filter_audit = [], [], [], []
     fixture_reports = []
+    # All historical samples must precede the first fixture being predicted.
+    starts = [fixture_start_rome(fixture) for fixture in fixtures]
+    starts = [start for start in starts if start is not None]
+    history_cutoff = min(starts) if starts else datetime.now(timezone.utc)
+    history_cutoff = pd.Timestamp(history_cutoff).tz_convert("UTC")
     index = finder_player_index(int(season[:4]) + 1)
     props_by_player = {}
     player_logs = {}
@@ -890,7 +895,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                     games["GAME_DATE"] = pd.to_datetime(games["GAME_DATE"], errors="coerce", utc=True)
                     # Never use a future or in-progress game to estimate a
                     # pregame probability, even if ESPN publishes partial stats.
-                    cutoff = pd.Timestamp.now(tz="UTC")
+                    cutoff = min(pd.Timestamp.now(tz="UTC"), history_cutoff)
                     future_count = int((games["GAME_DATE"] >= cutoff).sum())
                     if future_count:
                         logger.warning("ESPN excluded %d future/in-progress rows athlete=%s",
