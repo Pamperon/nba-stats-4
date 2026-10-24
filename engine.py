@@ -569,6 +569,10 @@ def espn_classified_game_log(athlete_id, season, team_id):
 def selected_game_log(athlete_id, season, mode, team_id=None):
     games = espn_classified_game_log(athlete_id, season, team_id)
     if mode == "Regular season":
+        unknown = int(games["SEASON_TYPE"].isna().sum())
+        if unknown:
+            logger.warning("ESPN excluded %d unclassified games for athlete=%s season=%s team=%s",
+                           unknown, athlete_id, season, team_id)
         return games.loc[games["SEASON_TYPE"] == 2].copy()
     if mode == "Playoff":
         return games.loc[games["SEASON_TYPE"] == 3].copy()
