@@ -4,6 +4,8 @@ on:
     paths:
       - 'calibration.py'
       - 'main.py'
+      - 'minutes_shadow.py'
+      - 'tests/test_minutes_shadow.py'
       - 'engine.py'
       - 'tests/test_player_identity.py'
       - 'tests/test_espn_coverage.py'
@@ -45,4 +47,5 @@ jobs:
       - run: python -m unittest discover -s tests -p 'test_espn_conflicts.py' -v
       - run: python -m unittest discover -s tests -p 'test_release_safety.py' -v
       - run: python -m unittest discover -s tests -p 'test_progressive_calibration.py' -v
-      - run: python -m compileall -q main.py storage.py settle_espn.py calibration.py calibration_validation.py scripts/espn_smoke_test.py scripts/verify_archive.py
+      - run: python -m unittest discover -s tests -p 'test_minutes_shadow.py' -v
+      - run: python -m compileall -q minutes_shadow.py main.py storage.py settle_espn.py calibration.py calibration_validation.py scripts/espn_smoke_test.py scripts/verify_archive.py
