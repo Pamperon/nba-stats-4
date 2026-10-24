@@ -12,10 +12,34 @@ from zoneinfo import ZoneInfo
 BASE = "https://nba-stats-4.onrender.com"
 TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
-# Accepted local execution hours, including GitHub Actions scheduling delays.
-# The 22:00 refresh is intentional; the overnight midnight run can be delayed
-# until 02:xx by GitHub. No extra cron triggers or OddsPapi calls are added.
-SLOTS = {0, 1, 2, 10, 14, 18, 21, 22}
+# Intended Rome slots, with separate UTC triggers for CET and CEST.
+SLOTS = (0, 10, 14, 18, 22)
+MAX_DELAY = dt.timedelta(hours=3)
+CRON_TO_UTC_HOUR = {
+    "0 8 * * *": 8, "0 9 * * *": 9,
+    "0 12 * * *": 12, "0 13 * * *": 13,
+    "0 16 * * *": 16, "0 17 * * *": 17,
+    "0 20 * * *": 20, "0 21 * * *": 21,
+    "0 22 * * *": 22, "0 23 * * *": 23,
+}
+
+def scheduled_slot(now, cron):
+    """Match the actual UTC cron to its Rome slot, even if GitHub starts late."""
+    utc_hour = CRON_TO_UTC_HOUR.get(cron)
+    if utc_hour is None:
+        raise ValueError("Unknown GitHub cron schedule: " + repr(cron))
+    # Consider today and yesterday: a 22:00 Rome run can start after midnight.
+    candidates = []
+    for days_back in (0, 1):
+        day = now.date() - dt.timedelta(days=days_back)
+        for hour in SLOTS:
+            target = dt.datetime.combine(day, dt.time(hour), tzinfo=ROME)
+            if target.astimezone(dt.timezone.utc).hour != utc_hour:
+                continue
+            delay = now.astimezone(dt.timezone.utc) - target.astimezone(dt.timezone.utc)
+            if dt.timedelta(0) <= delay <= MAX_DELAY:
+                candidates.append((delay, target))
+    return min(candidates, key=lambda item: item[0])[1] if candidates else None
 
 def call(path, method="GET", timeout=45):
     req = urllib.request.Request(
@@ -38,9 +62,16 @@ def run():
         schedule = call("/api/schedule?date=" + today)
         print("ESPN games for", today, ":", len(schedule.get("games", [])), flush=True)
         return
-    if os.environ.get("NBA_STATS_MANUAL_SCAN") != "1" and now.hour not in SLOTS:
-        print("Skipped: outside accepted Rome-time scan window:", now.isoformat(), flush=True)
-        return
+    manual = os.environ.get("NBA_STATS_MANUAL_SCAN") == "1"
+    if not manual:
+        cron = os.environ.get("NBA_STATS_SCHEDULE", "")
+        slot = scheduled_slot(now, cron)
+        if slot is None:
+            print("SKIPPED: inactive DST cron or delayed more than 3 hours.",
+                  "Rome time:", now.isoformat(), "cron:", cron, flush=True)
+            return
+        print("Scheduled Rome slot:", slot.isoformat(), "actual start:",
+              now.isoformat(), "cron:", cron, flush=True)
     print("Starting scheduled NBA scan at Rome time:", now.isoformat(), flush=True)
     # Cleanup runs even when there are no upcoming games, using only Supabase.
     # A temporary DB issue must not prevent the scheduled NBA scan.
@@ -50,8 +81,9 @@ def run():
     except Exception as exc:
         print("Archive cleanup failed (scans continue):", exc, flush=True)
     # Delay of a scheduled GitHub Actions run is expected; local-hour gate handles DST.
+    scan_day = slot.date() if not manual else now.date()
     for offset in (0, 1):
-        date = (now.date() + dt.timedelta(days=offset)).isoformat()
+        date = (scan_day + dt.timedelta(days=offset)).isoformat()
         print("Checking", date, flush=True)
         try:
             schedule = call("/api/schedule?date=" + date)
