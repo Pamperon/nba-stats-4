@@ -26,6 +26,20 @@ class RecommendationBacktestTests(unittest.TestCase):
         self.assertFalse(result["singola"]["settled"])
         self.assertIsNone(result["singola"]["unit_profit"])
 
+    def test_exclude_negative_value_and_non_evaluable(self):
+        negative = pick("Negative", 19.5, 1.8, 40)
+        excluded = pick("Excluded", 19.5, 1.8, 90)
+        excluded["Stato analisi"] = "Non valutabile"
+        good = pick("Valid", 19.5, 1.8, 70)
+        result = select_pregame([negative, excluded, good])
+        self.assertEqual([r["Giocatore"] for r in result["singola"]], ["Valid"])
+
+    def test_incomplete_tickets_are_not_scored(self):
+        archive = [pick("Only", 19.5, 1.55, 80)]
+        result = evaluate(archive, [pick("Only", 19.5, 1.55, 80, 25)])
+        self.assertFalse(result["doppia"]["complete"])
+        self.assertIsNone(result["doppia"]["unit_profit"])
+
     def test_correct_settlement(self):
         archive=[pick("Alpha",19.5,1.8,70)]
         result=evaluate(archive,[pick("Alpha",19.5,1.8,70,25)])
