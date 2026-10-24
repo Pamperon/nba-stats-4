@@ -58,6 +58,7 @@ jobs:
                       print("DEPLOY_PENDING: Render still rejects current-day audit",day,flush=True)
                       continue
                   raise
+          # Re-evaluate the deployed candidate after pooled-calibration merge.
           validation = call("/api/calibration/validation")
           print("VALIDATION",json.dumps(validation,ensure_ascii=False),flush=True)
           delta = (validation["brier_original"] - validation["brier_candidate"]
