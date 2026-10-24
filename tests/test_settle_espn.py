@@ -12,12 +12,12 @@ def summary():
     return {"boxscore":{"players":[
         {"team":{"displayName":"Boston Celtics"},"statistics":[
             {"labels":["MIN","PTS","REB","AST"],"athletes":[
-                {"athlete":{"displayName":"Jayson Tatum"},"stats":["34","27","8","6"]},
+                {"athlete":{"id":"111","displayName":"Jayson Tatum"},"stats":["34","27","8","6"]},
                 {"athlete":{"displayName":"DNP"},"didNotPlay":True,"stats":[]}
             ]}]},
         {"team":{"displayName":"New York Knicks"},"statistics":[
             {"labels":["MIN","PTS","REB","AST"],"athletes":[
-                {"athlete":{"displayName":"Jalen Brunson"},"stats":["34","25","3","9"]}
+                {"athlete":{"id":"222","displayName":"Jalen Brunson"},"stats":["34","25","3","9"]}
             ]}]}
     ]}}
 
@@ -40,6 +40,12 @@ class SettlementTests(unittest.TestCase):
         self.assertEqual(n,3)
         self.assertEqual(len(verified),2)
         self.assertEqual([x["actual"] for x in verified],[27,9])
+
+    def test_id_matching_and_legacy_fallback(self):
+        stats = settle_espn.player_stats(summary())
+        team = settle_espn.engine.normalized_name("Boston Celtics")
+        self.assertEqual(stats[(team, "id:111")]["PTS"], 27)
+        self.assertEqual(stats[(team, settle_espn.engine.espn_player_key("Tatum, Jayson"))]["REB"], 8)
 
     def test_missing_archived_fixture_rejected(self):
         snapshot={"scan_finished_at":"2026-10-24T12:00:00+00:00",
