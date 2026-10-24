@@ -61,6 +61,12 @@ def player_stats(summary):
                 if key in found:
                     raise ValueError("Duplicate athlete in ESPN boxscore")
                 found[key] = nums
+                athlete_id = str((athlete.get("athlete") or {}).get("id") or "").strip()
+                if athlete_id.isdigit():
+                    id_key = (team_key, "id:" + athlete_id)
+                    if id_key in found:
+                        raise ValueError("Duplicate ESPN athlete ID in boxscore")
+                    found[id_key] = nums
     return found
 
 def settle_archive(snapshot, scan_date):
@@ -124,7 +130,13 @@ def settle_archive(snapshot, scan_date):
         if fixture_teams != opponents:
             continue
         player = engine.espn_player_key(row.get("Giocatore",""))
-        actuals = stats.get((team,player))
+        athlete_id = str(row.get("ESPN ID") or "").strip()
+        if athlete_id:
+            # Fail closed: never substitute a name match for a mismatched ID.
+            actuals = stats.get((team, "id:" + athlete_id)) if athlete_id.isdigit() else None
+        else:
+            # Backward compatibility for historical snapshots without IDs.
+            actuals = stats.get((team,player))
         if actuals is None or row.get("Mercato") not in actuals:
             continue
         verified.append({**row,"actual":actuals[row["Mercato"]],"played":True})
