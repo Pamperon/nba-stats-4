@@ -303,7 +303,37 @@ def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
         raise HTTPException(503, 'Statistiche ESPN temporaneamente non disponibili')
 
 @app.post('/api/storage/slot/claim', dependencies=[Depends(auth)])
-def slot_claim(slot: str = Query(pattern=r'^\\d{4}-\\d{2}-\\d{2}T(?:00|10|14|18|22):00
+def slot_claim(slot: str = Query()):
+    try:
+        datetime.strptime(slot, '%Y-%m-%dT%H:%M')
+        if len(slot) != 16 or slot[-5:] not in ('00:00', '10:00', '14:00', '18:00', '22:00'):
+            raise ValueError('Invalid slot')
+    except ValueError:
+        raise HTTPException(400, 'Fascia oraria non valida')
+    try:
+        return {'claimed': storage.claim_slot(slot), 'odds_api_calls': 0}
+    except Exception:
+        logger.exception('Scan slot claim failed')
+        raise HTTPException(503, 'Impossibile prenotare la fascia di scansione')
+
+
+@app.post('/api/storage/slot/finish', dependencies=[Depends(auth)])
+def slot_finish(slot: str = Query(), success: bool = Query()):
+    try:
+        datetime.strptime(slot, '%Y-%m-%dT%H:%M')
+        if len(slot) != 16 or slot[-5:] not in ('00:00', '10:00', '14:00', '18:00', '22:00'):
+            raise ValueError('Invalid slot')
+    except ValueError:
+        raise HTTPException(400, 'Fascia oraria non valida')
+    try:
+        storage.finish_slot(slot, success)
+        return {'ok': True, 'odds_api_calls': 0}
+    except Exception:
+        logger.exception('Scan slot completion failed')
+        raise HTTPException(503, 'Impossibile registrare il completamento')
+
+
+@app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
     try:
