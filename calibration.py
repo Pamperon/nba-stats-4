@@ -117,3 +117,24 @@ def summary():
     return [{"market":m,"probability_bin":b,"n":n,"wins":w,
              "predicted":sp/n,"observed":w/n,"brier":sb/n}
             for m,b,n,w,sp,sb in rows if n]
+
+def calibrated_probability(market, raw_probability, aggregates, min_samples=200,
+                           prior_strength=400, max_adjustment=0.08):
+    """Conservative shrinkage calibration. Returns unchanged p on sparse history.
+
+    Offline candidate only: do not apply in live prediction engine until validated
+    on later, unseen NBA dates. Input probabilities use [0, 1].
+    """
+    p = float(raw_probability)
+    if not math.isfinite(p) or not 0 <= p <= 1:
+        raise ValueError("Probability must be between 0 and 1")
+    bucket = min(90, int(p * 10) * 10)
+    matching = [r for r in aggregates if r.get("market") == market
+                and r.get("probability_bin") == bucket]
+    if len(matching) != 1 or matching[0]["n"] < min_samples:
+        return p
+    r = matching[0]
+    # Shrink observed hit rate toward the average forecast in the same bucket.
+    adjustment = (r["observed"] - r["predicted"]) * r["n"] / (r["n"] + prior_strength)
+    return max(0.001, min(0.999, p + max(-max_adjustment,
+                                         min(max_adjustment, adjustment))))
