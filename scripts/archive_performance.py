@@ -83,7 +83,7 @@ def summarize_unique_opportunities(rows, candidate_rows=None):
         if not identity:
             identity = settle_espn.engine.espn_player_key(row.get("Giocatore", ""))
         key = (str(row.get("Partita", "")), str(row.get("Squadra", "")),
-               identity, str(row.get("Mercato", "")))
+               identity, str(row.get("Mercato", "")), str(row.get("Scelta", "")).lower())
         value = probability * price - 1
         tie = (value, probability, -line)
         if key not in best or tie > best[key][0]:
