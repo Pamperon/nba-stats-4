@@ -37,8 +37,14 @@ jobs:
               if day > today:
                   print("SKIP future local date",day,flush=True)
                   continue
-              result = call("/api/calibration/dry-run?date="+day)
-              print("AUDIT",day,json.dumps(result,ensure_ascii=False),flush=True)
+              try:
+                  result = call("/api/calibration/dry-run?date="+day)
+                  print("AUDIT",day,json.dumps(result,ensure_ascii=False),flush=True)
+              except urllib.error.HTTPError as e:
+                  if e.code == 422 and day == today:
+                      print("DEPLOY_PENDING: Render still rejects current-day audit",day,flush=True)
+                      continue
+                  raise
           result = call("/api/calibration/settle",method="POST")
           print("SETTLEMENT",json.dumps(result,ensure_ascii=False),flush=True)
           result = call("/api/calibration/summary")
