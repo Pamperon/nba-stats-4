@@ -22,8 +22,6 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Test pregame line selection without network
         run: python -m unittest tests.test_archive_performance tests.test_recommendation_backtest -v
-      - name: Inspect October 25 saved pregame proposals (read only)
-        run: python -m scripts.recommendation_backtest --date 2026-10-25
       - name: Fetch public saved archive (no bookmaker requests)
         run: |
           python - <<'PY'
