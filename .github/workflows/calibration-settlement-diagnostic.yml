@@ -34,8 +34,8 @@ jobs:
           from zoneinfo import ZoneInfo
           today = datetime.now(ZoneInfo("Europe/Rome")).date().isoformat()
           for day in ("2026-10-23","2026-10-24"):
-              if day >= today:
-                  print("SKIP unfinished local date",day,flush=True)
+              if day > today:
+                  print("SKIP future local date",day,flush=True)
                   continue
               result = call("/api/calibration/dry-run?date="+day)
               print("AUDIT",day,json.dumps(result,ensure_ascii=False),flush=True)
