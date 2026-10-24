@@ -58,6 +58,18 @@ jobs:
                       print("DEPLOY_PENDING: Render still rejects current-day audit",day,flush=True)
                       continue
                   raise
+          validation = call("/api/calibration/validation")
+          print("VALIDATION",json.dumps(validation,ensure_ascii=False),flush=True)
+          delta = (validation["brier_original"] - validation["brier_candidate"]
+                   if validation.get("brier_original") is not None and validation.get("brier_candidate") is not None
+                   else None)
+          eligible = (validation.get("days",0) >= 2
+                      and validation.get("n",0) >= 100
+                      and validation.get("adjusted_predictions",0) >= 100
+                      and delta is not None and delta >= 0.001)
+          print("CALIBRATION_ELIGIBLE",json.dumps({"eligible":eligible,"days":validation.get("days"),
+              "adjusted_predictions":validation.get("adjusted_predictions"),"brier_improvement":delta,
+              "note":"Eligibility is not proof of deployment or of a newly scanned snapshot"},flush=True)
           result = call("/api/calibration/settle",method="POST")
           print("SETTLEMENT",json.dumps(result,ensure_ascii=False),flush=True)
           try:
