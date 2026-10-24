@@ -158,3 +158,9 @@
 #app>nav button:focus-visible{outline:2px solid #f49b58;outline-offset:2px}
 @media(max-width:760px){.app-header{padding:8px 13px;min-height:56px}.app-header .brand-copy b{font-size:18px}#app>nav button{font-size:11px;padding:8px 2px}}
 @media(max-width:370px){.app-header .brand-copy b{font-size:16px}.app-header .brand-copy small{font-size:7px}#app>nav button{font-size:10px}}
+
+/* Date-only top area: remove redundant dashboard heading and source strip. */
+.app-hero{display:block;margin:0 0 13px;padding:0}
+.app-hero .actions{display:block;width:100%;max-width:340px}
+.app-hero .date-control{width:100%;margin:0}
+@media(max-width:760px){.app-hero{display:block;margin-bottom:12px}.app-hero .actions{max-width:none}.app-hero .date-control{padding:11px 14px}}
