@@ -36,6 +36,17 @@ class MultiDayBacktestTests(unittest.TestCase):
         self.assertIsNone(summary["doppia"]["roi"])
         self.assertEqual(summary["doppia"]["missing_results"], 1)
 
+    def test_brier_score_uses_only_verified_legs(self):
+        days = [{"proposals": {"singola": {
+            "complete": True, "settled": True, "missing_results": 0,
+            "unit_profit": -1, "legs": [
+                {"estimated_probability": 80, "win": False},
+                {"estimated_probability": 90, "win": None}]}}}]
+        summary = aggregate(days)["singola"]
+        self.assertEqual(summary["verified_legs"], 1)
+        self.assertAlmostEqual(summary["brier_score"], 0.64)
+        self.assertAlmostEqual(summary["mean_absolute_error"], 0.8)
+
     def test_today_is_checked_if_archive_available(self):
         from datetime import datetime
         from zoneinfo import ZoneInfo
