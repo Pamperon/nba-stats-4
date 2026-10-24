@@ -210,7 +210,36 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
     return visible_snapshot(snapshot)
 
 @app.get('/api/saved/archive')
-def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}
+def saved_archive(date: str = Query(..., pattern=r'^\\d{4}-\\d{2}-\\d{2}$')):
+    """Historical scan results without the live upcoming-game filter."""
+    try:
+        requested = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+    if requested >= datetime.now(ZoneInfo('Europe/Rome')).date():
+        raise HTTPException(400, 'Archivio disponibile solo per date passate')
+    if not storage.configured():
+        raise HTTPException(503, 'Database non configurato')
+    try:
+        snapshot = storage.latest(date)
+    except Exception:
+        logger.exception('Cannot read historical snapshot')
+        raise HTTPException(503, 'Archivio cloud temporaneamente non disponibile')
+    if not snapshot:
+        raise HTTPException(404, 'Nessuna analisi storica salvata')
+    return {
+        'date': date,
+        'historical': True,
+        'job_id': snapshot.get('job_id'),
+        'saved_at': snapshot.get('saved_at'),
+        'state': snapshot.get('state'),
+        'fixture_count': snapshot.get('fixture_count', 0),
+        'player_count': snapshot.get('player_count', 0),
+        'results': snapshot.get('results', []),
+        'fixture_reports': snapshot.get('fixture_reports', []),
+    }
+
+@app.get('/api/saved/time')
 def saved_time(date: str):
     try:
         datetime.strptime(date, '%Y-%m-%d')
