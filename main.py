@@ -32,6 +32,8 @@ def init_storage():
     if storage.configured():
         try:
             storage.initialize()
+            import calibration
+            calibration.initialize()
             logger.info('Persistent PostgreSQL scan storage ready')
         except Exception:
             logger.exception('Persistent storage unavailable; service remains accessible')
@@ -414,6 +416,38 @@ def slot_finish(slot: str = Query(), success: bool = Query()):
     except Exception:
         logger.exception('Scan slot completion failed')
         raise HTTPException(503, 'Impossibile registrare il completamento')
+
+
+@app.post('/api/calibration/settle', dependencies=[Depends(auth)])
+def calibration_settle():
+    """Process up to two past archived dates; never use OddsPapi or delete data."""
+    import calibration
+    import settle_espn
+    today = datetime.now(ZoneInfo('Europe/Rome')).date().isoformat()
+    with storage.connection() as conn:
+        settled = {r[0].isoformat() for r in conn.execute(
+            "SELECT scan_date FROM nba_calibration_settled").fetchall()}
+    candidates = [x['date'] for x in reversed(storage.available_dates())
+                  if x['date'] < today and x['date'] not in settled]
+    processed = []
+    for day in candidates[:2]:
+        try:
+            snapshot = storage.latest(day)
+            if not snapshot or not snapshot.get('results'):
+                processed.append({'date':day,'status':'empty'})
+                continue
+            verified, expected = settle_espn.settle_archive(snapshot, day)
+            result = calibration.settle(day, snapshot['job_id'], verified, expected)
+            processed.append({'date':day,'status':'settled',**result})
+        except Exception as exc:
+            logger.exception('NBA calibration settlement failed for %s', day)
+            processed.append({'date':day,'status':'skipped','reason':str(exc)[:160]})
+    return {'processed':processed,'pending':max(0,len(candidates)-2),'odds_api_calls':0}
+
+@app.get('/api/calibration/summary', dependencies=[Depends(auth)])
+def calibration_summary():
+    import calibration
+    return {'calibration':calibration.summary(),'odds_api_calls':0}
 
 
 @app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
