@@ -9,6 +9,8 @@ on:
       - 'tests/test_archive_performance.py'
       - 'scripts/recommendation_backtest.py'
       - 'tests/test_recommendation_backtest.py'
+      - 'scripts/multiday_backtest.py'
+      - 'tests/test_multiday_backtest.py'
   workflow_dispatch:
 jobs:
   verify-2026-10-24:
@@ -21,7 +23,7 @@ jobs:
           python-version: '3.11'
       - run: pip install -r requirements.txt
       - name: Test pregame line selection without network
-        run: python -m unittest tests.test_archive_performance tests.test_recommendation_backtest -v
+        run: python -m unittest tests.test_archive_performance tests.test_recommendation_backtest tests.test_multiday_backtest -v
       - name: Fetch public saved archive (no bookmaker requests)
         run: |
           python - <<'PY'
