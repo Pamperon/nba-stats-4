@@ -419,127 +419,17 @@ def slot_finish(slot: str = Query(), success: bool = Query()):
 
 
 @app.get('/api/calibration/dry-run', dependencies=[Depends(auth)])
-def calibration_dry_run(date: str = Query(..., pattern=r'^\\d{4}-\\d{2}-\\d{2}
-def calibration_settle():
-    """Process up to two past archived dates; never use OddsPapi or delete data."""
-    import calibration
-    import settle_espn
-    today = datetime.now(ZoneInfo('Europe/Rome')).date().isoformat()
-    with storage.connection() as conn:
-        settled = {r[0].isoformat() for r in conn.execute(
-            "SELECT scan_date FROM nba_calibration_settled").fetchall()}
-    candidates = [x['date'] for x in reversed(storage.available_dates())
-                  if x['date'] < today and x['date'] not in settled]
-    processed = []
-    for day in candidates[:2]:
-        try:
-            snapshot = storage.earliest_completed(day)
-            if not snapshot or not snapshot.get('results'):
-                processed.append({'date':day,'status':'empty'})
-                continue
-            verified, expected = settle_espn.settle_archive(snapshot, day)
-            result = calibration.settle(day, snapshot['job_id'], verified, expected)
-            processed.append({'date':day,'status':'settled',**result})
-        except Exception as exc:
-            logger.exception('NBA calibration settlement failed for %s', day)
-            processed.append({'date':day,'status':'skipped','reason':str(exc)[:160]})
-    return {'processed':processed,'pending':max(0,len(candidates)-2),'odds_api_calls':0}
-
-@app.get('/api/calibration/summary', dependencies=[Depends(auth)])
-def calibration_summary():
-    import calibration
-    return {'calibration':calibration.summary(),'odds_api_calls':0}
-
-
-@app.get('/api/calibration/validation', dependencies=[Depends(auth)])
-def calibration_validation_report():
-    """Leakage-free walk-forward report; never activates a model automatically."""
-    import calibration_validation
-    with storage.connection() as conn:
-        rows = conn.execute("""
-            SELECT scan_date,market,probability_bin,n,wins,sum_p,sum_brier
-            FROM nba_calibration_daily ORDER BY scan_date,market,probability_bin
-        """).fetchall()
-    data = [dict(date=day.isoformat(),market=market,probability_bin=bucket,
-                 n=n,wins=wins,sum_p=sp,sum_brier=sb)
-            for day,market,bucket,n,wins,sp,sb in rows]
-    return {**calibration_validation.walk_forward(data), 'odds_api_calls':0}
-
-
-@app.get('/api/calibration/retention-preview', dependencies=[Depends(auth)])
-def calibration_retention_preview():
-    """Report potentially removable snapshots; does not delete any records."""
-    return storage.calibration_retention_preview(retention_days=7)
-
-
-@app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
-def storage_cleanup():
-    """Protected, idempotent cleanup; does not contact OddsPapi."""
-    try:
-        return storage.cleanup_expired(retention_days=7)
-    except Exception:
-        logger.exception('NBA archive retention cleanup failed')
-        raise HTTPException(503, 'Pulizia archivio non riuscita')
-
-@app.post('/api/scan', dependencies=[Depends(auth)])
-def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
-    try: datetime.strptime(date,'%Y-%m-%d')
-    except ValueError: raise HTTPException(400,'Data non valida')
-    with lock:
-        for job_id, job in jobs.items():
-            if job['date']==date and job['state'] in ('queued','running'):
-                return {'job_id':job_id,'reused':True}
-        if any(job['state'] in ('queued','running') for job in jobs.values()):
-            raise HTTPException(409, 'Una scansione è già in corso')
-        if len(jobs)>15:
-            for old_id in list(jobs):
-                if jobs[old_id]['state'] not in ('queued','running'):
-                    del jobs[old_id]
-                if len(jobs)<=10: break
-        job_id=uuid.uuid4().hex
-        jobs[job_id]={'date':date,'state':'queued','progress':0,'stage':'In coda'}
-    threading.Thread(target=do_scan,args=(job_id,date),daemon=True).start()
-    return {'job_id':job_id,'reused':False}
-
-@app.get('/api/scan/{job_id}', dependencies=[Depends(auth)])
-def scan_result(job_id: str):
-    with lock:
-        job = dict(jobs[job_id]) if job_id in jobs else None
-    if job is not None:
-        return job
-    if storage.configured():
-        try:
-            saved = storage.latest()
-            if saved and saved.get('job_id') == job_id:
-                return saved
-        except Exception:
-            logger.exception('Cannot restore scan from database')
-    raise HTTPException(404,'Scansione non trovata')
-
-@app.get('/api/scan/{job_id}/csv', dependencies=[Depends(auth)])
-def scan_csv(job_id: str):
-    with lock: job=jobs.get(job_id)
-    if not job or job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
-    data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
-    return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="nba_stats_4_completo.csv"'})
-
-app.mount('/static',StaticFiles(directory='web'),name='static')
-@app.get('/')
-def index(): return FileResponse('web/index.html')
-)):
-    """Read-only ESPN settlement audit for one archived date.
-
-    Does not change calibration tables, delete archives or use OddsPapi.
-    """
+def calibration_dry_run(date: str):
+    """Read-only ESPN audit of a historical snapshot. Never writes to database."""
     from datetime import date as date_type
-    import settle_espn
     import calibration
+    import settle_espn
     try:
         requested = date_type.fromisoformat(date)
     except ValueError:
         raise HTTPException(422, 'Invalid date')
     if requested >= datetime.now(ZoneInfo('Europe/Rome')).date():
-        raise HTTPException(422, 'Only past NBA dates can be audited')
+        raise HTTPException(422, 'Only past dates can be audited')
     snapshot = storage.earliest_completed(date)
     if not snapshot:
         raise HTTPException(404, 'No completed archived snapshot')
@@ -548,14 +438,13 @@ def index(): return FileResponse('web/index.html')
         aggregates = calibration.aggregate(verified)
         matched = sum(v['n'] for v in aggregates.values())
         return {'date':date,'job_id':snapshot['job_id'],
-                'saved_at':snapshot.get('scan_finished_at') or snapshot.get('saved_at'),
                 'eligible_predictions':eligible,'verified_predictions':matched,
                 'coverage':matched/eligible if eligible else 0,
                 'calibration_bins':len(aggregates),
                 'can_settle':bool(eligible and matched/eligible >= 0.9),
                 'odds_api_calls':0,'database_writes':0}
     except Exception as exc:
-        logger.exception('ESPN calibration dry-run failed for %s', date)
+        logger.exception('ESPN calibration audit failed for %s', date)
         return {'date':date,'status':'failed','reason':str(exc)[:180],
                 'odds_api_calls':0,'database_writes':0}
 
