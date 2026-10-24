@@ -849,7 +849,12 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                      and espn_player_key(name) not in index]
     if missing_names:
         try:
-            index.update(historical_player_index(int(season[:4]) + 1, missing_names))
+            recovered = historical_player_index(int(season[:4]) + 1, missing_names)
+            # Current-roster identities take precedence over historical matches.
+            for key, athlete in recovered.items():
+                index.setdefault(key, athlete)
+            logger.info("Historical ESPN identity lookup: %d missing names, %d unique matches",
+                        len(missing_names), len(recovered))
         except requests.RequestException:
             logger.warning("Historical ESPN roster lookup unavailable", exc_info=True)
 
