@@ -216,7 +216,7 @@ def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
         requested = datetime.strptime(date, '%Y-%m-%d').date()
     except ValueError:
         raise HTTPException(400, 'Data non valida')
-    if requested >= datetime.now(ZoneInfo('Europe/Rome')).date():
+    if requested > datetime.now(ZoneInfo('Europe/Rome')).date():
         raise HTTPException(400, 'Archivio disponibile solo per date passate')
     if not storage.configured():
         raise HTTPException(503, 'Database non configurato')
