@@ -142,3 +142,19 @@
 #finder .finder-top-scroll::-webkit-scrollbar-track{background:#26364e;border-radius:8px}
 #finder .finder-top-scroll::-webkit-scrollbar-thumb{background:#f49b58;border:2px solid #26364e;border-radius:8px}
 #finder .finder-top-scroll:focus-visible{outline:2px solid #f49b58;outline-offset:2px}
+
+/* Compact masthead and icon-based tabs. Date/hero intentionally unchanged. */
+.app-header{position:sticky;top:0;z-index:50;padding:9px max(14px,3vw);min-height:60px;box-shadow:0 5px 20px #0003}
+.app-header .brand{gap:9px}
+.app-header .brand-icon{width:37px;height:37px;flex-basis:37px;border-radius:10px;font-size:22px}
+.app-header .brand-copy{gap:2px}
+.app-header .brand-copy b{font-size:19px;line-height:1.1}
+.app-header .brand-copy small{font-size:8px;letter-spacing:1px}
+.app-header .brand-version{color:#f49b58;font-size:.78em;font-weight:750}
+#app>nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:5px;background:#111f32;border:1px solid #293e59;border-radius:14px}
+#app>nav button{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:9px 3px;border:1px solid transparent;border-radius:10px;background:transparent;color:#a5b9d3;font-size:12px;font-weight:600;line-height:1.2}
+#app>nav button .tab-icon{font-size:20px;line-height:1.1;font-weight:700}
+#app>nav button.active{background:#274c78;border-color:#3b6593;color:#fff}
+#app>nav button:focus-visible{outline:2px solid #f49b58;outline-offset:2px}
+@media(max-width:760px){.app-header{padding:8px 13px;min-height:56px}.app-header .brand-copy b{font-size:18px}#app>nav button{font-size:11px;padding:8px 2px}}
+@media(max-width:370px){.app-header .brand-copy b{font-size:16px}.app-header .brand-copy small{font-size:7px}#app>nav button{font-size:10px}}
