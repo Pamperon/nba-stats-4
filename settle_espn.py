@@ -16,8 +16,20 @@ def fetch(url, **params):
 
 def final_events(scan_date):
     # NBA games can cross midnight UTC; ESPN dates use league schedule dates.
-    data = fetch(BASE + "/scoreboard", dates=scan_date.replace("-", ""), limit=100)
-    events = data.get("events", [])
+    from datetime import timedelta, date
+    rome_day = date.fromisoformat(scan_date)
+    events_by_id = {}
+    for offset in (-1, 0, 1):
+        espn_day = (rome_day + timedelta(days=offset)).strftime("%Y%m%d")
+        data = fetch(BASE + "/scoreboard", dates=espn_day, limit=100)
+        for event in data.get("events", []):
+            start = event.get("date")
+            if not start:
+                continue
+            utc_start = datetime.fromisoformat(start.replace("Z","+00:00"))
+            if utc_start.astimezone(ZoneInfo("Europe/Rome")).date() == rome_day:
+                events_by_id[event["id"]] = event
+    events = list(events_by_id.values())
     if not events:
         raise ValueError("ESPN has no events for requested date")
     if any(not (e.get("status",{}).get("type",{}).get("completed") is True) for e in events):
