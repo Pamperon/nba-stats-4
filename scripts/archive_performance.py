@@ -60,6 +60,42 @@ def summarize(rows):
         }
     return result
 
+
+def summarize_unique_opportunities(rows):
+    """One highest-value line per athlete, market and fixture.
+
+    Multiple thresholds remain in the full report; this view prevents
+    correlated alternate lines from being treated as independent samples.
+    """
+    best = {}
+    for row in rows:
+        if not eligible(row):
+            continue
+        try:
+            price = float(row["Quota"])
+            probability = float(row["Prob. stimata %"]) / 100
+            line = float(row["Linea"])
+            actual = float(row["actual"])
+            if not all(map(math.isfinite, (price, probability, line, actual))) or price <= 1:
+                continue
+        except (KeyError, ValueError, TypeError):
+            continue
+        if actual == line:
+            continue
+        identity = str(row.get("ESPN ID") or "").strip()
+        if not identity:
+            identity = settle_espn.engine.espn_player_key(row.get("Giocatore", ""))
+        key = (str(row.get("Partita", "")), str(row.get("Squadra", "")),
+               identity, str(row.get("Mercato", "")))
+        value = probability * price - 1
+        tie = (value, probability, -line)
+        if key not in best or tie > best[key][0]:
+            best[key] = (tie, row)
+    selected = [item[1] for item in best.values()]
+    return {"unique_player_market_games": len(selected),
+            "selection_rule": "highest pregame estimated expected value per player-market-game",
+            "groups": summarize(selected)}
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", default="2026-10-24")
@@ -72,7 +108,9 @@ def main():
         raise ValueError("Archive date mismatch")
     verified, count = settle_espn.settle_archive(archive, args.date)
     report = {"date": args.date, "eligible": count, "verified": len(verified),
-              "groups": summarize(verified), "odds_api_calls": 0, "database_writes": 0}
+              "groups": summarize(verified),
+              "one_line_per_player_market": summarize_unique_opportunities(verified),
+              "odds_api_calls": 0, "database_writes": 0}
     print(json.dumps(report, indent=2))
 
 if __name__ == "__main__":
