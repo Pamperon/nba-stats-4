@@ -12,7 +12,10 @@ from zoneinfo import ZoneInfo
 BASE = "https://nba-stats-4.onrender.com"
 TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
-SLOTS = {0, 10, 14, 18, 21}
+# Accepted local execution hours, including GitHub Actions scheduling delays.
+# The 22:00 refresh is intentional; the overnight midnight run can be delayed
+# until 02:xx by GitHub. No extra cron triggers or OddsPapi calls are added.
+SLOTS = {0, 1, 2, 10, 14, 18, 21, 22}
 
 def call(path, method="GET", timeout=45):
     req = urllib.request.Request(
@@ -36,8 +39,9 @@ def run():
         print("ESPN games for", today, ":", len(schedule.get("games", [])), flush=True)
         return
     if os.environ.get("NBA_STATS_MANUAL_SCAN") != "1" and now.hour not in SLOTS:
-        print("Not a Rome-time scan slot:", now.isoformat(), flush=True)
+        print("Skipped: outside accepted Rome-time scan window:", now.isoformat(), flush=True)
         return
+    print("Starting scheduled NBA scan at Rome time:", now.isoformat(), flush=True)
     # Cleanup runs even when there are no upcoming games, using only Supabase.
     # A temporary DB issue must not prevent the scheduled NBA scan.
     try:
