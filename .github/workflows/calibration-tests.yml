@@ -4,6 +4,8 @@ on:
     paths:
       - 'calibration.py'
       - 'settle_espn.py'
+      - 'calibration_validation.py'
+      - 'tests/test_calibration_validation.py'
       - 'tests/test_calibration.py'
       - 'tests/test_settle_espn.py'
       - '.github/workflows/calibration-tests.yml'
@@ -19,3 +21,4 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m unittest discover -s tests -p 'test_calibration.py' -v
       - run: python -m unittest discover -s tests -p 'test_settle_espn.py' -v
+      - run: python -m unittest discover -s tests -p 'test_calibration_validation.py' -v
