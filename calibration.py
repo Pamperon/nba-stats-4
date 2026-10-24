@@ -118,8 +118,8 @@ def summary():
              "predicted":sp/n,"observed":w/n,"brier":sb/n}
             for m,b,n,w,sp,sb in rows if n]
 
-def calibrated_probability(market, raw_probability, aggregates, min_samples=200,
-                           prior_strength=400, max_adjustment=0.08):
+def calibrated_probability(market, raw_probability, aggregates, min_samples=20,
+                           prior_strength=200, max_adjustment=0.03):
     """Conservative shrinkage calibration. Returns unchanged p on sparse history.
 
     Offline candidate only: do not apply in live prediction engine until validated
@@ -139,7 +139,7 @@ def calibrated_probability(market, raw_probability, aggregates, min_samples=200,
     return max(0.001, min(0.999, p + max(-max_adjustment,
                                          min(max_adjustment, adjustment))))
 
-def approved_adjustments(daily_rows, min_days=7, min_verified=200,
+def approved_adjustments(daily_rows, min_days=3, min_verified=100,
                          min_improvement=0.001):
     """Return historical calibration bins only after walk-forward improvement.
 

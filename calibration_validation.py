@@ -6,7 +6,7 @@ Uses exact Brier delta identity; no per-prediction retention needed.
 from collections import defaultdict
 from calibration import calibrated_probability
 
-def walk_forward(daily_rows, min_samples=200, prior_strength=400, max_adjustment=0.08):
+def walk_forward(daily_rows, min_samples=20, prior_strength=200, max_adjustment=0.03):
     """Daily rows: date, market, probability_bin, n, wins, sum_p, sum_brier.
 
     This evaluates a constant per-bin additive correction. Each date must have
