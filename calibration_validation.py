@@ -31,12 +31,9 @@ def walk_forward(daily_rows, min_samples=20, prior_strength=200, max_adjustment=
             key = (market, bucket)
             prev = prior[key]
             mean_p = float(r["sum_p"]) / n
-            if prev["n"]:
-                aggregates = [{"market":market,"probability_bin":bucket,
-                               "n":prev["n"],"observed":prev["wins"]/prev["n"],
-                               "predicted":prev["sum_p"]/prev["n"]}]
-            else:
-                aggregates = []
+            aggregates = [{"market":m,"probability_bin":b,"n":v["n"],
+                           "observed":v["wins"]/v["n"],"predicted":v["sum_p"]/v["n"]}
+                          for (m,b),v in prior.items() if m == market and v["n"]]
             # Use center of probability bucket solely to look up the adjustment.
             # The additive correction is identical for every p in that bucket.
             center = (bucket+5)/100
