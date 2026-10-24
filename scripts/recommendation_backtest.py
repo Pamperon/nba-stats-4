@@ -28,6 +28,8 @@ def select_pregame(rows):
         for row in rows:
             if not eligible(row):
                 continue
+            if str(row.get("Stato analisi", "")).strip().lower() == "non valutabile":
+                continue
             try:
                 price = float(row["Quota"])
                 probability = float(row["Prob. stimata %"]) / 100
@@ -38,7 +40,10 @@ def select_pregame(rows):
                     continue
             except (KeyError, ValueError, TypeError):
                 continue
-            candidates.append((probability * price - 1, probability, row))
+            estimated_ev = probability * price - 1
+            if estimated_ev <= 0:
+                continue
+            candidates.append((estimated_ev, probability, row))
         candidates.sort(key=lambda item: (item[0], item[1],
                                           str(item[2].get("Giocatore", "")),
                                           str(item[2].get("Linea", ""))), reverse=True)
@@ -89,12 +94,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", required=True)
     args = parser.parse_args()
+    from datetime import date
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+    endpoint = ("archive" if date.fromisoformat(args.date) < datetime.now(ZoneInfo("Europe/Rome")).date()
+                else "latest")
     response = requests.get(
-        "https://nba-stats-4.onrender.com/api/saved/archive",
+        f"https://nba-stats-4.onrender.com/api/saved/{endpoint}",
         params={"date": args.date}, timeout=100)
     response.raise_for_status()
     archive = response.json()
-    if archive.get("date") != args.date:
+    if archive.get("date") not in (None, args.date):
         raise ValueError("Archive date mismatch")
     rows = archive.get("results") or []
     if not rows:
