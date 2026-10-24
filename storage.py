@@ -162,6 +162,53 @@ def latest(date=None):
     job_id, payload, created_at = row
     return {"job_id": job_id, "saved_at": created_at.isoformat(), **payload}
 
+def earliest_completed(date):
+    """Oldest nonempty completed snapshot for a date, for pregame calibration.
+
+    Prefer a snapshot before all games rather than latest (possibly post-tipoff).
+    Never delete or mutate the underlying archived scan.
+    """
+    if not configured():
+        return None
+    with connection() as conn:
+        rows = conn.execute("""
+            SELECT job_id,payload,created_at
+            FROM nba_scan_snapshots
+            WHERE scan_date=%s AND state='done'
+            ORDER BY created_at ASC
+        """, (date,)).fetchall()
+    for job_id,payload,created_at in rows:
+        if payload.get("results"):
+            return {"job_id":job_id,"saved_at":created_at.isoformat(),**payload}
+    return None
+
+
+def calibration_retention_preview(retention_days=7):
+    """Read-only count of snapshots eligible for future pruning.
+
+    A date is eligible only if settled and old enough. No deletion is performed.
+    Unsettled archives are never considered safe to remove.
+    """
+    if not configured():
+        return {"eligible_dates":0,"eligible_snapshots":0,
+                "unsettled_snapshots":0,"deletion_enabled":False}
+    with connection() as conn:
+        row = conn.execute("""
+            SELECT COUNT(DISTINCT s.scan_date), COUNT(*)
+            FROM nba_scan_snapshots s
+            JOIN nba_calibration_settled c ON c.scan_date=s.scan_date
+            WHERE s.scan_date < CURRENT_DATE - (%s * INTERVAL '1 day')
+        """,(retention_days,)).fetchone()
+        unsettled = conn.execute("""
+            SELECT COUNT(*) FROM nba_scan_snapshots s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM nba_calibration_settled c
+                WHERE c.scan_date=s.scan_date)
+        """).fetchone()[0]
+    return {"eligible_dates":row[0],"eligible_snapshots":row[1],
+            "unsettled_snapshots":unsettled,"deletion_enabled":False}
+
+
 def self_test():
     """Insert, read back and delete one isolated synthetic record; no external APIs."""
     if not configured():
@@ -208,17 +255,11 @@ def available_dates():
 
 
 def cleanup_expired(retention_days=7):
-    """Delete snapshots from dates older than seven full calendar days in Rome."""
-    if not configured():
-        raise RuntimeError("DATABASE_URL missing")
-    if retention_days != 7:
-        raise ValueError("Unsupported retention period")
-    today = datetime.now(ZoneInfo("Europe/Rome")).date()
-    cutoff = today - timedelta(days=retention_days)
-    with connection() as conn:
-        deleted = conn.execute(
-            "DELETE FROM nba_scan_snapshots WHERE scan_date < %s", (cutoff,)
-        ).rowcount
-    log.info("NBA scan retention: removed %s snapshots older than %s", deleted, cutoff)
-    return {"deleted_snapshots": deleted, "retention_days": retention_days,
-            "oldest_kept_date": cutoff.isoformat(), "odds_api_calls": 0}
+    """Legacy compatibility: historical predictions are never deleted automatically.
+
+    The prior implementation deleted all scans older than seven days.
+    This function deliberately performs no deletion; keep for existing callers.
+    """
+    log.info("NBA scan retention disabled: preserving all historical snapshots")
+    return {"deleted_snapshots": 0, "retention_policy": "permanent",
+            "odds_api_calls": 0}

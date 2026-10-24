@@ -542,16 +542,18 @@ def espn_classified_game_log(athlete_id, season, team_id):
         if pd.notna(kind) and int(kind) in (2, 3):
             explicit.setdefault(event_id, set()).add(int(kind))
     games = games.drop_duplicates(subset=["GAME_ID"], keep="first").reset_index(drop=True)
+    conflicting = {event_id for event_id, types in explicit.items() if len(types) > 1}
     known = {event_id: next(iter(types)) for event_id, types in explicit.items() if len(types) == 1}
 
-    # Schedule classification was fetched concurrently with the ESPN game logs.
+    # An ESPN event reported as both regular and playoff must not be resolved
+    # by a schedule fallback. Exclude it until independent evidence is audited.
     for event_id, kind in schedule_types.items():
-        if event_id not in known and kind in (2, 3):
+        if event_id not in known and event_id not in conflicting and kind in (2, 3):
             known[event_id] = kind
 
     # Last resort: ask for an event summary, but only for unresolved games.
     for event_id in games["GAME_ID"].astype(str):
-        if event_id in known:
+        if event_id in known or event_id in conflicting:
             continue
         try:
             kind = espn_event_competition_type(event_id)
@@ -564,11 +566,19 @@ def espn_classified_game_log(athlete_id, season, team_id):
     # Do not raise for unknown classification: expose the uncertainty and exclude
     # those games from mode-specific analyses to avoid false Over/Under results.
     games.attrs["unclassified"] = int(games["SEASON_TYPE"].isna().sum())
+    games.attrs["conflicting"] = len(conflicting)
+    if conflicting:
+        logger.warning("ESPN conflicting season classification athlete=%s season=%s events=%s",
+                       athlete_id, season, sorted(conflicting))
     return games
 
 def selected_game_log(athlete_id, season, mode, team_id=None):
     games = espn_classified_game_log(athlete_id, season, team_id)
     if mode == "Regular season":
+        unknown = int(games["SEASON_TYPE"].isna().sum())
+        if unknown:
+            logger.warning("ESPN excluded %d unclassified games for athlete=%s season=%s team=%s",
+                           unknown, athlete_id, season, team_id)
         return games.loc[games["SEASON_TYPE"] == 2].copy()
     if mode == "Playoff":
         return games.loc[games["SEASON_TYPE"] == 3].copy()
@@ -655,6 +665,43 @@ def finder_player_index(end_year):
                                   "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"})
     return index
 
+def historical_player_index(end_year, missing_names):
+    """Resolve missing athletes against previous-season rosters only.
+
+    Never guess identities: ambiguous normalized names are excluded.
+    Called only if the current-roster index failed, and uses ESPN, not OddsPapi.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    wanted = {espn_player_key(name) for name in missing_names}
+    if not wanted:
+        return {}
+    teams = []
+    for entry in espn_teams():
+        team = entry.get("team", entry)
+        team_id = str(team.get("id") or "")
+        if team_id:
+            teams.append((team_id, team))
+    def fetch_old(item):
+        team_id, team = item
+        try:
+            return team_id, team, espn_roster(team_id, end_year - 1)
+        except requests.RequestException:
+            return team_id, team, {}
+    matches = {}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for team_id, team, payload in pool.map(fetch_old, teams):
+            for athlete in roster_athletes(payload):
+                key = espn_player_key(athlete["displayName"])
+                if key not in wanted:
+                    continue
+                matches.setdefault(key, {})[athlete["id"]] = {
+                    "id":athlete["id"],"team_id":team_id,
+                    "full_name":athlete["displayName"],
+                    "team_name":team.get("displayName") or team.get("name") or team_id}
+    return {key:next(iter(players.values())) for key,players in matches.items()
+            if len(players)==1}
+
+
 def odds_source_audit(odds, catalog, match_name):
     """Read bookmaker source fields already downloaded; NO extra API requests.
 
@@ -738,6 +785,11 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
     """
     results, issues, raw_audit, filter_audit = [], [], [], []
     fixture_reports = []
+    # All historical samples must precede the first fixture being predicted.
+    starts = [fixture_start_rome(fixture) for fixture in fixtures]
+    starts = [start for start in starts if start is not None]
+    history_cutoff = min(starts) if starts else datetime.now(timezone.utc)
+    history_cutoff = pd.Timestamp(history_cutoff).tz_convert("UTC")
     index = finder_player_index(int(season[:4]) + 1)
     props_by_player = {}
     player_logs = {}
@@ -807,6 +859,19 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             issues.append(f"{match_name}: {report['dettaglio']}")
     from concurrent.futures import ThreadPoolExecutor
     player_items = list(props_by_player.items())
+    missing_names = [name for name,_ in player_items
+                     if normalized_name(name) not in index
+                     and espn_player_key(name) not in index]
+    if missing_names:
+        try:
+            recovered = historical_player_index(int(season[:4]) + 1, missing_names)
+            # Current-roster identities take precedence over historical matches.
+            for key, athlete in recovered.items():
+                index.setdefault(key, athlete)
+            logger.info("Historical ESPN identity lookup: %d missing names, %d unique matches",
+                        len(missing_names), len(recovered))
+        except requests.RequestException:
+            logger.warning("Historical ESPN roster lookup unavailable", exc_info=True)
 
     def load_player(item):
         player_name, _props = item
@@ -828,12 +893,27 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                 else:
                     games = pd.concat(parts, ignore_index=True)
                     games["GAME_DATE"] = pd.to_datetime(games["GAME_DATE"], errors="coerce", utc=True)
+                    # Never use a future or in-progress game to estimate a
+                    # pregame probability, even if ESPN publishes partial stats.
+                    # A start timestamp alone does not prove a game is final.
+                    # Keep a conservative 24h buffer to exclude ongoing games.
+                    cutoff = min(pd.Timestamp.now(tz="UTC") - pd.Timedelta(hours=24),
+                                 history_cutoff)
+                    future_count = int((games["GAME_DATE"] >= cutoff).sum())
+                    if future_count:
+                        logger.warning("ESPN excluded %d future/in-progress rows athlete=%s",
+                                       future_count, athlete["id"])
+                        games = games.loc[games["GAME_DATE"] < cutoff].copy()
                     if games["GAME_DATE"].isna().any():
                         error = "Date ESPN incomplete: cronologia non verificabile"
                         games = None
                     else:
                         games = (games.drop_duplicates(subset=["GAME_ID"], keep="first")
                                       .sort_values("GAME_DATE", ascending=False).reset_index(drop=True))
+                        logger.info("ESPN history athlete=%s id=%s seasons=%s unique_games=%d",
+                                    player_name, athlete["id"],
+                                    {str(k): int(v) for k,v in games["ANNO_STAGIONE"].value_counts().items()},
+                                    len(games))
             except Exception as exc:
                 error = f"Dati ESPN non disponibili ({type(exc).__name__})"
                 games = None
@@ -869,7 +949,12 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                     row["Stagione attuale (n)"] = int((games["ANNO_STAGIONE"] == season).sum())
                     row["Stagione precedente (n)"] = int((games["ANNO_STAGIONE"] != season).sum())
                     if len(games) < min_games:
-                        row["Nota"] = "; ".join(filter(None, [reason, f"Solo {len(games)} partite ESPN (minimo {min_games})"]))
+                        by_season = games["ANNO_STAGIONE"].value_counts()
+                        current_count = int(by_season.get(season, 0))
+                        previous_count = len(games) - current_count
+                        detail = (f"Solo {len(games)} partite ESPN (minimo {min_games}; "
+                                  f"stagione attuale {current_count}, precedente {previous_count})")
+                        row["Nota"] = "; ".join(filter(None, [reason, detail]))
                     elif not reason:
                         estimate = finder_estimate_probability(games, stat, line, "Over")
                         if estimate:

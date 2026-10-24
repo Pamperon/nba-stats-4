@@ -32,6 +32,8 @@ def init_storage():
     if storage.configured():
         try:
             storage.initialize()
+            import calibration
+            calibration.initialize()
             logger.info('Persistent PostgreSQL scan storage ready')
         except Exception:
             logger.exception('Persistent storage unavailable; service remains accessible')
@@ -130,6 +132,26 @@ def do_scan(job_id, date):
         def progress(p, label):
             with lock: jobs[job_id].update(progress=round(p*100),stage=label)
         rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress)
+        # Apply calibration only after independent walk-forward validation on
+        # previously settled days. Never block the scan on a calibration error.
+        calibration_status = {'active': False, 'adjusted': 0}
+        if storage.configured():
+            try:
+                import progressive_calibration
+                with storage.connection() as conn:
+                    history = conn.execute("""
+                        SELECT scan_date,market,probability_bin,n,wins,sum_p,sum_brier
+                        FROM nba_calibration_daily
+                        WHERE scan_date < %s
+                        ORDER BY scan_date,market,probability_bin
+                    """, (date,)).fetchall()
+                daily = [dict(date=day.isoformat(),market=market,
+                              probability_bin=bucket,n=n,wins=wins,sum_p=sp,
+                              sum_brier=sb)
+                         for day,market,bucket,n,wins,sp,sb in history]
+                rows, calibration_status = progressive_calibration.apply(rows, daily)
+            except Exception:
+                logger.exception('Progressive calibration unavailable; raw probabilities retained')
         analysis_seconds = round(time.monotonic() - analysis_started, 2)
         serialized_logs = {}
         for name, log in logs.items():
@@ -140,6 +162,7 @@ def do_scan(job_id, date):
         snapshot = {
             'date': date, 'state': final_state, 'progress': 100, 'stage': final_stage,
             'results': rows, 'issues': issues, 'fixture_reports': fixture_reports,
+            'calibration': calibration_status,
             'player_logs': serialized_logs, 'fixture_count': len(fixtures),
             'player_count': player_count, 'season': season,
             'scan_started_at': scan_started_at,
@@ -414,6 +437,90 @@ def slot_finish(slot: str = Query(), success: bool = Query()):
     except Exception:
         logger.exception('Scan slot completion failed')
         raise HTTPException(503, 'Impossibile registrare il completamento')
+
+
+@app.get('/api/calibration/dry-run', dependencies=[Depends(auth)])
+def calibration_dry_run(date: str):
+    """Read-only ESPN audit of a historical snapshot. Never writes to database."""
+    from datetime import date as date_type
+    import calibration
+    import settle_espn
+    try:
+        requested = date_type.fromisoformat(date)
+    except ValueError:
+        raise HTTPException(422, 'Invalid date')
+    if requested >= datetime.now(ZoneInfo('Europe/Rome')).date():
+        raise HTTPException(422, 'Only past dates can be audited')
+    snapshot = storage.earliest_completed(date)
+    if not snapshot:
+        raise HTTPException(404, 'No completed archived snapshot')
+    try:
+        verified, eligible = settle_espn.settle_archive(snapshot, date)
+        aggregates = calibration.aggregate(verified)
+        matched = sum(v['n'] for v in aggregates.values())
+        return {'date':date,'job_id':snapshot['job_id'],
+                'eligible_predictions':eligible,'verified_predictions':matched,
+                'coverage':matched/eligible if eligible else 0,
+                'calibration_bins':len(aggregates),
+                'can_settle':bool(eligible and matched/eligible >= 0.9),
+                'odds_api_calls':0,'database_writes':0}
+    except Exception as exc:
+        logger.exception('ESPN calibration audit failed for %s', date)
+        return {'date':date,'status':'failed','reason':str(exc)[:180],
+                'odds_api_calls':0,'database_writes':0}
+
+
+@app.post('/api/calibration/settle', dependencies=[Depends(auth)])
+def calibration_settle():
+    """Process up to two past archived dates; never use OddsPapi or delete data."""
+    import calibration
+    import settle_espn
+    today = datetime.now(ZoneInfo('Europe/Rome')).date().isoformat()
+    with storage.connection() as conn:
+        settled = {r[0].isoformat() for r in conn.execute(
+            "SELECT scan_date FROM nba_calibration_settled").fetchall()}
+    candidates = [x['date'] for x in reversed(storage.available_dates())
+                  if x['date'] < today and x['date'] not in settled]
+    processed = []
+    for day in candidates[:2]:
+        try:
+            snapshot = storage.earliest_completed(day)
+            if not snapshot or not snapshot.get('results'):
+                processed.append({'date':day,'status':'empty'})
+                continue
+            verified, expected = settle_espn.settle_archive(snapshot, day)
+            result = calibration.settle(day, snapshot['job_id'], verified, expected)
+            processed.append({'date':day,'status':'settled',**result})
+        except Exception as exc:
+            logger.exception('NBA calibration settlement failed for %s', day)
+            processed.append({'date':day,'status':'skipped','reason':str(exc)[:160]})
+    return {'processed':processed,'pending':max(0,len(candidates)-2),'odds_api_calls':0}
+
+@app.get('/api/calibration/summary', dependencies=[Depends(auth)])
+def calibration_summary():
+    import calibration
+    return {'calibration':calibration.summary(),'odds_api_calls':0}
+
+
+@app.get('/api/calibration/validation', dependencies=[Depends(auth)])
+def calibration_validation_report():
+    """Leakage-free walk-forward report; never activates a model automatically."""
+    import calibration_validation
+    with storage.connection() as conn:
+        rows = conn.execute("""
+            SELECT scan_date,market,probability_bin,n,wins,sum_p,sum_brier
+            FROM nba_calibration_daily ORDER BY scan_date,market,probability_bin
+        """).fetchall()
+    data = [dict(date=day.isoformat(),market=market,probability_bin=bucket,
+                 n=n,wins=wins,sum_p=sp,sum_brier=sb)
+            for day,market,bucket,n,wins,sp,sb in rows]
+    return {**calibration_validation.walk_forward(data), 'odds_api_calls':0}
+
+
+@app.get('/api/calibration/retention-preview', dependencies=[Depends(auth)])
+def calibration_retention_preview():
+    """Report potentially removable snapshots; does not delete any records."""
+    return storage.calibration_retention_preview(retention_days=7)
 
 
 @app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
