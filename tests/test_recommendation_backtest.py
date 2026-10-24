@@ -54,6 +54,20 @@ class RecommendationBacktestTests(unittest.TestCase):
         chosen = select_pregame([first, second])["doppia"]
         self.assertEqual(len(chosen), 2)
 
+    def test_invalid_espn_actual_does_not_crash_or_count_as_loss(self):
+        archive = [pick("Alpha", 19.5, 1.8, 70)]
+        invalid = pick("Alpha", 19.5, 1.8, 70, float("nan"))
+        report = evaluate(archive, [invalid])["singola"]
+        self.assertFalse(report["settled"])
+        self.assertEqual(report["missing_results"], 1)
+        self.assertIsNone(report["unit_profit"])
+
+    def test_invalid_espn_text_does_not_crash(self):
+        archive = [pick("Alpha", 19.5, 1.8, 70)]
+        invalid = pick("Alpha", 19.5, 1.8, 70, "unavailable")
+        report = evaluate(archive, [invalid])["singola"]
+        self.assertFalse(report["settled"])
+
     def test_correct_settlement(self):
         archive=[pick("Alpha",19.5,1.8,70)]
         result=evaluate(archive,[pick("Alpha",19.5,1.8,70,25)])
