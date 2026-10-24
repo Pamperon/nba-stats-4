@@ -35,6 +35,22 @@ def init_storage():
             logger.info('Persistent PostgreSQL scan storage ready')
         except Exception:
             logger.exception('Persistent storage unavailable; service remains accessible')
+    # Independent best-effort fallback while Render is awake. GitHub Actions
+    # remains the primary scheduler; Supabase claims deduplicate both.
+    threading.Thread(target=_render_scheduler_loop, daemon=True,
+                     name='nba-render-scheduler').start()
+
+
+def _render_scheduler_loop():
+    """Recover missed slots if GitHub scheduled events are dropped."""
+    import scripts.scheduled_scan as scheduler
+    time.sleep(35)  # Wait for Uvicorn to start accepting requests.
+    while True:
+        try:
+            scheduler.run()
+        except Exception:
+            logger.exception('Render fallback scan scheduler failed')
+        time.sleep(600)
 
 
 def auth(authorization: str = Header(default='')):
