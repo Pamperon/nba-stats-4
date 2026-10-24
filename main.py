@@ -193,7 +193,18 @@ def saved_dates():
     if not storage.configured():
         raise HTTPException(503, 'Database non configurato')
     try:
-        return {'dates': [item for item in storage.available_dates() if item['date'] >= datetime.now(ZoneInfo('Europe/Rome')).date().isoformat()], 'odds_api_calls': 0}
+        today = datetime.now(ZoneInfo('Europe/Rome')).date()
+        dates = {item['date'] for item in storage.available_dates() if item['date'] >= today.isoformat()}
+        # Include scheduled NBA days even before player-prop odds have been saved.
+        # ESPN is free; a temporary ESPN outage must not hide archived days.
+        for offset in range(3):
+            day = (today + timedelta(days=offset)).isoformat()
+            try:
+                if schedule(day)['games']:
+                    dates.add(day)
+            except HTTPException:
+                logger.warning('Cannot check ESPN calendar for %s; retaining archived dates', day)
+        return {'dates': [{'date': day} for day in sorted(dates)], 'odds_api_calls': 0}
     except Exception:
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
