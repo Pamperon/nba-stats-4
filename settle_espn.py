@@ -14,7 +14,7 @@ def fetch(url, **params):
     r.raise_for_status()
     return r.json()
 
-def final_events(scan_date):
+def final_events(scan_date, require_all_final=True):
     # NBA games can cross midnight UTC; ESPN dates use league schedule dates.
     from datetime import timedelta, date
     rome_day = date.fromisoformat(scan_date)
@@ -32,7 +32,7 @@ def final_events(scan_date):
     events = list(events_by_id.values())
     if not events:
         raise ValueError("ESPN has no events for requested date")
-    if any(not (e.get("status",{}).get("type",{}).get("completed") is True) for e in events):
+    if require_all_final and any(not (e.get("status",{}).get("type",{}).get("completed") is True) for e in events):
         raise ValueError("Not all games on this ESPN date are final")
     return events
 
@@ -70,52 +70,61 @@ def player_stats(summary):
     return found
 
 def settle_archive(snapshot, scan_date):
-    """Returns verified rows + counts; caller decides whether to persist."""
-    events = final_events(scan_date)
-    lookup = {}
-    for event in events:
-        summary = fetch(BASE + "/summary", event=event["id"])
-        stats = player_stats(summary)
-        competitors = (event.get("competitions") or [{}])[0].get("competitors",[])
-        teams = [(c.get("team") or {}).get("displayName","") for c in competitors]
-        if len(teams) != 2 or not stats:
-            raise ValueError("Missing ESPN teams or player boxscore")
-        for team in teams:
-            key = engine.normalized_name(team)
-            if key in lookup:
-                raise ValueError("Duplicate team across ESPN games")
-            lookup[key] = (frozenset(engine.normalized_name(t) for t in teams),stats)
-    saved_at = snapshot.get("scan_finished_at") or snapshot.get("saved_at")
-    if not saved_at:
-        raise ValueError("Snapshot has no verifiable pregame timestamp")
-    from datetime import timezone
-    snapshot_time = datetime.fromisoformat(str(saved_at).replace("Z","+00:00"))
-    if snapshot_time.tzinfo is None:
-        raise ValueError("Timezone missing from snapshot timestamp")
-    snapshot_time = snapshot_time.astimezone(timezone.utc)
-    for event in events:
-        start = event.get("date")
-        if not start:
-            raise ValueError("ESPN event start time unavailable")
-        tipoff = datetime.fromisoformat(start.replace("Z","+00:00"))
-        if snapshot_time >= tipoff:
-            raise ValueError("Snapshot saved after at least one game's tipoff")
-    rows = snapshot.get("results",[])
+    """Verify only the archived fixtures, never already-started unrelated games."""
+    events = final_events(scan_date, require_all_final=False)
+    rows = snapshot.get("results", [])
     if not rows:
         raise ValueError("No archived predictions")
-    # Fail closed when an archived fixture is absent from the finalized ESPN
-    # calendar. A high player-match percentage must not hide missing games.
+
     archived_fixtures = set()
     for row in rows:
-        fixture = row.get("Partita","")
+        fixture = row.get("Partita", "")
         teams = frozenset(engine.normalized_name(t) for t in fixture.split(" - "))
         if len(teams) != 2 or not all(teams):
             raise ValueError("Malformed archived fixture")
         archived_fixtures.add(teams)
-    espn_fixtures = {game[0] for game in lookup.values()}
-    missing = archived_fixtures - espn_fixtures
+
+    saved_at = snapshot.get("scan_finished_at") or snapshot.get("saved_at")
+    if not saved_at:
+        raise ValueError("Snapshot has no verifiable pregame timestamp")
+    from datetime import timezone
+    snapshot_time = datetime.fromisoformat(str(saved_at).replace("Z", "+00:00"))
+    if snapshot_time.tzinfo is None:
+        raise ValueError("Timezone missing from snapshot timestamp")
+    snapshot_time = snapshot_time.astimezone(timezone.utc)
+
+    matched_events = {}
+    for event in events:
+        competitors = (event.get("competitions") or [{}])[0].get("competitors", [])
+        teams = frozenset(engine.normalized_name(
+            (c.get("team") or {}).get("displayName", "")) for c in competitors)
+        if teams in archived_fixtures:
+            if teams in matched_events:
+                raise ValueError("Duplicate ESPN fixture on archive date")
+            matched_events[teams] = event
+
+    missing = archived_fixtures - set(matched_events)
     if missing:
         raise ValueError(f"ESPN missing {len(missing)} archived fixtures")
+
+    lookup = {}
+    for fixture, event in matched_events.items():
+        if event.get("status", {}).get("type", {}).get("completed") is not True:
+            raise ValueError("An archived ESPN game is not final")
+        start = event.get("date")
+        if not start:
+            raise ValueError("ESPN event start time unavailable")
+        tipoff = datetime.fromisoformat(start.replace("Z", "+00:00"))
+        if snapshot_time >= tipoff:
+            raise ValueError("Snapshot saved after an archived game's tipoff")
+        summary = fetch(BASE + "/summary", event=event["id"])
+        stats = player_stats(summary)
+        if not stats:
+            raise ValueError("Missing ESPN player boxscore")
+        for team in fixture:
+            if team in lookup:
+                raise ValueError("Duplicate team across ESPN games")
+            lookup[team] = (fixture, stats)
     # Reject inconsistent archive dates: a prediction row must reference an
     # actual ESPN fixture, not merely a team that happened to play that day.
     verified = []
