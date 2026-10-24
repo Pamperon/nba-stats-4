@@ -80,3 +80,39 @@ def evaluate(archive_rows, verified_rows):
                             "settled": settled, "combined_odds": round(combined_odds, 4),
                             "unit_profit": None if profit is None else round(profit, 4)}
     return report
+
+def main():
+    """Inspect a dated saved archive without bookmaker requests or database writes."""
+    import argparse
+    import json
+    import requests
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--date", required=True)
+    args = parser.parse_args()
+    response = requests.get(
+        "https://nba-stats-4.onrender.com/api/saved/archive",
+        params={"date": args.date}, timeout=100)
+    response.raise_for_status()
+    archive = response.json()
+    if archive.get("date") != args.date:
+        raise ValueError("Archive date mismatch")
+    rows = archive.get("results") or []
+    if not rows:
+        raise ValueError("No saved pregame rows for requested date")
+    proposals = {}
+    for label, picks in select_pregame(rows).items():
+        proposals[label] = [
+            {"player": row.get("Giocatore"), "team": row.get("Squadra"),
+             "match": row.get("Partita"), "market": row.get("Mercato"),
+             "choice": row.get("Scelta"), "line": row.get("Linea"),
+             "odds": row.get("Quota"),
+             "estimated_probability": row.get("Prob. stimata %"),
+             "estimated_value": row.get("Value stimato %"),
+             "analysis_status": row.get("Stato analisi")}
+            for row in picks]
+    print(json.dumps({"date": args.date, "archive_rows": len(rows),
+                      "proposals": proposals, "odds_api_calls": 0,
+                      "database_writes": 0}, indent=2, ensure_ascii=False))
+
+if __name__ == "__main__":
+    main()
