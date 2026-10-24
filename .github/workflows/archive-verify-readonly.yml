@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/archive-verify-readonly.yml'
       - 'scripts/verify_archive.py'
+      - 'scripts/archive_performance.py'
       - 'settle_espn.py'
   workflow_dispatch:
 jobs:
@@ -32,3 +33,5 @@ jobs:
           PY
       - name: Compare with final ESPN boxscores
         run: python -m scripts.verify_archive --file archive-2026-10-24.json --date 2026-10-24
+      - name: Print performance by market and odds band (read only)
+        run: python -m scripts.archive_performance --date 2026-10-24
