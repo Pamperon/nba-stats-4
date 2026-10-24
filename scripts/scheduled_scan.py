@@ -12,34 +12,21 @@ from zoneinfo import ZoneInfo
 BASE = "https://nba-stats-4.onrender.com"
 TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
-# Intended Rome slots, with separate UTC triggers for CET and CEST.
+# Frequent heartbeat recovers missed GitHub cron launches. Supabase ensures
+# each Rome-time slot is executed at most once (except explicit failure retry).
 SLOTS = (0, 10, 14, 18, 22)
 MAX_DELAY = dt.timedelta(hours=3)
-CRON_TO_UTC_HOUR = {
-    "0 8 * * *": 8, "0 9 * * *": 9,
-    "0 12 * * *": 12, "0 13 * * *": 13,
-    "0 16 * * *": 16, "0 17 * * *": 17,
-    "0 20 * * *": 20, "0 21 * * *": 21,
-    "0 22 * * *": 22, "0 23 * * *": 23,
-}
 
-def scheduled_slot(now, cron):
-    """Match the actual UTC cron to its Rome slot, even if GitHub starts late."""
-    utc_hour = CRON_TO_UTC_HOUR.get(cron)
-    if utc_hour is None:
-        raise ValueError("Unknown GitHub cron schedule: " + repr(cron))
-    # Consider today and yesterday: a 22:00 Rome run can start after midnight.
+def due_slot(now):
     candidates = []
     for days_back in (0, 1):
         day = now.date() - dt.timedelta(days=days_back)
         for hour in SLOTS:
             target = dt.datetime.combine(day, dt.time(hour), tzinfo=ROME)
-            if target.astimezone(dt.timezone.utc).hour != utc_hour:
-                continue
             delay = now.astimezone(dt.timezone.utc) - target.astimezone(dt.timezone.utc)
             if dt.timedelta(0) <= delay <= MAX_DELAY:
-                candidates.append((delay, target))
-    return min(candidates, key=lambda item: item[0])[1] if candidates else None
+                candidates.append(target)
+    return max(candidates) if candidates else None
 
 def call(path, method="GET", timeout=45):
     req = urllib.request.Request(
@@ -63,16 +50,33 @@ def run():
         print("ESPN games for", today, ":", len(schedule.get("games", [])), flush=True)
         return
     manual = os.environ.get("NBA_STATS_MANUAL_SCAN") == "1"
+    slot = None
     if not manual:
-        cron = os.environ.get("NBA_STATS_SCHEDULE", "")
-        slot = scheduled_slot(now, cron)
+        slot = due_slot(now)
         if slot is None:
-            print("SKIPPED: inactive DST cron or delayed more than 3 hours.",
-                  "Rome time:", now.isoformat(), "cron:", cron, flush=True)
+            print("SKIPPED: no recent Rome-time slot", now.isoformat(), flush=True)
             return
-        print("Scheduled Rome slot:", slot.isoformat(), "actual start:",
-              now.isoformat(), "cron:", cron, flush=True)
-    print("Starting scheduled NBA scan at Rome time:", now.isoformat(), flush=True)
+        slot_key = slot.strftime("%Y-%m-%dT%H:00")
+        reservation = call("/api/storage/slot/claim?slot=" + urllib.parse.quote(slot_key),
+                           method="POST")
+        if not reservation.get("claimed"):
+            print("SKIPPED: slot already processed or running:", slot_key, flush=True)
+            return
+        print("CLAIMED slot:", slot_key, "actual:", now.isoformat(), flush=True)
+    print("Starting NBA scan at Rome time:", now.isoformat(), flush=True)
+    try:
+        execute_scan(now, slot, manual)
+    except BaseException:
+        if slot is not None:
+            call("/api/storage/slot/finish?slot=" + urllib.parse.quote(slot_key) +
+                 "&success=false", method="POST")
+        raise
+    else:
+        if slot is not None:
+            call("/api/storage/slot/finish?slot=" + urllib.parse.quote(slot_key) +
+                 "&success=true", method="POST")
+
+def execute_scan(now, slot, manual):
     # Cleanup runs even when there are no upcoming games, using only Supabase.
     # A temporary DB issue must not prevent the scheduled NBA scan.
     try:
