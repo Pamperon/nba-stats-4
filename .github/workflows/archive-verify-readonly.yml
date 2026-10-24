@@ -7,6 +7,8 @@ on:
       - 'scripts/archive_performance.py'
       - 'settle_espn.py'
       - 'tests/test_archive_performance.py'
+      - 'scripts/recommendation_backtest.py'
+      - 'tests/test_recommendation_backtest.py'
   workflow_dispatch:
 jobs:
   verify-2026-10-24:
@@ -19,7 +21,7 @@ jobs:
           python-version: '3.11'
       - run: pip install -r requirements.txt
       - name: Test pregame line selection without network
-        run: python -m unittest tests.test_archive_performance -v
+        run: python -m unittest tests.test_archive_performance tests.test_recommendation_backtest -v
       - name: Fetch public saved archive (no bookmaker requests)
         run: |
           python - <<'PY'
@@ -36,5 +38,17 @@ jobs:
           PY
       - name: Compare with final ESPN boxscores
         run: python -m scripts.verify_archive --file archive-2026-10-24.json --date 2026-10-24
+      - name: Evaluate pregame single double triple candidates (read only)
+        run: |
+          python - <<'PY'
+          import json
+          import settle_espn
+          from scripts.recommendation_backtest import evaluate
+          with open('archive-2026-10-24.json') as f:
+              archive = json.load(f)
+          verified, eligible = settle_espn.settle_archive(archive, '2026-10-24')
+          print(json.dumps({'eligible': eligible, 'verified': len(verified),
+                            'proposals': evaluate(archive['results'], verified)}, indent=2))
+          PY
       - name: Print performance by market and odds band (read only)
         run: python -m scripts.archive_performance --date 2026-10-24
