@@ -6,6 +6,7 @@ on:
       - 'scripts/verify_archive.py'
       - 'scripts/archive_performance.py'
       - 'settle_espn.py'
+      - 'tests/test_archive_performance.py'
   workflow_dispatch:
 jobs:
   verify-2026-10-24:
@@ -17,6 +18,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements.txt
+      - name: Test pregame line selection without network
+        run: python -m unittest tests.test_archive_performance -v
       - name: Fetch public saved archive (no bookmaker requests)
         run: |
           python - <<'PY'
