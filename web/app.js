@@ -164,18 +164,28 @@ function render(){
  renderFinder();
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(r.Squadra||"—")}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('')}
+const nbaTeams={
+ ATL:'ATL',BOS:'BOS',BKN:'BKN',BRK:'BKN',CHA:'CHA',CHI:'CHI',CLE:'CLE',DAL:'DAL',DEN:'DEN',DET:'DET',GSW:'GSW',GS:'GSW',HOU:'HOU',IND:'IND',LAC:'LAC',LAL:'LAL',MEM:'MEM',MIA:'MIA',MIL:'MIL',MIN:'MIN',NOP:'NOP',NO:'NOP',NYK:'NYK',NY:'NYK',OKC:'OKC',ORL:'ORL',PHI:'PHI',PHX:'PHX',PHO:'PHX',POR:'POR',SAC:'SAC',SAS:'SAS',SA:'SAS',TOR:'TOR',UTA:'UTA',UTAH:'UTA',WAS:'WAS',
+ 'ATLANTA HAWKS':'ATL','BOSTON CELTICS':'BOS','BROOKLYN NETS':'BKN','CHARLOTTE HORNETS':'CHA','CHICAGO BULLS':'CHI','CLEVELAND CAVALIERS':'CLE','DALLAS MAVERICKS':'DAL','DENVER NUGGETS':'DEN','DETROIT PISTONS':'DET','GOLDEN STATE WARRIORS':'GSW','HOUSTON ROCKETS':'HOU','INDIANA PACERS':'IND','LOS ANGELES CLIPPERS':'LAC','LA CLIPPERS':'LAC','LOS ANGELES LAKERS':'LAL','LA LAKERS':'LAL','MEMPHIS GRIZZLIES':'MEM','MIAMI HEAT':'MIA','MILWAUKEE BUCKS':'MIL','MINNESOTA TIMBERWOLVES':'MIN','NEW ORLEANS PELICANS':'NOP','NEW YORK KNICKS':'NYK','OKLAHOMA CITY THUNDER':'OKC','ORLANDO MAGIC':'ORL','PHILADELPHIA 76ERS':'PHI','PHOENIX SUNS':'PHX','PORTLAND TRAIL BLAZERS':'POR','PORTLAND TRAIL BLAZERS':'POR','SACRAMENTO KINGS':'SAC','SAN ANTONIO SPURS':'SAS','TORONTO RAPTORS':'TOR','UTAH JAZZ':'UTA','WASHINGTON WIZARDS':'WAS'
+};
+function teamAbbrev(team){const key=String(team||'').trim().toUpperCase().replace(/\s+/g,' ');return nbaTeams[key]||(/^[A-Z]{3}$/.test(key)?key:'—')}
+function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('')}
 // Value Finder filters affect only its own table; dashboard picks are independent.
-function updateRangeLabels(){
- $('oddmin-label').textContent=fmtOdd($('oddmin').value);
- $('oddmax-label').textContent=fmtOdd($('oddmax').value);
- $('probmin-label').textContent=$('probmin').value+'%';
+function initFinderSelects(){
+ const odds=Array.from({length:179},(_,i)=>(1.10+i*0.05).toFixed(2));
+ for(const id of ['oddmin','oddmax']){
+  const select=$(id);
+  select.innerHTML=odds.map(v=>'<option value="'+v+'">'+fmtOdd(v)+'</option>').join('');
+  select.value=id==='oddmin'?'1.10':'10.00';
+ }
+ const prob=$('probmin');
+ prob.innerHTML=Array.from({length:21},(_,i)=>'<option value="'+(i*5)+'">'+(i*5)+'%</option>').join('');
+ prob.value='0';
 }
+initFinderSelects();
 ['oddmin','oddmax','market','probmin'].forEach(id=>{
- $(id).addEventListener('input',()=>{updateRangeLabels();renderFinder()});
- $(id).addEventListener('change',()=>{updateRangeLabels();renderFinder()});
+ $(id).addEventListener('change',renderFinder);
 });
-updateRangeLabels();
 $('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const rows=data.results,keys=Object.keys(rows[0]);const safe=v=>{const t=String(v??'');const guarded=/^[=+@\\-\\t\\r]/.test(t)?"'"+t:t;return '"'+guarded.replace(/"/g,'""')+'"'};const csv='\uFEFF'+[keys.map(safe).join(';'),...rows.map(r=>keys.map(k=>safe(r[k])).join(';'))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_salvato.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}try{const r=await api('/api/scan/'+jobId+'/csv');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_completo.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{alert('CSV non disponibile')}};
 let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
 const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
