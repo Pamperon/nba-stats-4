@@ -19,6 +19,7 @@ on:
       - 'tests/test_calibration_validation.py'
       - 'tests/test_calendar_boundaries.py'
       - 'tests/test_calibration.py'
+      - 'tests/test_release_safety.py'
       - 'tests/test_settle_espn.py'
       - '.github/workflows/calibration-tests.yml'
   workflow_dispatch:
@@ -40,4 +41,5 @@ jobs:
       - run: python -m unittest discover -s tests -p 'test_player_identity.py' -v
       - run: python -m unittest discover -s tests -p 'test_espn_coverage.py' -v
       - run: python -m unittest discover -s tests -p 'test_espn_conflicts.py' -v
+      - run: python -m unittest discover -s tests -p 'test_release_safety.py' -v
       - run: python -m compileall -q main.py storage.py settle_espn.py calibration.py calibration_validation.py scripts/espn_smoke_test.py scripts/verify_archive.py
