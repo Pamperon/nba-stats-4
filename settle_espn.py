@@ -109,6 +109,8 @@ def settle_archive(snapshot, scan_date):
     missing = archived_fixtures - espn_fixtures
     if missing:
         raise ValueError(f"ESPN missing {len(missing)} archived fixtures")
+    # Reject inconsistent archive dates: a prediction row must reference an
+    # actual ESPN fixture, not merely a team that happened to play that day.
     verified = []
     for row in rows:
         team = engine.normalized_name(row.get("Squadra",""))
