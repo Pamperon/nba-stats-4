@@ -5,6 +5,7 @@ saved snapshot and settled ESPN results contribute to performance.
 """
 import argparse
 import json
+import math
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -20,14 +21,31 @@ def aggregate(day_reports):
         for name, ticket in day["proposals"].items():
             entry = groups.setdefault(name, {"complete": 0, "settled": 0,
                                              "wins": 0, "profit_units": 0.0,
-                                             "missing_results": 0})
+                                             "missing_results": 0, "verified_legs": 0,
+                                             "sum_brier": 0.0, "sum_abs_error": 0.0})
             entry["complete"] += int(ticket["complete"])
             entry["missing_results"] += ticket["missing_results"]
+            for leg in ticket.get("legs", []):
+                try:
+                    probability = float(leg["estimated_probability"]) / 100
+                    outcome = leg["win"]
+                    if outcome is None or not math.isfinite(probability) or not 0 <= probability <= 1:
+                        continue
+                    entry["verified_legs"] += 1
+                    entry["sum_brier"] += (probability - int(outcome)) ** 2
+                    entry["sum_abs_error"] += abs(probability - int(outcome))
+                except (KeyError, ValueError, TypeError):
+                    continue
             if ticket["settled"]:
                 entry["settled"] += 1
                 entry["wins"] += int(ticket["unit_profit"] > 0)
                 entry["profit_units"] += ticket["unit_profit"]
     for entry in groups.values():
+        n = entry["verified_legs"]
+        entry["brier_score"] = round(entry["sum_brier"] / n, 4) if n else None
+        entry["mean_absolute_error"] = round(entry["sum_abs_error"] / n, 4) if n else None
+        del entry["sum_brier"]
+        del entry["sum_abs_error"]
         entry["profit_units"] = round(entry["profit_units"], 4)
         entry["roi"] = (round(entry["profit_units"] / entry["settled"], 4)
                         if entry["settled"] else None)
