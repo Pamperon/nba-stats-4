@@ -25,7 +25,7 @@ class CalibrationTests(unittest.TestCase):
     def test_calibration_requires_history(self):
         self.assertEqual(calibrated_probability("PTS",0.72,[]),0.72)
         self.assertEqual(calibrated_probability("PTS",0.72,[{
-            "market":"PTS","probability_bin":70,"n":100,
+            "market":"PTS","probability_bin":70,"n":10,
             "observed":0.5,"predicted":0.75}]),0.72)
 
     def test_calibration_shrinks_and_caps(self):
