@@ -4,7 +4,7 @@ from unittest.mock import patch
 import settle_espn
 
 def event(team_a="Boston Celtics",team_b="New York Knicks"):
-    return {"id":"100","date":"2026-10-24T23:00:00Z","status":{"type":{"completed":True}},
+    return {"id":"100","date":"2026-10-24T19:00:00Z","status":{"type":{"completed":True}},
             "competitions":[{"competitors":[{"team":{"displayName":team_a}},
                                           {"team":{"displayName":team_b}}]}]}
 
@@ -99,8 +99,22 @@ class SettlementTests(unittest.TestCase):
                   "results":[{"Partita":"Boston Celtics - New York Knicks"}]}
         with patch.object(settle_espn,"final_events",return_value=[event()]), \
              patch.object(settle_espn,"fetch",return_value=summary()):
-            with self.assertRaisesRegex(ValueError,"after at least one"):
+            with self.assertRaisesRegex(ValueError,"after an archived game"):
                 settle_espn.settle_archive(snapshot,"2026-10-24")
+
+    def test_unrelated_earlier_game_does_not_invalidate_pregame_archive(self):
+        unrelated = event("Miami Heat", "Orlando Magic")
+        unrelated["id"] = "101"
+        unrelated["date"] = "2026-10-24T10:00:00Z"
+        snapshot = {"saved_at":"2026-10-24T12:00:00+00:00",
+                    "results":[{"Partita":"Boston Celtics - New York Knicks",
+                                "Squadra":"Boston Celtics","Giocatore":"Jayson Tatum",
+                                "Mercato":"PTS","Linea":24.5,"Scelta":"Over",
+                                "Prob. stimata %":70}]}
+        with patch.object(settle_espn,"final_events",return_value=[unrelated,event() ]), \
+             patch.object(settle_espn,"fetch",return_value=summary()):
+            verified, eligible = settle_espn.settle_archive(snapshot,"2026-10-24")
+        self.assertEqual((len(verified), eligible), (1,1))
 
     def test_nonfinal_rejected(self):
         with patch.object(settle_espn,"fetch",return_value={
