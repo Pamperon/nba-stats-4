@@ -208,17 +208,11 @@ def available_dates():
 
 
 def cleanup_expired(retention_days=7):
-    """Delete snapshots from dates older than seven full calendar days in Rome."""
-    if not configured():
-        raise RuntimeError("DATABASE_URL missing")
-    if retention_days != 7:
-        raise ValueError("Unsupported retention period")
-    today = datetime.now(ZoneInfo("Europe/Rome")).date()
-    cutoff = today - timedelta(days=retention_days)
-    with connection() as conn:
-        deleted = conn.execute(
-            "DELETE FROM nba_scan_snapshots WHERE scan_date < %s", (cutoff,)
-        ).rowcount
-    log.info("NBA scan retention: removed %s snapshots older than %s", deleted, cutoff)
-    return {"deleted_snapshots": deleted, "retention_days": retention_days,
-            "oldest_kept_date": cutoff.isoformat(), "odds_api_calls": 0}
+    """Legacy compatibility: historical predictions are never deleted automatically.
+
+    The prior implementation deleted all scans older than seven days.
+    This function deliberately performs no deletion; keep for existing callers.
+    """
+    log.info("NBA scan retention disabled: preserving all historical snapshots")
+    return {"deleted_snapshots": 0, "retention_policy": "permanent",
+            "odds_api_calls": 0}
