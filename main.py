@@ -120,6 +120,7 @@ def do_scan(job_id, date):
     with lock: jobs[job_id]['state']='running'
     try:
         started_at = time.monotonic()
+        scan_started_at = datetime.now(ZoneInfo('Europe/Rome')).isoformat()
         season = engine.current_nba_season(datetime.strptime(date,'%Y-%m-%d'))
         fixtures = [f for f in engine.get_fixtures(date) if not engine.fixture_is_completed(f)]
         if not fixtures: raise ValueError('Nessuna partita futura disponibile')
@@ -141,6 +142,9 @@ def do_scan(job_id, date):
             'results': rows, 'issues': issues, 'fixture_reports': fixture_reports,
             'player_logs': serialized_logs, 'fixture_count': len(fixtures),
             'player_count': player_count, 'season': season,
+            'scan_started_at': scan_started_at,
+            'scan_finished_at': datetime.now(ZoneInfo('Europe/Rome')).isoformat(),
+            'odds_api_calls_scan': odds_count,
             'timings': {'preparazione_s': setup_seconds,
                         'scansione_s': analysis_seconds,
                         'totale_s': round(time.monotonic()-started_at, 2)}
@@ -219,7 +223,15 @@ def saved_time(date: str):
         timestamp = datetime.fromisoformat(snapshot['saved_at'])
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=ZoneInfo('UTC'))
-        return {'date': date, 'saved_at_italy': timestamp.astimezone(ZoneInfo('Europe/Rome')).strftime('%d/%m/%Y %H:%M:%S'), 'odds_api_calls': 0}
+        return {
+            'date': date,
+            'saved_at_italy': timestamp.astimezone(ZoneInfo('Europe/Rome')).strftime('%d/%m/%Y %H:%M:%S'),
+            'scan_started_at': snapshot.get('scan_started_at', 'non registrato'),
+            'scan_finished_at': snapshot.get('scan_finished_at', 'non registrato'),
+            'status': snapshot.get('state', 'sconosciuto'),
+            'odds_api_calls_scan': snapshot.get('odds_api_calls_scan', 'non registrato'),
+            'odds_api_calls': 0
+        }
     except HTTPException:
         raise
     except Exception:
