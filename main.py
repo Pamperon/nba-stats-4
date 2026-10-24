@@ -465,6 +465,12 @@ def calibration_validation_report():
     return {**calibration_validation.walk_forward(data), 'odds_api_calls':0}
 
 
+@app.get('/api/calibration/retention-preview', dependencies=[Depends(auth)])
+def calibration_retention_preview():
+    """Report potentially removable snapshots; does not delete any records."""
+    return storage.calibration_retention_preview(retention_days=7)
+
+
 @app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
