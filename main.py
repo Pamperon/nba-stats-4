@@ -450,6 +450,21 @@ def calibration_summary():
     return {'calibration':calibration.summary(),'odds_api_calls':0}
 
 
+@app.get('/api/calibration/validation', dependencies=[Depends(auth)])
+def calibration_validation_report():
+    """Leakage-free walk-forward report; never activates a model automatically."""
+    import calibration_validation
+    with storage.connection() as conn:
+        rows = conn.execute("""
+            SELECT scan_date,market,probability_bin,n,wins,sum_p,sum_brier
+            FROM nba_calibration_daily ORDER BY scan_date,market,probability_bin
+        """).fetchall()
+    data = [dict(date=day.isoformat(),market=market,probability_bin=bucket,
+                 n=n,wins=wins,sum_p=sp,sum_brier=sb)
+            for day,market,bucket,n,wins,sp,sb in rows]
+    return {**calibration_validation.walk_forward(data), 'odds_api_calls':0}
+
+
 @app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
