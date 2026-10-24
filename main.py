@@ -432,16 +432,6 @@ def scan_csv(job_id: str):
 app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')
 def index(): return FileResponse('web/index.html')
-),
-                success: bool = Query()):
-    try:
-        storage.finish_slot(slot, success)
-        return {'ok': True, 'odds_api_calls': 0}
-    except Exception:
-        logger.exception('Scan slot completion failed')
-        raise HTTPException(503, 'Impossibile registrare il completamento')
-
-
 @app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
 def storage_cleanup():
     """Protected, idempotent cleanup; does not contact OddsPapi."""
