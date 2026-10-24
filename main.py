@@ -144,7 +144,8 @@ def do_scan(job_id, date):
             'player_count': player_count, 'season': season,
             'scan_started_at': scan_started_at,
             'scan_finished_at': datetime.now(ZoneInfo('Europe/Rome')).isoformat(),
-            'odds_api_calls_scan': odds_count,
+            'odds_api_calls_scan': odds_count,  # Legacy field: counts quote lines, NOT API requests.
+            'quote_lines_scan': odds_count,
             'timings': {'preparazione_s': setup_seconds,
                         'scansione_s': analysis_seconds,
                         'totale_s': round(time.monotonic()-started_at, 2)}
@@ -229,10 +230,13 @@ def saved_time(date: str):
             'scan_started_at': snapshot.get('scan_started_at', 'non registrato'),
             'scan_finished_at': snapshot.get('scan_finished_at', 'non registrato'),
             'status': snapshot.get('state', 'sconosciuto'),
-            'odds_api_calls_scan': snapshot.get('odds_api_calls_scan', 'non registrato'),
+            'odds_api_calls_scan': snapshot.get('odds_api_calls_scan', 'non registrato'),  # Legacy: quote lines, not HTTP requests.
+            'quote_lines_scan': snapshot.get('quote_lines_scan', snapshot.get('odds_api_calls_scan', 'non registrato')),
+            'odds_api_requests_scan': 'non misurate',
+            'coverage_status': ('completa' if snapshot.get('fixture_reports') and all(item.get('stato') == 'ok' for item in snapshot['fixture_reports']) else 'in_attesa_quote' if snapshot.get('fixture_reports') and all(item.get('stato') in ('ok', 'vuota') for item in snapshot['fixture_reports']) else 'errore_o_dati_incompleti'),
             'fixture_count': snapshot.get('fixture_count', 0),
             'fixture_status_counts': {state: sum(1 for item in snapshot.get('fixture_reports', []) if item.get('stato') == state) for state in ('ok', 'vuota', 'errore', 'in_elaborazione')},
-            'fixture_reports': [{'id': item.get('id'), 'partita': item.get('partita'), 'stato': item.get('stato'), 'linee': item.get('linee', 0), 'dettaglio': item.get('dettaglio', '')} for item in snapshot.get('fixture_reports', [])],
+            'fixture_reports': [{'id': item.get('id'), 'partita': item.get('partita'), 'inizio_italia': item.get('inizio_italia'), 'stato': item.get('stato'), 'linee': item.get('linee', 0), 'dettaglio': item.get('dettaglio', '')} for item in snapshot.get('fixture_reports', [])],
             'odds_api_calls': 0
         }
     except HTTPException:
