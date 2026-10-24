@@ -884,6 +884,10 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                     else:
                         games = (games.drop_duplicates(subset=["GAME_ID"], keep="first")
                                       .sort_values("GAME_DATE", ascending=False).reset_index(drop=True))
+                        logger.info("ESPN history athlete=%s id=%s seasons=%s unique_games=%d",
+                                    player_name, athlete["id"],
+                                    {str(k): int(v) for k,v in games["ANNO_STAGIONE"].value_counts().items()},
+                                    len(games))
             except Exception as exc:
                 error = f"Dati ESPN non disponibili ({type(exc).__name__})"
                 games = None
@@ -919,7 +923,12 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                     row["Stagione attuale (n)"] = int((games["ANNO_STAGIONE"] == season).sum())
                     row["Stagione precedente (n)"] = int((games["ANNO_STAGIONE"] != season).sum())
                     if len(games) < min_games:
-                        row["Nota"] = "; ".join(filter(None, [reason, f"Solo {len(games)} partite ESPN (minimo {min_games})"]))
+                        by_season = games["ANNO_STAGIONE"].value_counts()
+                        current_count = int(by_season.get(season, 0))
+                        previous_count = len(games) - current_count
+                        detail = (f"Solo {len(games)} partite ESPN (minimo {min_games}; "
+                                  f"stagione attuale {current_count}, precedente {previous_count})")
+                        row["Nota"] = "; ".join(filter(None, [reason, detail]))
                     elif not reason:
                         estimate = finder_estimate_probability(games, stat, line, "Over")
                         if estimate:
