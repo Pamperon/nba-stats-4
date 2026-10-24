@@ -56,6 +56,16 @@ class SettlementTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"missing 1 archived fixtures"):
                 settle_espn.settle_archive(snapshot,"2026-10-24")
 
+    def test_malformed_archived_fixture_rejected(self):
+        snapshot={"scan_finished_at":"2026-10-24T12:00:00+00:00",
+                  "results":[{"Partita":"Boston Celtics","Squadra":"Boston Celtics",
+                              "Giocatore":"Tatum, Jayson","Mercato":"PTS",
+                              "Linea":20.5,"Scelta":"Over","Prob. stimata %":70}]}
+        with patch.object(settle_espn,"final_events",return_value=[event()]), \
+             patch.object(settle_espn,"fetch",return_value=summary()):
+            with self.assertRaisesRegex(ValueError,"Malformed archived fixture"):
+                settle_espn.settle_archive(snapshot,"2026-10-24")
+
     def test_post_tipoff_snapshot_rejected(self):
         snapshot={"scan_finished_at":"2026-10-25T00:00:00+00:00",
                   "results":[{"Partita":"Boston Celtics - New York Knicks"}]}
