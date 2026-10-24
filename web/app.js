@@ -9,6 +9,7 @@ function updatedStatus(snapshot,local=false){
  const formatted=when&&!Number.isNaN(when.getTime())?when.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'orario non disponibile';
  return 'Ultimo aggiornamento effettuato: '+formatted+(local?' · copia locale':'');
 }
+const fmtOdd=x=>x==null||x===''?'—':Number.isFinite(Number(x))?Number(x).toFixed(2).replace('.',','):String(x);
 const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent=updatedStatus(j);return true}catch{return false}}
@@ -129,7 +130,7 @@ function pickCard(row){
  return '<article class="pick-selection"><div class="pick-profile">'+candidateAvatar(row)+
  '<div class="pick-profile-info"><h3>'+esc(row.Giocatore)+'</h3><p class="pick-player-meta">'+esc(row.Squadra||row.Partita)+'</p>'+
  '<div class="pick-market">OVER '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div></div></div>'+
- '<div class="pick-values"><div><small>QUOTA</small><strong>'+esc(row.Quota)+'</strong></div>'+
+ '<div class="pick-values"><div><small>QUOTA</small><strong>'+esc(fmtOdd(row.Quota))+'</strong></div>'+
  '<div><small>STIMA</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div></article>';
 }
 function render(){
@@ -151,9 +152,9 @@ function render(){
   const combinedProb=chosen.reduce((product,r)=>product*number(r['Prob. stimata %'])/100,1);
   const groupIndex=pending.length;
   pending.push(chosen);
-  return '<section class="panel pick-group"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+min.toFixed(2)+'–'+max.toFixed(2)+'</p>'+
+  return '<section class="panel pick-group"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+fmtOdd(min)+'–'+fmtOdd(max)+'</p>'+
   (complete?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>'+
-  (count>1?'<div class="pick-combined"><span>Quota totale <strong>'+combined.toFixed(2).replace('.',',')+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span></div>':''):
+  (count>1?'<div class="pick-combined"><span>Quota totale <strong>'+fmtOdd(combined)+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span></div>':''):
   '<p>'+esc(pickEmptyReason(rows,min,max,count,chosen.length))+'</p>')+
   '</section>';
  }).join('');
@@ -163,12 +164,18 @@ function render(){
  renderFinder();
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${r.Quota}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('')}
+function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(r.Squadra||"—")}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('')}
 // Value Finder filters affect only its own table; dashboard picks are independent.
+function updateRangeLabels(){
+ $('oddmin-label').textContent=fmtOdd($('oddmin').value);
+ $('oddmax-label').textContent=fmtOdd($('oddmax').value);
+ $('probmin-label').textContent=$('probmin').value+'%';
+}
 ['oddmin','oddmax','market','probmin'].forEach(id=>{
- $(id).addEventListener('input',renderFinder);
- $(id).addEventListener('change',renderFinder);
+ $(id).addEventListener('input',()=>{updateRangeLabels();renderFinder()});
+ $(id).addEventListener('change',()=>{updateRangeLabels();renderFinder()});
 });
+updateRangeLabels();
 $('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const rows=data.results,keys=Object.keys(rows[0]);const safe=v=>{const t=String(v??'');const guarded=/^[=+@\\-\\t\\r]/.test(t)?"'"+t:t;return '"'+guarded.replace(/"/g,'""')+'"'};const csv='\uFEFF'+[keys.map(safe).join(';'),...rows.map(r=>keys.map(k=>safe(r[k])).join(';'))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_salvato.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}try{const r=await api('/api/scan/'+jobId+'/csv');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_completo.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{alert('CSV non disponibile')}};
 let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
 const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
