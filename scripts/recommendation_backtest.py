@@ -78,7 +78,12 @@ def evaluate(archive_rows, verified_rows):
             verified = lookup.get(line_key(row))
             price = float(row["Quota"])
             combined_odds *= price
-            actual = None if verified is None else float(verified["actual"])
+            try:
+                actual = None if verified is None else float(verified["actual"])
+                if actual is not None and not math.isfinite(actual):
+                    actual = None
+            except (ValueError, TypeError, KeyError):
+                actual = None
             line = float(row["Linea"])
             win = None if actual is None or actual == line else (
                 actual > line if str(row["Scelta"]).lower() == "over" else actual < line)
@@ -90,6 +95,7 @@ def evaluate(archive_rows, verified_rows):
         settled = complete and all(leg["win"] is not None for leg in legs)
         profit = (combined_odds - 1 if all(leg["win"] for leg in legs) else -1) if settled else None
         report[category] = {"legs": legs, "complete": complete,
+                            "missing_results": sum(leg["win"] is None for leg in legs),
                             "settled": settled, "combined_odds": round(combined_odds, 4),
                             "unit_profit": None if profit is None else round(profit, 4)}
     return report
