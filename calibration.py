@@ -132,7 +132,14 @@ def calibrated_probability(market, raw_probability, aggregates, min_samples=20,
     matching = [r for r in aggregates if r.get("market") == market
                 and r.get("probability_bin") == bucket]
     if len(matching) != 1 or matching[0]["n"] < min_samples:
-        return p
+        pooled = [r for r in aggregates if r.get("market") == market]
+        total = sum(r["n"] for r in pooled)
+        if total < 50:
+            return p
+        observed = sum(r["observed"] * r["n"] for r in pooled) / total
+        predicted = sum(r["predicted"] * r["n"] for r in pooled) / total
+        adjustment = (observed - predicted) * total / (total + 500)
+        return max(0.001, min(0.999, p + max(-max_adjustment, min(max_adjustment, adjustment))))
     r = matching[0]
     # Shrink observed hit rate toward the average forecast in the same bucket.
     adjustment = (r["observed"] - r["predicted"]) * r["n"] / (r["n"] + prior_strength)
