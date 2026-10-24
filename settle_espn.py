@@ -97,6 +97,18 @@ def settle_archive(snapshot, scan_date):
     rows = snapshot.get("results",[])
     if not rows:
         raise ValueError("No archived predictions")
+    # Fail closed when an archived fixture is absent from the finalized ESPN
+    # calendar. A high player-match percentage must not hide missing games.
+    archived_fixtures = set()
+    for row in rows:
+        fixture = row.get("Partita","")
+        teams = frozenset(engine.normalized_name(t) for t in fixture.split(" - "))
+        if len(teams) == 2 and all(teams):
+            archived_fixtures.add(teams)
+    espn_fixtures = {game[0] for game in lookup.values()}
+    missing = archived_fixtures - espn_fixtures
+    if missing:
+        raise ValueError(f"ESPN missing {len(missing)} archived fixtures")
     verified = []
     for row in rows:
         team = engine.normalized_name(row.get("Squadra",""))
