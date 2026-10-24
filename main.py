@@ -387,24 +387,6 @@ def scan_csv(job_id: str):
 app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')
 def index(): return FileResponse('web/index.html')
-)):
-    try:
-        return {'claimed': storage.claim_slot(slot), 'odds_api_calls': 0}
-    except Exception:
-        logger.exception('Scan slot claim failed')
-        raise HTTPException(503, 'Impossibile prenotare la fascia di scansione')
-
-
-@app.post('/api/storage/slot/finish', dependencies=[Depends(auth)])
-def slot_finish(slot: str = Query(pattern=r'^\\d{4}-\\d{2}-\\d{2}T(?:00|10|14|18|22):00
-def storage_cleanup():
-    """Protected, idempotent cleanup; does not contact OddsPapi."""
-    try:
-        return storage.cleanup_expired(retention_days=7)
-    except Exception:
-        logger.exception('NBA archive retention cleanup failed')
-        raise HTTPException(503, 'Pulizia archivio non riuscita')
-
 @app.post('/api/scan', dependencies=[Depends(auth)])
 def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     try: datetime.strptime(date,'%Y-%m-%d')
