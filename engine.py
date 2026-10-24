@@ -747,7 +747,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
         match_name = f"{fixture.get('participant1Name', '?')} - {fixture.get('participant2Name', '?')}"
         if progress_callback:
             progress_callback(0.25 * idx / max(len(fixtures), 1), f"Quote: {match_name}")
-        report = {"id": fid, "partita": match_name, "stato": "in_elaborazione", "linee": 0, "dettaglio": ""}
+        report = {"id": fid, "partita": match_name, "inizio_italia": (fixture_start_rome(fixture).isoformat() if fixture_start_rome(fixture) else None), "stato": "in_elaborazione", "linee": 0, "dettaglio": ""}
         fixture_reports.append(report)
         count_before = quote_count
         try:
