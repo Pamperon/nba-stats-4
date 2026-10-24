@@ -1,0 +1,34 @@
+name: Archive ESPN verification (read only)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/archive-verify-readonly.yml'
+      - 'scripts/verify_archive.py'
+      - 'settle_espn.py'
+  workflow_dispatch:
+jobs:
+  verify-2026-10-24:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Fetch public saved archive (no bookmaker requests)
+        run: |
+          python - <<'PY'
+          import requests, json
+          url = 'https://nba-stats-4.onrender.com/api/saved/archive?date=2026-10-24'
+          response = requests.get(url, timeout=100)
+          response.raise_for_status()
+          payload = response.json()
+          assert payload.get('date') == '2026-10-24', 'Archive date mismatch'
+          assert payload.get('results'), 'Empty archive'
+          with open('archive-2026-10-24.json', 'w') as f:
+              json.dump(payload, f)
+          print('Fetched', len(payload['results']), 'archived rows')
+          PY
+      - name: Compare with final ESPN boxscores
+        run: python -m scripts.verify_archive --file archive-2026-10-24.json --date 2026-10-24
