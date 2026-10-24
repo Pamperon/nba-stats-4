@@ -6,6 +6,7 @@ on:
       - 'settle_espn.py'
       - 'calibration_validation.py'
       - 'tests/test_calibration_validation.py'
+      - 'tests/test_calendar_boundaries.py'
       - 'tests/test_calibration.py'
       - 'tests/test_settle_espn.py'
       - '.github/workflows/calibration-tests.yml'
@@ -22,3 +23,4 @@ jobs:
       - run: python -m unittest discover -s tests -p 'test_calibration.py' -v
       - run: python -m unittest discover -s tests -p 'test_settle_espn.py' -v
       - run: python -m unittest discover -s tests -p 'test_calibration_validation.py' -v
+      - run: python -m unittest discover -s tests -p 'test_calendar_boundaries.py' -v
