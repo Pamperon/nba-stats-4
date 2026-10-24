@@ -449,8 +449,8 @@ def calibration_dry_run(date: str):
         requested = date_type.fromisoformat(date)
     except ValueError:
         raise HTTPException(422, 'Invalid date')
-    if requested >= datetime.now(ZoneInfo('Europe/Rome')).date():
-        raise HTTPException(422, 'Only past dates can be audited')
+    if requested > datetime.now(ZoneInfo('Europe/Rome')).date():
+        raise HTTPException(422, 'Future dates cannot be audited')
     snapshot = storage.earliest_completed(date)
     if not snapshot:
         raise HTTPException(404, 'No completed archived snapshot')
@@ -472,7 +472,7 @@ def calibration_dry_run(date: str):
 
 @app.post('/api/calibration/settle', dependencies=[Depends(auth)])
 def calibration_settle():
-    """Process up to two past archived dates; never use OddsPapi or delete data."""
+    """Process up to two archived dates, including today if all games are final."""
     import calibration
     import settle_espn
     today = datetime.now(ZoneInfo('Europe/Rome')).date().isoformat()
@@ -480,7 +480,7 @@ def calibration_settle():
         settled = {r[0].isoformat() for r in conn.execute(
             "SELECT scan_date FROM nba_calibration_settled").fetchall()}
     candidates = [x['date'] for x in reversed(storage.available_dates())
-                  if x['date'] < today and x['date'] not in settled]
+                  if x['date'] <= today and x['date'] not in settled]
     processed = []
     for day in candidates[:2]:
         try:
