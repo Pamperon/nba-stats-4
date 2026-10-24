@@ -1,0 +1,19 @@
+name: Historical minutes shadow backtest
+on:
+  pull_request:
+    paths:
+      - 'scripts/minutes_backtest.py'
+      - '.github/workflows/minutes-historical-backtest.yml'
+  workflow_dispatch:
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Compare historical minutes with ESPN outcomes (no OddsPapi)
+        run: python -m scripts.minutes_backtest --dates 2026-10-23 2026-10-24
