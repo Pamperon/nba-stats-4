@@ -14,7 +14,7 @@ const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent=updatedStatus(j);return true}catch{return false}}
 let playerStatsInitialized=false;
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab)});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 let dateSelectionRequest=0;
 function setDateLoading(loading){
  $('app').classList.toggle('date-is-loading',loading);
@@ -135,6 +135,14 @@ function pickCard(row){
 }
 function render(){
  const request=++pickProfileRequest;
+ const summary=$('quote-summary');
+ summary.hidden=!data||document.querySelector('nav button.active')?.dataset.tab==='player';
+ if(data){
+  const saved=data.saved_at?new Date(data.saved_at):null;
+  const valid=saved&&!Number.isNaN(saved.getTime());
+  $('quote-updated').textContent=valid?'Ultimo aggiornamento dati e quote salvati: '+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Orario ultimo aggiornamento quote non disponibile';
+ }
+
  if(!data){
   $('metrics').innerHTML='';
   $('picks').innerHTML='<div class="panel"><h2>Pronostici</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p></div>';
