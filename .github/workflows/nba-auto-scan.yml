@@ -2,9 +2,20 @@ name: NBA STATS - scansioni automatiche
 
 on:
   schedule:
-    # 00, 10, 14, 18, 21 Europe/Rome (CET/CEST).
-    # Include both UTC offsets; Python skips hours outside the Italian slots.
-    - cron: "0 8,9,12,13,16,17,19,20,22,23 * * *"
+    # Five daily slots in Europe/Rome: 00, 10, 14, 18, 22.
+    # Both UTC offsets are listed for daylight saving time. The Python
+    # scheduler identifies the exact slot from github.event.schedule and
+    # skips the inactive offset, including when GitHub starts late.
+    - cron: "0 8 * * *"
+    - cron: "0 9 * * *"
+    - cron: "0 12 * * *"
+    - cron: "0 13 * * *"
+    - cron: "0 16 * * *"
+    - cron: "0 17 * * *"
+    - cron: "0 20 * * *"
+    - cron: "0 21 * * *"
+    - cron: "0 22 * * *"
+    - cron: "0 23 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -36,6 +47,7 @@ jobs:
       - name: Check secret and scan upcoming games
         env:
           NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+          NBA_STATS_SCHEDULE: ${{ github.event.schedule }}
           NBA_STATS_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.mode != 'scan' && '1' || '0' }}
           NBA_STATS_MANUAL_SCAN: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'scan' && '1' || '0' }}
         run: python scripts/scheduled_scan.py
