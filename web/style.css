@@ -118,3 +118,10 @@
 #player-summary.player-summary-grid .metric strong{font-size:clamp(16px,4.2vw,25px);white-space:nowrap}
 #player-loading[hidden]{display:none}
 #player.player-is-loading #player-profile,#player.player-is-loading #player-summary,#player.player-is-loading #player-chart-title,#player.player-is-loading #chart{display:none!important}
+
+/* Touch-friendly quote finder sliders */
+#finder .filters label:has(input[type="range"]){min-width:165px;flex:1 1 165px;gap:8px}
+#finder .filters output{font-size:16px;font-weight:800;color:#e8effa;font-variant-numeric:tabular-nums}
+#finder .filters input[type="range"]{width:100%;min-width:145px;max-width:290px;padding:0;height:24px;accent-color:#f49b58;background:transparent;border:0;cursor:pointer;touch-action:pan-y}
+#finder .filters input[type="range"]:focus-visible{outline:2px solid #f49b58;outline-offset:4px}
+@media(max-width:760px){#finder .filters label:has(input[type="range"]){flex:1 1 100%}#finder .filters input[type="range"]{max-width:none}}
