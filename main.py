@@ -159,7 +159,10 @@ def do_scan(job_id, date):
             serialized_logs[name]=records.where(pd.notna(records),None).to_dict('records')
         final_state = 'partial' if any(r['stato'] != 'ok' for r in fixture_reports) else 'done'
         final_stage = 'Parziale' if final_state == 'partial' else 'Completata'
+        import minutes_shadow
+        minutes_audit = minutes_shadow.audit(rows)
         snapshot = {
+            'minutes_audit': minutes_audit,
             'date': date, 'state': final_state, 'progress': 100, 'stage': final_stage,
             'results': rows, 'issues': issues, 'fixture_reports': fixture_reports,
             'calibration': calibration_status,
