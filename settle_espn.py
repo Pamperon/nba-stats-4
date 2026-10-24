@@ -101,4 +101,15 @@ def settle_archive(snapshot, scan_date):
         if actuals is None or row.get("Mercato") not in actuals:
             continue
         verified.append({**row,"actual":actuals[row["Mercato"]],"played":True})
-    return verified,len(rows)
+    eligible = 0
+    import math
+    for row in rows:
+        try:
+            p = float(row.get("Prob. stimata %"))
+            if (row.get("Mercato") in ("PTS","AST","REB")
+                and str(row.get("Scelta","")).lower() in ("over","under")
+                and math.isfinite(p) and 0 <= p <= 100):
+                eligible += 1
+        except (TypeError, ValueError):
+            continue
+    return verified,eligible
