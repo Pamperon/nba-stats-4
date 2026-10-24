@@ -79,7 +79,8 @@ def evaluate(archive, verified):
             unique=summarize_unique_opportunities(flagged)["groups"].get("overall")
             by_category[label][flag]={"verified_lines":len(flagged),"all_lines":summary,"unique_opportunities":unique}
     return {"archived_lines":len(original),"flags":dict(flags),
-            "verified_lines":len(verified),"by_minutes":groups,"by_category":by_category,\n            "direction_diagnostics":direction_diagnostics(verified),
+            "verified_lines":len(verified),"by_minutes":groups,"by_category":by_category,
+            "direction_diagnostics":direction_diagnostics(verified),
             "odds_api_calls":0,"database_writes":0,
             "note":"Correlated alternate lines; descriptive only, not proof of filter benefit"}
 
