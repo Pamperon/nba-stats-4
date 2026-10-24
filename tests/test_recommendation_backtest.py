@@ -40,6 +40,20 @@ class RecommendationBacktestTests(unittest.TestCase):
         self.assertFalse(result["doppia"]["complete"])
         self.assertIsNone(result["doppia"]["unit_profit"])
 
+    def test_different_games_preferred_for_multiple(self):
+        first = pick("Alpha", 19.5, 1.55, 90)
+        second = pick("Beta", 19.5, 1.55, 85)
+        third = pick("Gamma", 19.5, 1.55, 80)
+        third["Partita"] = "C - D"
+        chosen = select_pregame([first, second, third])["doppia"]
+        self.assertEqual({r["Giocatore"] for r in chosen}, {"Alpha", "Gamma"})
+
+    def test_same_game_fallback_when_needed(self):
+        first = pick("Alpha", 19.5, 1.55, 90)
+        second = pick("Beta", 19.5, 1.55, 85)
+        chosen = select_pregame([first, second])["doppia"]
+        self.assertEqual(len(chosen), 2)
+
     def test_correct_settlement(self):
         archive=[pick("Alpha",19.5,1.8,70)]
         result=evaluate(archive,[pick("Alpha",19.5,1.8,70,25)])
