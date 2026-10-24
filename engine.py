@@ -655,6 +655,43 @@ def finder_player_index(end_year):
                                   "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"})
     return index
 
+def historical_player_index(end_year, missing_names):
+    """Resolve missing athletes against previous-season rosters only.
+
+    Never guess identities: ambiguous normalized names are excluded.
+    Called only if the current-roster index failed, and uses ESPN, not OddsPapi.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    wanted = {espn_player_key(name) for name in missing_names}
+    if not wanted:
+        return {}
+    teams = []
+    for entry in espn_teams():
+        team = entry.get("team", entry)
+        team_id = str(team.get("id") or "")
+        if team_id:
+            teams.append((team_id, team))
+    def fetch_old(item):
+        team_id, team = item
+        try:
+            return team_id, team, espn_roster(team_id, end_year - 1)
+        except requests.RequestException:
+            return team_id, team, {}
+    matches = {}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for team_id, team, payload in pool.map(fetch_old, teams):
+            for athlete in roster_athletes(payload):
+                key = espn_player_key(athlete["displayName"])
+                if key not in wanted:
+                    continue
+                matches.setdefault(key, {})[athlete["id"]] = {
+                    "id":athlete["id"],"team_id":team_id,
+                    "full_name":athlete["displayName"],
+                    "team_name":team.get("displayName") or team.get("name") or team_id}
+    return {key:next(iter(players.values())) for key,players in matches.items()
+            if len(players)==1}
+
+
 def odds_source_audit(odds, catalog, match_name):
     """Read bookmaker source fields already downloaded; NO extra API requests.
 
@@ -807,6 +844,14 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             issues.append(f"{match_name}: {report['dettaglio']}")
     from concurrent.futures import ThreadPoolExecutor
     player_items = list(props_by_player.items())
+    missing_names = [name for name,_ in player_items
+                     if normalized_name(name) not in index
+                     and espn_player_key(name) not in index]
+    if missing_names:
+        try:
+            index.update(historical_player_index(int(season[:4]) + 1, missing_names))
+        except requests.RequestException:
+            logger.warning("Historical ESPN roster lookup unavailable", exc_info=True)
 
     def load_player(item):
         player_name, _props = item
