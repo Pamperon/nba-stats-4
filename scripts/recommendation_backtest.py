@@ -21,7 +21,7 @@ def line_key(row):
             str(row.get("Scelta") or "").lower(), str(row.get("Linea") or ""))
 
 def select_pregame(rows):
-    """Max estimated value within each price band, one pick per player."""
+    """Prioritize estimated hit probability within each price band, with EV as tie-breaker."""
     output = {}
     for label, count, low, high in CATEGORIES:
         candidates = []
@@ -44,7 +44,7 @@ def select_pregame(rows):
             if estimated_ev <= 0:
                 continue
             candidates.append((estimated_ev, probability, row))
-        candidates.sort(key=lambda item: (item[0], item[1],
+        candidates.sort(key=lambda item: (item[1], item[0],
                                           str(item[2].get("Giocatore", "")),
                                           str(item[2].get("Linea", ""))), reverse=True)
         # Prefer distinct games as well as distinct players. When there are
