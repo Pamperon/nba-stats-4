@@ -47,13 +47,21 @@ def select_pregame(rows):
         candidates.sort(key=lambda item: (item[0], item[1],
                                           str(item[2].get("Giocatore", "")),
                                           str(item[2].get("Linea", ""))), reverse=True)
-        chosen, used = [], set()
-        for _, _, row in candidates:
-            key = player_key(row)
-            if key in used:
-                continue
-            chosen.append(row)
-            used.add(key)
+        # Prefer distinct games as well as distinct players. When there are
+        # insufficient independent fixtures, allow another player from a used
+        # fixture rather than silently return an incomplete ticket.
+        chosen, used_players, used_games = [], set(), set()
+        for distinct_games_only in (True, False):
+            for _, _, row in candidates:
+                key = player_key(row)
+                game = str(row.get("Partita") or "")
+                if key in used_players or (distinct_games_only and game in used_games):
+                    continue
+                chosen.append(row)
+                used_players.add(key)
+                used_games.add(game)
+                if len(chosen) == count:
+                    break
             if len(chosen) == count:
                 break
         output[label] = chosen
