@@ -162,6 +162,27 @@ def latest(date=None):
     job_id, payload, created_at = row
     return {"job_id": job_id, "saved_at": created_at.isoformat(), **payload}
 
+def earliest_completed(date):
+    """Oldest nonempty completed snapshot for a date, for pregame calibration.
+
+    Prefer a snapshot before all games rather than latest (possibly post-tipoff).
+    Never delete or mutate the underlying archived scan.
+    """
+    if not configured():
+        return None
+    with connection() as conn:
+        rows = conn.execute("""
+            SELECT job_id,payload,created_at
+            FROM nba_scan_snapshots
+            WHERE scan_date=%s AND state='done'
+            ORDER BY created_at ASC
+        """, (date,)).fetchall()
+    for job_id,payload,created_at in rows:
+        if payload.get("results"):
+            return {"job_id":job_id,"saved_at":created_at.isoformat(),**payload}
+    return None
+
+
 def self_test():
     """Insert, read back and delete one isolated synthetic record; no external APIs."""
     if not configured():
