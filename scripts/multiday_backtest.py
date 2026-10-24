@@ -22,7 +22,8 @@ def aggregate(day_reports):
             entry = groups.setdefault(name, {"complete": 0, "settled": 0,
                                              "wins": 0, "profit_units": 0.0,
                                              "missing_results": 0, "verified_legs": 0,
-                                             "sum_brier": 0.0, "sum_abs_error": 0.0})
+                                             "sum_brier": 0.0, "sum_abs_error": 0.0,
+                                             "sum_outcomes": 0, "sum_probabilities": 0.0})
             entry["complete"] += int(ticket["complete"])
             entry["missing_results"] += ticket["missing_results"]
             for leg in ticket.get("legs", []):
@@ -32,6 +33,8 @@ def aggregate(day_reports):
                     if outcome is None or not math.isfinite(probability) or not 0 <= probability <= 1:
                         continue
                     entry["verified_legs"] += 1
+                    entry["sum_outcomes"] += int(outcome)
+                    entry["sum_probabilities"] += probability
                     entry["sum_brier"] += (probability - int(outcome)) ** 2
                     entry["sum_abs_error"] += abs(probability - int(outcome))
                 except (KeyError, ValueError, TypeError):
@@ -44,6 +47,13 @@ def aggregate(day_reports):
         n = entry["verified_legs"]
         entry["brier_score"] = round(entry["sum_brier"] / n, 4) if n else None
         entry["mean_absolute_error"] = round(entry["sum_abs_error"] / n, 4) if n else None
+        entry["actual_hit_rate"] = round(entry["sum_outcomes"] / n, 4) if n else None
+        entry["mean_predicted_probability"] = round(entry["sum_probabilities"] / n, 4) if n else None
+        entry["calibration_gap"] = (round(entry["mean_predicted_probability"] - entry["actual_hit_rate"], 4)
+                                    if n else None)
+        entry["sample_sufficient"] = n >= 200
+        del entry["sum_outcomes"]
+        del entry["sum_probabilities"]
         del entry["sum_brier"]
         del entry["sum_abs_error"]
         entry["profit_units"] = round(entry["profit_units"], 4)
