@@ -103,8 +103,9 @@ def settle_archive(snapshot, scan_date):
     for row in rows:
         fixture = row.get("Partita","")
         teams = frozenset(engine.normalized_name(t) for t in fixture.split(" - "))
-        if len(teams) == 2 and all(teams):
-            archived_fixtures.add(teams)
+        if len(teams) != 2 or not all(teams):
+            raise ValueError("Malformed archived fixture")
+        archived_fixtures.add(teams)
     espn_fixtures = {game[0] for game in lookup.values()}
     missing = archived_fixtures - espn_fixtures
     if missing:
