@@ -3,20 +3,22 @@ on:
   push:
     paths:
       - '.github/workflows/calibration-settlement-diagnostic.yml'
+  schedule:
+    - cron: '31 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Audit and settle saved predictions only
         env:
           NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
         run: |
           python - <<'PY'
-          import json, os, urllib.request, urllib.error
+          import json, os, urllib.request, urllib.error, time
           base = "https://nba-stats-4.onrender.com"
           token = os.environ.get("NBA_STATS_ACCESS_TOKEN")
           if not token:
@@ -33,13 +35,17 @@ jobs:
           from datetime import datetime
           from zoneinfo import ZoneInfo
           today = datetime.now(ZoneInfo("Europe/Rome")).date().isoformat()
-          for day in ("2026-10-23","2026-10-24"):
+          dates = ("2026-10-23","2026-10-24")
+          ready = []
+          for day in dates:
               if day > today:
                   print("SKIP future local date",day,flush=True)
                   continue
               try:
                   result = call("/api/calibration/dry-run?date="+day)
                   print("AUDIT",day,json.dumps(result,ensure_ascii=False),flush=True)
+                  if result.get("can_settle"):
+                      ready.append(day)
               except urllib.error.HTTPError as e:
                   if e.code == 422 and day == today:
                       print("DEPLOY_PENDING: Render still rejects current-day audit",day,flush=True)
@@ -47,6 +53,16 @@ jobs:
                   raise
           result = call("/api/calibration/settle",method="POST")
           print("SETTLEMENT",json.dumps(result,ensure_ascii=False),flush=True)
-          result = call("/api/calibration/summary")
-          print("SUMMARY",json.dumps(result,ensure_ascii=False),flush=True)
+          try:
+              status = call("/api/calibration/settlement-status")
+              print("COMMITTED",json.dumps(status,ensure_ascii=False),flush=True)
+              committed = {row["date"] for row in status["settled"] if row["bins"] > 0}
+              missing = [day for day in ready if day not in committed]
+              if missing:
+                  raise SystemExit("ERROR: ESPN-ready dates not committed: "+", ".join(missing))
+          except urllib.error.HTTPError as e:
+              if e.code == 404:
+                  print("DEPLOY_PENDING: settlement status endpoint not deployed; cannot verify DB commit",flush=True)
+                  raise SystemExit(1)
+              raise
           PY

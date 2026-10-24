@@ -496,6 +496,24 @@ def calibration_settle():
             processed.append({'date':day,'status':'skipped','reason':str(exc)[:160]})
     return {'processed':processed,'pending':max(0,len(candidates)-2),'odds_api_calls':0}
 
+@app.get('/api/calibration/settlement-status', dependencies=[Depends(auth)])
+def calibration_settlement_status():
+    """Read-only confirmation of committed daily calibration rows."""
+    with storage.connection() as conn:
+        rows = conn.execute("""
+            SELECT s.scan_date, s.snapshot_job_id, s.prediction_count,
+                   s.matched_count, COUNT(d.market)
+            FROM nba_calibration_settled s
+            LEFT JOIN nba_calibration_daily d ON d.scan_date = s.scan_date
+            GROUP BY s.scan_date, s.snapshot_job_id, s.prediction_count, s.matched_count
+            ORDER BY s.scan_date DESC LIMIT 30
+        """).fetchall()
+    return {'settled': [{'date': day.isoformat(), 'job_id': job,
+                         'eligible': expected, 'verified': matched, 'bins': bins}
+                        for day, job, expected, matched, bins in rows],
+            'odds_api_calls': 0}
+
+
 @app.get('/api/calibration/summary', dependencies=[Depends(auth)])
 def calibration_summary():
     import calibration
