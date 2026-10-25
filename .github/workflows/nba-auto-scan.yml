@@ -5,6 +5,9 @@ on:
     # Local Italian time, including automatic CET/CEST changes.
     - cron: "0 7,12,17,21 * * *"
       timezone: Europe/Rome
+    # Recovery checks within each two-hour window; claimed slots never repeat.
+    - cron: "7,17,27,37,47,57 7,8,12,13,17,18,21,22 * * *"
+      timezone: Europe/Rome
   workflow_dispatch:
     inputs:
       mode:

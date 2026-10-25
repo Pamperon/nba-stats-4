@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 BASE = "https://nba-stats-4.onrender.com"
 TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
-# GitHub schedules these Rome-time slots; Render can recover delayed launches.
+# GitHub and Render recovery checks cover two hours after each Rome-time slot.
 # Supabase reserves each slot at most once, including after ambiguous failures.
 SLOTS = (7, 12, 17, 21)
 MAX_DELAY = dt.timedelta(hours=2)
@@ -56,6 +56,11 @@ def run(source=None):
         if slot is None:
             print("SKIPPED: no recent Rome-time slot", now.isoformat(), flush=True)
             return
+        # Do not consume a slot against an old deployment with incompatible
+        # slot validation or retry policy. A later automatic check can recover.
+        health = call("/api/health")
+        if health.get("scheduler_revision") != "rome-slots-at-most-once-v2":
+            raise RuntimeError("Render scheduler update is not deployed yet; slot not claimed")
         slot_key = slot.strftime("%Y-%m-%dT%H:00")
         reservation = call("/api/storage/slot/claim?slot=" + urllib.parse.quote(slot_key),
                            method="POST")

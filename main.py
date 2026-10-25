@@ -61,7 +61,9 @@ def auth(authorization: str = Header(default='')):
 
 @app.get('/api/health')
 def health():
-    return {'status':'ok', 'version':'4.0-optimized'}
+    return {'status': 'ok', 'version': '4.0-optimized',
+            'deployment_commit': os.getenv('RENDER_GIT_COMMIT'),
+            'scheduler_revision': 'rome-slots-at-most-once-v2'}
 
 @app.get('/api/session', dependencies=[Depends(auth)])
 def session():

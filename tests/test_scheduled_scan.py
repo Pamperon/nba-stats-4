@@ -41,10 +41,17 @@ class SchedulerTests(unittest.TestCase):
                     function(invalid, *([True] if name == 'slot_finish' else []))
 
     def test_duplicate_slot_never_starts_scan(self):
-        with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 12, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', return_value={'claimed': False}) as call, patch.object(scheduler, 'execute_scan') as execute:
+        with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 12, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', side_effect=[{'scheduler_revision': 'rome-slots-at-most-once-v2'}, {'claimed': False}]) as call, patch.object(scheduler, 'execute_scan') as execute:
             scheduler.run()
             execute.assert_not_called()
-            self.assertEqual(call.call_count, 1)
+            self.assertEqual(call.call_count, 2)
+
+    def test_old_deployment_cannot_consume_slot(self):
+        with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 12, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', return_value={'status': 'ok'}) as call, patch.object(scheduler, 'execute_scan') as execute:
+            with self.assertRaisesRegex(RuntimeError, 'not deployed'):
+                scheduler.run()
+            call.assert_called_once_with('/api/health')
+            execute.assert_not_called()
 
     def test_database_claim_never_replays_failed_or_stale_slot(self):
         tree = ast.parse((ROOT / 'storage.py').read_text())
