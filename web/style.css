@@ -249,10 +249,3 @@ main{padding-top:14px}
 @media(max-width:760px){.app-header{min-height:78px;padding:11px 10px}.app-header .brand{gap:8px}.app-header .brand-icon{flex-basis:52px;width:52px;height:52px}.app-header .brand-icon svg{width:52px;height:52px}.app-header .brand-copy b{font-size:clamp(19px,5.2vw,29px)}.app-header .brand-copy small{font-size:clamp(7px,1.75vw,10px);letter-spacing:1px}}
 @media(max-width:370px){.app-header .brand{gap:6px}.app-header .brand-icon{flex-basis:44px;width:44px;height:44px}.app-header .brand-icon svg{width:44px;height:44px}.app-header .brand-copy b{font-size:19px}.app-header .brand-copy small{font-size:7px;letter-spacing:.65px}}
 
-/* Persistent attempt state remains visible even when no new snapshot exists. */
-.scan-status{padding:14px 18px;border:1px solid #293b54;border-radius:12px;background:#101a29;margin-bottom:16px}
-.scan-status[hidden]{display:none!important}.scan-status>div{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.scan-status-label{font-size:10px;letter-spacing:.8px;color:#9cb0cb}.scan-status strong{font-size:13px;color:#9dbde5}
-.scan-status p{font-size:12px;color:#9cb0cb;margin:6px 0 0}.scan-status[data-state="done"] strong{color:#53c99a}
-.scan-status[data-state="error"] strong,.scan-status[data-state="interrupted"] strong,.scan-status[data-state="save_failed"] strong{color:#f08091}
-.scan-status[data-state="partial"] strong{color:#ffb05e}

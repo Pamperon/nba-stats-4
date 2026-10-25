@@ -95,6 +95,64 @@ class CompletedHistoryTests(unittest.TestCase):
             engine.espn_event_summary('shared-game')
         self.assertEqual(free.call_count, 1)
 
+    def test_large_summary_cache_retains_only_verification_fields(self):
+        engine.espn_event_summary.cache_clear()
+        self.addCleanup(engine.espn_event_summary.cache_clear)
+        raw = {'header': {**event('large', True), 'season': {'type': 2}},
+               'boxscore': {'unused': 'x' * 1_000_000}, 'plays': ['y' * 1_000_000]}
+        with patch.object(engine, 'espn_json', return_value=raw):
+            compact = engine.espn_event_summary('large')
+        self.assertEqual(engine.espn_event_completed(compact['header']), True)
+        self.assertEqual(engine._espn_competition_type(compact['header']), 2)
+        self.assertNotIn('boxscore', compact)
+        import json
+        self.assertLess(len(json.dumps(compact)), 250)
+        raw['header']['competitions'][0]['status']['type']['completed'] = False
+        self.assertTrue(engine.espn_event_completed(compact['header']))
+
+    def test_compaction_preserves_negative_conflicting_and_unknown_evidence(self):
+        for value in (True, False, None, 'true', 1):
+            original = event('game', value)
+            self.assertEqual(engine.espn_event_completed(original),
+                             engine.espn_event_completed(engine._compact_espn_event(original)))
+        original = event('conflict', True)
+        original['status'] = {'type': {'completed': False}}
+        self.assertFalse(engine.espn_event_completed(engine._compact_espn_event(original)))
+        self.assertIsNone(engine.espn_event_completed(engine._compact_espn_event({})))
+
+    def test_schedule_cache_discards_large_nonverification_fields(self):
+        engine.espn_season_schedule_payloads.cache_clear()
+        self.addCleanup(engine.espn_season_schedule_payloads.cache_clear)
+        raw = {'events': [{**event('game', True), 'seasonType': 2,
+                           'date': '2026-10-25T18:00:00Z',
+                           'competitors': ['x' * 1_000_000]}], 'news': 'x' * 1_000_000}
+        with patch.object(engine, 'espn_json', return_value=raw):
+            schedules = engine.espn_season_schedule_payloads('compact', 2027)
+        import json
+        self.assertLess(len(json.dumps(schedules)), 500)
+        self.assertTrue(engine.espn_event_completed(schedules[0][1]['events'][0]))
+        self.assertEqual(engine.espn_event_date(schedules[0][1]['events'][0]), '2026-10-25T18:00:00Z')
+
+    def test_many_large_summaries_do_not_accumulate_raw_responses(self):
+        import tracemalloc
+        engine.espn_event_summary.cache_clear()
+        self.addCleanup(engine.espn_event_summary.cache_clear)
+        def large_response(*args, **kwargs):
+            return {'header': {**event(str(kwargs['event']), True), 'seasonType': 2},
+                    'boxscore': 'x' * 1_000_000}
+        tracemalloc.start()
+        try:
+            with patch.object(engine, 'espn_json', side_effect=large_response):
+                for game in range(1100):
+                    engine.espn_event_summary(str(game))
+            retained, peak = tracemalloc.get_traced_memory()
+            # The former cache retained ~1 GB for this fixture. Leave generous
+            # headroom for bookkeeping while bounding the metadata-only cache.
+            self.assertLess(retained, 8_000_000)
+            self.assertLess(peak, 12_000_000)
+        finally:
+            tracemalloc.stop()
+
     def test_classifier_returns_only_completed_games(self):
         games = self.frame()
         with patch.object(engine, 'espn_json', return_value={}), patch.object(engine, 'espn_log_to_frame', return_value=games), patch.object(engine, 'espn_schedule_competition_ids', return_value={}), patch.object(engine, 'completed_game_log', return_value=games.iloc[[0, 2]]) as final_filter:

@@ -59,9 +59,9 @@ ricostruire il consumo. Il registro copre le nuove richieste dall'attivazione;
 non ricostruisce gli arresti precedenti né richieste effettuate fuori dall'app.
 
 `GET /api/saved/status?date=YYYY-MM-DD` distingue l'ultimo tentativo dall'ultimo
-snapshot salvato. L'interfaccia mostra attesa, coda, elaborazione, completamento,
-parzialità, fallimento o interruzione e aggiorna lo stato delle scansioni attive
-con sole letture. Un errore non aggiorna l'orario delle quote precedenti.
+snapshot salvato. L'interfaccia controlla lo stato in sottofondo con sole letture
+per caricare i nuovi dati salvati, senza mostrare un riquadro tecnico. Un errore
+non aggiorna l'orario delle quote precedenti.
 
 ## Verifiche offline
 
@@ -87,8 +87,10 @@ Lo storico usato per le stime include soltanto partite il cui stato ESPN è
 ufficialmente concluso. Non esiste un'esclusione fissa delle ultime 24 ore:
 una gara finale di poche ore prima è utilizzabile anche nei back-to-back.
 Le gare in corso o senza conferma di conclusione vengono escluse. Il calendario
-stagionale e i riepiloghi per ID partita sono condivisi in cache per cinque minuti;
-non richiedono OddsPapi. Una nuova scansione aggiorna le stime salvate, senza
+stagionale e i riepiloghi per ID partita sono condivisi in cache per cinque minuti,
+conservando soltanto ID, data, tipo e conferma di conclusione. Le risposte ESPN
+complete (box score, cronache e media) non restano in questa cache, per contenere
+la memoria sul servizio Render da 512 MB. Questi controlli non richiedono OddsPapi. Una nuova scansione aggiorna le stime salvate, senza
 riscrivere gli archivi precedenti.
 
 Le probabilità sono stime empiriche, non garanzie di esito. Le correzioni di

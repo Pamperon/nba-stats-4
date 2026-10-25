@@ -385,12 +385,38 @@ def espn_event_date(info):
                 return found
     return None
 
+def _compact_espn_event(event):
+    """Retain verification metadata only, never box scores, news or rosters."""
+    if not isinstance(event, dict):
+        return {}
+    result = {}
+    if event.get("id") is not None:
+        result["id"] = str(event["id"])
+    date = espn_event_date(event)
+    if date:
+        result["date"] = date
+    kind = _espn_competition_type(event)
+    if kind is not None:
+        result["seasonType"] = kind
+    completed = espn_event_completed(event)
+    if completed is not None:
+        result["status"] = {"type": {"completed": completed}}
+    return result
+
+
 @cached(TTLCache(maxsize=128, ttl=300), lock=threading.RLock())
 def espn_season_schedule_payloads(team_id, end_year):
-    """Share official schedule/status responses across players for five minutes."""
-    return tuple((kind, espn_json(f"{ESPN_SITE}/teams/{team_id}/schedule",
-                                season=end_year, seasontype=kind))
-                 for kind in (2, 3))
+    """Share compact schedule evidence, without retaining full ESPN responses."""
+    schedules = []
+    for kind in (2, 3):
+        payload = espn_json(f"{ESPN_SITE}/teams/{team_id}/schedule",
+                            season=end_year, seasontype=kind)
+        if not isinstance(payload, dict) or not isinstance(payload.get("events", []), list):
+            raise ValueError("Invalid ESPN schedule")
+        schedules.append((kind, {"events": [_compact_espn_event(event)
+                                            for event in payload.get("events", [])]}))
+        del payload
+    return tuple(schedules)
 
 
 def espn_event_completed(event):
@@ -415,7 +441,13 @@ def espn_event_completed(event):
 
 @cached(TTLCache(maxsize=1024, ttl=300), lock=threading.RLock())
 def espn_event_summary(event_id):
-    return espn_json(f"{ESPN_SITE}/summary", event=event_id)
+    # Full summaries can contain several MB of box scores, plays and media.
+    # Caching hundreds of them exhausted Render Free's 512 MB during a scan.
+    payload = espn_json(f"{ESPN_SITE}/summary", event=event_id)
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid ESPN summary")
+    return {"header": _compact_espn_event(payload.get("header") or payload),
+            "gameInfo": _compact_espn_event(payload.get("gameInfo"))}
 
 
 def completed_game_log(games, team_id, season):

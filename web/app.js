@@ -20,7 +20,7 @@ const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();setArchiveStatus(updatedStatus(j));return true}catch{return false}}
 let playerStatsInitialized=false;
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player';$('scan-status').hidden=b.dataset.tab==='player'||!$('scan-status').dataset.state});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
  const select=$('date'), strip=$('date-strip'), month=$('date-month');
  if(!strip||!select)return;
@@ -44,26 +44,11 @@ function renderDateStrip(){
 }
 let scanStatusTimer=0;
 const scanStateNames={waiting:'In attesa di aggiornamento',queued:'In coda',running:'In elaborazione',done:'Completata',partial:'Parziale',error:'Fallita',save_failed:'Salvataggio fallito',interrupted:'Interrotta'};
-function statusTime(value){
- const time=value?new Date(value):null;
- return time&&!Number.isNaN(time.getTime())?time.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'non disponibile';
-}
-function renderScanStatus(payload){
- const panel=$('scan-status');panel.hidden=document.querySelector('nav button.active')?.dataset.tab==='player';panel.dataset.state=payload.state;
- $('scan-state').textContent=scanStateNames[payload.state]||'Stato non disponibile';
- const attempt=payload.latest_attempt,saved=payload.last_saved;
- $('scan-attempt').textContent=attempt?'Ultimo tentativo: '+statusTime(attempt.started_at)+(attempt.state==='running'?' · '+(attempt.progress||0)+'%':''):(saved?'Scansione salvata avviata: '+statusTime(saved.started_at||saved.saved_at):'Nessun tentativo ancora registrato');
- $('scan-saved').textContent=saved?'Ultimi dati salvati: '+statusTime(saved.saved_at)+(saved.state==='partial'?' · parziali':''):'Nessun dato ancora salvato';
- const usage=attempt?.api_requests;
- const count=usage?.logged??saved?.api_requests;
- $('scan-usage').textContent=Number.isFinite(count)?'Richieste API registrate: '+count+(usage?.uncertain&&!['queued','running'].includes(payload.state)?' · '+usage.uncertain+' da verificare':''):'Richieste API: non misurate per questo archivio';
-}
 async function loadScanStatus(date,request,previousState=null){
  try{
   const payload=await(await api('/api/saved/status?date='+encodeURIComponent(date))).json();
   if(request!==dateSelectionRequest||$('date').value!==date)return;
   if(!Object.hasOwn(scanStateNames,payload.state))throw Error('Stato non disponibile');
-  renderScanStatus(payload);
   const finished=['done','partial'].includes(payload.state);
   const newerSave=payload.last_saved?.job_id&&data?.job_id&&payload.last_saved.job_id!==data.job_id;
   if(previousState!==null&&finished&&(previousState!==payload.state||newerSave)){
@@ -74,9 +59,6 @@ async function loadScanStatus(date,request,previousState=null){
   scanStatusTimer=setTimeout(()=>loadScanStatus(date,request,payload.state),['queued','running'].includes(payload.state)?15000:60000);
  }catch(error){
   if(request!==dateSelectionRequest||$('date').value!==date)return;
-  $('scan-status').hidden=document.querySelector('nav button.active')?.dataset.tab==='player';$('scan-status').dataset.state='unavailable';
-  $('scan-state').textContent='Stato temporaneamente non disponibile';
-  $('scan-attempt').textContent='';$('scan-saved').textContent='';$('scan-usage').textContent='';
   scanStatusTimer=setTimeout(()=>loadScanStatus(date,request,previousState),60000);
  }
 }
@@ -100,7 +82,6 @@ $('date').addEventListener('change',async()=>{
  renderDateStrip();
  const request=++dateSelectionRequest;
  clearTimeout(scanStatusTimer);
- $('scan-status').hidden=true;
  loadScanStatus(selected,request);
  // Android Chrome can retain the native focus ring after the date menu closes.
  $('date').blur();
@@ -123,7 +104,7 @@ $('date').addEventListener('change',async()=>{
     data=local;jobId='';render();setArchiveStatus(updatedStatus(local,true),'notice');
    }else{
     data=null;jobId='';render();
-    setArchiveStatus('Nessuna quota ancora disponibile per il '+selected,'notice');
+    setArchiveStatus('');
    }
   }else{
    data=null;jobId='';render();
@@ -219,7 +200,7 @@ function render(){
  if(data){
   const saved=data.saved_at?new Date(data.saved_at):null;
   const valid=saved&&!Number.isNaN(saved.getTime());
-  $('quote-updated').textContent=valid?'Ultimo aggiornamento dati e quote salvati: '+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Orario ultimo aggiornamento quote non disponibile';
+  $('quote-updated').textContent=valid?'Ultimo aggiornamento dati e quote salvati: '+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
  }
 
  if(!data){
