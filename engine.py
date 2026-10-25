@@ -93,6 +93,13 @@ def bet365_line_allowed(row, stat):
 _ODDS_API_LOCK = threading.Lock()
 _ODDS_API_NEXT_AT = 0.0
 _ODDS_API_MIN_INTERVAL = 2.0
+_ODDS_API_REQUESTS = threading.local()
+
+def reset_odds_api_request_count():
+    _ODDS_API_REQUESTS.count = 0
+
+def odds_api_request_count():
+    return getattr(_ODDS_API_REQUESTS, 'count', 0)
 
 def get_json(path, **params):
     if not API_KEY:
@@ -107,6 +114,7 @@ def get_json(path, **params):
                 time.sleep(wait)
             _ODDS_API_NEXT_AT = time.monotonic() + _ODDS_API_MIN_INTERVAL
             try:
+                _ODDS_API_REQUESTS.count = odds_api_request_count() + 1
                 resp = requests.get(
                     f"{BASE}/{path}",
                     params={**params, "apiKey": API_KEY, "language": "en"},

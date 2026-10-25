@@ -121,6 +121,7 @@ def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
 def do_scan(job_id, date):
     with lock: jobs[job_id]['state']='running'
     try:
+        engine.reset_odds_api_request_count()
         started_at = time.monotonic()
         scan_started_at = datetime.now(ZoneInfo('Europe/Rome')).isoformat()
         season = engine.current_nba_season(datetime.strptime(date,'%Y-%m-%d'))
@@ -172,6 +173,7 @@ def do_scan(job_id, date):
             'scan_started_at': scan_started_at,
             'scan_finished_at': datetime.now(ZoneInfo('Europe/Rome')).isoformat(),
             'odds_api_calls_scan': odds_count,  # Legacy field: counts quote lines, NOT API requests.
+            'odds_api_http_requests_scan': engine.odds_api_request_count(),
             'quote_lines_scan': odds_count,
             'timings': {'preparazione_s': setup_seconds,
                         'scansione_s': analysis_seconds,
