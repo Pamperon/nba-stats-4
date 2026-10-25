@@ -174,3 +174,25 @@
 #quote-summary #metrics .metric strong{font-size:clamp(17px,4vw,23px);line-height:1.2}
 #quote-summary .quote-updated{padding:9px 2px 1px;text-align:center;font-size:11px;line-height:1.35;color:#a7bdd6}
 @media(max-width:370px){#quote-summary{padding:8px}#quote-summary #metrics{gap:5px}#quote-summary #metrics .metric small{font-size:9px}#quote-summary .quote-updated{font-size:10px}}
+
+/* NBA STATS PRO — compact premium header and accessible date strip */
+.app-header{background:#101827;border-bottom:1px solid #263348;padding:16px max(18px,4vw)}
+.app-header .brand-icon{background:#f28a45;color:#101522;font-size:27px;font-weight:900;border-radius:12px}
+.app-header .brand-copy b{font-size:clamp(19px,3vw,25px);letter-spacing:.15px}
+.app-header .brand-version{background:transparent!important;color:#f28a45!important;padding:0!important;font-size:inherit!important;letter-spacing:inherit!important}
+.app-header .brand-copy small{color:#9ca9bc;letter-spacing:1.4px}
+.app-hero{margin-bottom:20px}
+.app-hero .actions{width:100%}
+.app-hero .date-control{width:100%;background:#111d2d;border:1px solid #2d3b50;border-radius:20px;padding:20px;gap:14px}
+.app-hero .date-label{font-size:12px;letter-spacing:1.6px;color:#a7b5c9}
+.date-strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;padding:2px 1px 8px}
+.date-chip{flex:0 0 78px;min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#1b2638;color:#fff;border:1px solid #2d3b50;border-radius:13px;scroll-snap-align:start;cursor:pointer}
+.date-chip .day-name{font-size:11px;color:#a6b2c5;font-weight:700;letter-spacing:.5px}
+.date-chip .day-number{font-size:27px;font-weight:800;line-height:1}
+.date-chip[aria-pressed="true"]{background:#f28a45;color:#101522;border-color:#f28a45}
+.date-chip[aria-pressed="true"] .day-name{color:#101522}
+.date-chip:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.date-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#9baac0;font-size:13px}
+.calendar-action{color:#f28a45;cursor:pointer;font-weight:700}
+.app-hero #date{font-size:13px;width:100%;padding:8px 10px;border:1px solid #354862;border-radius:9px;background:#1b2638;color:#dce7f7}
+@media(max-width:760px){.app-header{padding:15px 16px}.app-hero .date-control{padding:16px}.date-chip{flex-basis:73px;min-height:75px}.app-header .brand-copy b{font-size:19px}}
