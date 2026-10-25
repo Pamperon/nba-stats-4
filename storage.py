@@ -53,31 +53,41 @@ def initialize():
                 finished_at TIMESTAMPTZ
             )
         """)
+        conn.execute("ALTER TABLE nba_scan_slots ADD COLUMN IF NOT EXISTS heartbeat_at TIMESTAMPTZ")
+        conn.execute("ALTER TABLE nba_scan_slots ADD COLUMN IF NOT EXISTS instance_id TEXT")
     return True
 
 
-def claim_slot(slot_key):
+def claim_slot(slot_key, instance_id=None):
     """Atomic at-most-once reservation across GitHub and Render schedulers."""
     if not configured():
         raise RuntimeError("Database required for scan deduplication")
     with connection() as conn:
+        if instance_id is not None:
+            import scan_tracking
+            scan_tracking.ensure_claim_allowed(conn, instance_id)
         row = conn.execute("""
-            INSERT INTO nba_scan_slots(slot_key, status)
-            VALUES (%s, 'running')
+            INSERT INTO nba_scan_slots(slot_key, status, heartbeat_at, instance_id)
+            VALUES (%s, 'running', NOW(), %s)
             -- Never replay a slot automatically: a failed/timed-out caller may
             -- already have consumed paid API calls or left a server job running.
             ON CONFLICT(slot_key) DO NOTHING
             RETURNING slot_key
-        """, (slot_key,)).fetchone()
+        """, (slot_key, instance_id)).fetchone()
     return bool(row)
 
 
 def finish_slot(slot_key, success):
     with connection() as conn:
         conn.execute("""
-            UPDATE nba_scan_slots SET status=%s, finished_at=NOW()
+            UPDATE nba_scan_slots SET status=%s, finished_at=NOW(), heartbeat_at=NOW()
             WHERE slot_key=%s AND status='running'
         """, ('done' if success else 'failed', slot_key))
+
+
+def touch_slot(slot_key):
+    with connection() as conn:
+        conn.execute("UPDATE nba_scan_slots SET heartbeat_at=NOW() WHERE slot_key=%s AND status='running'", (slot_key,))
 
 
 def cache_read(key, max_age_hours):

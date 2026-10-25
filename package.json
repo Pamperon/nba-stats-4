@@ -5,6 +5,7 @@
     "test": "node --check web/app.js && node --check web/sw.js && node --test tests/frontend.test.cjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "jsdom": "30.1.3"
   }
 }

@@ -26,7 +26,7 @@ class SchedulerTests(unittest.TestCase):
             node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name)
             node.decorator_list = []
             node.args.defaults = []
-            namespace = {'datetime': dt.datetime, 'HTTPException': HTTPException, 'storage': Mock(), 'logger': Mock()}
+            namespace = {'datetime': dt.datetime, 'HTTPException': HTTPException, 'storage': Mock(), 'logger': Mock(), 'RUNTIME_ID': 'offline-runtime'}
             exec(compile(ast.Module(body=[node], type_ignores=[]), 'main.py', 'exec'), namespace)
             function = namespace[name]
             for hour in range(24):

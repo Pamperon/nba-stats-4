@@ -20,6 +20,12 @@ class AppRuntimeTests(unittest.TestCase):
         self.network.start()
         self.addCleanup(self.network.stop)
         main.jobs.clear()
+        heartbeat = patch.object(main, '_scan_heartbeat')
+        heartbeat.start()
+        self.addCleanup(heartbeat.stop)
+        finish = patch.object(main.scan_tracking, 'finish_attempt')
+        finish.start()
+        self.addCleanup(finish.stop)
         # No context manager: these HTTP tests do not run startup or the scheduler.
         self.client = TestClient(main.app)
         self.addCleanup(self.client.close)

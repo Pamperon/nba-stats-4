@@ -33,7 +33,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: pip install -r requirements-dev.txt
-      - run: python scripts/run_offline_tests.py
-      - run: python -m compileall -q main.py engine.py storage.py player_stats.py calibration.py calibration_validation.py progressive_calibration.py minutes_shadow.py performance_report.py settle_espn.py scripts tests
       - run: npm ci --ignore-scripts
+      - run: python scripts/run_offline_tests.py
+      - run: python scripts/check_tracking_db.py
+      - run: python -m compileall -q main.py engine.py storage.py scan_tracking.py player_stats.py calibration.py calibration_validation.py progressive_calibration.py minutes_shadow.py performance_report.py settle_espn.py scripts tests
       - run: npm test

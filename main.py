@@ -1,5 +1,5 @@
 """FastAPI app. One process for the free-tier MVP; persistent jobs need external storage later."""
-import os, secrets, threading, uuid, io, time
+import os, secrets, threading, uuid, io, time, asyncio
 from PIL import Image
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -10,6 +10,7 @@ import pandas as pd
 import requests
 import engine
 import storage
+import scan_tracking
 import player_stats
 from cachetools import TTLCache
 import logging
@@ -27,32 +28,78 @@ lock = threading.Lock()
 headshot_cache = TTLCache(maxsize=80, ttl=86400)
 headshot_lock = threading.RLock()
 
+RUNTIME_ID = uuid.uuid4().hex
+shutdown_event = threading.Event()
+scan_threads = {}
+tracking_ready = False
+
+
 @app.on_event('startup')
 def init_storage():
-    if storage.configured():
+    global tracking_ready
+    if not storage.configured():
+        raise RuntimeError('Database required for durable scan/API tracking')
+    storage.initialize()
+    scan_tracking.initialize()
+    import calibration
+    calibration.initialize()
+    # Uvicorn has not opened its listening port yet. Render keeps the previous
+    # instance serving traffic while its already-claimed batch finishes.
+    scan_tracking.wait_for_deployment(RUNTIME_ID)
+    tracking_ready = True
+    threading.Thread(target=_release_guard_when_public, daemon=True, name='nba-deploy-release').start()
+    threading.Thread(target=_render_scheduler_loop, daemon=True, name='nba-render-scheduler').start()
+
+
+def _release_guard_when_public():
+    for _ in range(30):
+        if shutdown_event.wait(2):
+            return
         try:
-            storage.initialize()
-            import calibration
-            calibration.initialize()
-            logger.info('Persistent PostgreSQL scan storage ready')
+            response = requests.get('https://nba-stats-4.onrender.com/api/health', timeout=5)
+            if response.ok and response.json().get('runtime_instance') == RUNTIME_ID:
+                scan_tracking.release_deploy_guard(RUNTIME_ID)
+                return
         except Exception:
-            logger.exception('Persistent storage unavailable; service remains accessible')
-    # Independent best-effort fallback while Render is awake. GitHub Actions
-    # remains the primary scheduler; Supabase claims deduplicate both.
-    threading.Thread(target=_render_scheduler_loop, daemon=True,
-                     name='nba-render-scheduler').start()
+            logger.warning('Waiting for public routing before releasing deploy guard')
+    # Guard expires automatically. This instance may still process new work;
+    # only older instances are fenced by the guard's runtime ID.
+    logger.warning('Deploy guard retained until automatic expiry')
 
 
 def _render_scheduler_loop():
-    """Recover missed slots if GitHub scheduled events are dropped."""
     import scripts.scheduled_scan as scheduler
-    time.sleep(35)  # Wait for Uvicorn to start accepting requests.
-    while True:
+    if shutdown_event.wait(35):
+        return
+    while not shutdown_event.is_set():
         try:
             scheduler.run(source='render')
         except Exception:
             logger.exception('Render fallback scan scheduler failed')
-        time.sleep(600)
+        shutdown_event.wait(600)
+
+
+@app.on_event('shutdown')
+async def drain_scans():
+    shutdown_event.set()
+    with lock:
+        pending = [thread for thread in scan_threads.values() if thread.is_alive()]
+    # Normal deploys waited at startup. This bounded drain also helps with
+    # restarts; a platform hard kill can still interrupt an unusually long job.
+    deadline = time.monotonic() + 20
+    for thread in pending:
+        await asyncio.to_thread(thread.join, max(0, deadline - time.monotonic()))
+
+
+def _scan_heartbeat(job_id, stop):
+    while not stop.is_set():
+        try:
+            with lock:
+                job = dict(jobs[job_id])
+            scan_tracking.heartbeat(job_id, job.get('progress', 0), job.get('stage', 'In elaborazione'))
+        except Exception:
+            logger.exception('Cannot persist scan heartbeat %s', job_id)
+        stop.wait(15)
 
 
 def auth(authorization: str = Header(default='')):
@@ -61,9 +108,13 @@ def auth(authorization: str = Header(default='')):
 
 @app.get('/api/health')
 def health():
+    with lock:
+        active = sum(job['state'] in ('queued','running') for job in jobs.values())
     return {'status': 'ok', 'version': '4.0-optimized',
             'deployment_commit': os.getenv('RENDER_GIT_COMMIT'),
-            'scheduler_revision': 'rome-slots-at-most-once-v2'}
+            'scheduler_revision': 'rome-slots-at-most-once-v2',
+            'runtime_instance': RUNTIME_ID, 'scan_tracking_ready': tracking_ready,
+            'active_scans': active}
 
 @app.get('/api/session', dependencies=[Depends(auth)])
 def session():
@@ -122,8 +173,12 @@ def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
 
 def do_scan(job_id, date):
     with lock: jobs[job_id]['state']='running'
+    engine.set_odds_request_job(job_id)
+    heartbeat_stop = threading.Event()
+    heartbeat_thread = threading.Thread(target=_scan_heartbeat, args=(job_id, heartbeat_stop), daemon=True)
     try:
         engine.reset_odds_api_request_count()
+        heartbeat_thread.start()
         started_at = time.monotonic()
         scan_started_at = datetime.now(ZoneInfo('Europe/Rome')).isoformat()
         season = engine.current_nba_season(datetime.strptime(date,'%Y-%m-%d'))
@@ -199,9 +254,16 @@ def do_scan(job_id, date):
         logger.exception('Scan %s failed for %s', job_id, date)
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
     finally:
+        heartbeat_stop.set()
         with lock:
-            state = jobs[job_id]['state']
+            terminal = dict(jobs[job_id])
+            state = terminal['state']
             jobs[job_id]['odds_api_http_requests_scan'] = engine.odds_api_request_count()
+        try:
+            scan_tracking.finish_attempt(job_id, state, terminal.get('progress', 0), terminal.get('stage', ''))
+        except Exception:
+            logger.exception('Cannot finalize durable scan attempt %s', job_id)
+        engine.set_odds_request_job(None)
         print(f'NBA scan date={date} job={job_id} state={state} '
               f'odds_api_http_requests={engine.odds_api_request_count()}', flush=True)
 
@@ -436,10 +498,19 @@ def slot_claim(slot: str = Query()):
     except ValueError:
         raise HTTPException(400, 'Fascia oraria non valida')
     try:
-        return {'claimed': storage.claim_slot(slot), 'odds_api_calls': 0}
+        return {'claimed': storage.claim_slot(slot, RUNTIME_ID), 'odds_api_calls': 0}
     except Exception:
         logger.exception('Scan slot claim failed')
         raise HTTPException(503, 'Impossibile prenotare la fascia di scansione')
+
+
+@app.post('/api/storage/slot/heartbeat', dependencies=[Depends(auth)])
+def slot_heartbeat(slot: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:00$')):
+    try:
+        storage.touch_slot(slot)
+        return {'ok': True, 'odds_api_calls': 0}
+    except Exception:
+        raise HTTPException(503, 'Impossibile aggiornare lo stato della fascia')
 
 
 @app.post('/api/storage/slot/finish', dependencies=[Depends(auth)])
@@ -585,24 +656,67 @@ def storage_cleanup():
         logger.exception('NBA archive retention cleanup failed')
         raise HTTPException(503, 'Pulizia archivio non riuscita')
 
+@app.get('/api/saved/status')
+def saved_status(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    try:
+        datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+    try:
+        return scan_tracking.day_status(date)
+    except Exception:
+        logger.exception('Cannot read durable scan status')
+        raise HTTPException(503, 'Stato aggiornamento temporaneamente non disponibile')
+
+
 @app.post('/api/scan', dependencies=[Depends(auth)])
-def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'), source: str = Query(default='manual', pattern=r'^(github|render|manual)$')):
-    try: datetime.strptime(date,'%Y-%m-%d')
-    except ValueError: raise HTTPException(400,'Data non valida')
+def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
+         source: str = Query(default='manual', pattern=r'^(github|render|manual)$'),
+         slot: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:00$')):
+    try:
+        datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+    if shutdown_event.is_set():
+        raise HTTPException(503, 'Servizio in aggiornamento; nuova scansione rinviata')
     with lock:
         for job_id, job in jobs.items():
-            if job['date']==date and job['state'] in ('queued','running'):
-                return {'job_id':job_id,'reused':True}
+            if job['date'] == date and job['state'] in ('queued','running'):
+                return {'job_id': job_id, 'reused': True}
         if any(job['state'] in ('queued','running') for job in jobs.values()):
             raise HTTPException(409, 'Una scansione è già in corso')
-        if len(jobs)>15:
+        job_id = uuid.uuid4().hex
+        try:
+            reservation = scan_tracking.begin_attempt(job_id, date, RUNTIME_ID, source, slot)
+        except scan_tracking.ScanPaused as exc:
+            raise HTTPException(503, str(exc))
+        except Exception:
+            logger.exception('Cannot persist new scan attempt')
+            raise HTTPException(503, 'Archivio non disponibile; nessuna scansione avviata')
+        if reservation['reused']:
+            if reservation['date'] != date:
+                raise HTTPException(409, 'Una scansione è già in corso')
+            return {'job_id': reservation['job_id'], 'reused': True}
+        if len(jobs) > 15:
             for old_id in list(jobs):
                 if jobs[old_id]['state'] not in ('queued','running'):
                     del jobs[old_id]
-                if len(jobs)<=10: break
-        job_id=uuid.uuid4().hex
-        jobs[job_id]={'date':date,'state':'queued','progress':0,'stage':'In coda','scan_source':source}
-    threading.Thread(target=do_scan,args=(job_id,date),daemon=True).start()
+                    scan_threads.pop(old_id, None)
+                if len(jobs) <= 10:
+                    break
+        jobs[job_id] = {'date':date,'state':'queued','progress':0,'stage':'In coda','scan_source':source}
+        thread = threading.Thread(target=do_scan, args=(job_id,date), daemon=True)
+        scan_threads[job_id] = thread
+    try:
+        thread.start()
+    except Exception:
+        with lock:
+            jobs[job_id].update(state='error', stage='Impossibile avviare la scansione')
+        try:
+            scan_tracking.finish_attempt(job_id, 'error', 0, 'Impossibile avviare la scansione')
+        except Exception:
+            logger.exception('Cannot persist failed worker startup')
+        raise HTTPException(503, 'Impossibile avviare la scansione')
     return {'job_id':job_id,'reused':False}
 
 @app.get('/api/scan/{job_id}', dependencies=[Depends(auth)])
@@ -616,6 +730,9 @@ def scan_result(job_id: str):
             saved = storage.by_job_id(job_id)
             if saved:
                 return saved
+            attempt = scan_tracking.attempt(job_id=job_id)
+            if attempt:
+                return attempt
         except Exception:
             logger.exception('Cannot restore scan from database')
     raise HTTPException(404,'Scansione non trovata')

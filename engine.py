@@ -9,6 +9,7 @@ import os, re, requests, pandas as pd
 import json, time, threading
 from pathlib import Path
 import logging
+import scan_tracking
 logger = logging.getLogger(__name__)
 BASE = "https://api.oddspapi.io/v4"
 ROME_TZ = ZoneInfo("Europe/Rome")
@@ -105,6 +106,19 @@ def reset_odds_api_request_count():
 def odds_api_request_count():
     return getattr(_ODDS_API_REQUESTS, 'count', 0)
 
+def set_odds_request_job(job_id):
+    _ODDS_API_REQUESTS.job_id = job_id
+
+
+def _record_response(request_id, http_status=None):
+    try:
+        scan_tracking.finish_request(request_id, http_status)
+    except Exception:
+        # The pre-send record is durable. Preserve its uncertain status rather
+        # than retry a request that may already have consumed provider quota.
+        logger.exception("Cannot finalize metered HTTP attempt %s", request_id)
+
+
 def get_json(path, **params):
     if not API_KEY:
         raise RuntimeError("Chiave OddsPapi assente nella configurazione del servizio.")
@@ -116,6 +130,10 @@ def get_json(path, **params):
             wait = max(0.0, _ODDS_API_NEXT_AT - time.monotonic())
             if wait:
                 time.sleep(wait)
+            try:
+                request_id = scan_tracking.start_request(getattr(_ODDS_API_REQUESTS, 'job_id', None), path)
+            except Exception:
+                raise RuntimeError("Registro API non disponibile: richiesta OddsPapi NON inviata.") from None
             _ODDS_API_NEXT_AT = time.monotonic() + _ODDS_API_MIN_INTERVAL
             try:
                 _ODDS_API_REQUESTS.count = odds_api_request_count() + 1
@@ -125,7 +143,9 @@ def get_json(path, **params):
                     timeout=40,
                 )
             except requests.RequestException:
+                _record_response(request_id)
                 raise RuntimeError("OddsPapi: errore di connessione.") from None
+            _record_response(request_id, resp.status_code)
             if resp.status_code == 429 and attempt == 0:
                 header = resp.headers.get("Retry-After", "")
                 try:

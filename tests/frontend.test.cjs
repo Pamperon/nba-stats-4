@@ -173,3 +173,94 @@ test('day-load outage is visible and clears after a successful retry', async () 
     assert.equal(w.__audit.getData().date, '2099-01-01');
   } finally {dom.window.close();}
 });
+
+test('failed attempt shows previous saved data time and uncertain API attempts separately', () => {
+  const dom = browser(async () => response({dates: []}));
+  try {
+    dom.window.renderScanStatus({state:'error',latest_attempt:{state:'error',started_at:'2026-10-25T16:00:00Z',api_requests:{logged:5,responded:4,uncertain:1}},last_saved:{state:'done',saved_at:'2026-10-25T11:48:00Z'}});
+    const d=dom.window.document;
+    assert.equal(d.getElementById('scan-state').textContent,'Fallita');
+    assert.match(d.getElementById('scan-attempt').textContent,/17:00/);
+    assert.match(d.getElementById('scan-saved').textContent,/12:48/);
+    assert.match(d.getElementById('scan-usage').textContent,/5 · 1 da verificare/);
+  } finally {dom.window.close();}
+});
+
+test('running and partial status remain distinct from a completed update', () => {
+  const dom = browser(async () => response({dates: []}));
+  try {
+    const w=dom.window,d=w.document;
+    w.renderScanStatus({state:'running',latest_attempt:{state:'running',progress:45,started_at:'2026-10-25T16:00:00Z',api_requests:{logged:2,responded:1,uncertain:1}},last_saved:null});
+    assert.equal(d.getElementById('scan-state').textContent,'In elaborazione');
+    assert.match(d.getElementById('scan-attempt').textContent,/45%/);
+    assert.doesNotMatch(d.getElementById('scan-usage').textContent,/da verificare/);
+    w.renderScanStatus({state:'partial',last_saved:{state:'partial',saved_at:'2026-10-25T16:10:00Z',api_requests:4}});
+    assert.equal(d.getElementById('scan-state').textContent,'Parziale');
+    assert.match(d.getElementById('scan-saved').textContent,/parziali/);
+  } finally {dom.window.close();}
+});
+
+test('delayed status for an old date cannot replace the selected date status', async () => {
+  const pending=new Map();
+  const dom=browser(async url=>{
+    if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'},{date:'2099-01-02'}]});
+    if(url.startsWith('/api/saved/status'))return new Promise(resolve=>pending.set(url,resolve));
+    return response({results:[],date:url.includes('2099-01-02')?'2099-01-02':'2099-01-01'});
+  });
+  try{
+    await tick();const w=dom.window,d=w.document;
+    d.getElementById('date').value='2099-01-02';d.getElementById('date').dispatchEvent(new w.Event('change'));
+    pending.get('/api/saved/status?date=2099-01-02')(response({state:'done',last_saved:{state:'done',saved_at:'2099-01-02T12:00:00Z'}}));
+    await tick();
+    pending.get('/api/saved/status?date=2099-01-01')(response({state:'error'}));await tick();
+    assert.equal(d.getElementById('scan-state').textContent,'Completata');
+  }finally{dom.window.close();}
+});
+
+test('status polling only reads saved endpoints and refreshes a newly completed snapshot', async () => {
+  const calls=[],timers=[];let state='running';
+  const dom=browser(async(url,options={})=>{
+    calls.push({url,method:options.method||'GET'});
+    if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+    if(url.startsWith('/api/saved/status'))return response({state,latest_attempt:{state,started_at:'2099-01-01T12:00:00Z'},last_saved:null});
+    return response({date:'2099-01-01',state,results:[]});
+  });
+  try{
+    dom.window.setTimeout=(fn)=>{timers.push(fn);return timers.length};
+    await tick();assert.equal(timers.length,1);
+    state='done';await timers[0]();await tick();
+    assert.equal(dom.window.document.getElementById('scan-state').textContent,'Completata');
+    assert.equal(dom.window.__audit.getData().state,'done');
+    assert.ok(calls.filter(c=>c.url.startsWith('/api/saved/latest')).length>=2);
+    assert.ok(calls.every(c=>c.method==='GET'&&c.url.startsWith('/api/saved/')));
+  }finally{dom.window.close();}
+});
+
+test('status endpoint outage does not hide a successfully loaded snapshot', async () => {
+  const dom=browser(async url=>{
+    if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+    if(url.startsWith('/api/saved/status'))return {ok:false,status:503};
+    return response({date:'2099-01-01',results:[]});
+  });
+  try{
+    await tick();
+    assert.equal(dom.window.__audit.getData().date,'2099-01-01');
+    assert.equal(dom.window.document.getElementById('scan-state').textContent,'Stato temporaneamente non disponibile');
+  }finally{dom.window.close();}
+});
+
+test('an open page checks again after completion to detect the next scheduled scan', async () => {
+  const timers=[];let state='done';
+  const dom=browser(async url=>{
+    if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+    if(url.startsWith('/api/saved/status'))return response({state,latest_attempt:{state,started_at:'2099-01-01T12:00:00Z'},last_saved:null});
+    return response({date:'2099-01-01',state,results:[]});
+  });
+  try{
+    dom.window.setTimeout=(fn,delay)=>{timers.push({fn,delay});return timers.length};
+    await tick();assert.equal(timers[0].delay,60000);
+    state='running';await timers[0].fn();await tick();
+    assert.equal(dom.window.document.getElementById('scan-state').textContent,'In elaborazione');
+    assert.equal(timers[1].delay,15000);
+  }finally{dom.window.close();}
+});

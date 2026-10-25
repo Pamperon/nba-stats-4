@@ -35,28 +35,48 @@ la stessa fascia. Una fascia prenotata **non viene ritentata automaticamente**
 dopo errori, timeout o riavvii: potrebbe aver già consumato chiamate API.
 Ogni esecuzione controlla su ESPN oggi e domani e scarica quote solo per le
 partite ancora da iniziare. I controlli di recupero senza nuova prenotazione
-non contattano OddsPapi. Non fare deploy durante una scansione: un riavvio può
-interrompere i job prima del salvataggio. Le fasce successive restano indipendenti.
+non contattano OddsPapi. I deploy ordinari attendono fino a dieci minuti che terminino le scansioni e le
+fasce già avviate; nel frattempo le nuove fasce vengono rinviate. Se l'attesa
+scade, il nuovo avvio fallisce senza sostituire l'istanza ancora attiva. I segnali
+di attività scadono dopo due minuti, così un processo già morto non blocca
+indefinitamente l'avvio. Riavvii forzati e arresti del provider possono comunque
+interrompere una scansione; le fasce successive restano indipendenti.
 
 `GET /api/health` mostra il commit Render e la revisione dello scheduler.
 `GET /api/saved/time?date=YYYY-MM-DD` mostra il riepilogo salvato:
 `quote_lines_scan` conta le righe di quota; `odds_api_http_requests_scan` conta
 le richieste HTTP OddsPapi della scansione. Per gli archivi precedenti alla
 misurazione, il numero di richieste rimane sconosciuto. Il contatore del provider
-resta il riferimento per il consumo totale dell'abbonamento, comprese scansioni
-interrotte o richieste esterne all'app.
+resta il riferimento per il consumo totale dell'abbonamento.
+
+Il registro persistente `nba_odds_request_log` salva ogni tentativo PRIMA della
+richiesta HTTP, senza chiavi o parametri sensibili, e poi registra l'esito. Se il
+registro non è disponibile, non viene inviata una nuova richiesta a pagamento.
+Un tentativo privo di risposta confermata resta separato come incerto: in caso
+di arresto tra registrazione e invio, o errore di rete, non è possibile sapere
+con certezza se il provider l'abbia conteggiato. Non si effettuano replay per
+ricostruire il consumo. Il registro copre le nuove richieste dall'attivazione;
+non ricostruisce gli arresti precedenti né richieste effettuate fuori dall'app.
+
+`GET /api/saved/status?date=YYYY-MM-DD` distingue l'ultimo tentativo dall'ultimo
+snapshot salvato. L'interfaccia mostra attesa, coda, elaborazione, completamento,
+parzialità, fallimento o interruzione e aggiorna lo stato delle scansioni attive
+con sole letture. Un errore non aggiorna l'orario delle quote precedenti.
 
 ## Verifiche offline
 
 ```
 pip install -r requirements-dev.txt
-python scripts/run_offline_tests.py
 npm ci --ignore-scripts
+python scripts/run_offline_tests.py
+python scripts/check_tracking_db.py
 npm test
 ```
 
 Il runner Python vieta le connessioni di rete reali; i test HTTP usano risposte
-simulate. I test JavaScript verificano sintassi, cambio giornata, profili
+simulate. Le query di migrazione, contatori, fasce e protezione deploy sono
+eseguite anche su PostgreSQL/PGlite isolato in memoria, senza socket o provider
+esterni. I test JavaScript verificano sintassi, cambio giornata, profili
 senza foto e ciclo di vita del service worker. Questi comandi non avviano
 scansioni e non consumano chiamate OddsPapi. GitHub esegue gli stessi controlli
 su push e pull request che modificano il codice.

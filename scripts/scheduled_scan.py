@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -74,6 +75,9 @@ def run(source=None):
             return
         print("CLAIMED slot:", slot_key, "actual:", now.isoformat(), flush=True)
     print("Starting NBA scan at Rome time:", now.isoformat(), flush=True)
+    heartbeat_stop = threading.Event()
+    if slot is not None:
+        threading.Thread(target=slot_heartbeat, args=(slot_key, heartbeat_stop), daemon=True).start()
     try:
         execute_scan(now, slot, manual, source or 'github', schedules=schedules)
     except BaseException:
@@ -85,6 +89,17 @@ def run(source=None):
         if slot is not None:
             call("/api/storage/slot/finish?slot=" + urllib.parse.quote(slot_key) +
                  "&success=true", method="POST")
+    finally:
+        heartbeat_stop.set()
+
+
+def slot_heartbeat(slot_key, stop):
+    while not stop.wait(30):
+        try:
+            call("/api/storage/slot/heartbeat?slot=" + urllib.parse.quote(slot_key), method="POST", timeout=15)
+        except Exception as exc:
+            print("Slot heartbeat temporarily unavailable:", type(exc).__name__, flush=True)
+
 
 def load_schedules(scan_day):
     schedules = []
@@ -130,7 +145,10 @@ def execute_scan(now, slot, manual, source, schedules=None):
         print(len(upcoming), "upcoming games", flush=True)
         # Every scheduled slot refreshes today's/tomorrow's snapshot when games remain.
         try:
-            job = call("/api/scan?date=" + date + "&source=" + urllib.parse.quote(source), method="POST")
+            path = "/api/scan?date=" + date + "&source=" + urllib.parse.quote(source)
+            if slot is not None:
+                path += "&slot=" + urllib.parse.quote(slot.strftime("%Y-%m-%dT%H:00"))
+            job = call(path, method="POST")
             job_id = job["job_id"]
             print("Job", job_id, "reused:", job.get("reused"), flush=True)
             deadline = time.monotonic() + 1800
@@ -141,7 +159,7 @@ def execute_scan(now, slot, manual, source, schedules=None):
                 if state in ("done", "partial"):
                     print(date, state, "lines:", len(status.get("results", [])), flush=True)
                     break
-                if state in ("error", "save_failed"):
+                if state in ("error", "save_failed", "interrupted"):
                     raise RuntimeError(date + ": " + str(status.get("stage")))
             else:
                 raise TimeoutError("Scan exceeded 30 minutes: " + date)
