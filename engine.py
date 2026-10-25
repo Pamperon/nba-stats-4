@@ -196,6 +196,14 @@ def fixture_is_completed(fixture):
         return True
     return False
 
+def fixture_is_upcoming(fixture, now=None):
+    """Only scan pregame fixtures with a verified future start time."""
+    start = fixture_start_rome(fixture)
+    if start is None or fixture_is_completed(fixture):
+        return False
+    current = now if now is not None else datetime.now(ROME_TZ)
+    return start > current.astimezone(ROME_TZ)
+
 def get_odds(fixture_id, refresh_version=0):
     return get_json("odds", fixtureId=fixture_id, bookmakers="bet365.it", verbosity=3)
 

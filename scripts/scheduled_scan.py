@@ -14,8 +14,8 @@ TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
 # Frequent heartbeat recovers missed GitHub cron launches. Supabase ensures
 # each Rome-time slot is executed at most once (except explicit failure retry).
-SLOTS = (0, 10, 14, 18, 22)
-MAX_DELAY = dt.timedelta(hours=3)
+SLOTS = (7, 12, 17, 21)
+MAX_DELAY = dt.timedelta(hours=2)
 
 def due_slot(now):
     candidates = []
