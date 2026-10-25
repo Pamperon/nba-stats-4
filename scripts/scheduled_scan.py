@@ -35,7 +35,7 @@ def call(path, method="GET", timeout=45):
     with urllib.request.urlopen(req, timeout=timeout) as res:
         return json.load(res)
 
-def run():
+def run(source=None):
     if not TOKEN:
         raise RuntimeError("GitHub secret NBA_STATS_ACCESS_TOKEN is missing")
     now = dt.datetime.now(ROME)
@@ -65,7 +65,7 @@ def run():
         print("CLAIMED slot:", slot_key, "actual:", now.isoformat(), flush=True)
     print("Starting NBA scan at Rome time:", now.isoformat(), flush=True)
     try:
-        execute_scan(now, slot, manual)
+        execute_scan(now, slot, manual, source or 'github')
     except BaseException:
         if slot is not None:
             call("/api/storage/slot/finish?slot=" + urllib.parse.quote(slot_key) +
@@ -76,7 +76,7 @@ def run():
             call("/api/storage/slot/finish?slot=" + urllib.parse.quote(slot_key) +
                  "&success=true", method="POST")
 
-def execute_scan(now, slot, manual):
+def execute_scan(now, slot, manual, source):
     # Cleanup runs even when there are no upcoming games, using only Supabase.
     # A temporary DB issue must not prevent the scheduled NBA scan.
     try:
@@ -108,7 +108,7 @@ def execute_scan(now, slot, manual):
         print(len(upcoming), "upcoming games", flush=True)
         # Every scheduled slot refreshes today's/tomorrow's snapshot when games remain.
         try:
-            job = call("/api/scan?date=" + date, method="POST")
+            job = call("/api/scan?date=" + date + "&source=" + urllib.parse.quote(source), method="POST")
             job_id = job["job_id"]
             print("Job", job_id, "reused:", job.get("reused"), flush=True)
             deadline = time.monotonic() + 1800
