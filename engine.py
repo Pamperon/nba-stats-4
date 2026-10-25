@@ -18,7 +18,10 @@ STATS = {"Punti (PTS)": "PTS", "Rimbalzi (REB)": "REB", "Assist (AST)": "AST"}
 BET365_ALT_LINES = {"PTS": {float(n)+0.5 for n in range(4,100,5)}, "REB": {2.5,4.5,6.5,9.5,12.5,14.5,16.5,19.5}, "AST": {2.5,4.5,6.5,9.5,12.5,14.5}}
 ESPN_SITE = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba"
 ESPN_WEB = "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba"
-odds_cache = TTLCache(maxsize=200,ttl=86400)
+# Fresh odds for each scheduled window; limit repeat requests within a window.
+ODDS_CACHE_TTL_SECONDS = 3 * 3600
+odds_cache = TTLCache(maxsize=200, ttl=ODDS_CACHE_TTL_SECONDS)
+_odds_cache_fetched_at = {}
 # Store only usable responses; never cache a temporary empty or suspended feed.
 # Optional local disk cache survives application process restarts when storage persists.
 _CACHE_LOCK = threading.RLock()
@@ -28,22 +31,24 @@ def _cache_read(fid):
     with _CACHE_LOCK:
         cached_value = odds_cache.get(fid)
         if cached_value is not None:
-            return cached_value, "memory"
+            return cached_value, "memory", _odds_cache_fetched_at.get(str(fid))
         path = _CACHE_DIR / (re.sub(r"[^a-zA-Z0-9_-]", "", str(fid)) + ".json")
         try:
-            if time.time() - path.stat().st_mtime > 86400:
-                return None, "none"
+            if time.time() - path.stat().st_mtime > ODDS_CACHE_TTL_SECONDS:
+                return None, "none", None
             obj = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(obj, dict):
                 odds_cache[fid] = obj
-                return obj, "disk"
+                _odds_cache_fetched_at[str(fid)] = path.stat().st_mtime
+                return obj, "disk", path.stat().st_mtime
         except (OSError, ValueError, TypeError):
             pass
-        return None, "none"
+        return None, "none", None
 
 def _cache_write(fid, odds):
     with _CACHE_LOCK:
         odds_cache[fid] = odds
+        _odds_cache_fetched_at[str(fid)] = time.time()
         try:
             _CACHE_DIR.mkdir(parents=True, exist_ok=True)
             path = _CACHE_DIR / (re.sub(r"[^a-zA-Z0-9_-]", "", str(fid)) + ".json")
@@ -803,9 +808,11 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
         fixture_reports.append(report)
         count_before = quote_count
         try:
-            odds, source = _cache_read(fid)
+            odds, source, fetched_at = _cache_read(fid)
             if odds is None:
                 odds = get_odds(fid)
+                fetched_at = time.time()
+            report["quota_rilevata_at"] = (datetime.fromtimestamp(fetched_at, timezone.utc).isoformat() if fetched_at is not None else None)
             report["origine"] = source if source != "none" else "api"
             report["diagnostica"] = _odds_diagnostics(odds, catalog)
             # Cache only validated, successfully parsed fixtures (after processing).
