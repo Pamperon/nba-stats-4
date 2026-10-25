@@ -237,3 +237,14 @@ main{padding-top:14px}
 #finder .finder-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
 #finder .finder-scroll table{border-collapse:separate;border-spacing:0}
 #finder .finder-top-scroll{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+
+/* Centered NBA STATS PRO brand — basketball + growth logo (concept 2). */
+.app-header{display:flex;justify-content:center;align-items:center;min-height:88px;padding:12px 14px;background:#101827}
+.app-header .brand{display:flex;justify-content:center;align-items:center;gap:13px;width:100%;max-width:680px}
+.app-header .brand-icon{display:grid;place-items:center;flex:0 0 64px;width:64px;height:64px;padding:0;background:transparent;border-radius:0;color:inherit}
+.app-header .brand-icon svg{display:block;width:64px;height:64px;overflow:visible}
+.app-header .brand-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.app-header .brand-copy b{font-size:clamp(22px,4.7vw,36px);line-height:1.08;letter-spacing:.3px;white-space:nowrap}
+.app-header .brand-copy small{font-size:clamp(8px,1.6vw,12px);letter-spacing:clamp(1px,.4vw,3px);white-space:nowrap}
+@media(max-width:760px){.app-header{min-height:78px;padding:11px 10px}.app-header .brand{gap:8px}.app-header .brand-icon{flex-basis:52px;width:52px;height:52px}.app-header .brand-icon svg{width:52px;height:52px}.app-header .brand-copy b{font-size:clamp(19px,5.2vw,29px)}.app-header .brand-copy small{font-size:clamp(7px,1.75vw,10px);letter-spacing:1px}}
+@media(max-width:370px){.app-header .brand{gap:6px}.app-header .brand-icon{flex-basis:44px;width:44px;height:44px}.app-header .brand-icon svg{width:44px;height:44px}.app-header .brand-copy b{font-size:19px}.app-header .brand-copy small{font-size:7px;letter-spacing:.65px}}
