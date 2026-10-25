@@ -37,22 +37,12 @@ function renderDateStrip(){
  if(month){month.textContent=select.value?new Date(select.value+'T12:00:00').toLocaleDateString('it-IT',{month:'long',year:'numeric'}):'Nessuna giornata disponibile';}
 }
 let dateSelectionRequest=0;
-function updateHeaderTimestamp(snapshot){
- const root=$('header-update'),label=$('header-update-text');
- if(!root||!label)return;
- const saved=snapshot?.saved_at?new Date(snapshot.saved_at):null;
- const valid=saved&&!Number.isNaN(saved.getTime());
- label.textContent=valid?saved.toLocaleTimeString('it-IT',{timeZone:'Europe/Rome',hour:'2-digit',minute:'2-digit'}):'—';
- root.title=valid?'Ultimo aggiornamento dati salvati: '+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome'}):'Ultimo aggiornamento dati non disponibile';
- root.classList.toggle('has-data',Boolean(valid));
-}
 function setDateLoading(loading){
  $('app').classList.toggle('date-is-loading',loading);
  $('date-loading').hidden=!loading;
  if(loading){
   // Clear the previous day's snapshot immediately; never show stale counts or picks.
   data=null;jobId='';
-  updateHeaderTimestamp(null);
   ++pickProfileRequest;
   $('quote-summary').hidden=true;
   $('metrics').replaceChildren();
@@ -176,7 +166,6 @@ function pickCard(row){
  '<div><small>STIMA</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div></article>';
 }
 function render(){
- updateHeaderTimestamp(data);
  const request=++pickProfileRequest;
  const summary=$('quote-summary');
  summary.hidden=!data||document.querySelector('nav button.active')?.dataset.tab==='player';
