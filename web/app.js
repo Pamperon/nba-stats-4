@@ -37,12 +37,22 @@ function renderDateStrip(){
  if(month){month.textContent=select.value?new Date(select.value+'T12:00:00').toLocaleDateString('it-IT',{month:'long',year:'numeric'}):'Nessuna giornata disponibile';}
 }
 let dateSelectionRequest=0;
+function updateHeaderTimestamp(snapshot){
+ const root=$('header-update'),label=$('header-update-text');
+ if(!root||!label)return;
+ const saved=snapshot?.saved_at?new Date(snapshot.saved_at):null;
+ const valid=saved&&!Number.isNaN(saved.getTime());
+ label.textContent=valid?saved.toLocaleTimeString('it-IT',{timeZone:'Europe/Rome',hour:'2-digit',minute:'2-digit'}):'—';
+ root.title=valid?'Ultimo aggiornamento dati salvati: '+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome'}):'Ultimo aggiornamento dati non disponibile';
+ root.classList.toggle('has-data',Boolean(valid));
+}
 function setDateLoading(loading){
  $('app').classList.toggle('date-is-loading',loading);
  $('date-loading').hidden=!loading;
  if(loading){
   // Clear the previous day's snapshot immediately; never show stale counts or picks.
   data=null;jobId='';
+  updateHeaderTimestamp(null);
   ++pickProfileRequest;
   $('quote-summary').hidden=true;
   $('metrics').replaceChildren();
@@ -166,6 +176,7 @@ function pickCard(row){
  '<div><small>STIMA</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div></article>';
 }
 function render(){
+ updateHeaderTimestamp(data);
  const request=++pickProfileRequest;
  const summary=$('quote-summary');
  summary.hidden=!data||document.querySelector('nav button.active')?.dataset.tab==='player';
@@ -219,10 +230,21 @@ function syncFinderScrollWidth(){
 }
 function initFinderTopScroll(){
  const top=$('finder-top-scroll'),bottom=$('finder-scroll');
- let syncing=false;
- const sync=(from,to)=>{if(syncing)return;syncing=true;to.scrollLeft=from.scrollLeft;syncing=false};
- top.addEventListener('scroll',()=>sync(top,bottom),{passive:true});
- bottom.addEventListener('scroll',()=>sync(bottom,top),{passive:true});
+ // Batch mirroring to one animation frame instead of forcing a second scroll
+ // event and layout calculation for every touch-move event.
+ let pending=null,frame=0;
+ const mirror=(source,target)=>{
+  pending={source,target};
+  if(frame)return;
+  frame=requestAnimationFrame(()=>{
+   frame=0;
+   if(!pending)return;
+   const {source,target}=pending;pending=null;
+   if(Math.abs(target.scrollLeft-source.scrollLeft)>1)target.scrollLeft=source.scrollLeft;
+  });
+ };
+ top.addEventListener('scroll',()=>mirror(top,bottom),{passive:true});
+ bottom.addEventListener('scroll',()=>mirror(bottom,top),{passive:true});
  if('ResizeObserver' in window){const observer=new ResizeObserver(syncFinderScrollWidth);observer.observe(bottom);observer.observe(bottom.querySelector('table'));}
  window.addEventListener('resize',syncFinderScrollWidth);
  syncFinderScrollWidth();
