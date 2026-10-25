@@ -15,6 +15,27 @@ async function api(path,options={}){let r=await fetch(path,{...options,headers:{
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent=updatedStatus(j);return true}catch{return false}}
 let playerStatsInitialized=false;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+function renderDateStrip(){
+ const select=$('date'), strip=$('date-strip'), month=$('date-month');
+ if(!strip||!select)return;
+ const dates=Array.from(select.options).map(o=>o.value).filter(Boolean);
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ strip.replaceChildren();
+ for(const date of dates.filter(d=>d>=today)){
+  const parsed=new Date(date+'T12:00:00');
+  const chip=document.createElement('button');
+  chip.type='button';chip.className='date-chip';chip.dataset.date=date;
+  chip.setAttribute('aria-pressed',String(date===select.value));
+  chip.setAttribute('aria-label',parsed.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}));
+  const day=document.createElement('span');day.className='day-name';
+  day.textContent=date===today?'OGGI':parsed.toLocaleDateString('it-IT',{weekday:'short'}).replace('.','').toUpperCase();
+  const number=document.createElement('span');number.className='day-number';number.textContent=String(parsed.getDate());
+  chip.append(day,number);
+  chip.addEventListener('click',()=>{if(select.value!==date){select.value=date;select.dispatchEvent(new Event('change',{bubbles:true}));}else renderDateStrip();});
+  strip.append(chip);
+ }
+ if(month){month.textContent=select.value?new Date(select.value+'T12:00:00').toLocaleDateString('it-IT',{month:'long',year:'numeric'}):'Nessuna giornata disponibile';}
+}
 let dateSelectionRequest=0;
 function setDateLoading(loading){
  $('app').classList.toggle('date-is-loading',loading);
@@ -22,6 +43,7 @@ function setDateLoading(loading){
 }
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
+ renderDateStrip();
  const request=++dateSelectionRequest;
  // Android Chrome can retain the native focus ring after the date menu closes.
  $('date').blur();
@@ -358,9 +380,10 @@ async function initializeArchive(){
   const payload=await response.json();
   const dates=(payload.dates||[]).map(item=>item.date);
   $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
-  if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';$('status').textContent='Nessuna analisi archiviata';return;}
+  if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();$('status').textContent='Nessuna analisi archiviata';return;}
   const todayRome=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   $('date').value=dates.includes(todayRome)?todayRome:dates[0];
+  renderDateStrip();
   if(!await loadCloudScan($('date').value))$('status').textContent='Impossibile caricare le analisi salvate';
  }catch(error){$('status').textContent='Archivio temporaneamente non disponibile · '+error.message;}
 }
