@@ -17,6 +17,20 @@ class ReleaseSafetyTests(unittest.TestCase):
         self.assertNotIn("scripts.recommendation_backtest", imports)
         self.assertNotIn("scripts.multiday_backtest", imports)
 
+    def test_odds_cache_refreshes_within_each_scheduled_window(self):
+        tree = ast.parse((ROOT / "engine.py").read_text(encoding="utf-8"))
+        assignments = {
+            target.id: node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Assign)
+            for target in node.targets
+            if isinstance(target, ast.Name)
+        }
+        cache_ttl = assignments["ODDS_CACHE_TTL_SECONDS"]
+        self.assertIsInstance(cache_ttl, ast.BinOp)
+        self.assertEqual(cache_ttl.left.value * cache_ttl.right.value, 10800)
+        self.assertIn("quota_rilevata_at", (ROOT / "engine.py").read_text(encoding="utf-8"))
+
     def test_live_engine_does_not_use_offline_calibration(self):
         tree = ast.parse((ROOT / "engine.py").read_text(encoding="utf-8"))
         for node in ast.walk(tree):
