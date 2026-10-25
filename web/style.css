@@ -196,3 +196,16 @@
 .calendar-action{color:#f28a45;cursor:pointer;font-weight:700}
 .app-hero #date{font-size:13px;width:100%;padding:8px 10px;border:1px solid #354862;border-radius:9px;background:#1b2638;color:#dce7f7}
 @media(max-width:760px){.app-header{padding:15px 16px}.app-hero .date-control{padding:16px}.date-chip{flex-basis:73px;min-height:75px}.app-header .brand-copy b{font-size:19px}}
+
+/* Compact date navigation: the horizontal cards are the only visible picker.
+   Preserve #date as an accessible state/control for existing app.js listeners. */
+.app-hero{margin-bottom:13px}
+.app-hero .date-control{position:relative;padding:14px 16px 12px;gap:10px;border-radius:16px}
+.app-hero .date-label{font-size:11px;letter-spacing:1.4px}
+.date-strip{gap:8px;padding:1px 1px 4px}
+.date-chip{flex-basis:65px;min-height:65px;gap:3px;border-radius:11px}
+.date-chip .day-name{font-size:10px}
+.date-chip .day-number{font-size:23px}
+.date-bottom{font-size:11px}
+.app-hero #date.date-native-select{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;opacity:0!important;pointer-events:none!important}
+@media(max-width:760px){.app-hero .date-control{padding:13px 14px 11px;gap:10px}.date-chip{flex-basis:64px;min-height:64px}.app-hero{margin-bottom:12px}}
