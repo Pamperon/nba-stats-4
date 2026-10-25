@@ -113,7 +113,7 @@ def schedule(date: str):
 def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     try:
         datetime.strptime(date,'%Y-%m-%d')
-        matches = [f for f in engine.get_fixtures(date) if not engine.fixture_is_completed(f)]
+        matches = [f for f in engine.get_fixtures(date) if engine.fixture_is_upcoming(f)]
         return [{'id':str(f['fixtureId']), 'home':f.get('participant1Name'), 'away':f.get('participant2Name'), 'time':str(engine.fixture_start_rome(f))} for f in matches]
     except Exception:
         raise HTTPException(502,'Calendario temporaneamente non disponibile')
@@ -124,7 +124,7 @@ def do_scan(job_id, date):
         started_at = time.monotonic()
         scan_started_at = datetime.now(ZoneInfo('Europe/Rome')).isoformat()
         season = engine.current_nba_season(datetime.strptime(date,'%Y-%m-%d'))
-        fixtures = [f for f in engine.get_fixtures(date) if not engine.fixture_is_completed(f)]
+        fixtures = [f for f in engine.get_fixtures(date) if engine.fixture_is_upcoming(f)]
         if not fixtures: raise ValueError('Nessuna partita futura disponibile')
         catalog = engine.get_markets()
         setup_seconds = round(time.monotonic() - started_at, 2)
