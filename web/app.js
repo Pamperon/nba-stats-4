@@ -254,7 +254,12 @@ initFinderSelects();
 ['oddmin','oddmax','market','probmin'].forEach(id=>{
  $(id).addEventListener('change',renderFinder);
 });
-$('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const rows=data.results,keys=Object.keys(rows[0]);const safe=v=>{const t=String(v??'');const guarded=/^[=+@\\-\\t\\r]/.test(t)?"'"+t:t;return '"'+guarded.replace(/"/g,'""')+'"'};const csv='\uFEFF'+[keys.map(safe).join(';'),...rows.map(r=>keys.map(k=>safe(r[k])).join(';'))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_salvato.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}try{const r=await api('/api/scan/'+jobId+'/csv');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_completo.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{alert('CSV non disponibile')}};
+function csvCell(value){
+ const text=String(value??'');
+ const guarded=/^[=+@\-\t\r]/.test(text)||/^\d+\/\d+$/.test(text)?"'"+text:text;
+ return '"'+guarded.replace(/"/g,'""')+'"';
+}
+$('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const rows=data.results,keys=Object.keys(rows[0]);const safe=csvCell;const csv='\uFEFF'+[keys.map(safe).join(';'),...rows.map(r=>keys.map(k=>safe(r[k])).join(';'))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_salvato.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}try{const r=await api('/api/scan/'+jobId+'/csv');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba_stats_4_completo.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{alert('CSV non disponibile')}};
 let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
 const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
 const PLAYER_CACHE_LIMIT=80;
@@ -289,7 +294,7 @@ async function initPlayers(){
  try{const payload=await(await api('/api/players/teams')).json();
  $('team').innerHTML=payload.teams.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('');
  await changeTeam();
- }catch(e){$('player-status').textContent='Catalogo NBA non disponibile ('+e.message+'). Ricarica la pagina.';}
+ }catch(e){playerStatsInitialized=false;$('player-status').textContent='Catalogo NBA non disponibile ('+e.message+'). Riapri la scheda per riprovare.';}
 }
 function setPlayerLoading(loading){
  $('player').classList.toggle('player-is-loading',loading);
@@ -329,7 +334,7 @@ async function loadPlayerProfile(request,team,id){
  $('player-profile').hidden=false;
  $('player-display-name').textContent=name;
  $('player-meta').textContent=$('team').selectedOptions[0]?.textContent||'';
- $('player-initials').textContent=name.trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+ $('player-initials').textContent=name.trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
  const avatar=$('player-photo').parentElement;
  const oldPhoto=$('player-photo');
  // Replace the node to discard callbacks from previously selected players.
@@ -339,7 +344,7 @@ async function loadPlayerProfile(request,team,id){
  photo.loading='eager';
  photo.decoding='async';
  photo.referrerPolicy='no-referrer';
- photo.onerror=()=>{if(request===playerRequest){photo.remove();avatar.classList.remove('has-photo')}};
+ photo.onerror=()=>{if(request===playerRequest){photo.hidden=true;avatar.classList.remove('has-photo')}};
  photo.onload=()=>{if(request===playerRequest&&photo.naturalWidth>0)avatar.classList.add('has-photo')};
  avatar.classList.remove('has-photo');
  oldPhoto.replaceWith(photo);
@@ -405,7 +410,7 @@ async function initializeArchive(){
   const todayRome=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   $('date').value=dates.includes(todayRome)?todayRome:dates[0];
   renderDateStrip();
-  if(!await loadCloudScan($('date').value))$('status').textContent='Impossibile caricare le analisi salvate';
+  $('date').dispatchEvent(new Event('change',{bubbles:true}));
  }catch(error){$('status').textContent='Archivio temporaneamente non disponibile · '+error.message;}
 }
 initializeArchive();

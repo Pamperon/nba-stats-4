@@ -196,7 +196,14 @@ def do_scan(job_id, date):
         with lock:
             jobs[job_id].update(snapshot, cloud_saved=True)
     except Exception as exc:
+        logger.exception('Scan %s failed for %s', job_id, date)
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
+    finally:
+        with lock:
+            state = jobs[job_id]['state']
+            jobs[job_id]['odds_api_http_requests_scan'] = engine.odds_api_request_count()
+        print(f'NBA scan date={date} job={job_id} state={state} '
+              f'odds_api_http_requests={engine.odds_api_request_count()}', flush=True)
 
 def visible_snapshot(snapshot):
     """Filter out started games from the public view, without OddsPapi calls."""
@@ -291,7 +298,8 @@ def saved_time(date: str):
             'status': snapshot.get('state', 'sconosciuto'),
             'odds_api_calls_scan': snapshot.get('odds_api_calls_scan', 'non registrato'),  # Legacy: quote lines, not HTTP requests.
             'quote_lines_scan': snapshot.get('quote_lines_scan', snapshot.get('odds_api_calls_scan', 'non registrato')),
-            'odds_api_requests_scan': 'non misurate',
+            'odds_api_requests_scan': snapshot.get('odds_api_http_requests_scan', 'non misurate'),
+            'odds_api_http_requests_scan': snapshot.get('odds_api_http_requests_scan'),
             'coverage_status': ('completa' if snapshot.get('fixture_reports') and all(item.get('stato') == 'ok' for item in snapshot['fixture_reports']) else 'in_attesa_quote' if snapshot.get('fixture_reports') and all(item.get('stato') in ('ok', 'vuota') for item in snapshot['fixture_reports']) else 'errore_o_dati_incompleti'),
             'fixture_count': snapshot.get('fixture_count', 0),
             'fixture_status_counts': {state: sum(1 for item in snapshot.get('fixture_reports', []) if item.get('stato') == state) for state in ('ok', 'vuota', 'errore', 'in_elaborazione')},
@@ -605,8 +613,8 @@ def scan_result(job_id: str):
         return job
     if storage.configured():
         try:
-            saved = storage.latest()
-            if saved and saved.get('job_id') == job_id:
+            saved = storage.by_job_id(job_id)
+            if saved:
                 return saved
         except Exception:
             logger.exception('Cannot restore scan from database')

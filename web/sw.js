@@ -1,1 +1,21 @@
-const CACHE='nba-stats-4-shell-v2';const ASSETS=['/','/static/style.css','/static/app.js','/static/icon.svg'];self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).pathname.startsWith('/api/'))return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});
+const CACHE = 'nba-stats-4-shell-v3';
+const ASSETS = ['/', '/static/style.css', '/static/app.js', '/static/icon.svg'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
+});
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.filter(key => key.startsWith('nba-stats-4-shell-') && key !== CACHE)
+      .map(key => caches.delete(key))
+  )));
+});
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin ||
+      url.pathname.startsWith('/api/')) return;
+  event.respondWith(fetch(event.request).catch(async () => {
+    const cached = await caches.match(event.request, {ignoreSearch: true});
+    return cached || Response.error();
+  }));
+});

@@ -181,6 +181,21 @@ def earliest_completed(date):
     return None
 
 
+def by_job_id(job_id):
+    """Restore the requested completed job, even if a later date was saved."""
+    if not configured():
+        return None
+    with connection() as conn:
+        row = conn.execute("""
+            SELECT job_id, payload, created_at FROM nba_scan_snapshots
+            WHERE job_id=%s
+        """, (job_id,)).fetchone()
+    if row is None:
+        return None
+    saved_id, payload, created_at = row
+    return {**payload, 'job_id': saved_id, 'saved_at': created_at.isoformat()}
+
+
 def calibration_retention_preview(retention_days=7):
     """Read-only count of snapshots eligible for future pruning.
 

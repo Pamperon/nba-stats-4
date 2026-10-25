@@ -1,25 +1,71 @@
-# NBA STATS 4.0 — progetto separato
+# NBA STATS PRO
 
-Prima versione di sviluppo. **Non sostituisce NBA STATS 3.5** e non richiede modifiche al repository Streamlit.
+Web app privata per l'analisi dei player props NBA Bet365, con statistiche ESPN,
+archivio PostgreSQL/Supabase e interfaccia PWA. Repository indipendente dalla versione 3.5.
 
-## Avvio locale
+## Avvio
 
-1. Installa Python 3.11+.
-2. Apri questa cartella in un terminale e installa le dipendenze: `pip install -r requirements.txt`.
-3. Imposta le variabili d'ambiente `ODDSPAPI_API_KEY` e `NBA_STATS_ACCESS_TOKEN`. Non caricare mai i valori su GitHub. Puoi usare `.env.example` come riferimento, ma il programma legge le variabili d'ambiente, non carica automaticamente `.env`.
-4. Esegui `uvicorn main:app --host 127.0.0.1 --port 8000`.
-5. Apri `http://127.0.0.1:8000` e inserisci il token di accesso.
+Usa Python 3.11 o successivo e installa `pip install -r requirements.txt`.
+Configura `ODDSPAPI_API_KEY`, `NBA_STATS_ACCESS_TOKEN` e `DATABASE_URL` nel provider
+(senza pubblicarne i valori). Il programma legge le variabili d'ambiente;
+`.env.example` è solo un riferimento e non viene caricato automaticamente.
 
-## Pubblicazione
+Comando locale: `uvicorn main:app --host 127.0.0.1 --port 8000`.
+Su Render: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+Mantieni **una sola istanza e un solo worker**: i job attivi sono in memoria.
+Gli snapshot completati e gli storici sono salvati su PostgreSQL.
+Le letture delle analisi e delle statistiche sono pubbliche; le operazioni di
+scansione e manutenzione richiedono il token Bearer. Non esporre il servizio
+come sistema multiutente con autenticazione individuale.
 
-Usa **un nuovo repository GitHub**, distinto da quello della versione 3.5. Per l'hosting scegli un servizio che supporti processi Python web e HTTPS; configura le due variabili come secrets nel provider. Avvio: `uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}` (su piattaforme che espandono la variabile PORT tramite shell). Il piano gratuito e la sua disponibilità vanno verificati prima della pubblicazione. Per installare la PWA su Android apri l'URL HTTPS in Chrome e scegli «Aggiungi a schermata Home» / «Installa app» se disponibile.
+## Aggiornamenti automatici
 
-## Stato / limiti MVP
+GitHub Actions programma le scansioni alle **07:00, 12:00, 17:00 e 21:00** nel
+fuso `Europe/Rome`, con cambio automatico tra ora solare e legale. Il secret
+GitHub `NBA_STATS_ACCESS_TOKEN` deve corrispondere al token del server.
+Sono previsti controlli di recupero ogni dieci minuti, fino a due ore dopo
+ogni fascia. Render esegue anche un controllo interno mentre il server è attivo.
+GitHub può ritardare o perdere eventi pianificati; Render Free può sospendersi.
 
-- Logica OddsPapi/ESPN e modello statistico derivati dal file 3.5 fornito dall'utente.
-- Scansione unica per data con cache in memoria e CSV completo. Non aggiornare le quote automaticamente.
-- Grafica dark responsive, Dashboard, Value Finder, Player Stats e shell PWA. Le statistiche live **richiedono internet**.
-- I job e la cache non sopravvivono al riavvio del server; usa un solo processo. Non adatto ancora a deployment con più worker o hosting che interrompe le richieste lunghe.
-- Mancano ancora registro giocate persistente, filtri Regular/Playoff nella nuova interfaccia, diagnostica completa e test di integrazione con risposte reali delle API. Il Player Stats MVP mostra i log regular season raccolti dalla scansione.
-- Autenticazione con token condiviso semplice: per uso privato iniziale, non equivalente a un sistema account completo. Token tenuto solo in memoria della pagina, da reinserire al refresh.
-- Il modello è una stima empirica non calibrata e non garantisce esiti futuri.
+La prenotazione atomica `nba_scan_slots` impedisce che GitHub e Render ripetano
+la stessa fascia. Una fascia prenotata **non viene ritentata automaticamente**
+dopo errori, timeout o riavvii: potrebbe aver già consumato chiamate API.
+Ogni esecuzione controlla su ESPN oggi e domani e scarica quote solo per le
+partite ancora da iniziare. I controlli di recupero senza nuova prenotazione
+non contattano OddsPapi. Non fare deploy durante una scansione: un riavvio può
+interrompere i job prima del salvataggio. Le fasce successive restano indipendenti.
+
+`GET /api/health` mostra il commit Render e la revisione dello scheduler.
+`GET /api/saved/time?date=YYYY-MM-DD` mostra il riepilogo salvato:
+`quote_lines_scan` conta le righe di quota; `odds_api_http_requests_scan` conta
+le richieste HTTP OddsPapi della scansione. Per gli archivi precedenti alla
+misurazione, il numero di richieste rimane sconosciuto. Il contatore del provider
+resta il riferimento per il consumo totale dell'abbonamento, comprese scansioni
+interrotte o richieste esterne all'app.
+
+## Verifiche offline
+
+```
+pip install -r requirements-dev.txt
+python scripts/run_offline_tests.py
+npm ci --ignore-scripts
+npm test
+```
+
+Il runner Python vieta le connessioni di rete reali; i test HTTP usano risposte
+simulate. I test JavaScript verificano sintassi, cambio giornata, profili
+senza foto e ciclo di vita del service worker. Questi comandi non avviano
+scansioni e non consumano chiamate OddsPapi. GitHub esegue gli stessi controlli
+su push e pull request che modificano il codice.
+
+## Limiti del modello e dei dati
+
+Le probabilità sono stime empiriche, non garanzie di esito. Le correzioni di
+calibrazione esistenti richiedono validazione storica walk-forward; il controllo
+sul minutaggio resta in modalità osservazione. I backtest sperimentali delle
+multiple non rappresentano necessariamente le selezioni effettivamente mostrate
+in passato. Nessun archivio viene eliminato automaticamente.
+
+I risultati live dipendono dalla disponibilità dei provider esterni; i test
+simulati non certificano quote o risultati futuri. Il service worker conserva
+la shell dell'app e non memorizza le risposte API.

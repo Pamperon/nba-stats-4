@@ -31,10 +31,14 @@ def _cache_read(fid):
     with _CACHE_LOCK:
         cached_value = odds_cache.get(fid)
         if cached_value is not None:
-            return cached_value, "memory", _odds_cache_fetched_at.get(str(fid))
+            fetched_at = _odds_cache_fetched_at.get(str(fid))
+            if fetched_at is not None and 0 <= time.time() - fetched_at < ODDS_CACHE_TTL_SECONDS:
+                return cached_value, "memory", fetched_at
+            odds_cache.pop(fid, None)
+            _odds_cache_fetched_at.pop(str(fid), None)
         path = _CACHE_DIR / (re.sub(r"[^a-zA-Z0-9_-]", "", str(fid)) + ".json")
         try:
-            if time.time() - path.stat().st_mtime > ODDS_CACHE_TTL_SECONDS:
+            if not 0 <= time.time() - path.stat().st_mtime < ODDS_CACHE_TTL_SECONDS:
                 return None, "none", None
             obj = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(obj, dict):
@@ -868,7 +872,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                                      f"bookmaker attivo={d['bookmaker_attivo']}, "
                                      f"sospeso={d['bookmaker_sospeso']}")
                 issues.append(f"{match_name}: nessuna linea Bet365 elaborabile")
-            else:
+            elif source == "none":
                 _cache_write(fid, odds)
         except Exception as exc:
             # Discard partial results for this fixture; avoid silently counting incomplete games.
