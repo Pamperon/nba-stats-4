@@ -61,6 +61,11 @@ def run(source=None):
         health = call("/api/health")
         if health.get("scheduler_revision") != "rome-slots-at-most-once-v2":
             raise RuntimeError("Render scheduler update is not deployed yet; slot not claimed")
+    # Verify both free ESPN calendars before consuming the durable reservation.
+    # If either is unavailable, the next heartbeat may retry without paid calls.
+    scan_day = slot.date() if slot is not None else now.date()
+    schedules = load_schedules(scan_day)
+    if slot is not None:
         slot_key = slot.strftime("%Y-%m-%dT%H:00")
         reservation = call("/api/storage/slot/claim?slot=" + urllib.parse.quote(slot_key),
                            method="POST")
@@ -70,7 +75,7 @@ def run(source=None):
         print("CLAIMED slot:", slot_key, "actual:", now.isoformat(), flush=True)
     print("Starting NBA scan at Rome time:", now.isoformat(), flush=True)
     try:
-        execute_scan(now, slot, manual, source or 'github')
+        execute_scan(now, slot, manual, source or 'github', schedules=schedules)
     except BaseException:
         if slot is not None:
             call("/api/storage/slot/finish?slot=" + urllib.parse.quote(slot_key) +
@@ -81,7 +86,27 @@ def run(source=None):
             call("/api/storage/slot/finish?slot=" + urllib.parse.quote(slot_key) +
                  "&success=true", method="POST")
 
-def execute_scan(now, slot, manual, source):
+def load_schedules(scan_day):
+    schedules = []
+    for offset in (0, 1):
+        date = (scan_day + dt.timedelta(days=offset)).isoformat()
+        try:
+            payload = call("/api/schedule?date=" + date)
+            if not isinstance(payload, dict) or not isinstance(payload.get("games"), list):
+                raise ValueError("Invalid calendar response")
+            if any(not isinstance(game, dict) or type(game.get("upcoming")) is not bool
+                   for game in payload["games"]):
+                raise ValueError("Invalid game entry")
+        except Exception as exc:
+            raise RuntimeError("ESPN calendar unavailable for " + date +
+                               "; no slot claimed and no paid scan started") from exc
+        schedules.append((date, payload))
+    return schedules
+
+
+def execute_scan(now, slot, manual, source, schedules=None):
+    if schedules is None:
+        schedules = load_schedules(now.date() if manual else slot.date())
     # Cleanup runs even when there are no upcoming games, using only Supabase.
     # A temporary DB issue must not prevent the scheduled NBA scan.
     try:
@@ -96,16 +121,8 @@ def execute_scan(now, slot, manual, source):
         print("Incremental calibration:", report, flush=True)
     except Exception as exc:
         print("Calibration deferred (scan continues):", exc, flush=True)
-    # Delay of a scheduled GitHub Actions run is expected; local-hour gate handles DST.
-    scan_day = slot.date() if not manual else now.date()
-    for offset in (0, 1):
-        date = (scan_day + dt.timedelta(days=offset)).isoformat()
+    for date, schedule in schedules:
         print("Checking", date, flush=True)
-        try:
-            schedule = call("/api/schedule?date=" + date)
-        except Exception as exc:
-            print("ESPN calendar unavailable; skip without OddsPapi:", exc, flush=True)
-            continue
         upcoming = [g for g in schedule.get("games", []) if g.get("upcoming")]
         if not upcoming:
             print("No upcoming games; skipping paid scan", flush=True)

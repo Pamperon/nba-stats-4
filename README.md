@@ -24,7 +24,10 @@ GitHub Actions programma le scansioni alle **07:00, 12:00, 17:00 e 21:00** nel
 fuso `Europe/Rome`, con cambio automatico tra ora solare e legale. Il secret
 GitHub `NBA_STATS_ACCESS_TOKEN` deve corrispondere al token del server.
 Sono previsti controlli di recupero ogni dieci minuti, fino a due ore dopo
-ogni fascia. Render esegue anche un controllo interno mentre il server è attivo.
+ogni fascia. Prima di prenotare una fascia vengono verificati entrambi i calendari
+ESPN gratuiti: se non sono disponibili, il controllo successivo può riprovare
+senza aver consumato la prenotazione o richieste OddsPapi. Render esegue anche
+un controllo interno mentre il server è attivo.
 GitHub può ritardare o perdere eventi pianificati; Render Free può sospendersi.
 
 La prenotazione atomica `nba_scan_slots` impedisce che GitHub e Render ripetano

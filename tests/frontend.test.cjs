@@ -109,3 +109,67 @@ test('CSV preserves names and last-N ratios while neutralizing formulas', () => 
     assert.equal(cell('a"b'), '"a""b"');
   } finally {dom.window.close();}
 });
+
+
+test('player statistics expire in memory after fifteen minutes', () => {
+  const dom = browser(async () => response({dates: []}));
+  try {
+    const w = dom.window;
+    let now = 1000000000000;
+    w.Date.now = () => now;
+    w.cachePlayerLog('player', {games: [{PTS: 10}]});
+    now += 14 * 60 * 1000;
+    assert.equal(w.getPlayerLogCache('player').games[0].PTS, 10);
+    now += 2 * 60 * 1000;
+    assert.equal(w.getPlayerLogCache('player'), null);
+    assert.equal(w.sessionStorage.getItem('nba-player-log:player'), null);
+  } finally {dom.window.close();}
+});
+
+test('restoring session cache does not restart its fifteen minute lifetime', () => {
+  const dom = browser(async () => response({dates: []}));
+  try {
+    const w = dom.window, at = 1000000000000;
+    let now = at + 14 * 60 * 1000;
+    w.Date.now = () => now;
+    w.sessionStorage.setItem('nba-player-log:player', JSON.stringify({at, payload: {games: []}}));
+    assert.ok(w.getPlayerLogCache('player'));
+    now = at + 15 * 60 * 1000;
+    assert.equal(w.getPlayerLogCache('player'), null);
+    w.sessionStorage.setItem('nba-player-log:bad', JSON.stringify({at: 'invalid', payload: {}}));
+    assert.equal(w.getPlayerLogCache('bad'), null);
+  } finally {dom.window.close();}
+});
+
+test('initial archive outage shows a visible error', async () => {
+  const dom = browser(async () => ({ok: false, status: 503}));
+  try {
+    await tick();
+    const status = dom.window.document.getElementById('status');
+    assert.equal(status.hidden, false);
+    assert.equal(status.getAttribute('role'), 'alert');
+    assert.match(status.textContent, /Archivio temporaneamente non disponibile/);
+  } finally {dom.window.close();}
+});
+
+test('day-load outage is visible and clears after a successful retry', async () => {
+  let fail = true;
+  const dom = browser(async url => {
+    if (url === '/api/saved/dates') return response({dates: [{date: '2099-01-01'}]});
+    if (fail) return {ok: false, status: 503};
+    return response({date: '2099-01-01', results: [], saved_at: '2099-01-01T12:00:00Z'});
+  });
+  try {
+    await tick();
+    const w = dom.window, d = w.document, status = d.getElementById('status');
+    assert.equal(status.hidden, false);
+    assert.equal(status.getAttribute('role'), 'alert');
+    fail = false;
+    d.getElementById('date').dispatchEvent(new w.Event('change'));
+    await tick();
+    assert.equal(status.hidden, true);
+    assert.equal(status.getAttribute('role'), 'status');
+    assert.equal(d.getElementById('date-loading').hidden, true);
+    assert.equal(w.__audit.getData().date, '2099-01-01');
+  } finally {dom.window.close();}
+});

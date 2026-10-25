@@ -1,8 +1,14 @@
+function setArchiveStatus(message,kind='info'){
+ const status=$('status');
+ status.textContent=message;
+ status.hidden=kind==='info';
+ status.setAttribute('role',kind==='error'?'alert':'status');
+}
 const $=id=>document.getElementById(id);let token='',jobId='',data=null;const savedKey='nba-stats-4-last-scan';const dbName='nba-stats-4-local-results';
 function scanDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window))return reject(new Error('Archivio browser non disponibile'));const r=indexedDB.open(dbName,1);r.onupgradeneeded=()=>r.result.createObjectStore('scans');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
 async function saveLocalScan(j){try{const db=await scanDB();await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readwrite');tx.objectStore('scans').put(j,j.date);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();$('status').textContent+=' · copia salvata nel browser';}catch(e){$('status').textContent+=' · salvataggio locale non riuscito';}}
 async function readLocalScan(date){const db=await scanDB();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readonly');const r=tx.objectStore('scans').get(date);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}finally{db.close()}}
-async function showLocalScan(date){try{const j=await readLocalScan(date);if(!j)return false;data=j;jobId='';render();$('status').textContent=updatedStatus(j,true);return true}catch{return false}}
+async function showLocalScan(date){try{const j=await readLocalScan(date);if(!j)return false;data=j;jobId='';render();setArchiveStatus(updatedStatus(j,true),'notice');return true}catch{return false}}
 function updatedStatus(snapshot,local=false){
  const saved=snapshot?.saved_at;
  const when=saved?new Date(saved):null;
@@ -12,7 +18,7 @@ function updatedStatus(snapshot,local=false){
 const fmtOdd=x=>x==null||x===''?'—':Number.isFinite(Number(x))?Number(x).toFixed(2).replace('.',','):String(x);
 const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
-async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();$('status').textContent=updatedStatus(j);return true}catch{return false}}
+async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();setArchiveStatus(updatedStatus(j));return true}catch{return false}}
 let playerStatsInitialized=false;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
@@ -58,13 +64,13 @@ $('date').addEventListener('change',async()=>{
  // Android Chrome can retain the native focus ring after the date menu closes.
  $('date').blur();
  setDateLoading(true);
- $('status').textContent='Caricamento archivio del '+selected+'…';
+ setArchiveStatus('Caricamento archivio del '+selected+'…');
  try{
   const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));
   const saved=await response.json();
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
   data=saved;jobId='';render();
-  $('status').textContent=updatedStatus(saved);
+  setArchiveStatus(updatedStatus(saved));
  }catch(error){
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
   if(error.message==='HTTP 404'){
@@ -73,14 +79,14 @@ $('date').addEventListener('change',async()=>{
    try{local=await readLocalScan(selected)}catch(e){}
    if(request!==dateSelectionRequest||$('date').value!==selected)return;
    if(local){
-    data=local;jobId='';render();$('status').textContent=updatedStatus(local,true);
+    data=local;jobId='';render();setArchiveStatus(updatedStatus(local,true),'notice');
    }else{
     data=null;jobId='';render();
-    $('status').textContent='Nessuna quota ancora disponibile per il '+selected+' · 0 chiamate OddsPapi';
+    setArchiveStatus('Nessuna quota ancora disponibile per il '+selected,'notice');
    }
   }else{
    data=null;jobId='';render();
-   $('status').textContent='Impossibile consultare Supabase per il '+selected+' ('+error.message+') · riprova più tardi';
+   setArchiveStatus('Archivio temporaneamente non disponibile per il '+selected+' · riprova più tardi','error');
   }
  }finally{
   if(request===dateSelectionRequest&&$('date').value===selected)setDateLoading(false);
@@ -264,16 +270,27 @@ let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
 const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
 const PLAYER_CACHE_LIMIT=80;
 const PLAYER_CACHE_TTL=15*60*1000;
-function cachePlayerLog(key,payload){
- playerLogCache.delete(key);playerLogCache.set(key,payload);
+function rememberPlayerLog(key,item){
+ playerLogCache.delete(key);playerLogCache.set(key,item);
  if(playerLogCache.size>PLAYER_CACHE_LIMIT)playerLogCache.delete(playerLogCache.keys().next().value);
- try{sessionStorage.setItem('nba-player-log:'+key,JSON.stringify({at:Date.now(),payload}))}catch(e){}
+}
+function cachePlayerLog(key,payload){
+ const item={at:Date.now(),payload};
+ rememberPlayerLog(key,item);
+ try{sessionStorage.setItem('nba-player-log:'+key,JSON.stringify(item))}catch(e){}
 }
 function getPlayerLogCache(key){
- if(playerLogCache.has(key))return playerLogCache.get(key);
+ const fresh=item=>item&&Number.isFinite(item.at)&&Date.now()-item.at>=0&&Date.now()-item.at<PLAYER_CACHE_TTL;
+ const memory=playerLogCache.get(key);
+ if(fresh(memory))return memory.payload;
+ playerLogCache.delete(key);
  try{
   const raw=sessionStorage.getItem('nba-player-log:'+key);
-  if(raw){const item=JSON.parse(raw);if(Date.now()-item.at<PLAYER_CACHE_TTL){playerLogCache.set(key,item.payload);return item.payload}sessionStorage.removeItem('nba-player-log:'+key)}
+  if(raw){
+   const item=JSON.parse(raw);
+   if(fresh(item)){rememberPlayerLog(key,item);return item.payload}
+   sessionStorage.removeItem('nba-player-log:'+key);
+  }
  }catch(e){}
  return null;
 }
@@ -400,18 +417,18 @@ function drawPlayer(){
 }
 $('team').onchange=changeTeam;$('playername').onchange=changePlayer;$('playerseason').onchange=changePlayer;$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
 async function initializeArchive(){
- $('status').textContent='Caricamento giornate disponibili…';
+ setArchiveStatus('Caricamento giornate disponibili…');
  try {
   const response=await api('/api/saved/dates');
   const payload=await response.json();
   const dates=(payload.dates||[]).map(item=>item.date);
   $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
-  if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();$('status').textContent='Nessuna analisi archiviata';return;}
+  if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();setArchiveStatus('Nessuna analisi archiviata','notice');return;}
   const todayRome=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   $('date').value=dates.includes(todayRome)?todayRome:dates[0];
   renderDateStrip();
   $('date').dispatchEvent(new Event('change',{bubbles:true}));
- }catch(error){$('status').textContent='Archivio temporaneamente non disponibile · '+error.message;}
+ }catch(error){setArchiveStatus('Archivio temporaneamente non disponibile · riprova più tardi','error');}
 }
 initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
