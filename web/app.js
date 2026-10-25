@@ -40,6 +40,16 @@ let dateSelectionRequest=0;
 function setDateLoading(loading){
  $('app').classList.toggle('date-is-loading',loading);
  $('date-loading').hidden=!loading;
+ if(loading){
+  // Clear the previous day's snapshot immediately; never show stale counts or picks.
+  data=null;jobId='';
+  ++pickProfileRequest;
+  $('quote-summary').hidden=true;
+  $('metrics').replaceChildren();
+  $('quote-updated').textContent='';
+  $('picks').replaceChildren();
+  $('rows').replaceChildren();
+ }
 }
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
