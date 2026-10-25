@@ -23,7 +23,8 @@ class ESPNConflictingLabelsTests(unittest.TestCase):
         with patch.object(engine,"espn_json",return_value={}), \
              patch.object(engine,"espn_log_to_frame",side_effect=parse), \
              patch.object(engine,"espn_schedule_competition_ids",return_value={"a":2}), \
-             patch.object(engine,"espn_event_competition_type",return_value=2):
+             patch.object(engine,"espn_event_competition_type",return_value=2), \
+             patch.object(engine,"completed_game_log",side_effect=lambda games,*args: games):
             result=engine.espn_classified_game_log.__wrapped__("42","2026-27","1") if hasattr(engine.espn_classified_game_log,"__wrapped__") else engine.espn_classified_game_log("42","2026-27","1")
         row=result.set_index("GAME_ID")
         self.assertTrue(pd.isna(row.loc["a","SEASON_TYPE"]))

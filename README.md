@@ -63,6 +63,14 @@ su push e pull request che modificano il codice.
 
 ## Limiti del modello e dei dati
 
+Lo storico usato per le stime include soltanto partite il cui stato ESPN è
+ufficialmente concluso. Non esiste un'esclusione fissa delle ultime 24 ore:
+una gara finale di poche ore prima è utilizzabile anche nei back-to-back.
+Le gare in corso o senza conferma di conclusione vengono escluse. Il calendario
+stagionale e i riepiloghi per ID partita sono condivisi in cache per cinque minuti;
+non richiedono OddsPapi. Una nuova scansione aggiorna le stime salvate, senza
+riscrivere gli archivi precedenti.
+
 Le probabilità sono stime empiriche, non garanzie di esito. Le correzioni di
 calibrazione esistenti richiedono validazione storica walk-forward; il controllo
 sul minutaggio resta in modalità osservazione. I backtest sperimentali delle

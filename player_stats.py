@@ -83,7 +83,7 @@ def player_log(team_id, athlete_id, season):
                             "SEASON_TYPE": int(row["SEASON_TYPE"]),
                             "MATCHUP": str(row.get("MATCHUP", ""))})
         return {"games": records, "season": season, "athlete_id": athlete_id}
-    return cached("nba:log:v1:" + team_id + ":" + athlete_id + ":" + season,
+    return cached("nba:log:final-v2:" + team_id + ":" + athlete_id + ":" + season,
                   6 if year >= current - 1 else 720, build)
 
 def player_profile(team_id, athlete_id):

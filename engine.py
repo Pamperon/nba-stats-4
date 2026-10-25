@@ -365,6 +365,81 @@ def espn_event_date(info):
                 return found
     return None
 
+@cached(TTLCache(maxsize=128, ttl=300), lock=threading.RLock())
+def espn_season_schedule_payloads(team_id, end_year):
+    """Share official schedule/status responses across players for five minutes."""
+    return tuple((kind, espn_json(f"{ESPN_SITE}/teams/{team_id}/schedule",
+                                season=end_year, seasontype=kind))
+                 for kind in (2, 3))
+
+
+def espn_event_completed(event):
+    """Require ESPN's explicit completed flag; never infer finality from age."""
+    if not isinstance(event, dict):
+        return None
+    states = []
+    competitions = event.get("competitions")
+    for item in [event] + (competitions if isinstance(competitions, list) else []):
+        if not isinstance(item, dict):
+            continue
+        status = item.get("status") or {}
+        if not isinstance(status, dict):
+            continue
+        kind = status.get("type") or {}
+        value = kind.get("completed") if isinstance(kind, dict) else None
+        if type(value) is bool:
+            states.append(value)
+    # Conflicting explicit evidence must not publish a potentially live game.
+    return False if False in states else True if True in states else None
+
+
+@cached(TTLCache(maxsize=1024, ttl=300), lock=threading.RLock())
+def espn_event_summary(event_id):
+    return espn_json(f"{ESPN_SITE}/summary", event=event_id)
+
+
+def completed_game_log(games, team_id, season):
+    """Use only officially final games, including recent back-to-back games."""
+    if games.empty:
+        return games.copy()
+    evidence = {}
+    if team_id:
+        try:
+            for _, payload in espn_season_schedule_payloads(team_id, int(season[:4]) + 1):
+                for event in (payload.get("events") or []) if isinstance(payload, dict) else []:
+                    if not isinstance(event, dict) or not event.get("id"):
+                        continue
+                    state = espn_event_completed(event)
+                    if state is not None:
+                        evidence.setdefault(str(event["id"]), set()).add(state)
+        except (requests.RequestException, ValueError, TypeError):
+            logger.warning("ESPN completion schedule unavailable team=%s season=%s", team_id, season)
+    confirmed = set()
+    for event_id in games["GAME_ID"].astype(str).unique():
+        states = evidence.get(event_id, set())
+        if False in states:
+            continue
+        if True in states:
+            confirmed.add(event_id)
+            continue
+        # Traded players may have older games absent from the current team's
+        # schedule. Resolve these by event ID using the shared summary cache.
+        try:
+            summary = espn_event_summary(event_id)
+            state = espn_event_completed(summary.get("header") or summary) if isinstance(summary, dict) else None
+        except (requests.RequestException, ValueError, TypeError):
+            state = None
+        if state is True:
+            confirmed.add(event_id)
+    result = games.loc[games["GAME_ID"].astype(str).isin(confirmed)].copy()
+    excluded = len(games) - len(result)
+    if excluded:
+        logger.warning("ESPN excluded %d nonfinal/unverified games team=%s season=%s",
+                       excluded, team_id, season)
+    result.attrs["excluded_nonfinal"] = excluded
+    return result
+
+
 @cached(TTLCache(maxsize=512,ttl=21600))
 def espn_team_schedule(team_id, end_year, season_type=2):
     """One ESPN schedule request supplies game dates for an entire season."""
@@ -499,8 +574,7 @@ def _espn_competition_type(event):
 def espn_schedule_competition_ids(team_id, end_year):
     """Resolve event types from ESPN schedules; ignore season-type query if ESPN ignores it."""
     sources = {}
-    for requested_type in (2, 3):
-        payload = espn_json(f"{ESPN_SITE}/teams/{team_id}/schedule", season=end_year, seasontype=requested_type)
+    for requested_type, payload in espn_season_schedule_payloads(team_id, end_year):
         for event in payload.get("events") or []:
             if not isinstance(event, dict) or not event.get("id"):
                 continue
@@ -522,11 +596,11 @@ def espn_schedule_competition_ids(team_id, end_year):
 @cached(TTLCache(maxsize=512,ttl=21600))
 def espn_event_competition_type(event_id):
     """Fallback: one free ESPN event summary when schedule lacks type metadata."""
-    payload = espn_json(f"{ESPN_SITE}/summary", event=event_id)
+    payload = espn_event_summary(event_id)
     header = payload.get("header") or {}
     return _espn_competition_type(header) or _espn_competition_type(payload.get("gameInfo"))
 
-@cached(TTLCache(maxsize=512,ttl=21600))
+@cached(TTLCache(maxsize=512,ttl=300))
 def espn_classified_game_log(athlete_id, season, team_id):
     """Classify using ESPN game-log groups first, then independent evidence.
 
@@ -595,7 +669,7 @@ def espn_classified_game_log(athlete_id, season, team_id):
     if conflicting:
         logger.warning("ESPN conflicting season classification athlete=%s season=%s events=%s",
                        athlete_id, season, sorted(conflicting))
-    return games
+    return completed_game_log(games, team_id, season)
 
 def selected_game_log(athlete_id, season, mode, team_id=None):
     games = espn_classified_game_log(athlete_id, season, team_id)
@@ -920,12 +994,10 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                 else:
                     games = pd.concat(parts, ignore_index=True)
                     games["GAME_DATE"] = pd.to_datetime(games["GAME_DATE"], errors="coerce", utc=True)
-                    # Never use a future or in-progress game to estimate a
-                    # pregame probability, even if ESPN publishes partial stats.
-                    # A start timestamp alone does not prove a game is final.
-                    # Keep a conservative 24h buffer to exclude ongoing games.
-                    cutoff = min(pd.Timestamp.now(tz="UTC") - pd.Timedelta(hours=24),
-                                 history_cutoff)
+                    # Completion is verified by ESPN before caching game logs.
+                    # Retain the pregame cutoff against future-dated records;
+                    # a final game from a few hours ago remains eligible.
+                    cutoff = min(pd.Timestamp.now(tz="UTC"), history_cutoff)
                     future_count = int((games["GAME_DATE"] >= cutoff).sum())
                     if future_count:
                         logger.warning("ESPN excluded %d future/in-progress rows athlete=%s",
