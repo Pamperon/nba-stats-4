@@ -2,9 +2,9 @@ name: NBA STATS - scansioni automatiche
 
 on:
   schedule:
-    # Recovery heartbeat every 10 minutes, offset from minute zero to reduce GitHub scheduler congestion.
-    # Supabase atomic slot claims prevent repeated OddsPapi scans.
-    - cron: "7,17,27,37,47,57 * * * *"
+    # Local Italian time, including automatic CET/CEST changes.
+    - cron: "0 7,12,17,21 * * *"
+      timezone: Europe/Rome
   workflow_dispatch:
     inputs:
       mode:
@@ -39,3 +39,4 @@ jobs:
           NBA_STATS_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.mode != 'scan' && '1' || '0' }}
           NBA_STATS_MANUAL_SCAN: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'scan' && '1' || '0' }}
         run: python scripts/scheduled_scan.py
+

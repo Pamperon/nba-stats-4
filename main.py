@@ -419,8 +419,9 @@ def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
 @app.post('/api/storage/slot/claim', dependencies=[Depends(auth)])
 def slot_claim(slot: str = Query()):
     try:
-        datetime.strptime(slot, '%Y-%m-%dT%H:%M')
-        if len(slot) != 16 or slot[-5:] not in ('00:00', '10:00', '14:00', '18:00', '22:00'):
+        from scripts.scheduled_scan import SLOTS
+        parsed = datetime.strptime(slot, '%Y-%m-%dT%H:%M')
+        if parsed.strftime('%Y-%m-%dT%H:%M') != slot or parsed.minute != 0 or parsed.hour not in SLOTS:
             raise ValueError('Invalid slot')
     except ValueError:
         raise HTTPException(400, 'Fascia oraria non valida')
@@ -434,8 +435,9 @@ def slot_claim(slot: str = Query()):
 @app.post('/api/storage/slot/finish', dependencies=[Depends(auth)])
 def slot_finish(slot: str = Query(), success: bool = Query()):
     try:
-        datetime.strptime(slot, '%Y-%m-%dT%H:%M')
-        if len(slot) != 16 or slot[-5:] not in ('00:00', '10:00', '14:00', '18:00', '22:00'):
+        from scripts.scheduled_scan import SLOTS
+        parsed = datetime.strptime(slot, '%Y-%m-%dT%H:%M')
+        if parsed.strftime('%Y-%m-%dT%H:%M') != slot or parsed.minute != 0 or parsed.hour not in SLOTS:
             raise ValueError('Invalid slot')
     except ValueError:
         raise HTTPException(400, 'Fascia oraria non valida')
@@ -618,3 +620,4 @@ def scan_csv(job_id: str):
 app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')
 def index(): return FileResponse('web/index.html')
+

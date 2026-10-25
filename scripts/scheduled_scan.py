@@ -12,8 +12,8 @@ from zoneinfo import ZoneInfo
 BASE = "https://nba-stats-4.onrender.com"
 TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
-# Frequent heartbeat recovers missed GitHub cron launches. Supabase ensures
-# each Rome-time slot is executed at most once (except explicit failure retry).
+# GitHub schedules these Rome-time slots; Render can recover delayed launches.
+# Supabase reserves each slot at most once, including after ambiguous failures.
 SLOTS = (7, 12, 17, 21)
 MAX_DELAY = dt.timedelta(hours=2)
 
@@ -129,3 +129,4 @@ def execute_scan(now, slot, manual, source):
 
 if __name__ == "__main__":
     run()
+

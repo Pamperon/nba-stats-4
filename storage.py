@@ -57,18 +57,16 @@ def initialize():
 
 
 def claim_slot(slot_key):
-    """Atomic reservation across GitHub runners; retry stale/failed claims."""
+    """Atomic at-most-once reservation across GitHub and Render schedulers."""
     if not configured():
         raise RuntimeError("Database required for scan deduplication")
     with connection() as conn:
         row = conn.execute("""
             INSERT INTO nba_scan_slots(slot_key, status)
             VALUES (%s, 'running')
-            ON CONFLICT(slot_key) DO UPDATE
-            SET status='running', claimed_at=NOW(), finished_at=NULL
-            WHERE nba_scan_slots.status='failed'
-               OR (nba_scan_slots.status='running'
-                   AND nba_scan_slots.claimed_at < NOW() - INTERVAL '80 minutes')
+            -- Never replay a slot automatically: a failed/timed-out caller may
+            -- already have consumed paid API calls or left a server job running.
+            ON CONFLICT(slot_key) DO NOTHING
             RETURNING slot_key
         """, (slot_key,)).fetchone()
     return bool(row)
@@ -263,3 +261,4 @@ def cleanup_expired(retention_days=7):
     log.info("NBA scan retention disabled: preserving all historical snapshots")
     return {"deleted_snapshots": 0, "retention_policy": "permanent",
             "odds_api_calls": 0}
+
