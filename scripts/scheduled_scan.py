@@ -29,6 +29,18 @@ def due_slot(now):
                 candidates.append(target)
     return max(candidates) if candidates else None
 
+def seconds_until_check(now=None, maximum=600):
+    """Keep recovery checks bounded, but never sleep past a Rome-time slot."""
+    now = now or dt.datetime.now(ROME)
+    local = now.astimezone(ROME)
+    targets = [dt.datetime.combine(local.date() + dt.timedelta(days=offset),
+                                   dt.time(hour), tzinfo=ROME)
+               for offset in (0, 1) for hour in SLOTS]
+    delays = [(target.astimezone(dt.timezone.utc) - now.astimezone(dt.timezone.utc)).total_seconds()
+              for target in targets]
+    return min([maximum] + [delay for delay in delays if delay > 0])
+
+
 def call(path, method="GET", timeout=45):
     req = urllib.request.Request(
         BASE + path, method=method,

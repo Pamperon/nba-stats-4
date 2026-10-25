@@ -19,6 +19,34 @@ with patch.dict(os.environ, {'NBA_STATS_ACCESS_TOKEN': 'offline-token', 'ODDSPAP
     main = importlib.import_module('main')
 
 
+class SchedulerTimingTests(unittest.TestCase):
+    def test_check_just_before_slot_waits_for_slot_instead_of_ten_minutes(self):
+        now = dt.datetime(2026, 10, 25, 20, 59, 41, tzinfo=scheduled_scan.ROME)
+        self.assertEqual(scheduled_scan.seconds_until_check(now), 19)
+        self.assertEqual(scheduled_scan.seconds_until_check(now, maximum=35), 19)
+
+    def test_each_italian_slot_is_a_wakeup_target_in_summer_and_winter(self):
+        for month in (7, 10):
+            for hour in scheduled_scan.SLOTS:
+                now = dt.datetime(2026, month, 25, hour-1, 59, 50, tzinfo=scheduled_scan.ROME)
+                self.assertEqual(scheduled_scan.seconds_until_check(now), 10)
+                self.assertEqual(scheduled_scan.seconds_until_check(now.astimezone(dt.timezone.utc)), 10)
+
+    def test_after_slot_and_overnight_keep_ten_minute_recovery_interval(self):
+        for hour in (0, 7, 12, 17, 21, 23):
+            now = dt.datetime(2026, 10, 25, hour, 0, tzinfo=scheduled_scan.ROME)
+            self.assertEqual(scheduled_scan.seconds_until_check(now), 600)
+
+    def test_render_loop_uses_slot_aware_wait_and_stops_without_extra_run(self):
+        with patch.object(main, 'shutdown_event') as stop, patch.object(scheduled_scan, 'run') as run, patch.object(scheduled_scan, 'seconds_until_check', side_effect=[19, 600]) as delay:
+            stop.wait.side_effect = [False, True]
+            stop.is_set.side_effect = [False, True]
+            main._render_scheduler_loop()
+        run.assert_called_once_with(source='render')
+        self.assertEqual(stop.wait.call_args_list, [unittest.mock.call(19), unittest.mock.call(600)])
+        self.assertEqual(delay.call_count, 2)
+
+
 class MeteredRequestTests(unittest.TestCase):
     def setUp(self):
         engine.reset_odds_api_request_count()

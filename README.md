@@ -27,7 +27,8 @@ Sono previsti controlli di recupero ogni dieci minuti, fino a due ore dopo
 ogni fascia. Prima di prenotare una fascia vengono verificati entrambi i calendari
 ESPN gratuiti: se non sono disponibili, il controllo successivo può riprovare
 senza aver consumato la prenotazione o richieste OddsPapi. Render esegue anche
-un controllo interno mentre il server è attivo.
+un controllo interno mentre il server è attivo: al massimo ogni dieci minuti,
+con attesa abbreviata se si avvicina una delle quattro fasce, per non superarla.
 GitHub può ritardare o perdere eventi pianificati; Render Free può sospendersi.
 
 La prenotazione atomica `nba_scan_slots` impedisce che GitHub e Render ripetano

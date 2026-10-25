@@ -69,14 +69,14 @@ def _release_guard_when_public():
 
 def _render_scheduler_loop():
     import scripts.scheduled_scan as scheduler
-    if shutdown_event.wait(35):
+    if shutdown_event.wait(scheduler.seconds_until_check(maximum=35)):
         return
     while not shutdown_event.is_set():
         try:
             scheduler.run(source='render')
         except Exception:
             logger.exception('Render fallback scan scheduler failed')
-        shutdown_event.wait(600)
+        shutdown_event.wait(scheduler.seconds_until_check())
 
 
 @app.on_event('shutdown')
