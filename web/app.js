@@ -325,12 +325,37 @@ async function fetchPlayerLog(team,id,season){
  playerLogPending.set(key,task);return task;
 }
 
+// Catalog and roster revisits need no round trip while their cache is fresh.
+async function playerCatalog(path){
+ const key='nba-player-catalog:'+path,now=Date.now();
+ let item=rosterCache.get(path);
+ if(!item){try{item=JSON.parse(sessionStorage.getItem(key))}catch(e){}}
+ if(item&&Number.isFinite(item.at)&&now>=item.at&&now-item.at<PLAYER_CACHE_TTL){
+  rosterCache.set(path,item);return item.payload;
+ }
+ const payload=await(await api(path)).json();
+ item={at:Date.now(),payload};rosterCache.set(path,item);
+ try{sessionStorage.setItem(key,JSON.stringify(item))}catch(e){}
+ return payload;
+}
+let playerPrefetchTimer;
+function prefetchNextPlayer(request,team,id,season){
+ clearTimeout(playerPrefetchTimer);
+ const index=activeRoster.findIndex(p=>p.id===id),next=activeRoster[index+1];
+ if(index<0||!next)return;
+ // Only one adjacent player, after rendering; reuse pending requests and TTL.
+ playerPrefetchTimer=setTimeout(()=>{
+  if(request!==playerRequest||document.querySelector('nav button.active')?.dataset.tab!=='player')return;
+  fetchPlayerLog(team,next.id,season).catch(()=>{});
+ },250);
+}
+
 const playerNum=x=>Number(x)||0;
 async function initPlayers(){
  const now=new Date(),year=now.getFullYear(),start=now.getMonth()>=9?year:year-1;
  $('playerseason').innerHTML=[start,start-1,start-2].map(y=>'<option value="'+y+'">'+y+'/'+String(y+1).slice(-2)+'</option>').join('');
  $('player-status').textContent='Caricamento delle 30 squadre NBA…';
- try{const payload=await(await api('/api/players/teams')).json();
+ try{const payload=await playerCatalog('/api/players/teams');
  $('team').innerHTML=payload.teams.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('');
  await changeTeam();
  }catch(e){playerStatsInitialized=false;$('player-status').textContent='Catalogo NBA non disponibile ('+e.message+'). Riapri la scheda per riprovare.';}
@@ -349,7 +374,7 @@ async function changeTeam(){
  if(!team){setPlayerLoading(false);return;}
  setPlayerLoading(true);
  try{
-  const payload=await(await api('/api/players/roster?team_id='+encodeURIComponent(team))).json();
+  const payload=await playerCatalog('/api/players/roster?team_id='+encodeURIComponent(team));
   if(request!==rosterRequest)return;
   activeRoster=payload.players||[];
   $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
@@ -394,6 +419,7 @@ async function loadPlayerProfile(request,team,id){
  renderPlayerSeason();
 }
 async function changePlayer(){
+ clearTimeout(playerPrefetchTimer);
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
  playerGames=[];
  $('player-summary').innerHTML='';
@@ -408,6 +434,7 @@ async function changePlayer(){
   playerGames=payload.games||[];
   renderPlayerSeason();
   changeLine();
+  prefetchNextPlayer(request,team,id,season);
   if(!playerGames.length)$('player-status').textContent='Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
  }catch(e){
   if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';

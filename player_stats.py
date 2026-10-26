@@ -74,8 +74,6 @@ def roster(team_id):
     return cached("nba:roster:v3:" + team_id, 12, build)
 
 def player_log(team_id, athlete_id, season):
-    if athlete_id not in {p["id"] for p in roster(team_id)}:
-        raise ValueError("Giocatore non presente nel roster attuale")
     if not (season.isdigit() and len(season) == 4):
         raise ValueError("Stagione non valida")
     year = int(season)
@@ -83,6 +81,10 @@ def player_log(team_id, athlete_id, season):
     if year < current - 3 or year > current + 1:
         raise ValueError("Stagione fuori intervallo")
     def build():
+        # A cached log was already validated when built. Avoid loading teams and
+        # roster from the database again on every cold-process cache hit.
+        if athlete_id not in {p["id"] for p in roster(team_id)}:
+            raise ValueError("Giocatore non presente nel roster attuale")
         season_key = str(year) + "-" + str(year + 1)[-2:]
         frame = engine.selected_game_log(athlete_id, season_key, "Regular season + Playoff", team_id)
         if frame.empty:

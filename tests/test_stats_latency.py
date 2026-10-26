@@ -37,3 +37,18 @@ class StatsLatencyTests(unittest.TestCase):
         finally:
             release.set()
             player_stats._memory_cache.pop(key, None)
+
+    def test_saved_log_does_not_require_catalog_or_roster_round_trips(self):
+        player_stats._memory_cache.clear()
+        payload = {'games': [{'PTS': 12}], 'athlete_id': '123', 'season': '2026'}
+        with patch.object(player_stats.storage, 'cache_read', return_value=payload) as read, patch.object(player_stats, 'roster', side_effect=AssertionError('Unneeded roster request')):
+            self.assertEqual(player_stats.player_log('1', '123', '2026'), payload)
+        self.assertEqual(read.call_count, 1)
+        player_stats._memory_cache.clear()
+
+    def test_uncached_log_still_checks_roster(self):
+        player_stats._memory_cache.clear()
+        with patch.object(player_stats.storage, 'cache_read', return_value=None), patch.object(player_stats, 'roster', return_value=[]), patch.object(engine, 'selected_game_log') as load:
+            with self.assertRaises(ValueError):
+                player_stats.player_log('1', '123', '2026')
+            load.assert_not_called()

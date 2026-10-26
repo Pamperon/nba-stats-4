@@ -269,3 +269,37 @@ test('initial page selects the next upcoming NBA day instead of a completed cale
     assert.match(d.getElementById('quote-updated').textContent,/^Ultimo controllo:/);
   }finally{dom.window.close();}
 });
+
+test('catalog revisits avoid requests and expired catalog reloads', async()=>{
+ let calls=0;
+ const dom=browser(async url=>{
+  if(url==='/api/players/teams'){calls++;return response({teams:[]})}
+  return response({dates:[]});
+ });
+ try{
+  const w=dom.window;let now=1000000000000;w.Date.now=()=>now;
+  await w.playerCatalog('/api/players/teams');
+  await w.playerCatalog('/api/players/teams');
+  assert.equal(calls,1);
+  now+=15*60*1000;
+  await w.playerCatalog('/api/players/teams');
+  assert.equal(calls,2);
+ }finally{dom.window.close()}
+});
+
+test('concurrent player loads share one request and return cached data on revisit', async()=>{
+ let calls=0,resolve;
+ const dom=browser(url=>{
+  if(url.startsWith('/api/players/log')){calls++;return new Promise(r=>{resolve=r})}
+  return Promise.resolve(response({dates:[]}));
+ });
+ try{
+  const w=dom.window;
+  const a=w.fetchPlayerLog('1','123','2026'),b=w.fetchPlayerLog('1','123','2026');
+  assert.equal(calls,1);
+  resolve(response({games:[{PTS:20}]}));
+  await Promise.all([a,b]);
+  assert.equal((await w.fetchPlayerLog('1','123','2026')).games[0].PTS,20);
+  assert.equal(calls,1);
+ }finally{dom.window.close()}
+});
