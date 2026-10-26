@@ -126,6 +126,10 @@ def player_log(team_id, athlete_id, season):
 def team_cached_logs(team_id, season):
     """Small batch of already saved logs, scoped to the current roster/season."""
     year, current = validate_season(season)
+    batch_key = "nba:team-logs:v1:" + team_id + ":" + season
+    with _memory_lock:
+        if batch_key in _memory_cache:
+            return _memory_cache[batch_key]
     players = roster(team_id)
     keys = {"nba:log:final-v2:" + team_id + ":" + p["id"] + ":" + season: p["id"]
             for p in players}
@@ -137,7 +141,13 @@ def team_cached_logs(team_id, season):
     missing = [key for key, athlete_id in keys.items() if athlete_id not in logs]
     try:
         saved = storage.cache_read_many(missing, 6 if year >= current - 1 else 720)
-        logs.update({keys[key]: payload for key, payload in saved.items() if key in keys})
+        with _memory_lock:
+            for key, payload in saved.items():
+                if key in keys:
+                    _memory_cache[key] = payload
+                    logs[keys[key]] = payload
+            if logs:
+                _memory_cache[batch_key] = logs
     except Exception:
         # Optional acceleration: individual log requests still work on failure.
         logger.warning("Team log cache unavailable", exc_info=True)
