@@ -253,3 +253,11 @@ main{padding-top:14px}
 .pick-player-link:hover{background:transparent;color:#ffb05e;text-decoration-color:currentColor}
 .pick-avatar[role="button"]{cursor:pointer}
 .pick-player-link:focus-visible,.pick-avatar[role="button"]:focus-visible{outline:2px solid #ffb05e;outline-offset:5px}
+
+.pick-explanation{margin-top:14px;border-top:1px solid #334966;padding-top:12px}
+.pick-explanation summary{cursor:pointer;color:#ffb05e;font-weight:700;font-size:14px;line-height:1.4}
+.pick-explanation summary:focus-visible{outline:2px solid #ffb05e;outline-offset:4px}
+.pick-explanation-body{font-size:13px;line-height:1.5;color:#d2dfee}
+.pick-explanation-body p{margin:13px 0 0}.pick-explanation-body b{display:block;color:#eef5ff;margin-bottom:3px}
+.pick-explanation-warning{background:#352c28;border-left:3px solid #ffb05e;border-radius:6px;padding:9px 10px}
+.pick-explanation-body .pick-explanation-note{color:#9cb0cb;font-size:12px}

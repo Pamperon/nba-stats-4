@@ -191,12 +191,64 @@ function pickEmptyReason(rows,min,max,count,found){
  if(found<count)return 'Nessuna selezione completa: '+found+' di '+count+' giocatori idonei ('+rejected.length+' esclusi dai controlli sui dati)';
  return '';
 }
+function pickExplanation(row){
+ const isUnder=String(row.Scelta||'Over').toLowerCase()==='under';
+ const line=Number(row.Linea),market=row.Mercato;
+ const units={PTS:'punti',REB:'rimbalzi',AST:'assist'};
+ const unit=units[market]||String(market||'');
+ const threshold=(isUnder?'meno di ':'più di ')+esc(row.Linea)+' '+esc(unit);
+ const num=x=>x===null||x===undefined||x===''?null:(Number.isFinite(Number(x))?Number(x):null);
+ const display=x=>String(Math.round(x*10)/10).replace('.',',');
+ const ratio=x=>{const m=String(x||'').match(/^(\d+)\s*\/\s*(\d+)$/);return m&&+m[2]>0&&+m[1]<=+m[2]?{hits:+m[1],total:+m[2]}:null};
+ const match=val=>isUnder?val<line:val>line;
+ const saved=data?.player_logs?.[row.Giocatore];
+ const history=Array.isArray(saved)?saved.filter(g=>g&&/^\d{4}-\d{2}-\d{2}/.test(String(g.GAME_DATE||''))).slice().sort((a,b)=>String(b.GAME_DATE).localeCompare(String(a.GAME_DATE))):[];
+ const valid=history.filter(g=>num(g[market])!==null);
+ const games=num(row.Partite),season=num(row['Stagione %']);
+ const historicHits=valid.filter(g=>match(num(g[market]))).length;
+ const verified=Number.isFinite(line)&&games!==null&&valid.length===games&&season!==null&&Math.abs(100*historicHits/games-season)<0.11;
+ const recent=ratio(row['Ultime 20']),last5=ratio(row['Ultime 5']);
+ const sections=[];
+ if(recent){
+  let message='Ha fatto '+threshold+' in <strong>'+recent.hits+' delle ultime '+recent.total+' partite</strong> considerate.';
+  if(verified&&games>0)message+=' Nello storico utilizzato: <strong>'+historicHits+' su '+games+'</strong>.';
+  else if(season!==null&&games>0)message+=' Nello storico utilizzato: <strong>'+display(season)+'% su '+games+' partite</strong>.';
+  sections.push('<p><b>📊 Il rendimento sulla linea</b>'+message+'</p>');
+ }
+ const avg=num(row['Minuti medi']),recentMin=num(row['Minuti ultime 5']);
+ if(avg!==null&&recentMin!==null){
+  const diff=recentMin-avg;
+  const title=diff<=-2?'Sta giocando meno del solito':diff>=2?'Sta giocando più del solito':'Minutaggio recente simile alla media';
+  sections.push('<p><b>⏱️ '+title+'</b>Nelle ultime 5 partite ha giocato in media <strong>'+display(recentMin)+' minuti</strong>, rispetto ai <strong>'+display(avg)+' minuti</strong> dello storico.</p>');
+ }
+ const probability=num(row['Prob. stimata %']),odd=num(row.Quota);
+ if(probability!==null&&odd!==null&&odd>1){
+  const implied=100/odd,relation=probability>implied?'più alta':probability<implied?'più bassa':'uguale';
+  sections.push('<p><b>💡 Come valutiamo la quota</b>Il sistema stima una probabilità del <strong>'+display(probability)+'%</strong>. La quota '+fmtOdd(odd)+' corrisponde a circa il <strong>'+display(implied)+'%</strong>: secondo il modello la probabilità è '+relation+' di quella implicita nella quota.</p>');
+ }
+ const warnings=[];
+ // A sequence is only reported when each of the latest observations has a
+ // valid value and a distinct, ordered date. Do not use fresh post-scan logs.
+ if(Number.isFinite(line)&&history.length>=2&&history.every(g=>num(g[market])!==null)&&new Set(history.map(g=>String(g.GAME_DATE).slice(0,10))).size===history.length){
+  let misses=0;for(const g of history){if(match(num(g[market])))break;misses++}
+  if(misses>=2)warnings.push('Nelle ultime <strong>'+misses+' partite consecutive</strong> non ha fatto '+threshold+'.');
+ }
+ if(!warnings.length&&last5&&last5.total>=5&&last5.hits<=2)warnings.push('Nelle ultime '+last5.total+' partite ha fatto '+threshold+' <strong>'+last5.hits+' volte</strong>.');
+ const current=num(row['Stagione attuale (n)']);
+ if(current!==null&&current<5){
+  const previous=num(row['Stagione precedente (n)']);
+  warnings.push('Nella stagione attuale sono disponibili '+current+' partite.'+(previous!==null&&previous>0?' La valutazione include anche '+previous+' partite della stagione precedente.':''));
+ }
+ if(warnings.length)sections.push('<p class="pick-explanation-warning"><b>⚠️ Da tenere d’occhio</b>'+warnings.join(' ')+'</p>');
+ if(!sections.length)sections.push('<p>Dettagli non disponibili per questa scansione.</p>');
+ return '<details class="pick-explanation"><summary>Perché questo pronostico?</summary><div class="pick-explanation-body">'+sections.join('')+'<p class="pick-explanation-note">La stima usa le partite precedenti e non garantisce il risultato. I dati si riferiscono all’aggiornamento salvato.</p></div></details>';
+}
 function pickCard(row){
  return '<article class="pick-selection"><div class="pick-profile">'+candidateAvatar(row)+
  '<div class="pick-profile-info"><h3><button type="button" class="pick-player-link" aria-label="Apri le statistiche di '+esc(row.Giocatore)+'">'+esc(row.Giocatore)+'</button></h3><p class="pick-player-meta">'+esc(row.Squadra||row.Partita)+'</p>'+
  '<div class="pick-market">OVER '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div></div></div>'+
  '<div class="pick-values"><div><small>QUOTA</small><strong>'+esc(fmtOdd(row.Quota))+'</strong></div>'+
- '<div><small>STIMA</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div></article>';
+ '<div><small>STIMA</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div>'+pickExplanation(row)+'</article>';
 }
 function render(){
  const request=++pickProfileRequest;

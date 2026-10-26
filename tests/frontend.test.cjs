@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v13', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v14', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -506,4 +506,32 @@ test('same-game combinations do not present multiplied odds or probabilities as 
   d.getElementById('stat').dispatchEvent(new w.Event('change'));
   assert.equal(d.getElementById('line').value,'10.5');
  }finally{dom.window.close()}
+});
+
+
+test('explanation shows saved statistics and consecutive misses without changing picks', async () => {
+ const pick={Giocatore:'Player',Partita:'A - B',Squadra:'A',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75,'Value stimato %':19,'Stato analisi':'Valutabile (stima empirica)',Partite:5,'Stagione %':60,'Ultime 20':'3/5','Ultime 5':'3/5','Minuti medi':30,'Minuti ultime 5':28,'Stagione attuale (n)':5};
+ const games=[18,19,25,24,23].map((PTS,i)=>({GAME_DATE:`2026-10-${25-i}`,PTS}));
+ const snapshot={date:'2099-01-01',results:[pick],player_logs:{Player:games},recommendations:{groups:{Singola:{complete:true,legs:[pick]},Doppia:{legs:[]},Tripla:{legs:[]}}}};
+ const dom=browser(async url=>response(url==='/api/saved/dates'?{dates:[{date:'2099-01-01'}]}:url.startsWith('/api/saved/latest')?snapshot:{}));
+ try {
+  await tick();await tick();const d=dom.window.document,details=d.querySelector('.pick-explanation');
+  assert.ok(details);assert.equal(details.open,false);details.querySelector('summary').click();assert.equal(details.open,true);
+  assert.match(details.textContent,/3 delle ultime 5 partite/);assert.match(details.textContent,/3 su 5/);
+  assert.match(details.textContent,/ultime 2 partite consecutive/);assert.match(details.textContent,/55,6%/);
+  assert.match(details.textContent,/28 minuti/);assert.match(details.textContent,/non garantisce/);
+  assert.equal(d.querySelectorAll('.pick-selection').length,1);
+ } finally {dom.window.close()}
+});
+
+test('explanation never invents streaks or historic counts when data are missing or ambiguous', async () => {
+ const dom=browser(async()=>response({dates:[]}));
+ try {
+  const w=dom.window;
+  const pick={Giocatore:'Player',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75,Partite:20,'Stagione %':70,'Ultime 20':'14/20','Ultime 5':'3/5','Minuti medi':30,'Minuti ultime 5':30};
+  w.eval('data = '+JSON.stringify({player_logs:{Player:[{GAME_DATE:'2026-10-25',PTS:18},{GAME_DATE:'2026-10-25',PTS:19}]}}));
+  const html=w.pickExplanation(pick);
+  assert.doesNotMatch(html,/partite consecutive/);assert.doesNotMatch(html,/2 su 20/);assert.match(html,/70% su 20 partite/);
+  w.eval('data = {}');assert.doesNotMatch(w.pickExplanation(pick),/partite consecutive/);
+ } finally {dom.window.close()}
 });
