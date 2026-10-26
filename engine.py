@@ -309,6 +309,8 @@ PLAYER_NAME_ALIASES = {
     "pjwashingtonjr": "pjwashington",
     "jabarismith": "jabarismithjr",
     "dariusacuff": "dariusacuffjr",
+    "carltoncarrington": "bubcarrington",
+    "alexandresarr": "alexsarr",
 }
 
 
@@ -361,6 +363,7 @@ def roster_athletes(payload):
                 yield {
                     "id": key,
                     "displayName": name,
+                    "fullName": node.get("fullName") or name,
                     "position": (node.get("position") or {}).get("displayName", "") if isinstance(node.get("position"), dict) else "",
                     "jersey": str(node.get("jersey") or ""),
                     "height": str(node.get("displayHeight") or ""),
@@ -812,10 +815,17 @@ def finder_player_index(end_year):
             if roster is None:
                 continue
             for athlete in roster_athletes(roster):
-                index.setdefault(normalized_name(athlete["displayName"]),
-                                 {"id": athlete["id"], "team_id": team_id,
-                                  "full_name": athlete["displayName"],
-                                  "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"})
+                player = {"id": athlete["id"], "team_id": team_id,
+                          "full_name": athlete["displayName"],
+                          "team_name": team.get("displayName") or team.get("name") or f"Squadra ESPN {team_id}"}
+                # Use only provider-supplied full names. If two different IDs
+                # share a name, retain an ambiguity marker, never the first hit.
+                for name in {athlete["displayName"], athlete.get("fullName") or athlete["displayName"]}:
+                    key = normalized_name(name)
+                    if key not in index:
+                        index[key] = player
+                    elif index[key] is not None and index[key]["id"] != player["id"]:
+                        index[key] = None
     return index
 
 def historical_player_index(end_year, missing_names):
@@ -1030,7 +1040,8 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
 
     def load_player(item):
         player_name, _props = item
-        athlete = index.get(normalized_name(player_name)) or index.get(espn_player_key(player_name))
+        exact_key = normalized_name(player_name)
+        athlete = index[exact_key] if exact_key in index else index.get(espn_player_key(player_name))
         games = None
         error = "Giocatore non identificato su ESPN" if athlete is None else ""
         if athlete is not None:

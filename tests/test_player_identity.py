@@ -26,3 +26,21 @@ class HistoricalIdentityTests(unittest.TestCase):
 
 if __name__=="__main__":
     unittest.main()
+
+class CurrentIdentityTests(unittest.TestCase):
+    def test_known_odds_names_match_espn_roster_names(self):
+        self.assertEqual(engine.espn_player_key('Carrington, Carlton'), engine.normalized_name('Bub Carrington'))
+        self.assertEqual(engine.espn_player_key('Sarr, Alexandre'), engine.normalized_name('Alex Sarr'))
+        for given, official in [('Johnson, Morez','Morez Johnson Jr.'),('Washington Jr., PJ','PJ Washington'),('Smith, Jabari','Jabari Smith Jr.'),('Acuff, Darius','Darius Acuff Jr.')]:
+            self.assertEqual(engine.espn_player_key(given),engine.normalized_name(official))
+
+    def test_current_roster_index_uses_both_official_names_and_rejects_duplicates(self):
+        teams=[{'team':{'id':'27','displayName':'Washington Wizards'}}, {'team':{'id':'1','displayName':'Other Team'}}]
+        rosters={'27':{'athletes':[{'id':'4845374','displayName':'Bub Carrington','fullName':'Carlton Carrington','position':{}}, {'id':'5160992','displayName':'Alex Sarr','fullName':'Alex Sarr','position':{}}, {'id':'101','displayName':'Same Player','position':{}}]},
+                 '1':{'athletes':[{'id':'102','displayName':'Same Player','position':{}}]}}
+        with patch.object(engine,'espn_teams',return_value=teams), patch.object(engine,'espn_roster',side_effect=lambda tid, year=None:rosters[tid]):
+            index=engine.finder_player_index(2027)
+        self.assertEqual(index[engine.espn_player_key('Carrington, Carlton')]['id'],'4845374')
+        self.assertEqual(index[engine.espn_player_key('Sarr, Alexandre')]['id'],'5160992')
+        self.assertEqual(index[engine.normalized_name('Carlton Carrington')]['id'],'4845374')
+        self.assertIsNone(index['sameplayer'])
