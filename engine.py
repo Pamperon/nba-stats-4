@@ -70,13 +70,15 @@ def _odds_diagnostics(odds, catalog):
     result = {"bookmaker_presente": bool(book), "bookmaker_attivo": book.get("bookmakerIsActive"),
               "bookmaker_sospeso": book.get("suspended"), "mercati_totali": len(markets),
               "mercati_player_props": 0, "mercati_attivi": 0, "mercati_inattivi": 0,
-              "mercati_senza_catalogo": 0, "giocatori_attivi": 0, "quote_valide": 0}
+              "mercati_senza_catalogo": 0, "giocatori_attivi": 0, "quote_valide": 0, "tipi_mercato": {}}
     wanted = {kind for kinds in MARKETS.values() for kind in kinds}
     for mid, market in markets.items():
         definition = catalog.get(str(mid))
         if definition is None:
             result["mercati_senza_catalogo"] += 1
             continue
+        kind = str(definition.get("marketType") or "sconosciuto")
+        result["tipi_mercato"][kind] = result["tipi_mercato"].get(kind, 0) + 1
         if definition.get("marketType") not in wanted:
             continue
         result["mercati_player_props"] += 1

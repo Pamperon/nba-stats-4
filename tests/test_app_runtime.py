@@ -102,3 +102,24 @@ class AppRuntimeTests(unittest.TestCase):
             result = main.visible_snapshot(snapshot)
         self.assertEqual([r['Giocatore'] for r in result['results']], ['B'])
         self.assertEqual(len(snapshot['results']), 2)
+
+
+class FixtureCounterTests(unittest.TestCase):
+    def test_upcoming_games_count_even_without_provider_odds(self):
+        snapshot = {'date': '2026-10-27', 'results': [], 'fixture_count': 0}
+        games = [
+            {'home': 'Boston Celtics', 'away': 'Chicago Bulls', 'upcoming': True},
+            {'home': 'Miami Heat', 'away': 'Dallas Mavericks', 'upcoming': True},
+            {'home': 'New York Knicks', 'away': 'Orlando Magic', 'upcoming': False}]
+        with patch.object(main, 'schedule', return_value={'games': games}):
+            result = main.visible_snapshot(snapshot)
+        self.assertEqual(result['fixture_count'], 2)
+        self.assertEqual(result['results'], [])
+        self.assertEqual(result['player_count'], 0)
+        self.assertEqual(snapshot['fixture_count'], 0)
+
+    def test_finished_games_are_not_counted(self):
+        with patch.object(main, 'schedule', return_value={'games': [
+                {'home': 'Boston Celtics', 'away': 'Chicago Bulls', 'upcoming': False}]}):
+            result = main.visible_snapshot({'date': '2026-10-27', 'results': [], 'fixture_count': 1})
+        self.assertEqual(result['fixture_count'], 0)

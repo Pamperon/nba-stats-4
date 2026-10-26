@@ -1,0 +1,22 @@
+name: NBA STATS - risveglio prima degli aggiornamenti
+on:
+  schedule:
+    - cron: '55 6,11,16,20 * * *'
+      timezone: Europe/Rome
+permissions:
+  contents: read
+concurrency:
+  group: nba-stats-prewarm
+  cancel-in-progress: false
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      # Read-only health check: no scan endpoint and no OddsPapi requests.
+      # Scheduled Actions can be delayed; this reduces cold starts, not that limit.
+      - name: Wake web service
+        run: >-
+          curl --fail --silent --show-error --retry 4 --retry-all-errors
+          --retry-delay 10 --max-time 90 --retry-max-time 360
+          https://nba-stats-4.onrender.com/api/health

@@ -293,7 +293,8 @@ def visible_snapshot(snapshot):
     result['fixture_reports'] = []
     result['issues'] = []
     result['player_count'] = len(players)
-    result['fixture_count'] = len({row.get('Partita') for row in result['results']})
+    # Games exist independently of whether the provider offers player odds.
+    result['fixture_count'] = len(upcoming)
     return result
 
 @app.get('/api/saved/latest')
