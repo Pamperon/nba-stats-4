@@ -317,7 +317,8 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
     return visible_snapshot(snapshot)
 
 @app.get('/api/saved/archive')
-def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
+def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$'),
+                  include_logs: bool = False):
     """Read-only historical predictions without hiding completed games."""
     try:
         requested = datetime.strptime(date, '%Y-%m-%d').date()
@@ -343,6 +344,9 @@ def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
             'recommendations': snapshot.get('recommendations'),
             'availability': snapshot.get('availability'),
             'calibration': snapshot.get('calibration'),
+            'season': snapshot.get('season'),
+            'scan_finished_at': snapshot.get('scan_finished_at'),
+            **({'player_logs': snapshot.get('player_logs', {})} if include_logs else {}),
             'fixture_reports': snapshot.get('fixture_reports', [])}
 
 @app.get('/api/saved/time')

@@ -35,6 +35,17 @@ class AppRuntimeTests(unittest.TestCase):
             self.assertEqual(self.client.post('/api/scan?date=2026-10-25').status_code, 401)
             odds.assert_not_called()
 
+    def test_archive_includes_exact_saved_history_only_when_requested(self):
+        snapshot = {'date':'2026-10-23', 'season':'2026-27',
+                    'scan_finished_at':'2026-10-23T16:00:00+00:00',
+                    'player_logs':{'Saved Player':[{'GAME_ID':'before', 'PTS':12}]}}
+        with patch.object(main.storage, 'configured', return_value=True), patch.object(main.storage, 'latest', return_value=snapshot):
+            compact = self.client.get('/api/saved/archive?date=2026-10-23').json()
+            expanded = self.client.get('/api/saved/archive?date=2026-10-23&include_logs=true').json()
+        self.assertNotIn('player_logs', compact)
+        self.assertEqual(expanded['player_logs'], snapshot['player_logs'])
+        self.assertEqual(expanded['scan_finished_at'], snapshot['scan_finished_at'])
+
     def test_saved_time_reports_actual_http_requests_including_zero(self):
         for count in (0, 4):
             snapshot = {'saved_at': '2026-10-25T11:48:23+00:00', 'odds_api_http_requests_scan': count, 'quote_lines_scan': 328}
