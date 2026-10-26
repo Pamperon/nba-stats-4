@@ -365,7 +365,7 @@ def saved_time(date: str):
             'coverage_status': ('completa' if snapshot.get('fixture_reports') and all(item.get('stato') == 'ok' for item in snapshot['fixture_reports']) else 'in_attesa_quote' if snapshot.get('fixture_reports') and all(item.get('stato') in ('ok', 'vuota') for item in snapshot['fixture_reports']) else 'errore_o_dati_incompleti'),
             'fixture_count': snapshot.get('fixture_count', 0),
             'fixture_status_counts': {state: sum(1 for item in snapshot.get('fixture_reports', []) if item.get('stato') == state) for state in ('ok', 'vuota', 'errore', 'in_elaborazione')},
-            'fixture_reports': [{'id': item.get('id'), 'partita': item.get('partita'), 'inizio_italia': item.get('inizio_italia'), 'stato': item.get('stato'), 'linee': item.get('linee', 0), 'dettaglio': item.get('dettaglio', '')} for item in snapshot.get('fixture_reports', [])],
+            'fixture_reports': [{'id': item.get('id'), 'partita': item.get('partita'), 'inizio_italia': item.get('inizio_italia'), 'stato': item.get('stato'), 'linee': item.get('linee', 0), 'dettaglio': item.get('dettaglio', ''), 'diagnostica': item.get('diagnostica', {})} for item in snapshot.get('fixture_reports', [])],
             'odds_api_calls': 0
         }
     except HTTPException:
@@ -381,16 +381,22 @@ def saved_dates():
     try:
         today = datetime.now(ZoneInfo('Europe/Rome')).date()
         dates = {item['date'] for item in storage.available_dates() if item['date'] >= today.isoformat()}
+        upcoming_dates = set()
         # Include scheduled NBA days even before player-prop odds have been saved.
         # ESPN is free; a temporary ESPN outage must not hide archived days.
         for offset in range(3):
             day = (today + timedelta(days=offset)).isoformat()
             try:
-                if schedule(day)['games']:
+                games = schedule(day)['games']
+                if games:
                     dates.add(day)
+                if any(game.get('upcoming') for game in games):
+                    upcoming_dates.add(day)
             except HTTPException:
                 logger.warning('Cannot check ESPN calendar for %s; retaining archived dates', day)
-        return {'dates': [{'date': day} for day in sorted(dates)], 'odds_api_calls': 0}
+        return {'dates': [{'date': day} for day in sorted(dates)],
+                'default_date': min(upcoming_dates) if upcoming_dates else None,
+                'odds_api_calls': 0}
     except Exception:
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')

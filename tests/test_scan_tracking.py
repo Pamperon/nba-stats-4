@@ -47,6 +47,33 @@ class SchedulerTimingTests(unittest.TestCase):
         self.assertEqual(delay.call_count, 2)
 
 
+class SavedDateSelectionTests(unittest.TestCase):
+    def test_prefers_first_upcoming_day_and_keeps_completed_archive_accessible(self):
+        def schedule(day):
+            return {'games': [{'upcoming': day != '2026-10-26'}]}
+        with patch.object(main.storage, 'configured', return_value=True), patch.object(main.storage, 'available_dates', return_value=[{'date':'2026-10-26'}]), patch.object(main, 'schedule', side_effect=schedule), patch.object(main, 'datetime') as clock:
+            clock.now.return_value = dt.datetime(2026,10,26,8,tzinfo=scheduled_scan.ROME)
+            result = main.saved_dates()
+        self.assertEqual(result['default_date'], '2026-10-27')
+        self.assertIn({'date':'2026-10-26'}, result['dates'])
+        self.assertEqual(result['odds_api_calls'], 0)
+
+    def test_calendar_outage_keeps_saved_dates_without_inventing_upcoming_day(self):
+        with patch.object(main.storage, 'configured', return_value=True), patch.object(main.storage, 'available_dates', return_value=[{'date':'2026-10-26'}]), patch.object(main, 'schedule', side_effect=main.HTTPException(502, 'offline')), patch.object(main, 'datetime') as clock:
+            clock.now.return_value = dt.datetime(2026,10,26,8,tzinfo=scheduled_scan.ROME)
+            result = main.saved_dates()
+        self.assertIsNone(result['default_date'])
+        self.assertEqual(result['dates'], [{'date':'2026-10-26'}])
+
+    def test_saved_time_exposes_original_diagnostics_without_paid_requests(self):
+        snapshot = {'saved_at':'2026-10-26T06:34:40+00:00',
+                    'fixture_reports':[{'stato':'vuota','diagnostica':{'mercati_senza_catalogo':0, 'mercati_player_props':0}}]}
+        with patch.object(main.storage, 'configured', return_value=True), patch.object(main.storage, 'latest', return_value=snapshot), patch.object(engine, 'get_json') as paid:
+            result = main.saved_time('2026-10-27')
+        self.assertEqual(result['fixture_reports'][0]['diagnostica']['mercati_senza_catalogo'],0)
+        paid.assert_not_called()
+
+
 class MeteredRequestTests(unittest.TestCase):
     def setUp(self):
         engine.reset_odds_api_request_count()

@@ -253,3 +253,17 @@ test('missing quotes keep the previous simple layout without duplicate notices',
     assert.match(d.getElementById('picks').textContent,/Nessuna quota ancora disponibile/);
   }finally{dom.window.close();}
 });
+
+
+test('initial page selects the next upcoming NBA day instead of a completed calendar day', async () => {
+  const dom=browser(async url=>{
+    if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'},{date:'2099-01-02'}],default_date:'2099-01-02'});
+    if(url.startsWith('/api/saved/status'))return response({state:'partial',last_saved:null});
+    return response({date:'2099-01-02',results:[]});
+  });
+  try{
+    await tick();const d=dom.window.document;
+    assert.equal(d.getElementById('date').value,'2099-01-02');
+    assert.equal(dom.window.__audit.getData().date,'2099-01-02');
+  }finally{dom.window.close();}
+});

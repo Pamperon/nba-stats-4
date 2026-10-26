@@ -447,7 +447,7 @@ async function initializeArchive(){
   $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
   if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();setArchiveStatus('Nessuna analisi archiviata','notice');return;}
   const todayRome=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  $('date').value=dates.includes(todayRome)?todayRome:dates[0];
+  $('date').value=dates.includes(payload.default_date)?payload.default_date:(dates.includes(todayRome)?todayRome:dates[0]);
   renderDateStrip();
   $('date').dispatchEvent(new Event('change',{bubbles:true}));
  }catch(error){setArchiveStatus('Archivio temporaneamente non disponibile · riprova più tardi','error');}
