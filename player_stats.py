@@ -1,6 +1,7 @@
 """Public NBA roster and independent ESPN player statistics. No OddsPapi calls."""
 import logging
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from cachetools import TTLCache
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -11,6 +12,25 @@ logger = logging.getLogger(__name__)
 
 _memory_cache = TTLCache(maxsize=250, ttl=1800)
 _memory_lock = threading.RLock()
+
+# Optional persistence must not delay a response. Bound both workers and queue.
+_cache_writer = ThreadPoolExecutor(max_workers=1, thread_name_prefix="player-cache")
+_cache_write_slots = threading.BoundedSemaphore(16)
+
+def persist_cache(key, result):
+    if not _cache_write_slots.acquire(blocking=False):
+        return
+    def write():
+        try:
+            storage.cache_write(key, result)
+        except Exception:
+            logger.warning("Player cache write unavailable", exc_info=True)
+        finally:
+            _cache_write_slots.release()
+    try:
+        _cache_writer.submit(write)
+    except RuntimeError:
+        _cache_write_slots.release()
 
 def cached(key, hours, loader):
     with _memory_lock:
@@ -27,10 +47,7 @@ def cached(key, hours, loader):
     result = loader()
     with _memory_lock:
         _memory_cache[key] = result
-    try:
-        storage.cache_write(key, result)
-    except Exception:
-        logger.warning("Player cache write unavailable", exc_info=True)
+    persist_cache(key, result)
     return result
 
 def catalog():

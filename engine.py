@@ -409,16 +409,16 @@ def _compact_espn_event(event):
 @cached(TTLCache(maxsize=128, ttl=300), lock=threading.RLock())
 def espn_season_schedule_payloads(team_id, end_year):
     """Share compact schedule evidence, without retaining full ESPN responses."""
-    schedules = []
-    for kind in (2, 3):
+    from concurrent.futures import ThreadPoolExecutor
+    def fetch(kind):
         payload = espn_json(f"{ESPN_SITE}/teams/{team_id}/schedule",
                             season=end_year, seasontype=kind)
         if not isinstance(payload, dict) or not isinstance(payload.get("events", []), list):
             raise ValueError("Invalid ESPN schedule")
-        schedules.append((kind, {"events": [_compact_espn_event(event)
-                                            for event in payload.get("events", [])]}))
-        del payload
-    return tuple(schedules)
+        return kind, {"events": [_compact_espn_event(event)
+                                for event in payload.get("events", [])]}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        return tuple(pool.map(fetch, (2, 3)))
 
 
 def espn_event_completed(event):
