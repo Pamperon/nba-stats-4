@@ -107,12 +107,17 @@ def main():
                           'Prob. stimata %':80, 'Value stimato %':44, 'Partite':30,
                           'Stagione %':80, 'Minuti medi':30, 'Minuti ultime 5':29,
                           'Stato analisi':'Valutabile (stima empirica)'}
+            import shadow_study
+            import model_candidates
+            candidate_row={**ticket_row,'_shadow_probabilities':{name:.8 for name in model_candidates.MODELS}}
+            shadow=shadow_study.capture([candidate_row])
             storage.save('sql-ticket', {'date':'2026-10-23', 'state':'done', 'results':[ticket_row],
-                                       'recommendations':recommendations.select([ticket_row])})
+                                       'recommendations':recommendations.select([ticket_row]),'model_shadow':shadow})
             with patch.object(settle_espn, 'settle_archive', return_value=([{**ticket_row, 'actual':10, 'played':True}],1)):
                 assert recommendations.settle_snapshots('2026-10-23') == 1
                 assert recommendations.settle_snapshots('2026-10-23') == 0
             assert db.query("SELECT report->'groups'->'Singola'->>'status' FROM nba_recommendation_results WHERE snapshot_job_id='sql-ticket'")[0][0] == 'won'
+            assert db.query("SELECT report->'model_shadow'->'models'->'pooled80_recent20'->>'n' FROM nba_recommendation_results WHERE snapshot_job_id='sql-ticket'")[0][0] == '1'
             storage.initialize()
             tracking.initialize()  # Additive migrations are repeatable.
             storage.save('legacy', {'date':'2026-10-26','state':'done','results':[], 'odds_api_http_requests_scan':6})

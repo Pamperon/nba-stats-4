@@ -119,6 +119,9 @@ def settle_snapshots(day):
         snapshot = {**payload, 'job_id': job_id, 'saved_at': created_at.isoformat()}
         verified, _ = settle_espn.settle_archive(snapshot, day, evidence=evidence)
         report = evaluate(saved, verified)
+        if payload.get('model_shadow'):
+            import shadow_study
+            report['model_shadow'] = shadow_study.evaluate(payload['model_shadow'], verified)
         with storage.connection() as conn:
             conn.execute("""
                 INSERT INTO nba_recommendation_results(snapshot_job_id,scan_date,report)

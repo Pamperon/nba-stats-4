@@ -214,6 +214,15 @@ def do_scan(job_id, date):
         import availability
         import recommendations
         rows, availability_status = availability.check(rows)
+        model_shadow = None
+        try:
+            import shadow_study
+            model_shadow = shadow_study.capture(rows)
+        except Exception:
+            logger.exception('Parallel model comparison unavailable; live predictions unchanged')
+        finally:
+            for row in rows:
+                row.pop('_shadow_probabilities', None)
         saved_recommendations = recommendations.select(rows)
         serialized_logs = {}
         for name, log in logs.items():
@@ -224,6 +233,7 @@ def do_scan(job_id, date):
         import minutes_shadow
         minutes_audit = minutes_shadow.audit(rows)
         snapshot = {
+            'model_shadow': model_shadow,
             'recommendations': saved_recommendations,
             'availability': availability_status,
             'minutes_audit': minutes_audit,
@@ -293,6 +303,7 @@ def visible_snapshot(snapshot):
         parts = str(row.get('Partita', '')).split(' - ')
         return len(parts) == 2 and frozenset(p.casefold().strip() for p in parts) in upcoming
     result = dict(snapshot)
+    result.pop('model_shadow', None)  # Parallel research must not slow public navigation.
     result['results'] = [row for row in snapshot.get('results', []) if is_upcoming(row)]
     players = {row.get('Giocatore') for row in result['results']}
     result['player_logs'] = {name: log for name, log in snapshot.get('player_logs', {}).items() if name in players}
@@ -346,7 +357,8 @@ def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$'),
             'calibration': snapshot.get('calibration'),
             'season': snapshot.get('season'),
             'scan_finished_at': snapshot.get('scan_finished_at'),
-            **({'player_logs': snapshot.get('player_logs', {})} if include_logs else {}),
+            **({'player_logs': snapshot.get('player_logs', {}),
+                'model_shadow': snapshot.get('model_shadow')} if include_logs else {}),
             'fixture_reports': snapshot.get('fixture_reports', [])}
 
 @app.get('/api/saved/time')

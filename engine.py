@@ -1076,6 +1076,14 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
     with ThreadPoolExecutor(max_workers=4) as pool:
         player_data = pool.map(load_player, player_items)
         for idx, ((player_name, props), (athlete, games, error)) in enumerate(zip(player_items, player_data)):
+            shadow_context = None
+            if games is not None and not games.empty:
+                try:
+                    import model_candidates
+                    shadow_context = model_candidates.prepare(games, season,
+                        min(pd.Timestamp.now(tz='UTC'), history_cutoff).isoformat())
+                except (ValueError, TypeError):
+                    logger.warning('Shadow history unavailable for %s', player_name)
             if progress_callback:
                 progress_callback(0.25 + 0.75 * idx / max(len(player_items), 1),
                                   f"ESPN: {idx + 1}/{len(player_items)} — {player_name}")
@@ -1113,6 +1121,11 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                         if estimate:
                             prob = estimate["estimate"]
                             row["Prob. stimata %"] = round(prob * 100, 1)
+                            if shadow_context is not None:
+                                try:
+                                    row['_shadow_probabilities'] = model_candidates.estimate(shadow_context, stat, line, 'Over')
+                                except (ValueError, TypeError, KeyError):
+                                    logger.warning('Shadow estimate unavailable for %s/%s', player_name, stat)
                             row["Value stimato %"] = round((prob * price - 1) * 100, 1)
                             row["Stato analisi"] = "Valutabile (stima empirica)"
                             row["Nota"] = "Stima empirica NON calibrata; verifica quota e disponibilità"

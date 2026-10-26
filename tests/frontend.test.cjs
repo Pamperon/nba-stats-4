@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v11', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v12', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -464,5 +464,18 @@ test('completed seasons survive browser session reload without renewing their li
   w.localStorage.setItem('nba-player-history:2:22:2024',JSON.stringify({at:Date.now()-25*60*60*1000,payload:{games:[]}}));
   assert.equal(w.getPlayerLogCache('2:22:2024'),null);
   assert.equal(w.localStorage.getItem('nba-player-history:2:22:2024'),null);
+ }finally{dom.window.close()}
+});
+
+test('same-game combinations do not present multiplied odds or probabilities as available', async () => {
+ const base={Squadra:'A',Partita:'A - B',Mercato:'PTS',Scelta:'Over',Linea:9.5,Quota:1.5,'Prob. stimata %':80,'Value stimato %':20,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
+ const picks=[{...base,Giocatore:'First','ESPN ID':'1'},{...base,Giocatore:'Second','ESPN ID':'2'}];
+ const dom=browser(async url=>response(url==='/api/saved/dates'?{dates:[{date:'2099-01-01'}]}:url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:picks}:{}));
+ try{
+  await tick();await tick();
+  const text=dom.window.document.getElementById('picks').textContent;
+  assert.match(text,/Selezioni della stessa partita/);
+  assert.doesNotMatch(text,/Quota totale/);
+  assert.doesNotMatch(text,/Stima combinata indicativa/);
  }finally{dom.window.close()}
 });

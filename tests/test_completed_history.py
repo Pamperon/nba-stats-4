@@ -182,6 +182,7 @@ class CompletedHistoryTests(unittest.TestCase):
         self.assertEqual(results[0]['Ultime 5'], '1/5')
         expected = engine.finder_estimate_probability(games, 'PTS', 19.5, 'Over')['estimate']
         self.assertEqual(results[0]['Prob. stimata %'], round(expected * 100, 1))
+        self.assertAlmostEqual(results[0]['_shadow_probabilities']['pooled80_recent20'], expected)
         paid.assert_not_called()
 
 
