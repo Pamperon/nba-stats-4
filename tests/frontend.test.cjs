@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v9', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v10', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -370,5 +370,56 @@ test('saved suggestions remain exact and started legs are not replaced', async (
   d.getElementById('date').dispatchEvent(new dom.window.Event('change'));await tick();await tick();
   assert.doesNotMatch(d.getElementById('picks').textContent,/Higher Player/);
   assert.doesNotMatch(d.getElementById('picks').textContent,/Saved Player/);
+ }finally{dom.window.close()}
+});
+
+test('clicking a suggested player opens exactly that player market and line without unrelated logs', async () => {
+ const calls=[];
+ const pick={Giocatore:'Second Player','ESPN ID':'22',Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'AST',Scelta:'Over',Linea:4.5,Quota:1.8,'Prob. stimata %':80,'Value stimato %':44,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
+ const dom=browser(async url=>{
+  calls.push(url);
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/latest'))return response({date:'2099-01-01',results:[pick],season:'2026-27'});
+  if(url==='/api/players/teams')return response({teams:[{id:'1',name:'Atlanta Hawks'},{id:'2',name:'Boston Celtics'}]});
+  if(url.startsWith('/api/players/roster'))return response({players:[{id:'11',name:'First Player'},{id:'22',name:'Second Player'}]});
+  if(url.startsWith('/api/players/log?'))return response({games:[{AST:6,PTS:20,REB:3,SEASON_TYPE:2,GAME_DATE:'2026-10-25'}]});
+  return response({logs:{}});
+ });
+ try{
+  await tick();await tick();
+  dom.window.document.querySelector('.pick-player-link').click();
+  await tick();await tick();await tick();
+  const d=dom.window.document;
+  assert.equal(d.getElementById('player').hidden,false);
+  assert.equal(d.getElementById('dashboard').hidden,true);
+  assert.equal(d.getElementById('team').value,'2');
+  assert.equal(d.getElementById('playername').value,'22');
+  assert.equal(d.getElementById('stat').value,'AST');
+  assert.equal(d.getElementById('line').value,'4.5');
+  assert.equal(d.getElementById('playermode').value,'2');
+  assert.match(d.getElementById('player-summary').textContent,/Over 4.5/);
+  assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,1);
+  assert.ok(calls.find(x=>x.startsWith('/api/players/log?')).includes('athlete_id=22'));
+ }finally{dom.window.close()}
+});
+
+test('a slower first pick cannot overwrite the second selected player', async () => {
+ let release;
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[]});
+  if(url==='/api/players/teams')return new Promise(resolve=>{release=()=>resolve(response({teams:[{id:'2',name:'Boston Celtics'}]}))});
+  if(url.startsWith('/api/players/roster'))return response({players:[{id:'11',name:'First'},{id:'22',name:'Second'}]});
+  if(url.startsWith('/api/players/log?'))return response({games:[]});
+  return response({logs:{}});
+ });
+ try{
+  const w=dom.window;
+  const a=w.openPickStats({Giocatore:'First','ESPN ID':'11',Squadra:'Boston Celtics',Mercato:'PTS',Linea:19.5});
+  const firstRelease=release;
+  const b=w.openPickStats({Giocatore:'Second','ESPN ID':'22',Squadra:'Boston Celtics',Mercato:'REB',Linea:6.5});
+  release();await b;firstRelease();await a;
+  assert.equal(w.document.getElementById('playername').value,'22');
+  assert.equal(w.document.getElementById('stat').value,'REB');
+  assert.equal(w.document.getElementById('line').value,'6.5');
  }finally{dom.window.close()}
 });

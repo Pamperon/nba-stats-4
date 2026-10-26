@@ -20,7 +20,8 @@ const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();setArchiveStatus(updatedStatus(j));return true}catch{return false}}
 let playerStatsInitialized=false;
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+let pickNavigationRequest=0;
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++teamWarmGeneration;clearTimeout(playerPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
  const select=$('date'), strip=$('date-strip'), month=$('date-month');
  if(!strip||!select)return;
@@ -192,7 +193,7 @@ function pickEmptyReason(rows,min,max,count,found){
 }
 function pickCard(row){
  return '<article class="pick-selection"><div class="pick-profile">'+candidateAvatar(row)+
- '<div class="pick-profile-info"><h3>'+esc(row.Giocatore)+'</h3><p class="pick-player-meta">'+esc(row.Squadra||row.Partita)+'</p>'+
+ '<div class="pick-profile-info"><h3><button type="button" class="pick-player-link" aria-label="Apri le statistiche di '+esc(row.Giocatore)+'">'+esc(row.Giocatore)+'</button></h3><p class="pick-player-meta">'+esc(row.Squadra||row.Partita)+'</p>'+
  '<div class="pick-market">OVER '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div></div></div>'+
  '<div class="pick-values"><div><small>QUOTA</small><strong>'+esc(fmtOdd(row.Quota))+'</strong></div>'+
  '<div><small>STIMA</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div></article>';
@@ -234,7 +235,15 @@ function render(){
   '</section>';
  }).join('');
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
-  group.querySelectorAll('.pick-selection').forEach((card,j)=>enrichPickProfile(pending[i][j],card,request));
+  group.querySelectorAll('.pick-selection').forEach((card,j)=>{
+   const row=pending[i][j],open=()=>openPickStats(row);
+   card.querySelector('.pick-player-link').onclick=open;
+   const avatar=card.querySelector('.pick-avatar');
+   avatar.setAttribute('role','button');avatar.tabIndex=0;
+   avatar.setAttribute('aria-label','Apri le statistiche di '+row.Giocatore);
+   avatar.onclick=open;avatar.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
+   enrichPickProfile(row,card,request);
+  });
  });
  renderFinder();
 }
@@ -379,20 +388,53 @@ function prepareTeamLogs(team,season){
 }
 
 const playerNum=x=>Number(x)||0;
-async function initPlayers(){
+async function openPickStats(row){
+ const navigation=++pickNavigationRequest;
+ ++rosterRequest;++playerRequest;++teamWarmGeneration;
+ clearTimeout(playerPrefetchTimer);
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='player'));
+ document.querySelectorAll('.tab').forEach(tab=>tab.hidden=tab.id!=='player');
+ $('quote-summary').hidden=true;
+ playerStatsInitialized=true;setPlayerLoading(true);
+ $('player-profile').hidden=true;$('chart').replaceChildren();$('player-summary').replaceChildren();
+ $('player-status').textContent='Apertura statistiche di '+row.Giocatore+'…';
+ const selection={id:String(row['ESPN ID']||''),team:row.Squadra,market:row.Mercato,line:Number(row.Linea),season:String(data?.season||'').slice(0,4),navigation};
+ try{
+  if(!/^\d{1,12}$/.test(selection.id)){
+   const profile=await(await api('/api/players/resolve?name='+encodeURIComponent(row.Giocatore))).json();
+   if(navigation!==pickNavigationRequest)return;
+   selection.id=String(profile.id||'');selection.team=profile.team||selection.team;
+  }
+  if(navigation!==pickNavigationRequest)return;
+  await initPlayers(selection);
+ }catch(error){
+  if(navigation===pickNavigationRequest){setPlayerLoading(false);$('player-status').textContent='Statistiche del giocatore non disponibili. Riprova dal pronostico.';}
+ }
+}
+async function initPlayers(selection=null){
+ const navigation=pickNavigationRequest;
  const now=new Date(),year=now.getFullYear(),start=now.getMonth()>=9?year:year-1;
  $('playerseason').innerHTML=[start,start-1,start-2].map(y=>'<option value="'+y+'">'+y+'/'+String(y+1).slice(-2)+'</option>').join('');
  $('player-status').textContent='Caricamento delle 30 squadre NBA…';
  try{const payload=await playerCatalog('/api/players/teams');
+ if(navigation!==pickNavigationRequest)return;
  $('team').innerHTML=payload.teams.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('');
- await changeTeam();
- }catch(e){playerStatsInitialized=false;$('player-status').textContent='Catalogo NBA non disponibile ('+e.message+'). Riapri la scheda per riprovare.';}
+ if(selection){
+  const abbreviation=teamAbbrev(selection.team);
+  const team=payload.teams.find(t=>t.name===selection.team||(abbreviation!=='—'&&teamAbbrev(t.name)===abbreviation));
+  if(!team)throw Error('Squadra del pronostico non trovata');
+  $('team').value=String(team.id);
+  if([...$('playerseason').options].some(o=>o.value===selection.season))$('playerseason').value=selection.season;
+  $('stat').value=selection.market;$('playermode').value='2';$('playerwindow').value='20';
+ }
+ await changeTeam(selection);
+ }catch(e){if(navigation!==pickNavigationRequest)return;playerStatsInitialized=false;setPlayerLoading(false);$('player-status').textContent='Statistiche non disponibili ('+e.message+'). Riprova dal pronostico o riapri la scheda.';}
 }
 function setPlayerLoading(loading){
  $('player').classList.toggle('player-is-loading',loading);
  $('player-loading').hidden=!loading;
 }
-async function changeTeam(){
+async function changeTeam(selection=null){
  const request=++rosterRequest;
  ++playerRequest;
  const team=$('team').value;
@@ -404,10 +446,15 @@ async function changeTeam(){
  try{
   const payload=await playerCatalog('/api/players/roster?team_id='+encodeURIComponent(team));
   if(request!==rosterRequest)return;
+  if(selection?.navigation&&selection.navigation!==pickNavigationRequest)return;
   activeRoster=payload.players||[];
   $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+  if(selection?.id){
+   if(!activeRoster.some(p=>String(p.id)===selection.id))throw Error('Giocatore del pronostico non presente nel roster');
+   $('playername').value=selection.id;
+  }
   prepareTeamLogs(team,$('playerseason').value);
-  await changePlayer();
+  await changePlayer(selection);
  }catch(e){
   if(request===rosterRequest){
    setPlayerLoading(false);
@@ -447,7 +494,7 @@ async function loadPlayerProfile(request,team,id){
  if(profile){$('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ')}
  renderPlayerSeason();
 }
-async function changePlayer(){
+async function changePlayer(selection=null){
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
  playerGames=[];
  $('player-summary').innerHTML='';
@@ -462,6 +509,11 @@ async function changePlayer(){
   playerGames=payload.games||[];
   renderPlayerSeason();
   changeLine();
+  if(selection?.id===id&&selection.market===$('stat').value&&Number.isFinite(selection.line)){
+   const value=String(selection.line);
+   if(![...$('line').options].some(o=>o.value===value))$('line').add(new Option(value,value));
+   $('line').value=value;drawPlayer();
+  }
   if(!playerGames.length)$('player-status').textContent='Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
  }catch(e){
   if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';
@@ -491,7 +543,7 @@ function drawPlayer(){
  const max=Math.max(line+1,...games.map(g=>playerNum(g[stat])),1);
  $('chart').innerHTML=games.slice().reverse().map(g=>{const val=playerNum(g[stat]);return '<div class="barrow"><span>'+esc(String(g.GAME_DATE||'').slice(5,10))+'</span><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+val+'</strong></div>'}).join('')||'<p>Nessuna partita per i filtri selezionati.</p>';
 }
-$('team').onchange=changeTeam;$('playername').onchange=changePlayer;$('playerseason').onchange=()=>{prepareTeamLogs($('team').value,$('playerseason').value);changePlayer()};$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
+$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;prepareTeamLogs($('team').value,$('playerseason').value);changePlayer()};$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
 async function initializeArchive(){
  setArchiveStatus('Caricamento giornate disponibili…');
  try {

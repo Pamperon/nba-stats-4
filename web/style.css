@@ -248,3 +248,8 @@ main{padding-top:14px}
 .app-header .brand-copy small{font-size:clamp(8px,1.6vw,12px);letter-spacing:clamp(1px,.4vw,3px);white-space:nowrap}
 @media(max-width:760px){.app-header{min-height:78px;padding:11px 10px}.app-header .brand{gap:8px}.app-header .brand-icon{flex-basis:52px;width:52px;height:52px}.app-header .brand-icon svg{width:52px;height:52px}.app-header .brand-copy b{font-size:clamp(19px,5.2vw,29px)}.app-header .brand-copy small{font-size:clamp(7px,1.75vw,10px);letter-spacing:1px}}
 @media(max-width:370px){.app-header .brand{gap:6px}.app-header .brand-icon{flex-basis:44px;width:44px;height:44px}.app-header .brand-icon svg{width:44px;height:44px}.app-header .brand-copy b{font-size:19px}.app-header .brand-copy small{font-size:7px;letter-spacing:.65px}}
+
+.pick-player-link{display:inline;padding:0;border:0;border-radius:3px;background:transparent;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#607a98;text-underline-offset:4px}
+.pick-player-link:hover{background:transparent;color:#ffb05e;text-decoration-color:currentColor}
+.pick-avatar[role="button"]{cursor:pointer}
+.pick-player-link:focus-visible,.pick-avatar[role="button"]:focus-visible{outline:2px solid #ffb05e;outline-offset:5px}
