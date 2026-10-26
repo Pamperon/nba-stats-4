@@ -1,11 +1,32 @@
 """Latency regressions using synchronization, without external requests."""
 import threading
+from datetime import datetime
 import unittest
 from unittest.mock import patch
 import engine
 import player_stats
 
 class StatsLatencyTests(unittest.TestCase):
+    def test_completed_seasons_use_long_cache_but_current_season_stays_fresh(self):
+        with patch.object(player_stats, 'datetime') as clock:
+            clock.now.return_value = datetime(2026, 10, 26)
+            self.assertEqual(player_stats.log_cache_hours(2026), 6)
+            self.assertEqual(player_stats.log_cache_hours(2025), 720)
+            clock.now.return_value = datetime(2026, 2, 1)
+            self.assertEqual(player_stats.log_cache_hours(2025), 6)
+            self.assertEqual(player_stats.log_cache_hours(2024), 720)
+
+    def test_completed_season_revisit_avoids_database_and_provider(self):
+        key = 'historical-cache-test'
+        player_stats._historical_cache.pop(key, None)
+        try:
+            with patch.object(player_stats.storage, 'cache_read', return_value={'games': []}) as read:
+                player_stats.cached(key, 720, lambda: self.fail('Saved season must not reload ESPN'))
+                player_stats.cached(key, 720, lambda: self.fail('Revisit must use server memory'))
+            self.assertEqual(read.call_count, 1)
+        finally:
+            player_stats._historical_cache.pop(key, None)
+
     def test_independent_schedules_are_requested_concurrently(self):
         engine.espn_season_schedule_payloads.cache_clear()
         self.addCleanup(engine.espn_season_schedule_payloads.cache_clear)

@@ -11,6 +11,7 @@ import storage
 logger = logging.getLogger(__name__)
 
 _memory_cache = TTLCache(maxsize=250, ttl=1800)
+_historical_cache = TTLCache(maxsize=160, ttl=86400)
 _memory_lock = threading.RLock()
 _pending = {}
 
@@ -34,9 +35,10 @@ def persist_cache(key, result):
         _cache_write_slots.release()
 
 def cached(key, hours, loader):
+    memory = _historical_cache if hours >= 720 else _memory_cache
     with _memory_lock:
-        if key in _memory_cache:
-            return _memory_cache[key]
+        if key in memory:
+            return memory[key]
         # Concurrent visitors share one provider/database load.
         pending = _pending.get(key)
         owner = pending is None
@@ -52,7 +54,7 @@ def cached(key, hours, loader):
             hit = None
         result = hit if hit is not None else loader()
         with _memory_lock:
-            _memory_cache[key] = result
+            memory[key] = result
         if hit is None:
             persist_cache(key, result)
         pending.set_result(result)
@@ -96,6 +98,11 @@ def validate_season(season):
         raise ValueError("Stagione fuori intervallo")
     return year, current
 
+def log_cache_hours(year):
+    now = datetime.now(ZoneInfo('Europe/Rome'))
+    current_start = now.year if now.month >= 10 else now.year - 1
+    return 6 if year >= current_start else 720
+
 def player_log(team_id, athlete_id, season):
     year, current = validate_season(season)
     def build():
@@ -121,33 +128,35 @@ def player_log(team_id, athlete_id, season):
                             "MATCHUP": str(row.get("MATCHUP", ""))})
         return {"games": records, "season": season, "athlete_id": athlete_id}
     return cached("nba:log:final-v2:" + team_id + ":" + athlete_id + ":" + season,
-                  6 if year >= current - 1 else 720, build)
+                  log_cache_hours(year), build)
 
 def team_cached_logs(team_id, season):
     """Small batch of already saved logs, scoped to the current roster/season."""
     year, current = validate_season(season)
+    hours = log_cache_hours(year)
+    memory = _historical_cache if hours >= 720 else _memory_cache
     batch_key = "nba:team-logs:v1:" + team_id + ":" + season
     with _memory_lock:
-        if batch_key in _memory_cache:
-            return _memory_cache[batch_key]
+        if batch_key in memory:
+            return memory[batch_key]
     players = roster(team_id)
     keys = {"nba:log:final-v2:" + team_id + ":" + p["id"] + ":" + season: p["id"]
             for p in players}
     logs = {}
     with _memory_lock:
         for key, athlete_id in keys.items():
-            if key in _memory_cache:
-                logs[athlete_id] = _memory_cache[key]
+            if key in memory:
+                logs[athlete_id] = memory[key]
     missing = [key for key, athlete_id in keys.items() if athlete_id not in logs]
     try:
-        saved = storage.cache_read_many(missing, 6 if year >= current - 1 else 720)
+        saved = storage.cache_read_many(missing, hours)
         with _memory_lock:
             for key, payload in saved.items():
                 if key in keys:
-                    _memory_cache[key] = payload
+                    memory[key] = payload
                     logs[keys[key]] = payload
             if logs:
-                _memory_cache[batch_key] = logs
+                memory[batch_key] = logs
     except Exception:
         # Optional acceleration: individual log requests still work on failure.
         logger.warning("Team log cache unavailable", exc_info=True)

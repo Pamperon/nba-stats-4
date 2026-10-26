@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v10', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v11', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -421,5 +421,48 @@ test('a slower first pick cannot overwrite the second selected player', async ()
   assert.equal(w.document.getElementById('playername').value,'22');
   assert.equal(w.document.getElementById('stat').value,'REB');
   assert.equal(w.document.getElementById('line').value,'6.5');
+ }finally{dom.window.close()}
+});
+
+test('other seasons of the selected player preload once and switching years needs no request', async () => {
+ const calls=[];
+ const dom=browser(async url=>{
+  calls.push(url);
+  if(url==='/api/saved/dates')return response({dates:[]});
+  if(url==='/api/players/teams')return response({teams:[{id:'2',name:'Boston Celtics'}]});
+  if(url.startsWith('/api/players/roster'))return response({players:[{id:'11',name:'Other Player'},{id:'22',name:'Chosen Player'}]});
+  if(url.startsWith('/api/players/log?')){
+   const season=new URLSearchParams(url.split('?')[1]).get('season');
+   return response({season,athlete_id:'22',games:[{PTS:Number(season)%100,AST:2,REB:3,SEASON_TYPE:2,GAME_DATE:season+'-11-01'}]});
+  }
+  return response({logs:{}});
+ });
+ try{
+  const w=dom.window,d=w.document;
+  await w.openPickStats({Giocatore:'Chosen Player','ESPN ID':'22',Squadra:'Boston Celtics',Mercato:'PTS',Linea:9.5});
+  await new Promise(resolve=>setTimeout(resolve,220));
+  const logs=calls.filter(url=>url.startsWith('/api/players/log?'));
+  assert.equal(logs.length,3);
+  assert.ok(logs.every(url=>url.includes('athlete_id=22')));
+  const before=calls.length;
+  d.getElementById('playerseason').selectedIndex=1;
+  d.getElementById('playerseason').dispatchEvent(new w.Event('change'));
+  await tick();
+  assert.equal(calls.length,before);
+  assert.equal(d.getElementById('player-loading').hidden,true);
+  assert.ok(d.getElementById('player-season-stats').textContent.includes((Number(d.getElementById('playerseason').value)%100).toFixed(1)));
+ }finally{dom.window.close()}
+});
+
+test('completed seasons survive browser session reload without renewing their lifetime', async () => {
+ const dom=browser(async()=>response({dates:[]}));
+ try{
+  const w=dom.window,key='2:22:2025',at=Date.now()-60*60*1000;
+  w.localStorage.setItem('nba-player-history:'+key,JSON.stringify({at,payload:{games:[{PTS:23}]}}));
+  assert.equal(w.getPlayerLogCache(key).games[0].PTS,23);
+  assert.equal(JSON.parse(w.localStorage.getItem('nba-player-history:'+key)).at,at);
+  w.localStorage.setItem('nba-player-history:2:22:2024',JSON.stringify({at:Date.now()-25*60*60*1000,payload:{games:[]}}));
+  assert.equal(w.getPlayerLogCache('2:22:2024'),null);
+  assert.equal(w.localStorage.getItem('nba-player-history:2:22:2024'),null);
  }finally{dom.window.close()}
 });

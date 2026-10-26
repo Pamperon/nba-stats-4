@@ -21,7 +21,7 @@ async function api(path,options={}){let r=await fetch(path,{...options,headers:{
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();setArchiveStatus(updatedStatus(j));return true}catch{return false}}
 let playerStatsInitialized=false;
 let pickNavigationRequest=0;
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++teamWarmGeneration;clearTimeout(playerPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
  const select=$('date'), strip=$('date-strip'), month=$('date-month');
  if(!strip||!select)return;
@@ -308,6 +308,18 @@ let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
 const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
 const PLAYER_CACHE_LIMIT=80;
 const PLAYER_CACHE_TTL=15*60*1000;
+function currentPlayerSeason(){const now=new Date();return now.getMonth()>=9?now.getFullYear():now.getFullYear()-1}
+function historicalPlayerKey(key){const year=Number(key.split(':').pop());return Number.isInteger(year)&&year>=2000&&year<currentPlayerSeason()}
+function playerCacheTTL(key){return historicalPlayerKey(key)?24*60*60*1000:PLAYER_CACHE_TTL}
+function persistHistoricalLog(key,item){
+ try{
+  const prefix='nba-player-history:',keys=[];
+  for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name?.startsWith(prefix))keys.push(name)}
+  const entries=keys.map(name=>{try{return {name,at:JSON.parse(localStorage.getItem(name)).at||0}}catch(e){return {name,at:0}}}).sort((a,b)=>a.at-b.at);
+  while(entries.length>=24)localStorage.removeItem(entries.shift().name);
+  localStorage.setItem(prefix+key,JSON.stringify(item));
+ }catch(e){}
+}
 function rememberPlayerLog(key,item){
  playerLogCache.delete(key);playerLogCache.set(key,item);
  if(playerLogCache.size>PLAYER_CACHE_LIMIT)playerLogCache.delete(playerLogCache.keys().next().value);
@@ -316,9 +328,10 @@ function cachePlayerLog(key,payload){
  const item={at:Date.now(),payload};
  rememberPlayerLog(key,item);
  try{sessionStorage.setItem('nba-player-log:'+key,JSON.stringify(item))}catch(e){}
+ if(historicalPlayerKey(key))persistHistoricalLog(key,item);
 }
 function getPlayerLogCache(key){
- const fresh=item=>item&&Number.isFinite(item.at)&&Date.now()-item.at>=0&&Date.now()-item.at<PLAYER_CACHE_TTL;
+ const fresh=item=>item&&Number.isFinite(item.at)&&Date.now()-item.at>=0&&Date.now()-item.at<playerCacheTTL(key);
  const memory=playerLogCache.get(key);
  if(fresh(memory))return memory.payload;
  playerLogCache.delete(key);
@@ -330,6 +343,13 @@ function getPlayerLogCache(key){
    sessionStorage.removeItem('nba-player-log:'+key);
   }
  }catch(e){}
+ if(historicalPlayerKey(key)){
+  try{
+   const name='nba-player-history:'+key,item=JSON.parse(localStorage.getItem(name));
+   if(fresh(item)){rememberPlayerLog(key,item);return item.payload}
+   localStorage.removeItem(name);
+  }catch(e){}
+ }
  return null;
 }
 async function fetchPlayerLog(team,id,season){
@@ -354,14 +374,10 @@ async function playerCatalog(path){
  try{sessionStorage.setItem(key,JSON.stringify(item))}catch(e){}
  return payload;
 }
-let playerPrefetchTimer,teamWarmGeneration=0;
 const teamLogBatches=new Map();
-function playerTeamActive(team,season,generation){
- return generation===teamWarmGeneration&&$('team').value===team&&$('playerseason').value===season&&document.querySelector('nav button.active')?.dataset.tab==='player';
-}
 function prepareTeamLogs(team,season){
- const generation=++teamWarmGeneration,players=activeRoster.slice();
- clearTimeout(playerPrefetchTimer);
+ const players=activeRoster.slice();
+ clearTimeout(seasonPrefetchTimer);
  const key=team+':'+season;
  let batch=teamLogBatches.get(key);
  if(!batch||Date.now()-batch.at>=PLAYER_CACHE_TTL){
@@ -372,26 +388,32 @@ function prepareTeamLogs(team,season){
   }).catch(()=>{teamLogBatches.delete(key)})};
   teamLogBatches.set(key,batch);
  }
- // One low-priority log at a time, only for the visible team and season.
- // These public ESPN statistics never start scans or call OddsPapi.
- const warm=async()=>{
-  for(const player of players){
-   if(!playerTeamActive(team,season,generation))return;
-   if(!getPlayerLogCache([team,player.id,season].join(':'))){
-    try{await fetchPlayerLog(team,player.id,season)}catch(e){return}
-   }
+ // Read saved team logs only. Never start unrelated ESPN season downloads
+ // while a visitor is waiting for the selected player's statistics.
+ return batch.task;
+}
+let seasonPrefetchTimer,seasonPrefetchGeneration=0,seasonPrefetchTask=Promise.resolve();
+function preloadPlayerSeasons(team,id){
+ clearTimeout(seasonPrefetchTimer);
+ const generation=++seasonPrefetchGeneration;
+ const seasons=[...$('playerseason').options].map(o=>o.value);
+ const active=()=>generation===seasonPrefetchGeneration&&$('team').value===team&&$('playername').value===id&&document.querySelector('nav button.active')?.dataset.tab==='player';
+ seasonPrefetchTimer=setTimeout(()=>{
+  seasonPrefetchTask=seasonPrefetchTask.catch(()=>{}).then(async()=>{
+  for(const season of seasons){
+   if(!active())return;
+   if(getPlayerLogCache([team,id,season].join(':'))!==null)continue;
+   try{await fetchPlayerLog(team,id,season)}catch(e){/* Optional preload; selection can retry. */}
   }
- };
- batch.task.then(()=>{
-  if(playerTeamActive(team,season,generation))playerPrefetchTimer=setTimeout(warm,350);
- });
+  });
+ },150);
 }
 
 const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
  const navigation=++pickNavigationRequest;
- ++rosterRequest;++playerRequest;++teamWarmGeneration;
- clearTimeout(playerPrefetchTimer);
+ ++rosterRequest;++playerRequest;++seasonPrefetchGeneration;
+ clearTimeout(seasonPrefetchTimer);
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='player'));
  document.querySelectorAll('.tab').forEach(tab=>tab.hidden=tab.id!=='player');
  $('quote-summary').hidden=true;
@@ -495,6 +517,7 @@ async function loadPlayerProfile(request,team,id){
  renderPlayerSeason();
 }
 async function changePlayer(selection=null){
+ clearTimeout(seasonPrefetchTimer);++seasonPrefetchGeneration;
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
  playerGames=[];
  $('player-summary').innerHTML='';
@@ -507,6 +530,7 @@ async function changePlayer(selection=null){
   const payload=await fetchPlayerLog(team,id,season);
   if(request!==playerRequest)return;
   playerGames=payload.games||[];
+  preloadPlayerSeasons(team,id);
   renderPlayerSeason();
   changeLine();
   if(selection?.id===id&&selection.market===$('stat').value&&Number.isFinite(selection.line)){
@@ -543,7 +567,7 @@ function drawPlayer(){
  const max=Math.max(line+1,...games.map(g=>playerNum(g[stat])),1);
  $('chart').innerHTML=games.slice().reverse().map(g=>{const val=playerNum(g[stat]);return '<div class="barrow"><span>'+esc(String(g.GAME_DATE||'').slice(5,10))+'</span><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+val+'</strong></div>'}).join('')||'<p>Nessuna partita per i filtri selezionati.</p>';
 }
-$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;prepareTeamLogs($('team').value,$('playerseason').value);changePlayer()};$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
+$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer()};$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
 async function initializeArchive(){
  setArchiveStatus('Caricamento giornate disponibili…');
  try {
