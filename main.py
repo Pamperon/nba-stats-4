@@ -16,7 +16,7 @@ from cachetools import TTLCache
 import logging
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title='NBA STATS 4.0', docs_url=None, redoc_url=None)
+app = FastAPI(title='BasketLab', docs_url=None, redoc_url=None)
 TOKEN = os.getenv('NBA_STATS_ACCESS_TOKEN', '')
 if not TOKEN:
     raise RuntimeError('Set NBA_STATS_ACCESS_TOKEN before starting the server')
@@ -749,7 +749,7 @@ def scan_csv(job_id: str):
     with lock: job=jobs.get(job_id)
     if not job or job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
     data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
-    return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="nba_stats_4_completo.csv"'})
+    return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="basketlab_completo.csv"'})
 
 app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')

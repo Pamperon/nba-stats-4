@@ -1,4 +1,4 @@
-const CACHE = 'nba-stats-4-shell-v3';
+const CACHE = 'nba-stats-4-shell-v4';
 const ASSETS = ['/', '/static/style.css', '/static/app.js', '/static/icon.svg'];
 
 self.addEventListener('install', event => {
