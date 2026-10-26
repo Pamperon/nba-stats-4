@@ -101,6 +101,19 @@ def cache_read(key, max_age_hours):
     return row[0] if row else None
 
 
+def cache_read_many(keys, max_age_hours):
+    """Read one team's saved logs in one connection; never contact providers."""
+    if not configured() or not keys:
+        return {}
+    with connection() as conn:
+        rows = conn.execute("""
+            SELECT cache_key, payload FROM nba_player_cache
+            WHERE cache_key = ANY(%s)
+              AND updated_at >= NOW() - (%s * INTERVAL '1 hour')
+        """, (list(keys), max_age_hours)).fetchall()
+    return dict(rows)
+
+
 def cache_write(key, payload):
     if not configured():
         return

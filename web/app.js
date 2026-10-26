@@ -20,7 +20,7 @@ const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();setArchiveStatus(updatedStatus(j));return true}catch{return false}}
 let playerStatsInitialized=false;
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'&&!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
  const select=$('date'), strip=$('date-strip'), month=$('date-month');
  if(!strip||!select)return;
@@ -338,16 +338,37 @@ async function playerCatalog(path){
  try{sessionStorage.setItem(key,JSON.stringify(item))}catch(e){}
  return payload;
 }
-let playerPrefetchTimer;
-function prefetchNextPlayer(request,team,id,season){
+let playerPrefetchTimer,teamWarmGeneration=0;
+const teamLogBatches=new Map();
+function playerTeamActive(team,season,generation){
+ return generation===teamWarmGeneration&&$('team').value===team&&$('playerseason').value===season&&document.querySelector('nav button.active')?.dataset.tab==='player';
+}
+function prepareTeamLogs(team,season){
+ const generation=++teamWarmGeneration,players=activeRoster.slice();
  clearTimeout(playerPrefetchTimer);
- const index=activeRoster.findIndex(p=>p.id===id),next=activeRoster[index+1];
- if(index<0||!next)return;
- // Only one adjacent player, after rendering; reuse pending requests and TTL.
- playerPrefetchTimer=setTimeout(()=>{
-  if(request!==playerRequest||document.querySelector('nav button.active')?.dataset.tab!=='player')return;
-  fetchPlayerLog(team,next.id,season).catch(()=>{});
- },250);
+ const key=team+':'+season;
+ let batch=teamLogBatches.get(key);
+ if(!batch||Date.now()-batch.at>=PLAYER_CACHE_TTL){
+  batch={at:Date.now(),task:api('/api/players/team-logs?'+new URLSearchParams({team_id:team,season})).then(r=>r.json()).then(data=>{
+   for(const [id,payload] of Object.entries(data.logs||{})){
+    if(players.some(p=>p.id===id)&&payload.athlete_id===id&&payload.season===season&&!getPlayerLogCache([team,id,season].join(':'))){cachePlayerLog([team,id,season].join(':'),payload)}
+   }
+  }).catch(()=>{teamLogBatches.delete(key)})};
+  teamLogBatches.set(key,batch);
+ }
+ // One low-priority log at a time, only for the visible team and season.
+ // These public ESPN statistics never start scans or call OddsPapi.
+ const warm=async()=>{
+  for(const player of players){
+   if(!playerTeamActive(team,season,generation))return;
+   if(!getPlayerLogCache([team,player.id,season].join(':'))){
+    try{await fetchPlayerLog(team,player.id,season)}catch(e){return}
+   }
+  }
+ };
+ batch.task.then(()=>{
+  if(playerTeamActive(team,season,generation))playerPrefetchTimer=setTimeout(warm,350);
+ });
 }
 
 const playerNum=x=>Number(x)||0;
@@ -378,6 +399,7 @@ async function changeTeam(){
   if(request!==rosterRequest)return;
   activeRoster=payload.players||[];
   $('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+  prepareTeamLogs(team,$('playerseason').value);
   await changePlayer();
  }catch(e){
   if(request===rosterRequest){
@@ -419,7 +441,6 @@ async function loadPlayerProfile(request,team,id){
  renderPlayerSeason();
 }
 async function changePlayer(){
- clearTimeout(playerPrefetchTimer);
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
  playerGames=[];
  $('player-summary').innerHTML='';
@@ -434,7 +455,6 @@ async function changePlayer(){
   playerGames=payload.games||[];
   renderPlayerSeason();
   changeLine();
-  prefetchNextPlayer(request,team,id,season);
   if(!playerGames.length)$('player-status').textContent='Nessuna partita disponibile per questa stagione. Prova la stagione precedente.';
  }catch(e){
   if(request===playerRequest)$('player-status').textContent='Game log non disponibile ('+e.message+')';
@@ -464,7 +484,7 @@ function drawPlayer(){
  const max=Math.max(line+1,...games.map(g=>playerNum(g[stat])),1);
  $('chart').innerHTML=games.slice().reverse().map(g=>{const val=playerNum(g[stat]);return '<div class="barrow"><span>'+esc(String(g.GAME_DATE||'').slice(5,10))+'</span><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+val+'</strong></div>'}).join('')||'<p>Nessuna partita per i filtri selezionati.</p>';
 }
-$('team').onchange=changeTeam;$('playername').onchange=changePlayer;$('playerseason').onchange=changePlayer;$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
+$('team').onchange=changeTeam;$('playername').onchange=changePlayer;$('playerseason').onchange=()=>{prepareTeamLogs($('team').value,$('playerseason').value);changePlayer()};$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
 async function initializeArchive(){
  setArchiveStatus('Caricamento giornate disponibili…');
  try {

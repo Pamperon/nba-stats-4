@@ -52,3 +52,38 @@ class StatsLatencyTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 player_stats.player_log('1', '123', '2026')
             load.assert_not_called()
+
+    def test_concurrent_visitors_share_one_cold_load(self):
+        from concurrent.futures import ThreadPoolExecutor
+        key = 'single-flight-test'
+        started, release = threading.Event(), threading.Event()
+        player_stats._memory_cache.pop(key, None)
+        def load():
+            started.set()
+            self.assertTrue(release.wait(timeout=2))
+            return {'games': []}
+        with patch.object(player_stats.storage, 'cache_read', return_value=None), patch.object(player_stats, 'persist_cache'), ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(player_stats.cached, key, 1, load)
+            self.assertTrue(started.wait(timeout=2))
+            second = pool.submit(player_stats.cached, key, 1, lambda: self.fail('Duplicate provider load'))
+            release.set()
+            self.assertEqual(first.result(timeout=2), second.result(timeout=2))
+        player_stats._memory_cache.pop(key, None)
+
+    def test_team_batch_reads_only_current_roster_and_season_without_espn(self):
+        player_stats._memory_cache.clear()
+        key = 'nba:log:final-v2:1:123:2026'
+        payload = {'athlete_id': '123', 'season': '2026', 'games': []}
+        with patch.object(player_stats, 'roster', return_value=[{'id': '123'}]), patch.object(player_stats.storage, 'cache_read_many', return_value={key: payload, 'unrelated': {}}) as read, patch.object(engine, 'selected_game_log', side_effect=AssertionError('Batch must not call providers')):
+            self.assertEqual(player_stats.team_cached_logs('1', '2026'), {'123': payload})
+        read.assert_called_once_with([key], 6)
+
+    def test_failed_shared_load_can_be_retried(self):
+        key = 'failed-single-flight-test'
+        player_stats._memory_cache.pop(key, None)
+        with patch.object(player_stats.storage, 'cache_read', return_value=None), patch.object(player_stats, 'persist_cache'):
+            with self.assertRaises(ValueError):
+                player_stats.cached(key, 1, lambda: (_ for _ in ()).throw(ValueError('Unavailable')))
+            self.assertNotIn(key, player_stats._pending)
+            self.assertEqual(player_stats.cached(key, 1, lambda: {'games': []}), {'games': []})
+        player_stats._memory_cache.pop(key, None)

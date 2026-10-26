@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v7', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v8', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -302,4 +302,44 @@ test('concurrent player loads share one request and return cached data on revisi
   assert.equal((await w.fetchPlayerLog('1','123','2026')).games[0].PTS,20);
   assert.equal(calls,1);
  }finally{dom.window.close()}
+});
+
+test('team batch makes a nonadjacent player available without a log request', async () => {
+  const calls=[];
+  const dom=browser(async url=>{
+    calls.push(url);
+    if(url==='/api/saved/dates')return response({dates:[]});
+    if(url==='/api/players/teams')return response({teams:[{id:'1',name:'Team'}]});
+    if(url.startsWith('/api/players/roster'))return response({players:[{id:'1',name:'First'},{id:'2',name:'Second'},{id:'3',name:'Third'}]});
+    if(url.startsWith('/api/players/team-logs'))return response({logs:{'3':{athlete_id:'3',season:String(new Date().getMonth()>=9?new Date().getFullYear():new Date().getFullYear()-1),games:[{PTS:25,REB:3,AST:4,SEASON_TYPE:2}]}}});
+    return response({games:[]});
+  });
+  try{
+    const w=dom.window,d=w.document;
+    d.querySelector('nav button.active').classList.remove('active');
+    d.querySelector('[data-tab="player"]').classList.add('active');
+    await w.initPlayers();await tick();
+    const before=calls.length;
+    d.getElementById('playername').value='3';await w.changePlayer();
+    assert.equal(calls.length,before);
+    assert.match(d.getElementById('player-season-stats').textContent,/25\.0/);
+    assert.equal(d.getElementById('player-loading').hidden,true);
+  }finally{dom.window.close()}
+});
+
+test('background team preparation stops before loading players after leaving statistics', async () => {
+  const calls=[];
+  const dom=browser(async url=>{
+    calls.push(url);
+    if(url==='/api/saved/dates')return response({dates:[]});
+    if(url==='/api/players/teams')return response({teams:[{id:'1',name:'Team'}]});
+    if(url.startsWith('/api/players/roster'))return response({players:[{id:'1',name:'First'},{id:'2',name:'Second'}]});
+    if(url.startsWith('/api/players/team-logs'))return response({logs:{}});
+    return response({games:[]});
+  });
+  try{
+    await dom.window.initPlayers();
+    await new Promise(resolve=>setTimeout(resolve,450));
+    assert.equal(calls.filter(url=>url.startsWith('/api/players/log?')).length,1);
+  }finally{dom.window.close()}
 });

@@ -485,6 +485,17 @@ def player_profile(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
         logger.exception('NBA athlete profile unavailable')
         raise HTTPException(503, 'Profilo ESPN temporaneamente non disponibile')
 
+@app.get('/api/players/team-logs')
+def player_team_logs(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
+                     season: str = Query(pattern=r'^[0-9]{4}$')):
+    try:
+        return {'logs': player_stats.team_cached_logs(team_id, season), 'odds_api_calls': 0}
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except Exception:
+        logger.exception('Saved team statistics unavailable')
+        raise HTTPException(503, 'Statistiche salvate temporaneamente non disponibili')
+
 @app.get('/api/players/log')
 def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
                athlete_id: str = Query(pattern=r'^[0-9]{1,12}$'),

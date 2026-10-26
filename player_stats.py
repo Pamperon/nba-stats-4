@@ -1,7 +1,7 @@
 """Public NBA roster and independent ESPN player statistics. No OddsPapi calls."""
 import logging
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from cachetools import TTLCache
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 _memory_cache = TTLCache(maxsize=250, ttl=1800)
 _memory_lock = threading.RLock()
+_pending = {}
 
 # Optional persistence must not delay a response. Bound both workers and queue.
 _cache_writer = ThreadPoolExecutor(max_workers=1, thread_name_prefix="player-cache")
@@ -36,19 +37,32 @@ def cached(key, hours, loader):
     with _memory_lock:
         if key in _memory_cache:
             return _memory_cache[key]
+        # Concurrent visitors share one provider/database load.
+        pending = _pending.get(key)
+        owner = pending is None
+        if owner:
+            pending = _pending[key] = Future()
+    if not owner:
+        return pending.result()
     try:
-        hit = storage.cache_read(key, hours)
-        if hit is not None:
-            with _memory_lock:
-                _memory_cache[key] = hit
-            return hit
-    except Exception:
-        logger.warning("Player cache read unavailable", exc_info=True)
-    result = loader()
-    with _memory_lock:
-        _memory_cache[key] = result
-    persist_cache(key, result)
-    return result
+        try:
+            hit = storage.cache_read(key, hours)
+        except Exception:
+            logger.warning("Player cache read unavailable", exc_info=True)
+            hit = None
+        result = hit if hit is not None else loader()
+        with _memory_lock:
+            _memory_cache[key] = result
+        if hit is None:
+            persist_cache(key, result)
+        pending.set_result(result)
+        return result
+    except BaseException as exc:
+        pending.set_exception(exc)
+        raise
+    finally:
+        with _memory_lock:
+            _pending.pop(key, None)
 
 def catalog():
     def build():
@@ -73,13 +87,17 @@ def roster(team_id):
                        for a in players], key=lambda p: p["name"])
     return cached("nba:roster:v3:" + team_id, 12, build)
 
-def player_log(team_id, athlete_id, season):
+def validate_season(season):
     if not (season.isdigit() and len(season) == 4):
         raise ValueError("Stagione non valida")
     year = int(season)
     current = datetime.now(ZoneInfo("Europe/Rome")).year
     if year < current - 3 or year > current + 1:
         raise ValueError("Stagione fuori intervallo")
+    return year, current
+
+def player_log(team_id, athlete_id, season):
+    year, current = validate_season(season)
     def build():
         # A cached log was already validated when built. Avoid loading teams and
         # roster from the database again on every cold-process cache hit.
@@ -104,6 +122,26 @@ def player_log(team_id, athlete_id, season):
         return {"games": records, "season": season, "athlete_id": athlete_id}
     return cached("nba:log:final-v2:" + team_id + ":" + athlete_id + ":" + season,
                   6 if year >= current - 1 else 720, build)
+
+def team_cached_logs(team_id, season):
+    """Small batch of already saved logs, scoped to the current roster/season."""
+    year, current = validate_season(season)
+    players = roster(team_id)
+    keys = {"nba:log:final-v2:" + team_id + ":" + p["id"] + ":" + season: p["id"]
+            for p in players}
+    logs = {}
+    with _memory_lock:
+        for key, athlete_id in keys.items():
+            if key in _memory_cache:
+                logs[athlete_id] = _memory_cache[key]
+    missing = [key for key, athlete_id in keys.items() if athlete_id not in logs]
+    try:
+        saved = storage.cache_read_many(missing, 6 if year >= current - 1 else 720)
+        logs.update({keys[key]: payload for key, payload in saved.items() if key in keys})
+    except Exception:
+        # Optional acceleration: individual log requests still work on failure.
+        logger.warning("Team log cache unavailable", exc_info=True)
+    return logs
 
 def player_profile(team_id, athlete_id):
     """Player portrait from the official ESPN CDN; no fragile profile API call."""
