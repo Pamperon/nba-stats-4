@@ -19,7 +19,11 @@ def apply(rows, daily_rows):
             if market not in calibration.MARKETS or not math.isfinite(raw) or not 0 <= raw <= 100:
                 output.append(row)
                 continue
-            candidate = calibration.calibrated_probability(market, raw / 100, aggregates) * 100
+            # Walk-forward deliberately excludes boundary bins: clipping would
+            # invalidate its aggregate Brier identity. Do not adjust live bins
+            # that were never evaluated by that validation.
+            candidate = (calibration.calibrated_probability(market, raw / 100, aggregates) * 100
+                         if 10 <= raw < 90 else raw)
             row["Prob. grezza %"] = raw
             row["Prob. stimata %"] = round(candidate, 1)
             price = float(row["Quota"])
@@ -27,6 +31,7 @@ def apply(rows, daily_rows):
                 row["Value stimato %"] = round((candidate / 100 * price - 1) * 100, 1)
             if abs(candidate - raw) > 0.0001:
                 adjusted += 1
+                row['Nota'] = 'Stima empirica calibrata su risultati precedenti; verifica quota e disponibilità'
         except (KeyError, ValueError, TypeError):
             pass
         output.append(row)

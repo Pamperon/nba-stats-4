@@ -211,6 +211,10 @@ def do_scan(job_id, date):
             except Exception:
                 logger.exception('Progressive calibration unavailable; raw probabilities retained')
         analysis_seconds = round(time.monotonic() - analysis_started, 2)
+        import availability
+        import recommendations
+        rows, availability_status = availability.check(rows)
+        saved_recommendations = recommendations.select(rows)
         serialized_logs = {}
         for name, log in logs.items():
             records=log.copy();records['GAME_DATE']=records['GAME_DATE'].dt.strftime('%Y-%m-%d')
@@ -220,6 +224,8 @@ def do_scan(job_id, date):
         import minutes_shadow
         minutes_audit = minutes_shadow.audit(rows)
         snapshot = {
+            'recommendations': saved_recommendations,
+            'availability': availability_status,
             'minutes_audit': minutes_audit,
             'scan_source': jobs[job_id].get('scan_source', 'unknown'),
             'date': date, 'state': final_state, 'progress': 100, 'stage': final_stage,
@@ -334,6 +340,9 @@ def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
             'fixture_count': snapshot.get('fixture_count', 0),
             'player_count': snapshot.get('player_count', 0),
             'results': snapshot.get('results', []),
+            'recommendations': snapshot.get('recommendations'),
+            'availability': snapshot.get('availability'),
+            'calibration': snapshot.get('calibration'),
             'fixture_reports': snapshot.get('fixture_reports', [])}
 
 @app.get('/api/saved/time')

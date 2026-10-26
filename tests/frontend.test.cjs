@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v8', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v9', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -342,4 +342,33 @@ test('background team preparation stops before loading players after leaving sta
     await new Promise(resolve=>setTimeout(resolve,450));
     assert.equal(calls.filter(url=>url.startsWith('/api/players/log?')).length,1);
   }finally{dom.window.close()}
+});
+
+test('risk screening rejects falling minutes and unavailable players without changing estimates', async () => {
+ const dom=browser(async()=>response({dates:[]}));
+ try{
+  const base={'Stato analisi':'Valutabile (stima empirica)','Prob. stimata %':80,Quota:1.8,Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
+  assert.equal(dom.window.reliablePick(base),true);
+  assert.equal(dom.window.reliablePick({...base,'Minuti ultime 5':21}),false);
+  assert.equal(dom.window.reliablePick({...base,'Disponibilità ESPN':'out'}),false);
+  assert.equal(dom.window.reliablePick({...base,'Disponibilità ESPN':'unknown'}),false);
+  assert.equal(base['Prob. stimata %'],80);
+ }finally{dom.window.close()}
+});
+
+test('saved suggestions remain exact and started legs are not replaced', async () => {
+ const base={Giocatore:'Saved Player',Partita:'A - B',Squadra:'A',Mercato:'PTS',Scelta:'Over',Linea:9.5,Quota:1.8,'Prob. stimata %':80,'Value stimato %':44,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
+ const alternate={...base,Giocatore:'Higher Player','Prob. stimata %':90};
+ let snapshot={date:'2099-01-01',results:[base,alternate],fixture_count:1,player_count:2,recommendations:{policy:'risk-screen-v1',groups:{Singola:{complete:true,legs:[base]},Doppia:{complete:false,legs:[]},Tripla:{complete:false,legs:[]}}}};
+ const dom=browser(async url=>response(url==='/api/saved/dates'?{dates:[{date:'2099-01-01'}]}:url.startsWith('/api/saved/latest')?snapshot:{}));
+ try{
+  await tick();await tick();
+  const d=dom.window.document;
+  assert.match(d.getElementById('picks').textContent,/Saved Player/);
+  assert.doesNotMatch(d.getElementById('picks').textContent,/Higher Player/);
+  snapshot={...snapshot,results:[alternate]};
+  d.getElementById('date').dispatchEvent(new dom.window.Event('change'));await tick();await tick();
+  assert.doesNotMatch(d.getElementById('picks').textContent,/Higher Player/);
+  assert.doesNotMatch(d.getElementById('picks').textContent,/Saved Player/);
+ }finally{dom.window.close()}
 });

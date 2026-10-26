@@ -162,6 +162,9 @@ function pickRejectionReasons(row){
  if(!Number.isFinite(season)||season<50)reasons.push('frequenza stagionale insufficiente');
  if(!Number.isFinite(minutes)||minutes<15)reasons.push('minuti medi insufficienti');
  if(!Number.isFinite(recent)||recent<0.65*minutes)reasons.push('minuti recenti in calo');
+ if(games>=15&&recent<0.75*minutes&&minutes-recent>=5)reasons.push('forte calo del minutaggio');
+ if(['out','doubtful','questionable','day-to-day','suspension'].includes(row['Disponibilità ESPN']))reasons.push('assenza o disponibilità incerta segnalata');
+ if(row['Disponibilità ESPN']==='unknown')reasons.push('disponibilità non verificata');
  if(Number.isFinite(p)&&Number.isFinite(odd)&&odd>1&&p-100/odd<3)reasons.push('value insufficiente');
  return reasons;
 }
@@ -182,6 +185,7 @@ function pickCandidates(rows,min,max,count){
 function pickEmptyReason(rows,min,max,count,found){
  const inRange=rows.filter(r=>Number(r.Quota)>=min&&Number(r.Quota)<=max);
  if(!inRange.length)return 'Nessuna quota disponibile in questa fascia';
+ if(inRange.every(r=>r['Disponibilità ESPN']==='unknown'))return 'Disponibilità dei giocatori non verificata: proposte temporaneamente sospese.';
  const rejected=inRange.filter(r=>!reliablePick(r));
  if(found<count)return 'Nessuna selezione completa: '+found+' di '+count+' giocatori idonei ('+rejected.length+' esclusi dai controlli sui dati)';
  return '';
@@ -214,7 +218,10 @@ function render(){
  const groups=[['Singola',1,1.70,2.00],['Doppia',2,1.40,1.69],['Tripla',3,1.20,1.39]];
  const pending=[];
  $('picks').innerHTML=groups.map(([title,count,min,max])=>{
-  const chosen=pickCandidates(rows,min,max,count);
+  // Keep the exact versioned selections archived at scan time. Never replace
+  // a started/removed leg with a different pick under the same saved ticket.
+  const stored=data.recommendations?.groups?.[title];
+  const chosen=stored?stored.legs.filter(p=>rows.some(r=>r.Giocatore===p.Giocatore&&r.Partita===p.Partita&&r.Mercato===p.Mercato&&r.Linea===p.Linea&&r.Scelta===p.Scelta)):pickCandidates(rows,min,max,count);
   const complete=chosen.length===count;
   const combined=chosen.reduce((product,r)=>product*number(r.Quota),1);
   const combinedProb=chosen.reduce((product,r)=>product*number(r['Prob. stimata %'])/100,1);

@@ -1,4 +1,7 @@
-"""Read-only minutes anomaly flags for shadow evaluation, not live filtering."""
+"""Shared minutes risk assessment; this audit never changes probabilities.
+
+The versioned recommendation policy may screen flagged rows separately.
+"""
 import math
 
 def assess(row):
