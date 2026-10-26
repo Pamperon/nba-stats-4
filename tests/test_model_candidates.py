@@ -82,6 +82,14 @@ class CandidateTests(unittest.TestCase):
         self.assertFalse(picks['groups']['Doppia']['complete'])
         self.assertEqual(len(picks['groups']['Doppia']['legs']),1)
 
+    def test_same_game_outcomes_do_not_invent_a_bookmaker_price_or_roi(self):
+        rows=[row('A',1.5),row('B',1.6)]
+        ticket=recommendations.select(rows)
+        result=recommendations.evaluate(ticket,[{**r,'actual':10,'played':True} for r in rows])
+        self.assertEqual(result['groups']['Doppia']['status'],'won')
+        self.assertIsNone(result['groups']['Doppia']['combined_odds'])
+        self.assertIsNone(result['groups']['Doppia']['unit_profit'])
+
     def test_shadow_capture_preserves_public_values_and_scores_exact_saved_lines(self):
         original=row()
         captured_input={**original,'_shadow_probabilities':{m:.8 for m in models.MODELS}}

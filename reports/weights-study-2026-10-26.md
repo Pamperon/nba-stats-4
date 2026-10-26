@@ -92,7 +92,9 @@ futuro; per questo la selezione pubblica resta invariata.
    pagina principale. Il contesto del giocatore viene preparato una sola volta,
    senza ulteriori richieste di storico: il confronto non aggiunge chiamate ESPN o OddsPapi durante la scansione.
 6. Per multiple della stessa partita, l'interfaccia segnala che quota e probabilità
-   combinate non sono stimate e richiede di verificare la combinazione sul bookmaker.
+   combinate non sono stimate e richiede di verificare la combinazione sul bookmaker. Anche nel registro interno,
+   per queste combinazioni quota e rendimento restano non stimati: si conserva
+   soltanto l’esito sportivo delle selezioni.
 
 ## Ripetizione e verifica
 

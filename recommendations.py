@@ -88,8 +88,12 @@ def evaluate(saved, verified):
         complete = len(legs) == count
         status = ('incomplete' if not complete else 'lost' if any(r['win'] is False for r in legs)
                   else 'unresolved' if any(r['win'] is None for r in legs) else 'won')
-        groups[name] = {'status': status, 'legs': legs, 'combined_odds': round(odds, 4),
-                        'unit_profit': odds - 1 if status == 'won' else -1 if status == 'lost' else None}
+        distinct_games = all(r.get('Partita') for r in chosen) and len({str(r['Partita']).strip().lower() for r in chosen}) == len(chosen)
+        price_available = complete and distinct_games
+        groups[name] = {'status': status, 'legs': legs,
+                        'combined_odds': round(odds, 4) if price_available else None,
+                        'unit_profit': (odds - 1 if status == 'won' else -1 if status == 'lost' else None) if price_available else None,
+                        'price_basis': 'product_of_saved_odds' if price_available else 'combination_price_unavailable'}
     return {'policy': saved.get('policy'), 'groups': groups}
 
 
