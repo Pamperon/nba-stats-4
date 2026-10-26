@@ -517,7 +517,7 @@ async function loadPlayerProfile(request,team,id){
  if(profile){$('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ')}
  renderPlayerSeason();
 }
-async function changePlayer(selection=null){
+async function changePlayer(selection=null,preserveLine=false){
  clearTimeout(seasonPrefetchTimer);++seasonPrefetchGeneration;
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
  playerGames=[];
@@ -533,7 +533,7 @@ async function changePlayer(selection=null){
   playerGames=payload.games||[];
   preloadPlayerSeasons(team,id);
   renderPlayerSeason();
-  changeLine();
+  changeLine(preserveLine);
   if(selection?.id===id&&selection.market===$('stat').value&&Number.isFinite(selection.line)){
    const value=String(selection.line);
    if(![...$('line').options].some(o=>o.value===value))$('line').add(new Option(value,value));
@@ -546,13 +546,15 @@ async function changePlayer(selection=null){
   if(request===playerRequest)setPlayerLoading(false);
  }
 }
-function changeLine(){
+function changeLine(preserveSelected=false){
+ const selected=preserveSelected?$('line').value:null;
  const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);
  const median=values.length?values[Math.floor(values.length/2)]:10;
  const max=stat==='PTS'?79:stat==='REB'?39:29;
  const lines=Array.from({length:max+1},(_,i)=>i+0.5);
  $('line').innerHTML=lines.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
- $('line').value=String(Math.min(max+.5,Math.max(.5,Math.floor(median)+.5)));
+ if(selected!==null&&selected!==''&&!lines.some(x=>String(x)===selected))$('line').add(new Option(selected,selected));
+ $('line').value=selected!==null&&selected!==''?selected:String(Math.min(max+.5,Math.max(.5,Math.floor(median)+.5)));
  drawPlayer();
 }
 function drawPlayer(){
@@ -568,7 +570,7 @@ function drawPlayer(){
  const max=Math.max(line+1,...games.map(g=>playerNum(g[stat])),1);
  $('chart').innerHTML=games.slice().reverse().map(g=>{const val=playerNum(g[stat]);return '<div class="barrow"><span>'+esc(String(g.GAME_DATE||'').slice(5,10))+'</span><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+val+'</strong></div>'}).join('')||'<p>Nessuna partita per i filtri selezionati.</p>';
 }
-$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer()};$('stat').onchange=changeLine;$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
+$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
 async function initializeArchive(){
  setArchiveStatus('Caricamento giornate disponibili…');
  try {

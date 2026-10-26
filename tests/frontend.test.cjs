@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v12', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v13', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -449,6 +449,8 @@ test('other seasons of the selected player preload once and switching years need
   d.getElementById('playerseason').dispatchEvent(new w.Event('change'));
   await tick();
   assert.equal(calls.length,before);
+  assert.equal(d.getElementById('line').value,'9.5');
+  assert.match(d.getElementById('player-summary').textContent,/Over 9.5/);
   assert.equal(d.getElementById('player-loading').hidden,true);
   assert.ok(d.getElementById('player-season-stats').textContent.includes((Number(d.getElementById('playerseason').value)%100).toFixed(1)));
  }finally{dom.window.close()}
@@ -477,5 +479,31 @@ test('same-game combinations do not present multiplied odds or probabilities as 
   assert.match(text,/Selezioni della stessa partita/);
   assert.doesNotMatch(text,/Quota totale/);
   assert.doesNotMatch(text,/Stima combinata indicativa/);
+ }finally{dom.window.close()}
+});
+
+ test('season switches preserve a manually selected line even with no games', async () => {
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[]});
+  if(url==='/api/players/teams')return response({teams:[{id:'2',name:'Boston Celtics'}]});
+  if(url.startsWith('/api/players/roster'))return response({players:[{id:'22',name:'Chosen Player'}]});
+  if(url.startsWith('/api/players/log?'))return response({games:[]});
+  return response({logs:{}});
+ });
+ try{
+  const w=dom.window,d=w.document;
+  await w.openPickStats({Giocatore:'Chosen Player','ESPN ID':'22',Squadra:'Boston Celtics',Mercato:'AST',Linea:4.5});
+  d.getElementById('line').value='12.5';
+  d.getElementById('line').dispatchEvent(new w.Event('change'));
+  for(const index of [1,2,0]){
+   d.getElementById('playerseason').selectedIndex=index;
+   d.getElementById('playerseason').dispatchEvent(new w.Event('change'));
+   await tick();await tick();
+   assert.equal(d.getElementById('line').value,'12.5');
+   assert.equal(d.getElementById('stat').value,'AST');
+  }
+  d.getElementById('stat').value='REB';
+  d.getElementById('stat').dispatchEvent(new w.Event('change'));
+  assert.equal(d.getElementById('line').value,'10.5');
  }finally{dom.window.close()}
 });
