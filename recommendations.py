@@ -91,3 +91,38 @@ def evaluate(saved, verified):
         groups[name] = {'status': status, 'legs': legs, 'combined_odds': round(odds, 4),
                         'unit_profit': odds - 1 if status == 'won' else -1 if status == 'lost' else None}
     return {'policy': saved.get('policy'), 'groups': groups}
+
+
+def settle_snapshots(day):
+    """Retain every versioned pregame ticket after raw snapshot cleanup.
+
+    Idempotent per job, independent of the snapshot chosen for calibration.
+    Current injuries and newly computed selections are never consulted here.
+    """
+    import storage
+    import settle_espn
+    from psycopg.types.json import Jsonb
+    with storage.connection() as conn:
+        snapshots = conn.execute("""
+            SELECT job_id,payload,created_at FROM nba_scan_snapshots
+            WHERE scan_date=%s AND payload ? 'recommendations'
+              AND NOT EXISTS (SELECT 1 FROM nba_recommendation_results r
+                              WHERE r.snapshot_job_id=nba_scan_snapshots.job_id)
+            ORDER BY created_at
+        """, (day,)).fetchall()
+    count = 0
+    evidence = {}
+    for job_id, payload, created_at in snapshots:
+        saved = payload.get('recommendations')
+        if not isinstance(saved, dict):
+            continue
+        snapshot = {**payload, 'job_id': job_id, 'saved_at': created_at.isoformat()}
+        verified, _ = settle_espn.settle_archive(snapshot, day, evidence=evidence)
+        report = evaluate(saved, verified)
+        with storage.connection() as conn:
+            conn.execute("""
+                INSERT INTO nba_recommendation_results(snapshot_job_id,scan_date,report)
+                VALUES (%s,%s,%s) ON CONFLICT(snapshot_job_id) DO NOTHING
+            """, (job_id, day, Jsonb(report)))
+        count += 1
+    return count

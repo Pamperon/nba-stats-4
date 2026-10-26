@@ -607,8 +607,10 @@ def calibration_settle():
                 processed.append({'date':day,'status':'empty'})
                 continue
             verified, expected = settle_espn.settle_archive(snapshot, day)
+            import recommendations
+            ticket_count = recommendations.settle_snapshots(day)
             result = calibration.settle(day, snapshot['job_id'], verified, expected)
-            processed.append({'date':day,'status':'settled',**result})
+            processed.append({'date':day,'status':'settled', 'recommendation_snapshots': ticket_count, **result})
         except Exception as exc:
             logger.exception('NBA calibration settlement failed for %s', day)
             processed.append({'date':day,'status':'skipped','reason':str(exc)[:160]})
@@ -636,6 +638,18 @@ def calibration_settlement_status():
 def calibration_summary():
     import calibration
     return {'calibration':calibration.summary(),'odds_api_calls':0}
+
+
+@app.get('/api/calibration/recommendation-results', dependencies=[Depends(auth)])
+def recommendation_results(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    with storage.connection() as conn:
+        rows = conn.execute("""
+            SELECT scan_date,snapshot_job_id,report FROM nba_recommendation_results
+            WHERE (%s::date IS NULL OR scan_date=%s::date)
+            ORDER BY scan_date DESC,settled_at DESC LIMIT 100
+        """, (date, date)).fetchall()
+    return {'snapshots': [{'date': day.isoformat(), 'job_id': job, 'report': report}
+                          for day, job, report in rows], 'odds_api_calls': 0}
 
 
 @app.get('/api/calibration/performance', dependencies=[Depends(auth)])

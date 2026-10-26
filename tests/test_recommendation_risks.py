@@ -3,6 +3,7 @@ import subprocess
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
+from unittest.mock import MagicMock
 
 import availability
 import progressive_calibration
@@ -85,6 +86,27 @@ process.stdout.write(JSON.stringify(out));
         risky = row(**{'Minuti ultime 5': 21})
         self.assertTrue(recommendations.select([risky], screen_risks=False)['groups']['Singola']['complete'])
         self.assertFalse(recommendations.select([risky])['groups']['Singola']['complete'])
+
+    def test_settlement_keeps_saved_ticket_and_is_idempotent_per_snapshot(self):
+        import storage
+        import settle_espn
+        original = row()
+        saved = recommendations.select([original])
+        payload = {'date': '2026-10-26', 'recommendations': saved, 'results': [original]}
+        db = MagicMock()
+        db.return_value.__enter__.return_value.execute.return_value.fetchall.return_value = [
+            ('job', payload, datetime(2026, 10, 25, 16, tzinfo=timezone.utc))]
+        with patch.object(storage, 'connection', db), patch.object(settle_espn, 'settle_archive',
+                return_value=([{**original, 'actual': 10, 'played': True}], 1)) as verify:
+            self.assertEqual(recommendations.settle_snapshots('2026-10-26'), 1)
+        query = db.return_value.__enter__.return_value.execute
+        self.assertIn('NOT EXISTS', query.call_args_list[0].args[0])
+        sql, params = query.call_args_list[1].args
+        self.assertIn('ON CONFLICT(snapshot_job_id) DO NOTHING', sql)
+        self.assertEqual(params[0], 'job')
+        self.assertEqual(params[2].obj['groups']['Singola']['legs'][0]['player'], 'Player')
+        self.assertEqual(params[2].obj['groups']['Singola']['status'], 'won')
+        self.assertEqual(verify.call_args.args[0]['recommendations'], saved)
 
     def test_unvalidated_probability_boundaries_are_not_adjusted(self):
         bins = [{"market": "PTS", "probability_bin": 90, "n": 400,

@@ -67,6 +67,13 @@ Il report infortuni corrente NON viene applicato retroattivamente al backtest.
 
 Ogni nuovo snapshot salva policy e selezioni esatte di Singola/Doppia/Tripla.
 L'interfaccia non sostituisce una selezione archiviata se una partita è iniziata.
+Le nuove proposte vengono valutate automaticamente dalla procedura di consolidamento
+già programmata: una voce per snapshot, senza duplicati. Il registro separato
+`nba_recommendation_results` conserva selezioni, quote, stime ed esiti anche dopo
+la pulizia degli archivi grezzi. I risultati mancanti restano irrisolti, senza
+presumere rimborsi. È consultabile con l’endpoint autenticato
+`/api/calibration/recommendation-results`.
+
 Il comando `python -m scripts.model_review --dates 2026-10-23 2026-10-24 2026-10-25 2026-10-26`
 consente di ripetere il controllo con soli archivi e ESPN. Per i nuovi snapshot
 legge le selezioni effettivamente salvate; per i vecchi dichiara la ricostruzione.

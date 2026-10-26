@@ -69,9 +69,15 @@ def player_stats(summary):
                     found[id_key] = nums
     return found
 
-def settle_archive(snapshot, scan_date):
+def settle_archive(snapshot, scan_date, evidence=None):
     """Verify only the archived fixtures, never already-started unrelated games."""
-    events = final_events(scan_date, require_all_final=False)
+    # Share only read-only evidence within one settlement batch, never across
+    # dates or prediction runs. This avoids reloading boxes for every snapshot.
+    evidence = {} if evidence is None else evidence
+    event_key = ('events', scan_date)
+    if event_key not in evidence:
+        evidence[event_key] = final_events(scan_date, require_all_final=False)
+    events = evidence[event_key]
     rows = snapshot.get("results", [])
     if not rows:
         raise ValueError("No archived predictions")
@@ -117,7 +123,10 @@ def settle_archive(snapshot, scan_date):
         tipoff = datetime.fromisoformat(start.replace("Z", "+00:00"))
         if snapshot_time >= tipoff:
             raise ValueError("Snapshot saved after an archived game's tipoff")
-        summary = fetch(BASE + "/summary", event=event["id"])
+        summary_key = ('summary', event['id'])
+        if summary_key not in evidence:
+            evidence[summary_key] = fetch(BASE + "/summary", event=event["id"])
+        summary = evidence[summary_key]
         stats = player_stats(summary)
         if not stats:
             raise ValueError("Missing ESPN player boxscore")

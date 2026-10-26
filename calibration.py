@@ -14,6 +14,14 @@ MARKETS = ("PTS", "AST", "REB")
 def initialize():
     with storage.connection() as conn:
         conn.execute("""
+          CREATE TABLE IF NOT EXISTS nba_recommendation_results (
+            snapshot_job_id TEXT PRIMARY KEY,
+            scan_date DATE NOT NULL,
+            report JSONB NOT NULL,
+            settled_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )
+        """)
+        conn.execute("""
           CREATE TABLE IF NOT EXISTS nba_calibration_daily (
             scan_date DATE NOT NULL,
             snapshot_job_id TEXT NOT NULL,

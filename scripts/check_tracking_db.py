@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import storage
 import scan_tracking as tracking
+import calibration
 
 
 class Database:
@@ -92,6 +93,26 @@ def main():
         with patch.object(storage, 'configured', return_value=True), patch.object(storage, 'connection', side_effect=db.connection):
             storage.initialize()
             tracking.initialize()
+            calibration.initialize()
+            calibration.initialize()
+            from psycopg.types.json import Jsonb
+            for _ in range(2):
+                db.query("INSERT INTO nba_recommendation_results(snapshot_job_id,scan_date,report) VALUES (%s,%s,%s) ON CONFLICT(snapshot_job_id) DO NOTHING",
+                         ('ticket-test', '2026-10-26', Jsonb({'policy':'risk-screen-v1','groups':{}})))
+            assert db.query('SELECT count(*) FROM nba_recommendation_results')[0][0] == 1
+            import recommendations
+            import settle_espn
+            ticket_row = {'Giocatore':'SQL Player', 'ESPN ID':'123', 'Partita':'A - B', 'Squadra':'A',
+                          'Mercato':'PTS', 'Scelta':'Over', 'Linea':9.5, 'Quota':1.8,
+                          'Prob. stimata %':80, 'Value stimato %':44, 'Partite':30,
+                          'Stagione %':80, 'Minuti medi':30, 'Minuti ultime 5':29,
+                          'Stato analisi':'Valutabile (stima empirica)'}
+            storage.save('sql-ticket', {'date':'2026-10-23', 'state':'done', 'results':[ticket_row],
+                                       'recommendations':recommendations.select([ticket_row])})
+            with patch.object(settle_espn, 'settle_archive', return_value=([{**ticket_row, 'actual':10, 'played':True}],1)):
+                assert recommendations.settle_snapshots('2026-10-23') == 1
+                assert recommendations.settle_snapshots('2026-10-23') == 0
+            assert db.query("SELECT report->'groups'->'Singola'->>'status' FROM nba_recommendation_results WHERE snapshot_job_id='sql-ticket'")[0][0] == 'won'
             storage.initialize()
             tracking.initialize()  # Additive migrations are repeatable.
             storage.save('legacy', {'date':'2026-10-26','state':'done','results':[], 'odds_api_http_requests_scan':6})
