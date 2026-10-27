@@ -250,7 +250,7 @@ function fixtureCard(match){
  if(sides.length!==2)return match?'<div class="pick-fixture">'+esc(match)+'</div>':'';
  const aliases={GSW:'gs',NOP:'no',NYK:'ny',SAS:'sa',UTA:'utah',WAS:'wsh'};
  const team=label=>{const code=teamAbbrev(label);const logo=aliases[code]||code.toLowerCase();
-  return '<span class="fixture-team">'+(code==='—'?'':'<span class="team-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/'+esc(logo)+'.png" alt="" loading="lazy" referrerpolicy="no-referrer"><span>'+esc(code)+'</span></span>')+'<span class="fixture-team-name">'+esc(label)+'</span></span>';};
+  return '<span class="fixture-team">'+(code==='—'?'':'<span class="team-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/'+esc(logo)+'.png" alt="" loading="lazy" referrerpolicy="no-referrer"><span>'+esc(code)+'</span></span>')+'<span class="fixture-team-name"><span class="fixture-name-full">'+esc(label)+'</span><span class="fixture-name-short" aria-hidden="true">'+esc(code==='—'?label:code)+'</span></span></span>';};
  return '<div class="pick-fixture" data-match="'+esc(match)+'">'+team(sides[0])+'<span class="fixture-vs">VS</span>'+team(sides[1])+'<time class="fixture-time" hidden></time></div>';
 }
 function pickCard(row){
