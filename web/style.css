@@ -414,3 +414,4 @@ main{padding-top:14px}
  #picks .pick-player-link,#picks .pick-group-1 .pick-player-link{font-size:15px}
  #picks .fixture-team{flex-direction:column}
 }
+#picks .pick-combined-warning{flex:1 0 100%;margin:0;color:#ffcfad;font-size:12px;line-height:1.5}
