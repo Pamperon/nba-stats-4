@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v14', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v15', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -388,6 +388,36 @@ test('clicking a suggested player opens exactly that player market and line with
  try{
   await tick();await tick();
   dom.window.document.querySelector('.pick-player-link').click();
+  await tick();await tick();await tick();
+  const d=dom.window.document;
+  assert.equal(d.getElementById('player').hidden,false);
+  assert.equal(d.getElementById('dashboard').hidden,true);
+  assert.equal(d.getElementById('team').value,'2');
+  assert.equal(d.getElementById('playername').value,'22');
+  assert.equal(d.getElementById('stat').value,'AST');
+  assert.equal(d.getElementById('line').value,'4.5');
+  assert.equal(d.getElementById('playermode').value,'2');
+  assert.match(d.getElementById('player-summary').textContent,/Over 4.5/);
+  assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,1);
+  assert.ok(calls.find(x=>x.startsWith('/api/players/log?')).includes('athlete_id=22'));
+ }finally{dom.window.close()}
+});
+
+test('the statistics button opens exactly that player market and line without unrelated logs', async () => {
+ const calls=[];
+ const pick={Giocatore:'Second Player','ESPN ID':'22',Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'AST',Scelta:'Over',Linea:4.5,Quota:1.8,'Prob. stimata %':80,'Value stimato %':44,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
+ const dom=browser(async url=>{
+  calls.push(url);
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/latest'))return response({date:'2099-01-01',results:[pick],season:'2026-27'});
+  if(url==='/api/players/teams')return response({teams:[{id:'1',name:'Atlanta Hawks'},{id:'2',name:'Boston Celtics'}]});
+  if(url.startsWith('/api/players/roster'))return response({players:[{id:'11',name:'First Player'},{id:'22',name:'Second Player'}]});
+  if(url.startsWith('/api/players/log?'))return response({games:[{AST:6,PTS:20,REB:3,SEASON_TYPE:2,GAME_DATE:'2026-10-25'}]});
+  return response({logs:{}});
+ });
+ try{
+  await tick();await tick();
+  dom.window.document.querySelector('.pick-stats-button').click();
   await tick();await tick();await tick();
   const d=dom.window.document;
   assert.equal(d.getElementById('player').hidden,false);
