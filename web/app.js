@@ -461,7 +461,7 @@ function historicalPlayerKey(key){const year=Number(key.split(':').pop());return
 function playerCacheTTL(key){return historicalPlayerKey(key)?24*60*60*1000:PLAYER_CACHE_TTL}
 function persistHistoricalLog(key,item){
  try{
-  const prefix='nba-player-history:',keys=[];
+  const prefix='nba-player-history-v2:',keys=[];
   for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name?.startsWith(prefix))keys.push(name)}
   const entries=keys.map(name=>{try{return {name,at:JSON.parse(localStorage.getItem(name)).at||0}}catch(e){return {name,at:0}}}).sort((a,b)=>a.at-b.at);
   while(entries.length>=24)localStorage.removeItem(entries.shift().name);
@@ -475,7 +475,7 @@ function rememberPlayerLog(key,item){
 function cachePlayerLog(key,payload){
  const item={at:Date.now(),payload};
  rememberPlayerLog(key,item);
- try{sessionStorage.setItem('nba-player-log:'+key,JSON.stringify(item))}catch(e){}
+ try{sessionStorage.setItem('nba-player-log-v2:'+key,JSON.stringify(item))}catch(e){}
  if(historicalPlayerKey(key))persistHistoricalLog(key,item);
 }
 function getPlayerLogCache(key){
@@ -484,16 +484,16 @@ function getPlayerLogCache(key){
  if(fresh(memory))return memory.payload;
  playerLogCache.delete(key);
  try{
-  const raw=sessionStorage.getItem('nba-player-log:'+key);
+  const raw=sessionStorage.getItem('nba-player-log-v2:'+key);
   if(raw){
    const item=JSON.parse(raw);
    if(fresh(item)){rememberPlayerLog(key,item);return item.payload}
-   sessionStorage.removeItem('nba-player-log:'+key);
+   sessionStorage.removeItem('nba-player-log-v2:'+key);
   }
  }catch(e){}
  if(historicalPlayerKey(key)){
   try{
-   const name='nba-player-history:'+key,item=JSON.parse(localStorage.getItem(name));
+   const name='nba-player-history-v2:'+key,item=JSON.parse(localStorage.getItem(name));
    if(fresh(item)){rememberPlayerLog(key,item);return item.payload}
    localStorage.removeItem(name);
   }catch(e){}
@@ -598,7 +598,7 @@ async function initPlayers(selection=null){
   if(!team)throw Error('Squadra del pronostico non trovata');
   $('team').value=String(team.id);
   if([...$('playerseason').options].some(o=>o.value===selection.season))$('playerseason').value=selection.season;
-  $('stat').value=selection.market;$('playermode').value='2';$('playerwindow').value='20';
+  $('stat').value=selection.market;$('playermode').value='2';$('playerwindow').value='20';$('player-venue').value='all';
  }
  await changeTeam(selection);
  }catch(e){if(navigation!==pickNavigationRequest)return;playerStatsInitialized=false;setPlayerLoading(false);$('player-status').textContent='Statistiche non disponibili ('+e.message+'). Riprova dal pronostico o riapri la scheda.';}
@@ -671,7 +671,7 @@ async function changePlayer(selection=null,preserveLine=false){
  clearTimeout(seasonPrefetchTimer);++seasonPrefetchGeneration;
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
  playerGames=[];
- $('player-summary').innerHTML='';
+ $('player-summary').innerHTML='';$('player-trends').innerHTML='';
  $('chart').innerHTML='';
  $('player-status').textContent='';
  if(!team||!id){$('player-profile').hidden=true;setPlayerLoading(false);return;}
@@ -707,20 +707,38 @@ function changeLine(preserveSelected=false){
  $('line').value=selected!==null&&selected!==''?selected:String(Math.min(max+.5,Math.max(.5,Math.floor(median)+.5)));
  drawPlayer();
 }
+function playerVenue(game){
+ const matchup=String(game.MATCHUP||'').trim();
+ if(/^@\s+\S/.test(matchup))return 'away';
+ if(/^vs\s+\S/i.test(matchup))return 'home';
+ return 'unknown';
+}
 function drawPlayer(){
  renderPlayerSeason();
- const mode=$('playermode').value,window=$('playerwindow').value,stat=$('stat').value,line=playerNum($('line').value);
- let games=playerGames.filter(g=>mode==='all'||String(g.SEASON_TYPE)===mode);
- games=games.slice().sort((a,b)=>String(b.GAME_DATE||'').localeCompare(String(a.GAME_DATE||'')));
- if(window!=='all')games=games.slice(0,Number(window));
- const hits=games.filter(g=>playerNum(g[stat])>line).length;
- const avg=games.length?games.reduce((n,g)=>n+playerNum(g[stat]),0)/games.length:0;
- $('player-chart-title').textContent='Prestazioni · '+(window==='all'?'stagione completa':'ultime '+window)+' partite';
+ const mode=$('playermode').value,window=$('playerwindow').value,stat=$('stat').value,line=playerNum($('line').value),venue=$('player-venue').value;
+ const eligible=playerGames.filter(g=>(mode==='all'||String(g.SEASON_TYPE)===mode)&&g[stat]!==null&&g[stat]!==undefined&&g[stat]!==''&&Number.isFinite(Number(g[stat])));
+ const unknownVenue=eligible.filter(g=>playerVenue(g)==='unknown').length;
+ const matching=eligible.filter(g=>venue==='all'||playerVenue(g)===venue);
+ const undated=matching.filter(g=>!/^\d{4}-\d{2}-\d{2}/.test(String(g.GAME_DATE||''))).length;
+ const dated=matching.filter(g=>/^\d{4}-\d{2}-\d{2}/.test(String(g.GAME_DATE||''))).sort((a,b)=>String(b.GAME_DATE).localeCompare(String(a.GAME_DATE)));
+ let games=window==='all'?dated:dated.slice(0,Number(window));
+ const hits=games.filter(g=>Number(g[stat])>line).length;
+ const avg=games.length?games.reduce((n,g)=>n+Number(g[stat]),0)/games.length:0;
+ $('player-chart-title').textContent='Prestazioni · '+(window==='all'?'stagione completa':'ultime '+window+' partite');
  $('player-summary').innerHTML=[['Over '+line,hits+'/'+games.length],['Frequenza Over',games.length?(100*hits/games.length).toFixed(1)+'%':'—'],['Media '+stat,games.length?avg.toFixed(1):'—']].map(([a,b])=>'<div class="metric"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join('');
- const max=Math.max(line+1,...games.map(g=>playerNum(g[stat])),1);
- $('chart').innerHTML=games.slice().reverse().map(g=>{const val=playerNum(g[stat]);return '<div class="barrow"><span>'+esc(String(g.GAME_DATE||'').slice(5,10))+'</span><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+val+'</strong></div>'}).join('')||'<p>Nessuna partita per i filtri selezionati.</p>';
+ $('player-trends').innerHTML='<div class="player-trends-title">Over sulla linea · partite disponibili</div><div class="player-trends-list">'+[5,10,20].map(n=>{const subset=dated.slice(0,n);const count=subset.filter(g=>Number(g[stat])>line).length;return '<div><small>Ultime '+n+'</small><strong>'+(subset.length?count+'/'+subset.length:'—')+'</strong></div>';}).join('')+'</div>'+(undated?'<p class="player-unknown">'+undated+(undated===1?' partita senza data esclusa':' partite senza data escluse')+' dalle statistiche recenti.</p>':'')+(venue!=='all'&&unknownVenue?'<p class="player-unknown">'+unknownVenue+(unknownVenue===1?' partita esclusa: campo non verificato.':' partite escluse: campo non verificato.')+'</p>':'');
+ const max=Math.max(line+1,...games.map(g=>Number(g[stat])),1);
+ $('chart').innerHTML=games.slice().reverse().map(g=>{
+  const val=Number(g[stat]),date=String(g.GAME_DATE||'').slice(5,10).split('-').reverse().join('/');
+  const matchup=String(g.MATCHUP||'').trim(),match=matchup.match(/^(@|vs|\?)\s+(.+)$/i);const opponent=match&&match[2]!=='?'?match[2]:'Avversario n.d.';
+  const location=playerVenue(g)==='home'?'vs':playerVenue(g)==='away'?'@':'';
+  const min=g.MIN===null||g.MIN===undefined||g.MIN===''||!Number.isFinite(Number(g.MIN))?'min n.d.':Math.round(Number(g.MIN)*10)/10+' min';
+  const label=[date,(location?location+' ':'')+opponent,min].filter(Boolean).join(' · ');
+  return '<div class="player-game"><div class="player-game-info">'+esc(label)+'</div><div class="barrow"><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+esc(val)+'</strong></div></div>';
+ }).join('')||'<p>Nessuna partita disponibile per i filtri selezionati.</p>';
 }
-$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;
+$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;$('player-venue').onchange=drawPlayer;
+
 async function initializeArchive(){
  setArchiveStatus('Caricamento giornate disponibili…');
  try {

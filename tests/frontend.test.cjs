@@ -13,7 +13,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 function browser(fetch) {
   const dom = new JSDOM(html, {url: 'https://nba.invalid', runScripts: 'outside-only', pretendToBeVisual: true});
   dom.window.fetch = fetch;
-  dom.window.eval(source + '\nwindow.__audit = {getData: () => data, getPlayerInit: () => playerStatsInitialized, setPlayerInit: value => {playerStatsInitialized = value;}};');
+  dom.window.eval(source + '\nwindow.__audit = {getData: () => data, getPlayerInit: () => playerStatsInitialized, setPlayerInit: value => {playerStatsInitialized = value;}, setPlayerGames: value => {playerGames = value;}};');
   return dom;
 }
 
@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v44', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v45', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -122,7 +122,7 @@ test('player statistics expire in memory after fifteen minutes', () => {
     assert.equal(w.getPlayerLogCache('player').games[0].PTS, 10);
     now += 2 * 60 * 1000;
     assert.equal(w.getPlayerLogCache('player'), null);
-    assert.equal(w.sessionStorage.getItem('nba-player-log:player'), null);
+    assert.equal(w.sessionStorage.getItem('nba-player-log-v2:player'), null);
   } finally {dom.window.close();}
 });
 
@@ -132,11 +132,11 @@ test('restoring session cache does not restart its fifteen minute lifetime', () 
     const w = dom.window, at = 1000000000000;
     let now = at + 14 * 60 * 1000;
     w.Date.now = () => now;
-    w.sessionStorage.setItem('nba-player-log:player', JSON.stringify({at, payload: {games: []}}));
+    w.sessionStorage.setItem('nba-player-log-v2:player', JSON.stringify({at, payload: {games: []}}));
     assert.ok(w.getPlayerLogCache('player'));
     now = at + 15 * 60 * 1000;
     assert.equal(w.getPlayerLogCache('player'), null);
-    w.sessionStorage.setItem('nba-player-log:bad', JSON.stringify({at: 'invalid', payload: {}}));
+    w.sessionStorage.setItem('nba-player-log-v2:bad', JSON.stringify({at: 'invalid', payload: {}}));
     assert.equal(w.getPlayerLogCache('bad'), null);
   } finally {dom.window.close();}
 });
@@ -493,12 +493,12 @@ test('completed seasons survive browser session reload without renewing their li
  const dom=browser(async()=>response({dates:[]}));
  try{
   const w=dom.window,key='2:22:2025',at=Date.now()-60*60*1000;
-  w.localStorage.setItem('nba-player-history:'+key,JSON.stringify({at,payload:{games:[{PTS:23}]}}));
+  w.localStorage.setItem('nba-player-history-v2:'+key,JSON.stringify({at,payload:{games:[{PTS:23}]}}));
   assert.equal(w.getPlayerLogCache(key).games[0].PTS,23);
-  assert.equal(JSON.parse(w.localStorage.getItem('nba-player-history:'+key)).at,at);
-  w.localStorage.setItem('nba-player-history:2:22:2024',JSON.stringify({at:Date.now()-25*60*60*1000,payload:{games:[]}}));
+  assert.equal(JSON.parse(w.localStorage.getItem('nba-player-history-v2:'+key)).at,at);
+  w.localStorage.setItem('nba-player-history-v2:2:22:2024',JSON.stringify({at:Date.now()-25*60*60*1000,payload:{games:[]}}));
   assert.equal(w.getPlayerLogCache('2:22:2024'),null);
-  assert.equal(w.localStorage.getItem('nba-player-history:2:22:2024'),null);
+  assert.equal(w.localStorage.getItem('nba-player-history-v2:2:22:2024'),null);
  }finally{dom.window.close()}
 });
 
@@ -753,5 +753,32 @@ test('horizontal swipes change only available saved dates and leave vertical ges
  gesture(80,100,90,160);assert.equal(d.getElementById('date').value,'2099-01-02');
  gesture(80,100,150,105);await tick();await tick();assert.equal(d.getElementById('date').value,'2099-01-01');
  assert.ok(calls.every(url=>!url.includes('/api/scan')));
+ }finally{dom.window.close()}
+});
+
+test('statistics venue filters, game details and recent denominators use known dated games', async () => {
+ const dom=browser(async url=>response(url==='/api/saved/dates'?{dates:[]}:{}));
+ try{
+  const w=dom.window,d=w.document;
+  w.__audit.setPlayerGames([
+   {GAME_DATE:'2026-10-25',SEASON_TYPE:2,MATCHUP:'vs BOS',PTS:15,REB:3,AST:2,MIN:28},
+   {GAME_DATE:'2026-10-24',SEASON_TYPE:2,MATCHUP:'@ NYK',PTS:8,REB:2,AST:1,MIN:31.5},
+   {GAME_DATE:'2026-10-23',SEASON_TYPE:2,MATCHUP:'? LAL',PTS:20,REB:4,AST:2,MIN:null},
+   {GAME_DATE:null,SEASON_TYPE:2,MATCHUP:'vs CHI',PTS:25,REB:2,AST:1,MIN:20}
+  ]);
+  d.getElementById('line').innerHTML='<option value="9.5">9.5</option>';d.getElementById('line').value='9.5';
+  d.getElementById('playerwindow').value='20';w.drawPlayer();
+  assert.match(d.getElementById('player-summary').textContent,/2\/3/);
+  assert.match(d.getElementById('player-trends').textContent,/2\/3/);
+  assert.match(d.getElementById('player-trends').textContent,/1 partita senza data/);
+  assert.match(d.getElementById('chart').textContent,/vs BOS · 28 min/);
+  assert.match(d.getElementById('chart').textContent,/@ NYK · 31.5 min/);
+  assert.match(d.getElementById('chart').textContent,/LAL · min n.d./);
+  d.getElementById('player-venue').value='home';w.drawPlayer();
+  assert.match(d.getElementById('player-summary').textContent,/1\/1/);
+  assert.doesNotMatch(d.getElementById('chart').textContent,/NYK|LAL/);assert.match(d.getElementById('player-trends').textContent,/campo non verificato/);
+  d.getElementById('player-venue').value='away';w.drawPlayer();
+  assert.match(d.getElementById('player-summary').textContent,/0\/1/);
+  assert.doesNotMatch(d.getElementById('chart').textContent,/BOS|LAL/);
  }finally{dom.window.close()}
 });
