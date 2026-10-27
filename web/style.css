@@ -428,3 +428,23 @@ main{padding-top:14px}
 #app>nav button[hidden],#app>nav.stats-mode{display:none!important}
 body.statistics-area #date-loading,body.statistics-area #status{display:none!important}
 @media(max-width:400px){.primary-nav-wrap{padding:6px 8px}.primary-nav button{font-size:12px;padding:8px 4px}}
+
+/* Compact forecast controls retain clear 44px touch targets. */
+#app>nav{margin:0 0 9px;padding:4px;gap:4px}
+#app>nav button{min-height:44px;flex-direction:row;gap:7px;padding:5px 8px;font-size:13px}
+#app>nav button .tab-icon{font-size:17px}
+#date-area{margin:0 0 9px}
+#date-area .date-control{padding:9px 12px;gap:6px}
+#date-area .date-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#date-area .date-heading #date-month{font-size:11px;color:#a7bdd6;text-align:right}
+#date-area .date-strip{padding:0;gap:6px}
+#date-area .date-chip{min-height:44px;padding:4px;gap:1px}
+#date-area .date-chip .day-number{font-size:19px}
+#quote-summary{padding:9px 12px;margin-bottom:12px}
+#quote-summary #metrics{gap:0;align-items:center}
+#quote-summary #metrics .metric{display:flex;align-items:baseline;justify-content:center;gap:4px;min-width:0;padding:3px 2px;background:transparent;border:0;border-radius:0}
+#quote-summary #metrics .metric+.metric{border-left:1px solid #344a66}
+#quote-summary #metrics .metric small{order:2;margin:0;font-size:10px;line-height:1.2;text-transform:lowercase}
+#quote-summary #metrics .metric strong{font-size:17px;line-height:1.2}
+#quote-summary .quote-updated{padding:7px 0 0;font-size:11px}
+@media(max-width:360px){#app>nav button{font-size:12px}#quote-summary{padding:8px 6px}#quote-summary #metrics .metric{gap:3px}#quote-summary #metrics .metric strong{font-size:15px}#quote-summary #metrics .metric small{font-size:9px}}
