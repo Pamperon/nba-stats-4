@@ -666,3 +666,5 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 
 /* Optical centering accounts for empty space in the logo artwork. */
 .app-header .brand{transform:translateX(-5px)}
+
+@media(max-width:760px){.app-header .brand-copy small{font-size:clamp(9px,2.65vw,13px);letter-spacing:clamp(.45px,.18vw,.8px)}}
