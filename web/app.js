@@ -147,6 +147,7 @@ $('date').addEventListener('change',async()=>{
     data=local;jobId='';render();setArchiveStatus(updatedStatus(local,true),'notice');
    }else{
     data=null;jobId='';render();
+    $('quote-updated').textContent='Dati non ancora disponibili';
     setArchiveStatus('');
    }
   }else{
@@ -252,21 +253,19 @@ function pickExplanation(row){
  const recent=ratio(row['Ultime 20']),last5=ratio(row['Ultime 5']);
  const sections=[];
  if(recent){
-  let message='Ha fatto '+threshold+' in <strong>'+recent.hits+' delle ultime '+recent.total+' partite</strong> considerate.';
-  if(verified&&games>0)message+=' Nello storico utilizzato: <strong>'+historicHits+' su '+games+'</strong>.';
-  else if(season!==null&&games>0)message+=' Nello storico utilizzato: <strong>'+display(season)+'% su '+games+' partite</strong>.';
-  sections.push('<p><b>📊 Il rendimento sulla linea</b>'+message+'</p>');
+  let message='<strong>'+recent.hits+'/'+recent.total+'</strong> '+(isUnder?'sotto':'sopra')+' la linea.';
+  if(verified&&games>0)message+=' Storico: <strong>'+historicHits+' su '+games+'</strong>.';
+  else if(season!==null&&games>0)message+=' Storico: <strong>'+display(season)+'% su '+games+' partite</strong>.';
+  sections.push('<p class="pick-detail-row"><b>Ultime partite</b><span>'+message+'</span></p>');
  }
  const avg=num(row['Minuti medi']),recentMin=num(row['Minuti ultime 5']);
  if(avg!==null&&recentMin!==null){
-  const diff=recentMin-avg;
-  const title=diff<=-2?'Sta giocando meno del solito':diff>=2?'Sta giocando più del solito':'Minutaggio recente simile alla media';
-  sections.push('<p><b>⏱️ '+title+'</b>Nelle ultime 5 partite ha giocato in media <strong>'+display(recentMin)+' minuti</strong>, rispetto ai <strong>'+display(avg)+' minuti</strong> dello storico.</p>');
+  sections.push('<p class="pick-detail-row"><b>Minuti</b><span>Media ultime 5: <strong>'+display(recentMin)+' minuti</strong> · media storica: <strong>'+display(avg)+' minuti</strong>.</span></p>');
  }
  const probability=num(row['Prob. stimata %']),odd=num(row.Quota);
  if(probability!==null&&odd!==null&&odd>1){
-  const implied=100/odd,relation=probability>implied?'più alta':probability<implied?'più bassa':'uguale';
-  sections.push('<p><b>💡 Come valutiamo la quota</b>Il sistema stima una probabilità del <strong>'+display(probability)+'%</strong>. La quota '+fmtOdd(odd)+' corrisponde a circa il <strong>'+display(implied)+'%</strong>: secondo il modello la probabilità è '+relation+' di quella implicita nella quota.</p>');
+  const implied=100/odd;
+  sections.push('<p class="pick-detail-row"><b>Confronto quota</b><span>Stima: <strong>'+display(probability)+'%</strong> · probabilità implicita: <strong>'+display(implied)+'%</strong>.</span></p>');
  }
  const warnings=[];
  // A sequence is only reported when each of the latest observations has a
@@ -333,7 +332,7 @@ function render(){
  }
 
  if(!data){
-  $('quote-updated').textContent='';
+  $('quote-updated').textContent='Dati non disponibili';
   $('picks').innerHTML='<div class="panel"><h2>Pronostici</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p></div>';
   $('rows').innerHTML='';$('finder-cards').innerHTML='';$('finder-count').textContent='';return;
  }
