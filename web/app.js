@@ -38,27 +38,49 @@ $('area-quotes').onclick=()=>{returnPick=null;document.querySelector('nav button
 $('area-stats').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="player"]').click();};
 $('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+function visibleDates(){
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ return Array.from($('date').options).map(o=>o.value).filter(d=>d&&d>=today);
+}
+function stepDate(delta){
+ const dates=visibleDates(),current=dates.indexOf($('date').value),next=current+delta;
+ if(current<0||next<0||next>=dates.length)return;
+ $('date').value=dates[next];$('date').dispatchEvent(new Event('change',{bubbles:true}));
+}
+let wheelSuppressClickUntil=0;
 function renderDateStrip(){
- const select=$('date'), strip=$('date-strip'), month=$('date-month');
- if(!strip||!select)return;
- const dates=Array.from(select.options).map(o=>o.value).filter(Boolean);
+ const select=$('date'),strip=$('date-strip'),month=$('date-month');
+ const dates=visibleDates(),index=dates.indexOf(select.value);
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  strip.replaceChildren();
- for(const date of dates.filter(d=>d>=today)){
-  const parsed=new Date(date+'T12:00:00');
-  const chip=document.createElement('button');
-  chip.type='button';chip.className='date-chip';chip.dataset.date=date;
-  chip.setAttribute('aria-pressed',String(date===select.value));
+ for(const [offset,position] of [[-1,'previous'],[0,'selected'],[1,'next']]){
+  const date=index<0?null:dates[index+offset];if(!date)continue;
+  const parsed=new Date(date+'T12:00:00'),chip=document.createElement('button');
+  chip.type='button';chip.className='date-chip wheel-'+position;chip.dataset.date=date;
+  chip.setAttribute('aria-pressed',String(offset===0));
   chip.setAttribute('aria-label',parsed.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}));
-  const day=document.createElement('span');day.className='day-name';
-  day.textContent=date===today?'OGGI':parsed.toLocaleDateString('it-IT',{weekday:'short'}).replace('.','').toUpperCase();
+  if(offset!==0)chip.tabIndex=-1;
+  const day=document.createElement('span');day.className='day-name';day.textContent=date===today?'OGGI':parsed.toLocaleDateString('it-IT',{weekday:'short'}).replace('.','').toUpperCase();
   const number=document.createElement('span');number.className='day-number';number.textContent=String(parsed.getDate());
   chip.append(day,number);
-  chip.addEventListener('click',()=>{if(select.value!==date){select.value=date;select.dispatchEvent(new Event('change',{bubbles:true}));}else renderDateStrip();});
+  chip.addEventListener('click',()=>{if(Date.now()<wheelSuppressClickUntil)return;if(select.value!==date){select.value=date;select.dispatchEvent(new Event('change',{bubbles:true}));}});
   strip.append(chip);
  }
- if(month){month.textContent=select.value?new Date(select.value+'T12:00:00').toLocaleDateString('it-IT',{month:'long',year:'numeric'}):'Nessuna giornata disponibile';}
+ $('date-prev').disabled=index<=0;$('date-next').disabled=index<0||index>=dates.length-1;
+ if(month)month.textContent=select.value?new Date(select.value+'T12:00:00').toLocaleDateString('it-IT',{month:'long',year:'numeric'}):'Nessuna giornata disponibile';
 }
+$('date-prev').onclick=()=>stepDate(-1);
+$('date-next').onclick=()=>stepDate(1);
+$('date-strip').addEventListener('keydown',event=>{if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault();stepDate(event.key==='ArrowUp'?-1:1);}});
+let wheelLastStep=0;
+$('date-strip').addEventListener('wheel',event=>{if(!event.deltaY)return;event.preventDefault();const now=Date.now();if(now-wheelLastStep<250)return;wheelLastStep=now;stepDate(event.deltaY>0?1:-1);},{passive:false});
+let wheelPointerStart=null;
+function resetWheelDrag(){document.querySelectorAll('#date-strip .date-chip').forEach(chip=>chip.style.transform='');wheelPointerStart=null;}
+$('date-strip').addEventListener('pointerdown',event=>{if(event.pointerType==='touch'||event.pointerType==='pen'){wheelPointerStart={id:event.pointerId,y:event.clientY};event.currentTarget.setPointerCapture?.(event.pointerId);}});
+$('date-strip').addEventListener('pointermove',event=>{if(!wheelPointerStart||wheelPointerStart.id!==event.pointerId)return;const distance=Math.max(-35,Math.min(35,event.clientY-wheelPointerStart.y));document.querySelectorAll('#date-strip .date-chip').forEach(chip=>chip.style.transform='translateY('+distance+'px)');});
+$('date-strip').addEventListener('pointerup',event=>{if(!wheelPointerStart||wheelPointerStart.id!==event.pointerId)return;const distance=event.clientY-wheelPointerStart.y;resetWheelDrag();if(Math.abs(distance)>20){wheelSuppressClickUntil=Date.now()+450;stepDate(distance<0?1:-1);}});
+$('date-strip').addEventListener('pointercancel',resetWheelDrag);
+
 let scanStatusTimer=0;
 const scanStateNames={waiting:'In attesa di aggiornamento',queued:'In coda',running:'In elaborazione',done:'Completata',partial:'Parziale',error:'Fallita',save_failed:'Salvataggio fallito',interrupted:'Interrotta'};
 async function loadScanStatus(date,request,previousState=null){
@@ -285,7 +307,7 @@ async function enrichSavedFixtureInfo(snapshot,request){
   const stamp=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(saved).replace(',','');
   if(stamp!==info.saved_at_italy)return;
   const labels={completa:'Copertura completa',in_attesa_quote:'Quote parziali o in attesa',errore_o_dati_incompleti:'Copertura incompleta'};
-  if(labels[info.coverage_status])$('quote-updated').textContent+=' · '+labels[info.coverage_status];
+  // Coverage remains available in saved metadata; the compact panel shows only the timestamp.
   const reports=Array.isArray(info.fixture_reports)?info.fixture_reports:[];
   for(const fixture of $('picks').querySelectorAll('.pick-fixture[data-match]')){
    const matches=reports.filter(r=>r.partita===fixture.dataset.match&&r.inizio_italia);
@@ -303,7 +325,7 @@ function render(){
  if(data){
   const saved=data.saved_at?new Date(data.saved_at):null;
   const valid=saved&&!Number.isNaN(saved.getTime());
-  $('quote-updated').textContent=valid?((data.results||[]).length?'Aggiornato ':'Ultimo controllo: ')+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  $('quote-updated').textContent=valid?((data.results||[]).length?'Ultimo aggiornamento ':'Ultimo controllo: ')+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
  }
 
  if(!data){

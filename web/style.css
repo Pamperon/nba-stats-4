@@ -538,3 +538,33 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
  #finder .finder-extra b{color:#eef5ff}
  #finder .finder-extra[hidden]{display:none}
 }
+
+/* Compact single panel: a clipped vertical date wheel and saved counts. */
+#date-area .actions{max-width:none}
+#date-area .date-control{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(120px,1fr);grid-template-areas:'wheel metrics' 'updated updated';gap:4px 14px;padding:9px 12px}
+#date-area .wheel-panel{grid-area:wheel;min-width:0}
+#date-area .date-heading{margin:0 0 3px}
+#date-area .date-label{font-size:10px}
+#date-area .date-heading #date-month{font-size:10px}
+#date-area .wheel-row{display:flex;align-items:center;gap:4px}
+#date-area .date-strip{position:relative;display:block;height:70px;min-width:0;overflow:hidden;touch-action:pan-x;overscroll-behavior:contain;border-radius:9px;background:#101e31;border:1px solid #2a405b;scrollbar-width:none}
+#date-area .date-strip:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#date-area .date-chip{position:absolute;left:0;right:0;width:100%;height:42px;min-height:42px;margin:0;display:flex;flex-direction:row;gap:7px;align-items:center;justify-content:center;padding:4px;border-radius:7px}
+#date-area .date-chip .day-name{font-size:11px}
+#date-area .date-chip .day-number{font-size:20px}
+#date-area .wheel-previous{top:-28px;opacity:.42}
+#date-area .wheel-selected{top:14px;opacity:1;z-index:1}
+#date-area .wheel-next{top:56px;opacity:.42}
+#date-area .date-arrows{display:flex;flex-direction:column;gap:2px;flex:0 0 28px}
+#date-area .date-arrows button{width:28px;height:32px;min-height:32px;padding:0;line-height:1;border:1px solid #334a68;background:#172a43;color:#dce9fa;font-size:21px;transform:rotate(90deg)}
+#date-area .date-arrows button:disabled{opacity:.35;cursor:default}
+#date-area .date-arrows button:focus-visible{outline:2px solid #fff;outline-offset:1px}
+#date-area #quote-summary{display:contents}
+#date-area #quote-summary[hidden]{display:none!important}
+#date-area #metrics{grid-area:metrics;display:flex;flex-direction:column;justify-content:center;gap:0;border-left:1px solid #344a66;padding-left:12px}
+#date-area #metrics .metric{display:flex;justify-content:flex-start;gap:6px;width:100%;padding:3px 0;border:0;background:transparent}
+#date-area #metrics .metric+.metric{border:0}
+#date-area #metrics .metric strong{font-size:16px}
+#date-area #metrics .metric small{font-size:11px}
+#date-area #quote-updated{grid-area:updated;padding:5px 0 0;border-top:1px solid #2b405b;text-align:center;font-size:11px}
+@media(max-width:350px){#date-area .date-control{grid-template-columns:minmax(0,1fr) minmax(94px,.75fr);gap:4px 8px;padding:8px}#date-area #metrics{padding-left:8px}#date-area .date-arrows{flex-basis:26px}#date-area .date-arrows button{width:26px}}
