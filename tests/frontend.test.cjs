@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v19', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v20', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -506,6 +506,11 @@ test('same-game combinations do not present multiplied odds or probabilities as 
  try{
   await tick();await tick();
   const text=dom.window.document.getElementById('picks').textContent;
+  const d=dom.window.document;
+  const cards=d.querySelectorAll('#pick-doppia .pick-selection');
+  assert.equal(cards.length,2);
+  for(const card of cards){assert.match(card.textContent,/QUOTA\s*1,50/);assert.match(card.textContent,/STIMA DEL MODELLO\s*80%/)}
+  assert.equal(d.querySelectorAll('.pick-group-range').length,0);
   assert.match(text,/Selezioni della stessa partita/);
   assert.doesNotMatch(text,/Quota totale/);
   assert.doesNotMatch(text,/Stima combinata indicativa/);
