@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v34', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v35', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -732,6 +732,8 @@ test('date wheel selects available days with buttons and keyboard without starti
   assert.equal(d.getElementById('date').value,'2099-01-02');
   assert.equal(d.querySelector('.wheel-previous').dataset.date,'2099-01-01');
   assert.equal(d.querySelector('.wheel-selected').dataset.date,'2099-01-02');
+  assert.equal(d.querySelector('.wheel-selected .day-month').textContent,'GEN');
+  assert.equal(d.querySelector('.wheel-selected .day-name').textContent,'VENERDÌ');
   assert.equal(d.querySelector('.wheel-next').dataset.date,'2099-01-04');
   d.getElementById('date-strip').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));await tick();await tick();
   assert.equal(d.getElementById('date').value,'2099-01-04');

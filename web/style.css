@@ -599,3 +599,15 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 /* Keep the selected day legible and allow vertical page scrolling alongside horizontal date swipes. */
 #date-area .date-chip[aria-pressed="true"] .day-name{color:#f5f8ff}
 #date-area .wheel-panel,#date-area .date-strip{touch-action:pan-y}
+
+/* Date: day and abbreviated month above the full weekday. */
+#date-area .wheel-panel{background:#172d49;border:1px solid #294565;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:62px}
+#date-area .date-heading{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#date-area .wheel-row{width:100%;grid-template-columns:32px minmax(0,1fr) 32px}
+#date-area .date-arrows button{width:32px;font-size:28px}
+#date-area .date-chip.wheel-selected{display:flex;flex-direction:column;gap:3px;min-width:0}
+#date-area .date-chip .day-date{display:flex;align-items:baseline;justify-content:center;gap:4px;white-space:nowrap}
+#date-area .date-chip .day-number{font-size:clamp(19px,5vw,25px);line-height:1}
+#date-area .date-chip .day-month{font-size:clamp(11px,3vw,15px);font-weight:800;color:#f5f8ff}
+#date-area .date-chip[aria-pressed="true"] .day-name{font-size:clamp(8px,2.1vw,10px);letter-spacing:.4px;line-height:1.1;white-space:nowrap;color:#aec8e7}
+@media(max-width:350px){#date-area .wheel-row{grid-template-columns:28px minmax(0,1fr) 28px}#date-area .date-arrows button{width:28px}#date-area .date-chip[aria-pressed="true"] .day-name{letter-spacing:0;font-size:8px}}
