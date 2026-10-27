@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v22', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v23', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -611,9 +611,36 @@ test('return from a pick preserves the selected date and returns to forecasts', 
   await tick();await tick();const d=dom.window.document;
   d.querySelector('.pick-stats-button').click();await tick();
   assert.equal(d.getElementById('back-to-picks').hidden,false);
+  assert.equal(d.getElementById('date-area').hidden,true);
+  assert.equal(d.getElementById('area-stats').getAttribute('aria-pressed'),'true');
   d.getElementById('back-to-picks').click();
+  assert.equal(d.getElementById('date-area').hidden,false);
+  assert.equal(d.getElementById('area-quotes').getAttribute('aria-pressed'),'true');
   assert.equal(d.getElementById('dashboard').hidden,false);
   assert.equal(d.getElementById('date').value,'2099-01-01');
   assert.equal(d.getElementById('back-to-picks').hidden,true);
+ }finally{dom.window.close()}
+});
+
+test('primary navigation keeps forecast date and last quote tab when switching areas', async () => {
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/latest'))return response({date:'2099-01-01',results:[],fixture_count:0,player_count:0});
+  if(url==='/api/players/teams')return response({teams:[]});
+  return response({state:'waiting',players:[]});
+ });
+ try{
+  await tick();await tick();const d=dom.window.document;
+  d.querySelector('nav button[data-tab="finder"]').click();
+  d.getElementById('area-stats').click();
+  assert.equal(d.getElementById('date-area').hidden,true);
+  assert.equal(d.getElementById('area-stats').getAttribute('aria-pressed'),'true');
+  assert.equal(d.getElementById('player').hidden,false);
+  assert.equal(d.getElementById('quote-summary').hidden,true);
+  d.getElementById('area-quotes').click();
+  assert.equal(d.getElementById('date-area').hidden,false);
+  assert.equal(d.getElementById('finder').hidden,false);
+  assert.equal(d.getElementById('date').value,'2099-01-01');
+  assert.equal(d.getElementById('area-quotes').getAttribute('aria-pressed'),'true');
  }finally{dom.window.close()}
 });

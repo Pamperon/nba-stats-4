@@ -22,8 +22,21 @@ async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest
 let playerStatsInitialized=false;
 let pickNavigationRequest=0;
 let returnPick=null;
+let lastQuoteTab='dashboard';
+function syncArea(tab){
+ const stats=tab==='player';
+ document.body.classList.toggle('statistics-area',stats);
+ $('date-area').hidden=stats;
+ $('quote-tabs').classList.toggle('stats-mode',stats);
+ for(const [id,active] of [['area-quotes',!stats],['area-stats',stats]]){
+  $(id).classList.toggle('active',active);$(id).setAttribute('aria-pressed',String(active));
+ }
+ if(!stats)lastQuoteTab=tab;
+}
+$('area-quotes').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="'+lastQuoteTab+'"]').click();};
+$('area-stats').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="player"]').click();};
 $('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab=dashboard]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
  const select=$('date'), strip=$('date-strip'), month=$('date-month');
  if(!strip||!select)return;
@@ -499,6 +512,7 @@ function preloadPlayerSeasons(team,id){
 const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
  const navigation=++pickNavigationRequest;
+ syncArea('player');
  $('back-to-picks').hidden=false;
  ++rosterRequest;++playerRequest;++seasonPrefetchGeneration;
  clearTimeout(seasonPrefetchTimer);

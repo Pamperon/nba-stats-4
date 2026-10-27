@@ -415,3 +415,16 @@ main{padding-top:14px}
  #picks .fixture-team{flex-direction:column}
 }
 #picks .pick-combined-warning{flex:1 0 100%;margin:0;color:#ffcfad;font-size:12px;line-height:1.5}
+
+/* Main areas stay reachable while the page scrolls; the logo scrolls away. */
+.app-header{position:static;box-shadow:none}
+.primary-nav-wrap{position:sticky;top:0;z-index:100;padding:7px max(12px,3vw);background:#0f1b2d;border-bottom:1px solid #2b405c;box-shadow:0 4px 14px #0004}
+.primary-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;max-width:1000px;margin:0 auto;padding:4px;background:#101e31;border:1px solid #2d4563;border-radius:12px}
+.primary-nav button{min-width:0;min-height:44px;padding:8px 9px;border:1px solid transparent;background:transparent;color:#b8cbe3;font-weight:750;font-size:14px;line-height:1.2}
+.primary-nav button.active{background:#f58b44;border-color:#f58b44;color:#111b2a}
+.primary-nav button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#date-area[hidden]{display:none!important}
+#app>nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+#app>nav button[hidden],#app>nav.stats-mode{display:none!important}
+body.statistics-area #date-loading,body.statistics-area #status{display:none!important}
+@media(max-width:400px){.primary-nav-wrap{padding:6px 8px}.primary-nav button{font-size:12px;padding:8px 4px}}
