@@ -622,3 +622,7 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #picks .pick-actions .pick-explanation-body{padding:0 3px}
 #picks .pick-actions .pick-stats-button{position:absolute;top:0;right:0;width:calc(50% - 4px);min-height:44px;padding:8px 4px;font-size:13px}
 @media(min-width:900px){#picks .pick-group-1 .pick-selection{grid-template-columns:minmax(200px,1.2fr) minmax(200px,1fr) minmax(180px,.8fr);grid-template-areas:none}#picks .pick-group-1 .pick-profile,#picks .pick-group-1 .pick-fixture,#picks .pick-group-1 .pick-market,#picks .pick-group-1 .pick-values{grid-area:auto}#picks .pick-group-2 .pick-selection,#picks .pick-group-3 .pick-selection{grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(120px,.7fr) minmax(150px,.8fr)}#picks .pick-actions{grid-column:1/-1}}
+
+#picks .pick-actions .pick-explanation summary{font-size:clamp(10px,3vw,13px);gap:3px;white-space:nowrap}
+#picks .pick-actions .pick-explanation summary::before{content:"⌄";color:#ff9a54;font-size:16px;flex:none}
+#picks .pick-actions .pick-explanation[open] summary::before{content:"⌃"}

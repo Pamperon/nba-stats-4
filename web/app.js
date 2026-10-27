@@ -283,7 +283,7 @@ function pickExplanation(row){
  }
  if(warnings.length)sections.push('<p class="pick-explanation-warning"><b>⚠️ Da tenere d’occhio</b>'+warnings.join(' ')+'</p>');
  if(!sections.length)sections.push('<p>Dettagli non disponibili per questa scansione.</p>');
- return '<details class="pick-explanation"><summary>Motivazione</summary><div class="pick-explanation-body">'+sections.join('')+'</div></details>';
+ return '<details class="pick-explanation"><summary>Perché questa quota</summary><div class="pick-explanation-body">'+sections.join('')+'</div></details>';
 }
 function fixtureCard(match){
  const sides=String(match||'').split(' - ');
