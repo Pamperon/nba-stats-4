@@ -498,3 +498,16 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
  #finder .finder-card details{margin-top:5px}
  #finder .finder-card details summary{padding:4px 0}
 }
+
+/* Keep the extra-data control aligned with the quote and estimate on mobile. */
+@media(max-width:760px){
+ #finder .finder-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;align-items:center}
+ #finder .finder-card-top{grid-column:1/-1}
+ #finder .finder-card-values{grid-column:1;gap:4px 12px;margin-top:6px}
+ #finder .finder-card details{grid-column:2;margin:6px 0 0;text-align:right}
+ #finder .finder-card details summary{min-height:36px;display:flex;align-items:center;justify-content:flex-end;gap:4px;white-space:nowrap}
+ #finder .finder-card details summary::before{content:'▸';color:#a9bfd9}
+ #finder .finder-card details[open]{grid-column:1/-1;margin-top:3px}
+ #finder .finder-card details[open] summary::before{content:'▾'}
+ #finder .finder-card details[open] div{text-align:left;padding:4px 0 2px;line-height:1.4}
+}
