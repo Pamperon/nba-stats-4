@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v24', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v25', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -555,7 +555,7 @@ test('explanation shows saved statistics and consecutive misses without changing
   assert.ok(details);assert.equal(details.open,false);details.querySelector('summary').click();assert.equal(details.open,true);
   assert.match(details.textContent,/3 delle ultime 5 partite/);assert.match(details.textContent,/3 su 5/);
   assert.match(details.textContent,/ultime 2 partite consecutive/);assert.match(details.textContent,/55,6%/);
-  assert.match(details.textContent,/28 minuti/);assert.match(details.textContent,/non garantisce/);
+  assert.match(details.textContent,/28 minuti/);assert.doesNotMatch(details.textContent,/La stima usa le partite precedenti/);
   assert.equal(d.querySelectorAll('.pick-selection').length,1);
  } finally {dom.window.close()}
 });
@@ -660,5 +660,50 @@ test('forecast controls precede the date picker and date changes preserve the qu
   assert.equal(d.getElementById('finder').hidden,false);
   assert.equal(d.getElementById('date').value,'2099-01-02');
   assert.match(d.getElementById('date-month').textContent,/2099/);
+ }finally{dom.window.close()}
+});
+
+test('quote search filters only finder results and returns from statistics with filters intact', async () => {
+ const base={Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'AST',Scelta:'Over',Linea:4.5,Quota:1.8,'Prob. stimata %':80,'Value stimato %':44,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29,'Ultime 20':'12/20'};
+ const rows=[{...base,Giocatore:'Second Player','ESPN ID':'22'},{...base,Giocatore:'Another Player','ESPN ID':'23'}];
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/latest'))return response({date:'2099-01-01',results:rows,season:'2026-27'});
+  if(url==='/api/players/teams')return response({teams:[{id:'2',name:'Boston Celtics'}]});
+  if(url.startsWith('/api/players/roster'))return response({players:[{id:'22',name:'Second Player'},{id:'23',name:'Another Player'}]});
+  if(url.startsWith('/api/players/log?'))return response({games:[{AST:6,PTS:20,REB:3,SEASON_TYPE:2,GAME_DATE:'2026-10-25'}]});
+  return response({state:'waiting',logs:{}});
+ });
+ try{
+  await tick();await tick();const d=dom.window.document;
+  const picksBefore=d.getElementById('picks').textContent;
+  d.querySelector('nav button[data-tab="finder"]').click();
+  const search=d.getElementById('finder-search');search.value='PLAYER second';search.dispatchEvent(new dom.window.Event('input'));
+  assert.equal(d.querySelectorAll('#finder-cards .finder-card').length,1);
+  assert.match(d.getElementById('finder-count').textContent,/1 risultato/);
+  assert.match(d.querySelector('#finder-cards .finder-card').textContent,/Second Player/);
+  assert.equal(d.getElementById('picks').textContent,picksBefore);
+  d.querySelector('#finder-cards .finder-player').click();await tick();await tick();await tick();
+  assert.equal(d.getElementById('playername').value,'22');assert.equal(d.getElementById('stat').value,'AST');assert.equal(d.getElementById('line').value,'4.5');
+  assert.match(d.getElementById('back-to-picks').textContent,/Analisi quote/);
+  d.getElementById('back-to-picks').click();
+  assert.equal(d.getElementById('finder').hidden,false);assert.equal(search.value,'PLAYER second');
+  assert.equal(d.querySelectorAll('#finder-cards .finder-card').length,1);
+ }finally{dom.window.close()}
+});
+
+test('no saved data clears mobile finder results on date change', async () => {
+ const row={Giocatore:'Test Player',Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'PTS',Linea:9.5,Quota:1.8,'Prob. stimata %':80,'Stato analisi':'Valutabile (stima empirica)'};
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'},{date:'2099-01-02'}]});
+  if(url.includes('latest?date=2099-01-02'))return {ok:false,status:404};
+  if(url.startsWith('/api/saved/latest'))return response({date:'2099-01-01',results:[row]});
+  return response({state:'waiting'});
+ });
+ try{
+  await tick();await tick();const d=dom.window.document;
+  assert.equal(d.querySelectorAll('#finder-cards .finder-card').length,1);
+  d.getElementById('date').value='2099-01-02';d.getElementById('date').dispatchEvent(new dom.window.Event('change'));
+  await tick();await tick();assert.equal(d.querySelectorAll('#finder-cards .finder-card').length,0);
  }finally{dom.window.close()}
 });
