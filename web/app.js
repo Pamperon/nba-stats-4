@@ -365,7 +365,6 @@ function finderAdditionalData(row){
  const history=val('Stagione %'),games=val('Partite');
  if(history!==null)add('Storico linea',history,'%'+(games!==null?' ('+esc(games)+' partite)':''));
  add('Minuti medi',val('Minuti medi'));
- add('Minuti ultime 5',val('Minuti ultime 5'));
  return pairs.length?pairs.join(''):'<span>Dati non disponibili.</span>';
 }
 function renderFinder(){
