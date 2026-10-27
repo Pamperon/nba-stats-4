@@ -283,7 +283,7 @@ function pickExplanation(row){
  }
  if(warnings.length)sections.push('<p class="pick-explanation-warning"><b>⚠️ Da tenere d’occhio</b>'+warnings.join(' ')+'</p>');
  if(!sections.length)sections.push('<p>Dettagli non disponibili per questa scansione.</p>');
- return '<details class="pick-explanation"><summary>Perché questo pronostico?</summary><div class="pick-explanation-body">'+sections.join('')+'</div></details>';
+ return '<details class="pick-explanation"><summary>Motivazione</summary><div class="pick-explanation-body">'+sections.join('')+'</div></details>';
 }
 function fixtureCard(match){
  const sides=String(match||'').split(' - ');
@@ -298,7 +298,7 @@ function pickCard(row){
  '<div class="pick-profile-info"><h3><button type="button" class="pick-player-link" aria-label="Apri le statistiche di '+esc(row.Giocatore)+'">'+esc(row.Giocatore)+'</button></h3><p class="pick-player-meta">'+esc(row.Squadra||'')+'</p></div></div>'+
  fixtureCard(row.Partita)+'<div class="pick-market">'+esc(row.Scelta||'Over').toUpperCase()+' '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div>'+
  '<div class="pick-values"><div><small>QUOTA</small><strong>'+esc(fmtOdd(row.Quota))+'</strong></div>'+
- '<div><small>STIMA DEL MODELLO</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div><button type="button" class="pick-stats-button">Vedi statistiche <span aria-hidden="true">›</span></button>'+pickExplanation(row)+'</article>';
+ '<div><small>STIMA DEL MODELLO</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div><div class="pick-actions">'+pickExplanation(row)+'<button type="button" class="pick-stats-button">Vedi statistiche <span aria-hidden="true">›</span></button></div></article>';
 }
 async function enrichSavedFixtureInfo(snapshot,request){
  if(!snapshot?.date||!snapshot.saved_at)return;

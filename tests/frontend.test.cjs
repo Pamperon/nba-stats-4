@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v35', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v36', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -554,7 +554,7 @@ test('explanation shows saved statistics and consecutive misses without changing
  const dom=browser(async url=>response(url==='/api/saved/dates'?{dates:[{date:'2099-01-01'}]}:url.startsWith('/api/saved/latest')?snapshot:{}));
  try {
   await tick();await tick();const d=dom.window.document,details=d.querySelector('.pick-explanation');
-  assert.ok(details);assert.equal(details.open,false);details.querySelector('summary').click();assert.equal(details.open,true);
+  assert.ok(details);assert.equal(details.querySelector('summary').textContent,'Motivazione');assert.ok(details.closest('.pick-actions').querySelector('.pick-stats-button'));assert.equal(details.open,false);details.querySelector('summary').click();assert.equal(details.open,true);
   assert.match(details.textContent,/3 delle ultime 5 partite/);assert.match(details.textContent,/3 su 5/);
   assert.match(details.textContent,/ultime 2 partite consecutive/);assert.match(details.textContent,/55,6%/);
   assert.match(details.textContent,/28 minuti/);assert.doesNotMatch(details.textContent,/La stima usa le partite precedenti/);
