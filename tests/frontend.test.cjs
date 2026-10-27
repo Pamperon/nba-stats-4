@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v30', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v31', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -593,7 +593,7 @@ test('match details use only the matching saved scan and keep a readable logo fa
   dom.window.render();await tick();await tick();
   assert.equal(d.querySelector('.fixture-time').hidden,false);
   assert.match(d.querySelector('.fixture-time').textContent,/01:30/);
-  assert.match(d.getElementById('quote-updated').textContent,/Copertura completa/);
+  assert.doesNotMatch(d.getElementById('quote-updated').textContent,/Copertura completa/);
  }finally{dom.window.close()}
 });
 
@@ -710,5 +710,31 @@ test('no saved data clears mobile finder results on date change', async () => {
   assert.equal(d.querySelectorAll('#finder-cards .finder-card').length,1);
   d.getElementById('date').value='2099-01-02';d.getElementById('date').dispatchEvent(new dom.window.Event('change'));
   await tick();await tick();assert.equal(d.querySelectorAll('#finder-cards .finder-card').length,0);
+ }finally{dom.window.close()}
+});
+
+test('date wheel selects available days with buttons and keyboard without starting scans', async () => {
+ const calls=[];
+ const dom=browser(async url=>{
+  calls.push(url);
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'},{date:'2099-01-02'},{date:'2099-01-04'}]});
+  if(url.startsWith('/api/saved/latest'))return response({date:(new URL(url,'https://nba.invalid')).searchParams.get('date'),results:[],fixture_count:0,player_count:0});
+  return response({state:'waiting'});
+ });
+ try{
+  await tick();await tick();const d=dom.window.document;
+  assert.equal(d.getElementById('date').value,'2099-01-01');
+  assert.equal(d.getElementById('date-prev').disabled,true);
+  assert.equal(d.querySelector('.wheel-previous'),null);
+  d.getElementById('date-next').click();await tick();await tick();
+  assert.equal(d.getElementById('date').value,'2099-01-02');
+  assert.equal(d.querySelector('.wheel-previous').dataset.date,'2099-01-01');
+  assert.equal(d.querySelector('.wheel-selected').dataset.date,'2099-01-02');
+  assert.equal(d.querySelector('.wheel-next').dataset.date,'2099-01-04');
+  d.getElementById('date-strip').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));await tick();await tick();
+  assert.equal(d.getElementById('date').value,'2099-01-04');
+  assert.equal(d.getElementById('date-next').disabled,true);
+  assert.equal(d.querySelector('.wheel-next'),null);
+  assert.ok(calls.every(url=>!url.includes('/api/scan')));
  }finally{dom.window.close()}
 });
