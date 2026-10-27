@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v20', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v21', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -499,7 +499,7 @@ test('completed seasons survive browser session reload without renewing their li
  }finally{dom.window.close()}
 });
 
-test('same-game combinations do not present multiplied odds or probabilities as available', async () => {
+test('same-game combinations show indicative products and warn about dependence', async () => {
  const base={Squadra:'A',Partita:'A - B',Mercato:'PTS',Scelta:'Over',Linea:9.5,Quota:1.5,'Prob. stimata %':80,'Value stimato %':20,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
  const picks=[{...base,Giocatore:'First','ESPN ID':'1'},{...base,Giocatore:'Second','ESPN ID':'2'}];
  const dom=browser(async url=>response(url==='/api/saved/dates'?{dates:[{date:'2099-01-01'}]}:url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:picks}:{}));
@@ -512,8 +512,10 @@ test('same-game combinations do not present multiplied odds or probabilities as 
   for(const card of cards){assert.match(card.textContent,/QUOTA\s*1,50/);assert.match(card.textContent,/STIMA DEL MODELLO\s*80%/)}
   assert.equal(d.querySelectorAll('.pick-group-range').length,0);
   assert.match(text,/Selezioni della stessa partita/);
-  assert.doesNotMatch(text,/Quota totale/);
-  assert.doesNotMatch(text,/Stima combinata indicativa/);
+  assert.match(text,/Quota totale indicativa\s*2,25/);
+  assert.match(text,/Stima combinata indicativa\s*64%/);
+  assert.match(text,/come se gli eventi fossero indipendenti/);
+  assert.match(text,/verifica la combinazione sul bookmaker/i);
  }finally{dom.window.close()}
 });
 
