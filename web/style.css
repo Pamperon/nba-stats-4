@@ -611,3 +611,14 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #date-area .date-chip .day-month{font-size:clamp(11px,3vw,15px);font-weight:800;color:#f5f8ff}
 #date-area .date-chip[aria-pressed="true"] .day-name{font-size:clamp(8px,2.1vw,10px);letter-spacing:.4px;line-height:1.1;white-space:nowrap;color:#aec8e7}
 @media(max-width:350px){#date-area .wheel-row{grid-template-columns:28px minmax(0,1fr) 28px}#date-area .date-arrows button{width:28px}#date-area .date-chip[aria-pressed="true"] .day-name{letter-spacing:0;font-size:8px}}
+
+/* Compact, aligned actions; the explanation expands below both controls. */
+#picks .pick-actions{grid-column:1/-1;position:relative;min-width:0}
+#picks .pick-actions .pick-explanation{display:block;margin:0;padding:0;border:0;background:transparent;width:100%}
+#picks .pick-actions .pick-explanation summary{display:flex;align-items:center;justify-content:center;gap:5px;width:calc(50% - 4px);min-height:44px;padding:8px 4px;border:1px solid #49627e;border-radius:9px;color:#eaf2ff;font-size:13px;list-style:none;cursor:pointer}
+#picks .pick-actions .pick-explanation summary::-webkit-details-marker{display:none}
+#picks .pick-actions .pick-explanation summary::after{content:'⌄';color:#ff9a54;font-size:16px}
+#picks .pick-actions .pick-explanation[open] summary::after{content:'⌃'}
+#picks .pick-actions .pick-explanation-body{padding:0 3px}
+#picks .pick-actions .pick-stats-button{position:absolute;top:0;right:0;width:calc(50% - 4px);min-height:44px;padding:8px 4px;font-size:13px}
+@media(min-width:900px){#picks .pick-group-1 .pick-selection{grid-template-columns:minmax(200px,1.2fr) minmax(200px,1fr) minmax(180px,.8fr);grid-template-areas:none}#picks .pick-group-1 .pick-profile,#picks .pick-group-1 .pick-fixture,#picks .pick-group-1 .pick-market,#picks .pick-group-1 .pick-values{grid-area:auto}#picks .pick-group-2 .pick-selection,#picks .pick-group-3 .pick-selection{grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(120px,.7fr) minmax(150px,.8fr)}#picks .pick-actions{grid-column:1/-1}}
