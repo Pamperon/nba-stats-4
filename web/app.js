@@ -60,7 +60,7 @@ function renderDateStrip(){
   chip.setAttribute('aria-pressed',String(offset===0));
   chip.setAttribute('aria-label',parsed.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}));
   if(offset!==0)chip.tabIndex=-1;
-  const day=document.createElement('span');day.className='day-name';day.textContent=date===today?'OGGI':parsed.toLocaleDateString('it-IT',{weekday:'short'}).replace('.','').toUpperCase();
+  const day=document.createElement('span');day.className='day-name';day.textContent=parsed.toLocaleDateString('it-IT',{weekday:'short'}).replace('.','').toUpperCase();
   const number=document.createElement('span');number.className='day-number';number.textContent=String(parsed.getDate());
   chip.append(day,number);
   chip.addEventListener('click',()=>{if(Date.now()<wheelSuppressClickUntil)return;if(select.value!==date){select.value=date;select.dispatchEvent(new Event('change',{bubbles:true}));}});
@@ -72,14 +72,6 @@ function renderDateStrip(){
 $('date-prev').onclick=()=>stepDate(-1);
 $('date-next').onclick=()=>stepDate(1);
 $('date-strip').addEventListener('keydown',event=>{if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault();stepDate(event.key==='ArrowUp'?-1:1);}});
-let wheelLastStep=0;
-$('date-strip').addEventListener('wheel',event=>{if(!event.deltaY)return;event.preventDefault();const now=Date.now();if(now-wheelLastStep<250)return;wheelLastStep=now;stepDate(event.deltaY>0?1:-1);},{passive:false});
-let wheelPointerStart=null;
-function resetWheelDrag(){document.querySelectorAll('#date-strip .date-chip').forEach(chip=>chip.style.transform='');wheelPointerStart=null;}
-$('date-strip').addEventListener('pointerdown',event=>{if(event.pointerType==='touch'||event.pointerType==='pen'){wheelPointerStart={id:event.pointerId,y:event.clientY};event.currentTarget.setPointerCapture?.(event.pointerId);}});
-$('date-strip').addEventListener('pointermove',event=>{if(!wheelPointerStart||wheelPointerStart.id!==event.pointerId)return;const distance=Math.max(-35,Math.min(35,event.clientY-wheelPointerStart.y));document.querySelectorAll('#date-strip .date-chip').forEach(chip=>chip.style.transform='translateY('+distance+'px)');});
-$('date-strip').addEventListener('pointerup',event=>{if(!wheelPointerStart||wheelPointerStart.id!==event.pointerId)return;const distance=event.clientY-wheelPointerStart.y;resetWheelDrag();if(Math.abs(distance)>20){wheelSuppressClickUntil=Date.now()+450;stepDate(distance<0?1:-1);}});
-$('date-strip').addEventListener('pointercancel',resetWheelDrag);
 
 let scanStatusTimer=0;
 const scanStateNames={waiting:'In attesa di aggiornamento',queued:'In coda',running:'In elaborazione',done:'Completata',partial:'Parziale',error:'Fallita',save_failed:'Salvataggio fallito',interrupted:'Interrotta'};
