@@ -288,3 +288,54 @@ main{padding-top:14px}
 #picks .pick-combined strong{color:#ffad6c}
 @media(min-width:900px){#picks .pick-selection{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(230px,1fr) minmax(160px,.6fr);gap:12px;align-items:center}#picks .pick-profile,#picks .pick-values{margin:0}#picks .pick-explanation{grid-column:1/-1;margin:0}#picks .pick-stats-button{width:100%}}
 @media(max-width:360px){#picks .pick-group{padding:12px}#picks .pick-selection{padding:11px}#picks .pick-avatar{width:60px;height:60px;flex-basis:60px}#picks .pick-values small{font-size:9px}}
+
+/* The forecast layout follows the approved Basket Lab concept. */
+#picks .pick-group{overflow:hidden;padding:18px;background:linear-gradient(145deg,#142640,#0e1e33);border:1px solid #294565;box-shadow:0 14px 32px #0003}
+#picks .pick-group-heading{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+#picks .pick-group h2{margin:0;padding:0;background:transparent;color:#f6f8fd;font-size:clamp(24px,3vw,34px);font-weight:850;line-height:1;text-transform:uppercase;letter-spacing:.02em}
+#picks .pick-group-range{margin:0;color:#adc0d8;font-size:12px;line-height:1.4}
+#picks .pick-selection{background:#0d1d31;border:1px solid #29415f;border-radius:12px;padding:14px}
+#picks .pick-profile{min-width:0}
+#picks .pick-avatar{background:linear-gradient(155deg,#54789c,#172d48);border:1px solid #405e7f}
+#picks .pick-avatar img{object-fit:cover;object-position:center top}
+#picks .pick-player-link{text-decoration:none;color:#f4f7fd;font-weight:800}
+#picks .pick-player-link:hover{text-decoration:underline}
+#picks .pick-market{font-weight:850;letter-spacing:.02em}
+#picks .pick-values>div{background:#12253e;border-color:#2e496b}
+#picks .pick-values strong{color:#ff8f34;font-weight:850}
+#picks .pick-stats-button{color:#fff;background:#ff7c21;border-color:#ff7c21;min-height:46px}
+#picks .pick-stats-button:hover{background:#ff963e}
+#picks .pick-explanation{background:#15283f;border-color:#324c69;padding:12px 14px}
+#picks .pick-explanation summary{color:#eff5ff;font-size:14px}
+#picks .pick-combined{background:#10243b;border-color:#314d6a;gap:10px 28px}
+#picks .pick-combined span{flex:1 1 190px}
+#picks .pick-combined strong{color:#ff8f34}
+#picks .pick-group-1 .pick-avatar{width:96px;height:104px;flex-basis:96px}
+#picks .pick-group-1 .pick-player-link{font-size:clamp(21px,5vw,31px);line-height:1.1}
+#picks .pick-group-1 .pick-market{font-size:17px;padding:9px 12px}
+#picks .pick-group-1 .pick-values strong{font-size:26px}
+@media(min-width:900px){
+ #picks .pick-group{padding:20px}
+ #picks .pick-group-1 .pick-selection{grid-template-columns:minmax(390px,1.4fr) minmax(260px,.9fr) minmax(175px,.55fr);gap:18px;padding:20px}
+ #picks .pick-group-1 .pick-avatar{width:150px;height:150px;flex-basis:150px}
+ #picks .pick-group-1 .pick-profile{gap:22px}
+ #picks .pick-group-1 .pick-market{font-size:20px;padding:12px 15px}
+ #picks .pick-group-1 .pick-values>div{padding:15px 16px;min-height:83px}
+ #picks .pick-group-1 .pick-values strong{font-size:30px}
+ #picks .pick-group-2 .pick-selection,#picks .pick-group-3 .pick-selection{grid-template-columns:minmax(340px,1.4fr) minmax(230px,.9fr) minmax(160px,.55fr);padding:10px 12px}
+ #picks .pick-group-2 .pick-avatar,#picks .pick-group-3 .pick-avatar{width:62px;height:62px;flex-basis:62px}
+ #picks .pick-group-2 .pick-player-link,#picks .pick-group-3 .pick-player-link{font-size:19px}
+ #picks .pick-group-2 .pick-stats-button,#picks .pick-group-3 .pick-stats-button{color:#e9f1fd;background:transparent;border:1px solid #7890ad}
+ #picks .pick-group-2 .pick-stats-button:hover,#picks .pick-group-3 .pick-stats-button:hover{background:#25405e}
+}
+@media(max-width:500px){
+ #picks .pick-group{padding:14px}
+ #picks .pick-group-heading{gap:7px 12px}
+ #picks .pick-group h2{font-size:23px}
+ #picks .pick-selection{padding:12px}
+ #picks .pick-group-1 .pick-avatar{width:82px;height:92px;flex-basis:82px}
+ #picks .pick-group-1 .pick-player-link{font-size:21px}
+ #picks .pick-group-1 .pick-market{font-size:15px;padding:7px 9px}
+ #picks .pick-values>div{min-width:0}
+ #picks .pick-values small{white-space:normal;line-height:1.25}
+}

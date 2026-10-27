@@ -281,7 +281,7 @@ function render(){
   const distinctGames=chosen.every(r=>r.Partita)&&new Set(chosen.map(r=>String(r.Partita).trim().toLowerCase())).size===chosen.length;
   const groupIndex=pending.length;
   pending.push(chosen);
-  return '<section class="panel pick-group"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+fmtOdd(min)+'–'+fmtOdd(max)+'</p>'+
+  return '<section class="panel pick-group pick-group-'+count+'"><div class="pick-group-heading"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+fmtOdd(min)+'–'+fmtOdd(max)+'</p></div>'+ 
   (complete?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>'+
   (count>1?'<div class="pick-combined">'+(distinctGames?'<span>Quota totale <strong>'+fmtOdd(combined)+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span>':'<span>Selezioni della stessa partita: quota e probabilità combinate non stimate. Verifica la combinazione sul bookmaker.</span>')+'</div>':''):
   '<p>'+esc(pickEmptyReason(rows,min,max,count,chosen.length))+'</p>')+
