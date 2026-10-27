@@ -660,3 +660,6 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 .app-header .brand-copy b{font-size:clamp(28px,5.3vw,42px)}
 @media(max-width:760px){.app-header .brand-icon{width:66px;height:66px;flex-basis:66px}.app-header .brand-icon svg{width:66px;height:66px}.app-header .brand-copy b{font-size:clamp(24px,6.6vw,33px)}}
 @media(max-width:350px){.app-header .brand-icon{width:56px;height:56px;flex-basis:56px}.app-header .brand-icon svg{width:56px;height:56px}.app-header .brand-copy b{font-size:clamp(20px,6.3vw,23px)}}
+
+/* Scale the mobile brand with the viewport while preserving side margins. */
+@media(max-width:760px){.app-header{padding:5px 12px}.app-header .brand{gap:clamp(5px,2vw,10px)}.app-header .brand-icon{width:clamp(56px,20vw,84px);height:clamp(56px,20vw,84px);flex-basis:clamp(56px,20vw,84px)}.app-header .brand-icon svg{width:100%;height:100%}.app-header .brand-copy b{font-size:clamp(27px,10vw,46px);letter-spacing:0}.app-header .brand-copy small{font-size:clamp(7px,2.1vw,11px);letter-spacing:clamp(.5px,.25vw,1.2px)}}
