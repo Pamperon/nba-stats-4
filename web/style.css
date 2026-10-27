@@ -217,7 +217,7 @@
 .date-chip .day-name{font-size:10px;line-height:1.15}
 .date-chip .day-number{font-size:21px;line-height:1.1}
 .date-bottom{font-size:10px;line-height:1.2}
-#app.date-is-loading #quote-summary{display:none!important}
+
 #app.date-is-loading #status{display:none!important}
 #app.date-is-loading #dashboard,#app.date-is-loading #finder{display:none!important}
 #app .date-loading-panel{margin:0 0 14px}
@@ -595,3 +595,7 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #date-area #metrics .metric small{font-size:clamp(9px,2.5vw,11px);line-height:1.1;white-space:nowrap}
 #date-area #quote-updated{border:0;padding:2px 0 0;font-size:10px}
 @media(max-width:350px){#date-area .date-control{grid-template-columns:minmax(125px,2fr) minmax(0,3fr);gap:4px;padding:8px 6px}#date-area .wheel-row{grid-template-columns:34px minmax(0,1fr) 34px}#date-area .date-arrows button{width:34px}#date-area .date-heading #date-month{font-size:10px}#date-area #metrics .metric small{font-size:9px}}
+
+/* Keep the selected day legible and allow vertical page scrolling alongside horizontal date swipes. */
+#date-area .date-chip[aria-pressed="true"] .day-name{color:#f5f8ff}
+#date-area .wheel-panel,#date-area .date-strip{touch-action:pan-y}
