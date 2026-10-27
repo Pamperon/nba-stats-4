@@ -448,3 +448,37 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #quote-summary #metrics .metric strong{font-size:17px;line-height:1.2}
 #quote-summary .quote-updated{padding:7px 0 0;font-size:11px}
 @media(max-width:360px){#app>nav button{font-size:12px}#quote-summary{padding:8px 6px}#quote-summary #metrics .metric{gap:3px}#quote-summary #metrics .metric strong{font-size:15px}#quote-summary #metrics .metric small{font-size:9px}}
+
+/* Quote analysis: compact controls and readable mobile result cards. */
+.finder-primary-filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(110px,1fr);gap:10px;margin:0 0 10px}
+.finder-primary-filters label{display:flex;flex-direction:column;gap:6px;color:#b0c3db;font-size:12px}
+.finder-primary-filters input,.finder-primary-filters select{width:100%;min-width:0;min-height:44px}
+.finder-advanced,.finder-guide{border:1px solid #304965;border-radius:10px;background:#13253c;margin:0 0 10px}
+.finder-advanced summary,.finder-guide summary{padding:12px;cursor:pointer;font-size:13px;font-weight:700;color:#eaf2fc}
+.finder-advanced .filters{padding:0 12px 12px;margin:0}
+.finder-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;color:#b0c3db;font-size:12px}
+.finder-actions #csv{min-height:40px;padding:7px 10px}
+.finder-guide>div{padding:0 12px 10px;color:#c9d8eb;font-size:12px;line-height:1.45}
+.finder-guide p{margin:0 0 8px}
+.finder-player{cursor:pointer}
+#finder table .finder-player{padding:0;border:0;border-radius:0;background:transparent;color:#eaf2ff;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.finder-player:focus-visible,.finder-advanced summary:focus-visible,.finder-guide summary:focus-visible{outline:2px solid #ffad6c;outline-offset:2px}
+.finder-cards{display:none}
+@media(max-width:760px){
+ #finder .finder-scroll,#finder .finder-top-scroll,#finder .table-scroll-hint{display:none!important}
+ #finder .finder-cards{display:grid;gap:9px}
+ #finder .finder-card{min-width:0;padding:12px;background:#101f33;border:1px solid #304a69;border-radius:12px}
+ #finder .finder-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+ #finder .finder-card-top>div{min-width:0}
+ #finder .finder-card-top strong{display:block;overflow-wrap:anywhere;font-size:15px}
+ #finder .finder-card-top span{display:block;color:#a9bfd9;font-size:11px;margin-top:3px}
+ #finder .finder-card-top button{min-height:40px;flex:0 0 auto;padding:7px 9px;font-size:11px;border-color:#57779a}
+ #finder .finder-card-market{margin:10px 0;color:#ffb16d;font-weight:800;font-size:14px}
+ #finder .finder-card-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #finder .finder-card-values span{padding:8px 10px;background:#192e49;border:1px solid #304b6a;border-radius:8px}
+ #finder .finder-card-values small{display:block;color:#adbed6;font-size:10px}
+ #finder .finder-card-values b{display:block;margin-top:3px;color:#f6f8fc;font-size:19px}
+ #finder .finder-card details{margin-top:9px;color:#c6d7eb;font-size:12px}
+ #finder .finder-card details summary{padding:6px 0;cursor:pointer;font-weight:700;color:#e8f1ff}
+ #finder .finder-empty{color:#b8cbe0;line-height:1.5}
+}

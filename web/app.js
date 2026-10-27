@@ -22,6 +22,7 @@ async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest
 let playerStatsInitialized=false;
 let pickNavigationRequest=0;
 let returnPick=null;
+let returnOrigin='dashboard';
 let lastQuoteTab='dashboard';
 function syncArea(tab){
  const stats=tab==='player';
@@ -35,7 +36,7 @@ function syncArea(tab){
 }
 $('area-quotes').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="'+lastQuoteTab+'"]').click();};
 $('area-stats').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="player"]').click();};
-$('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab=dashboard]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
+$('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
  const select=$('date'), strip=$('date-strip'), month=$('date-month');
@@ -91,6 +92,7 @@ function setDateLoading(loading){
   $('quote-updated').textContent='';
   $('picks').replaceChildren();
   $('rows').replaceChildren();
+  $('finder-cards').replaceChildren();$('finder-count').textContent='';
  }
 }
 $('date').addEventListener('change',async()=>{
@@ -130,7 +132,7 @@ $('date').addEventListener('change',async()=>{
   if(request===dateSelectionRequest&&$('date').value===selected)setDateLoading(false);
  }
 });
-const number=x=>Number(x)||0;function eligible(){return (data?.results||[]).filter(r=>r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
+const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
 const marketNames={PTS:'PUNTI',REB:'RIMBALZI',AST:'ASSIST'};
 const pickIdentityCache=new Map();
 let pickProfileRequest=0;
@@ -256,7 +258,7 @@ function pickExplanation(row){
  }
  if(warnings.length)sections.push('<p class="pick-explanation-warning"><b>⚠️ Da tenere d’occhio</b>'+warnings.join(' ')+'</p>');
  if(!sections.length)sections.push('<p>Dettagli non disponibili per questa scansione.</p>');
- return '<details class="pick-explanation"><summary>Perché questo pronostico?</summary><div class="pick-explanation-body">'+sections.join('')+'<p class="pick-explanation-note">La stima usa le partite precedenti e non garantisce il risultato. I dati si riferiscono all’aggiornamento salvato.</p></div></details>';
+ return '<details class="pick-explanation"><summary>Perché questo pronostico?</summary><div class="pick-explanation-body">'+sections.join('')+'</div></details>';
 }
 function fixtureCard(match){
  const sides=String(match||'').split(' - ');
@@ -307,7 +309,7 @@ function render(){
  if(!data){
   $('metrics').innerHTML='';
   $('picks').innerHTML='<div class="panel"><h2>Pronostici</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p></div>';
-  $('rows').innerHTML='';return;
+  $('rows').innerHTML='';$('finder-cards').innerHTML='';$('finder-count').textContent='';return;
  }
  const rows=data.results||[];
  $('metrics').innerHTML=[['PARTITE',data.fixture_count],['GIOCATORI',data.player_count],['QUOTE',rows.length]]
@@ -333,7 +335,7 @@ function render(){
  }).join('');
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
   group.querySelectorAll('.pick-selection').forEach((card,j)=>{
-   const row=pending[i][j],open=()=>{returnPick=card.querySelector('.pick-stats-button');openPickStats(row);};
+   const row=pending[i][j],open=()=>{returnOrigin='dashboard';returnPick=card.querySelector('.pick-stats-button');openPickStats(row);};
    card.querySelector('.pick-player-link').onclick=open;
    card.querySelector('.pick-stats-button').onclick=open;
    const avatar=card.querySelector('.pick-avatar');
@@ -353,7 +355,15 @@ const nbaTeams={
  'ATLANTA HAWKS':'ATL','BOSTON CELTICS':'BOS','BROOKLYN NETS':'BKN','CHARLOTTE HORNETS':'CHA','CHICAGO BULLS':'CHI','CLEVELAND CAVALIERS':'CLE','DALLAS MAVERICKS':'DAL','DENVER NUGGETS':'DEN','DETROIT PISTONS':'DET','GOLDEN STATE WARRIORS':'GSW','HOUSTON ROCKETS':'HOU','INDIANA PACERS':'IND','LOS ANGELES CLIPPERS':'LAC','LA CLIPPERS':'LAC','LOS ANGELES LAKERS':'LAL','LA LAKERS':'LAL','MEMPHIS GRIZZLIES':'MEM','MIAMI HEAT':'MIA','MILWAUKEE BUCKS':'MIL','MINNESOTA TIMBERWOLVES':'MIN','NEW ORLEANS PELICANS':'NOP','NEW YORK KNICKS':'NYK','OKLAHOMA CITY THUNDER':'OKC','ORLANDO MAGIC':'ORL','PHILADELPHIA 76ERS':'PHI','PHOENIX SUNS':'PHX','PORTLAND TRAIL BLAZERS':'POR','PORTLAND TRAIL BLAZERS':'POR','SACRAMENTO KINGS':'SAC','SAN ANTONIO SPURS':'SAS','TORONTO RAPTORS':'TOR','UTAH JAZZ':'UTA','WASHINGTON WIZARDS':'WAS'
 };
 function teamAbbrev(team){const key=String(team||'').trim().toUpperCase().replace(/\s+/g,' ');return nbaTeams[key]||(/^[A-Z]{3}$/.test(key)?key:'—')}
-function renderFinder(){$('rows').innerHTML=eligible().slice(0,500).map(r=>`<tr><td>${esc(r.Giocatore)}</td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${r.Linea}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${fmt(r['Prob. stimata %'])}</td><td>${esc(r['Ultime 20'])}</td><td>${fmt(r['Value stimato %'])}</td></tr>`).join('');syncFinderScrollWidth()}
+function renderFinder(){
+ const all=eligible(),items=all.slice(0,500);
+ $('finder-count').textContent=all.length>500?'Primi 500 di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
+ $('rows').innerHTML=items.map((r,i)=>`<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`).join('');
+ $('finder-cards').innerHTML=items.map((r,i)=>`<article class="finder-card"><div class="finder-card-top"><div><strong>${esc(r.Giocatore)}</strong><span>${esc(teamAbbrev(r.Squadra))}</span></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><details><summary>Altri dati</summary><div>Ultime 20: <b>${esc(r['Ultime 20']||'—')}</b> · Value: <b>${esc(fmt(r['Value stimato %']))}%</b></div></details></article>`).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
+ for(const button of document.querySelectorAll('#finder .finder-player'))button.onclick=()=>{const row=items[Number(button.dataset.index)];if(!row)return;returnOrigin='finder';returnPick=button;openPickStats(row);};
+ syncFinderScrollWidth();
+}
+
 // Value Finder filters affect only its own table; dashboard picks are independent.
 function syncFinderScrollWidth(){
  const bottom=$('finder-scroll'),top=$('finder-top-scroll'),content=$('finder-top-scroll-content');
@@ -395,6 +405,7 @@ function initFinderSelects(){
  prob.value='0';
 }
 initFinderSelects();
+$('finder-search').addEventListener('input',renderFinder);
 ['oddmin','oddmax','market','probmin'].forEach(id=>{
  $(id).addEventListener('change',renderFinder);
 });
@@ -513,6 +524,7 @@ const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
  const navigation=++pickNavigationRequest;
  syncArea('player');
+ $('back-to-picks').textContent=returnOrigin==='finder'?'← Torna ad Analisi quote':'← Torna ai pronostici';
  $('back-to-picks').hidden=false;
  ++rosterRequest;++playerRequest;++seasonPrefetchGeneration;
  clearTimeout(seasonPrefetchTimer);
