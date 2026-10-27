@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v33', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v34', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -251,6 +251,8 @@ test('missing quotes keep the previous simple layout without duplicate notices',
     assert.equal(d.getElementById('scan-status'),null);
     assert.equal(d.getElementById('status').hidden,true);
     assert.match(d.getElementById('picks').textContent,/Nessuna quota ancora disponibile/);
+    assert.equal(d.getElementById('quote-summary').hidden,false);
+    assert.deepEqual([...d.querySelectorAll('#metrics .metric strong')].map(x=>x.textContent),['—','—','—']);
   }finally{dom.window.close();}
 });
 
@@ -736,5 +738,17 @@ test('date wheel selects available days with buttons and keyboard without starti
   assert.equal(d.getElementById('date-next').disabled,true);
   assert.equal(d.querySelector('.wheel-next'),null);
   assert.ok(calls.every(url=>!url.includes('/api/scan')));
+ }finally{dom.window.close()}
+});
+
+
+test('horizontal swipes change only available saved dates and leave vertical gestures alone', async () => {
+ const calls=[];const dom=browser(async url=>{calls.push(url);if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'},{date:'2099-01-02'}]});if(url.startsWith('/api/saved/latest'))return response({results:[],fixture_count:0,player_count:0});return response({state:'waiting'});});
+ try{await tick();await tick();const d=dom.window.document,area=d.querySelector('#date-area .wheel-panel');
+ const gesture=(x1,y1,x2,y2)=>{for(const [type,x,y] of [['pointerdown',x1,y1],['pointerup',x2,y2]]){const e=new dom.window.Event(type,{bubbles:true});Object.assign(e,{pointerId:1,pointerType:'touch',clientX:x,clientY:y});area.dispatchEvent(e);}};
+ gesture(150,100,80,105);await tick();await tick();assert.equal(d.getElementById('date').value,'2099-01-02');
+ gesture(80,100,90,160);assert.equal(d.getElementById('date').value,'2099-01-02');
+ gesture(80,100,150,105);await tick();await tick();assert.equal(d.getElementById('date').value,'2099-01-01');
+ assert.ok(calls.every(url=>!url.includes('/api/scan')));
  }finally{dom.window.close()}
 });
