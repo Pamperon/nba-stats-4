@@ -639,3 +639,9 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #picks .pick-actions .pick-explanation[open] summary::before{content:none}
 #picks .pick-actions .pick-explanation summary::after{content:'+';font-size:17px;line-height:1}
 #picks .pick-actions .pick-explanation[open] summary::after{content:'−'}
+
+/* Compact explanations remain readable when they wrap on narrow screens. */
+#picks .pick-explanation-body .pick-detail-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:9px 0 0;font-size:12px;line-height:1.45}
+#picks .pick-explanation-body .pick-detail-row b{display:inline;margin:0;color:#b7cce4;white-space:nowrap}
+#picks .pick-explanation-body .pick-detail-row span{min-width:0;color:#e6eef9}
+#picks .pick-explanation-body .pick-explanation-warning{margin-top:10px}
