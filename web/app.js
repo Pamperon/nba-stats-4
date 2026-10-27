@@ -21,7 +21,9 @@ async function api(path,options={}){let r=await fetch(path,{...options,headers:{
 async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();setArchiveStatus(updatedStatus(j));return true}catch{return false}}
 let playerStatsInitialized=false;
 let pickNavigationRequest=0;
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+let returnPick=null;
+$('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab=dashboard]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
 function renderDateStrip(){
  const select=$('date'), strip=$('date-strip'), month=$('date-month');
  if(!strip||!select)return;
@@ -243,13 +245,42 @@ function pickExplanation(row){
  if(!sections.length)sections.push('<p>Dettagli non disponibili per questa scansione.</p>');
  return '<details class="pick-explanation"><summary>Perché questo pronostico?</summary><div class="pick-explanation-body">'+sections.join('')+'<p class="pick-explanation-note">La stima usa le partite precedenti e non garantisce il risultato. I dati si riferiscono all’aggiornamento salvato.</p></div></details>';
 }
+function fixtureCard(match){
+ const sides=String(match||'').split(' - ');
+ if(sides.length!==2)return match?'<div class="pick-fixture">'+esc(match)+'</div>':'';
+ const aliases={GSW:'gs',NOP:'no',NYK:'ny',SAS:'sa',UTA:'utah',WAS:'wsh'};
+ const team=label=>{const code=teamAbbrev(label);const logo=aliases[code]||code.toLowerCase();
+  return '<span class="fixture-team">'+(code==='—'?'':'<span class="team-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/'+esc(logo)+'.png" alt="" loading="lazy" referrerpolicy="no-referrer"><span>'+esc(code)+'</span></span>')+'<span class="fixture-team-name">'+esc(label)+'</span></span>';};
+ return '<div class="pick-fixture" data-match="'+esc(match)+'">'+team(sides[0])+'<span class="fixture-vs">VS</span>'+team(sides[1])+'<time class="fixture-time" hidden></time></div>';
+}
 function pickCard(row){
  return '<article class="pick-selection"><div class="pick-profile">'+candidateAvatar(row)+
- '<div class="pick-profile-info"><h3><button type="button" class="pick-player-link" aria-label="Apri le statistiche di '+esc(row.Giocatore)+'">'+esc(row.Giocatore)+'</button></h3><p class="pick-player-meta">'+esc(row.Squadra||row.Partita)+'</p>'+
- (row.Partita?'<p class="pick-fixture">'+esc(row.Partita)+'</p>':'')+'<div class="pick-market">'+esc(row.Scelta||'Over').toUpperCase()+' '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div></div></div>'+
+ '<div class="pick-profile-info"><h3><button type="button" class="pick-player-link" aria-label="Apri le statistiche di '+esc(row.Giocatore)+'">'+esc(row.Giocatore)+'</button></h3><p class="pick-player-meta">'+esc(row.Squadra||'')+'</p></div></div>'+
+ fixtureCard(row.Partita)+'<div class="pick-market">'+esc(row.Scelta||'Over').toUpperCase()+' '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div>'+
  '<div class="pick-values"><div><small>QUOTA</small><strong>'+esc(fmtOdd(row.Quota))+'</strong></div>'+
  '<div><small>STIMA DEL MODELLO</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div><button type="button" class="pick-stats-button">Vedi statistiche <span aria-hidden="true">›</span></button>'+pickExplanation(row)+'</article>';
 }
+async function enrichSavedFixtureInfo(snapshot,request){
+ if(!snapshot?.date||!snapshot.saved_at)return;
+ try{
+  const info=await(await api('/api/saved/time?date='+encodeURIComponent(snapshot.date))).json();
+  if(request!==pickProfileRequest||data!==snapshot||$('date').value!==snapshot.date)return;
+  const saved=new Date(snapshot.saved_at);
+  if(Number.isNaN(saved.getTime()))return;
+  const stamp=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(saved).replace(',','');
+  if(stamp!==info.saved_at_italy)return;
+  const labels={completa:'Copertura completa',in_attesa_quote:'Quote parziali o in attesa',errore_o_dati_incompleti:'Copertura incompleta'};
+  if(labels[info.coverage_status])$('quote-updated').textContent+=' · '+labels[info.coverage_status];
+  const reports=Array.isArray(info.fixture_reports)?info.fixture_reports:[];
+  for(const fixture of $('picks').querySelectorAll('.pick-fixture[data-match]')){
+   const matches=reports.filter(r=>r.partita===fixture.dataset.match&&r.inizio_italia);
+   if(matches.length!==1)continue;
+   const at=new Date(matches[0].inizio_italia);if(Number.isNaN(at.getTime()))continue;
+   const el=fixture.querySelector('.fixture-time');el.textContent=at.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});el.dateTime=at.toISOString();el.hidden=false;
+  }
+ }catch(error){/* The forecast remains usable when saved details are unavailable. */}
+}
+
 function render(){
  const request=++pickProfileRequest;
  const summary=$('quote-summary');
@@ -281,7 +312,7 @@ function render(){
   const distinctGames=chosen.every(r=>r.Partita)&&new Set(chosen.map(r=>String(r.Partita).trim().toLowerCase())).size===chosen.length;
   const groupIndex=pending.length;
   pending.push(chosen);
-  return '<section class="panel pick-group pick-group-'+count+'"><div class="pick-group-heading"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+fmtOdd(min)+'–'+fmtOdd(max)+'</p></div>'+ 
+  return '<section id="pick-'+title.toLowerCase()+'" class="panel pick-group pick-group-'+count+'" tabindex="-1"><div class="pick-group-heading"><h2>'+title+'</h2><p class="pick-group-range">'+count+' selezion'+(count===1?'e':'i')+' · quote '+fmtOdd(min)+'–'+fmtOdd(max)+'</p></div>'+ 
   (complete?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>'+
   (count>1?'<div class="pick-combined">'+(distinctGames?'<span>Quota totale <strong>'+fmtOdd(combined)+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span>':'<span>Selezioni della stessa partita: quota e probabilità combinate non stimate. Verifica la combinazione sul bookmaker.</span>')+'</div>':''):
   '<p>'+esc(pickEmptyReason(rows,min,max,count,chosen.length))+'</p>')+
@@ -289,16 +320,18 @@ function render(){
  }).join('');
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
   group.querySelectorAll('.pick-selection').forEach((card,j)=>{
-   const row=pending[i][j],open=()=>openPickStats(row);
+   const row=pending[i][j],open=()=>{returnPick=card.querySelector('.pick-stats-button');openPickStats(row);};
    card.querySelector('.pick-player-link').onclick=open;
    card.querySelector('.pick-stats-button').onclick=open;
    const avatar=card.querySelector('.pick-avatar');
    avatar.setAttribute('role','button');avatar.tabIndex=0;
    avatar.setAttribute('aria-label','Apri le statistiche di '+row.Giocatore);
    avatar.onclick=open;avatar.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
+   card.querySelectorAll('.team-logo img').forEach(img=>{img.onload=()=>img.parentElement.classList.add('has-logo');img.onerror=()=>img.remove();});
    enrichPickProfile(row,card,request);
   });
  });
+ enrichSavedFixtureInfo(data,request);
  renderFinder();
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -466,6 +499,7 @@ function preloadPlayerSeasons(team,id){
 const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
  const navigation=++pickNavigationRequest;
+ $('back-to-picks').hidden=false;
  ++rosterRequest;++playerRequest;++seasonPrefetchGeneration;
  clearTimeout(seasonPrefetchTimer);
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='player'));
