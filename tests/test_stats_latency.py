@@ -4,9 +4,25 @@ from datetime import datetime
 import unittest
 from unittest.mock import patch
 import engine
+import pandas as pd
 import player_stats
 
 class StatsLatencyTests(unittest.TestCase):
+    def test_public_player_log_returns_minutes_and_preserves_missing(self):
+        frame = pd.DataFrame([
+            {"GAME_DATE": pd.Timestamp("2026-10-25"), "PTS": 20, "REB": 4, "AST": 3, "SEASON_TYPE": 2, "MATCHUP": "vs BOS", "MIN": "28:30"},
+            {"GAME_DATE": pd.Timestamp("2026-10-24"), "PTS": 10, "REB": 3, "AST": 2, "SEASON_TYPE": 2, "MATCHUP": "? LAL", "MIN": None},
+        ])
+        with patch.object(player_stats, 'validate_season', return_value=(2026, 2026)), \
+             patch.object(player_stats, 'cached', side_effect=lambda key, hours, loader: loader()), \
+             patch.object(player_stats, 'roster', return_value=[{'id': '123'}]), \
+             patch.object(engine, 'selected_game_log', return_value=frame), \
+             patch.object(engine, 'prepare_game_log', return_value=frame):
+            result = player_stats.player_log('1', '123', '2026')
+        self.assertEqual(result['games'][0]['MIN'], 28.5)
+        self.assertIsNone(result['games'][1]['MIN'])
+        self.assertEqual(result['games'][1]['MATCHUP'], '? LAL')
+
     def test_completed_seasons_use_long_cache_but_current_season_stays_fresh(self):
         with patch.object(player_stats, 'datetime') as clock:
             clock.now.return_value = datetime(2026, 10, 26)
@@ -93,7 +109,7 @@ class StatsLatencyTests(unittest.TestCase):
 
     def test_team_batch_reads_only_current_roster_and_season_without_espn(self):
         player_stats._memory_cache.clear()
-        key = 'nba:log:final-v2:1:123:2026'
+        key = 'nba:log:final-v3:1:123:2026'
         payload = {'athlete_id': '123', 'season': '2026', 'games': []}
         with patch.object(player_stats, 'roster', return_value=[{'id': '123'}]), patch.object(player_stats.storage, 'cache_read_many', return_value={key: payload, 'unrelated': {}}) as read, patch.object(engine, 'selected_game_log', side_effect=AssertionError('Batch must not call providers')):
             self.assertEqual(player_stats.team_cached_logs('1', '2026'), {'123': payload})

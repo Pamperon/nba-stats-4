@@ -668,3 +668,6 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 .app-header .brand{transform:translateX(-5px)}
 
 @media(max-width:760px){.app-header .brand-copy small{font-size:clamp(9px,2.65vw,13px);letter-spacing:clamp(.45px,.18vw,.8px)}}
+
+/* Game labels sit above compact horizontal bars for readability on mobile. */
+.player-trends{margin:0 0 14px}.player-trends-title{color:#a8bdd8;font-size:11px;margin-bottom:6px}.player-trends-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.player-trends-list>div{background:#182b43;border:1px solid #304866;border-radius:9px;padding:7px;text-align:center}.player-trends-list small{display:block;color:#a8bdd8;font-size:10px}.player-trends-list strong{font-size:16px}.player-unknown{font-size:11px;color:#a8bdd8}.player-game{margin:0 0 10px}.player-game-info{color:#b4c8df;font-size:11px;line-height:1.35;margin-bottom:3px}.player-game .barrow{grid-template-columns:minmax(0,1fr) 34px;gap:8px;margin:0}.player-game .track{height:19px}.player-game .barrow strong{text-align:right}.player-is-loading #player-trends{display:none!important}

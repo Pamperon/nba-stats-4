@@ -562,7 +562,7 @@ def espn_log_to_frame(data, season_type=2):
                     "GAME_ID": event_id,
                     "SEASON_TYPE": group_type,
                     "GAME_DATE": espn_event_date(info) or espn_event_date(event),
-                    "MATCHUP": f"{'@' if str(info.get('atVs', '')).strip() == '@' else 'vs'} {opp}",
+                    "MATCHUP": f"{'@' if str(info.get('atVs', '')).strip() == '@' else 'vs' if str(info.get('atVs', '')).strip().lower() == 'vs' else '?'} {opp}",
                     "MIN": values[local_labels.index("MIN")] if "MIN" in local_labels else None,
                     "PTS": values[local_labels.index("PTS")],
                     "REB": values[local_labels.index("REB")],

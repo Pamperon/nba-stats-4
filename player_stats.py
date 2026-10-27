@@ -1,5 +1,6 @@
 """Public NBA roster and independent ESPN player statistics. No OddsPapi calls."""
 import logging
+import math
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from cachetools import TTLCache
@@ -122,12 +123,24 @@ def player_log(team_id, athlete_id, season):
                 date = date.isoformat()
             else:
                 date = None
-            records.append({"GAME_DATE": date, "PTS": float(row["PTS"]),
+            raw_minutes = row.get("MIN")
+            try:
+                value = str(raw_minutes).strip()
+                if ":" in value:
+                    parts = value.split(":")
+                    minutes = int(parts[0]) + int(parts[1]) / 60 if len(parts) == 2 and 0 <= int(parts[1]) < 60 else None
+                else:
+                    minutes = float(value)
+                if minutes is not None and (not math.isfinite(minutes) or minutes < 0 or minutes > 100):
+                    minutes = None
+            except (TypeError, ValueError, OverflowError):
+                minutes = None
+            records.append({"GAME_DATE": date, "MIN": minutes, "PTS": float(row["PTS"]),
                             "REB": float(row["REB"]), "AST": float(row["AST"]),
                             "SEASON_TYPE": int(row["SEASON_TYPE"]),
                             "MATCHUP": str(row.get("MATCHUP", ""))})
         return {"games": records, "season": season, "athlete_id": athlete_id}
-    return cached("nba:log:final-v2:" + team_id + ":" + athlete_id + ":" + season,
+    return cached("nba:log:final-v3:" + team_id + ":" + athlete_id + ":" + season,
                   log_cache_hours(year), build)
 
 def team_cached_logs(team_id, season):
@@ -135,12 +148,12 @@ def team_cached_logs(team_id, season):
     year, current = validate_season(season)
     hours = log_cache_hours(year)
     memory = _historical_cache if hours >= 720 else _memory_cache
-    batch_key = "nba:team-logs:v1:" + team_id + ":" + season
+    batch_key = "nba:team-logs:v2:" + team_id + ":" + season
     with _memory_lock:
         if batch_key in memory:
             return memory[batch_key]
     players = roster(team_id)
-    keys = {"nba:log:final-v2:" + team_id + ":" + p["id"] + ":" + season: p["id"]
+    keys = {"nba:log:final-v3:" + team_id + ":" + p["id"] + ":" + season: p["id"]
             for p in players}
     logs = {}
     with _memory_lock:
