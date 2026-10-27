@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v27', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v28', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -682,6 +682,9 @@ test('quote search filters only finder results and returns from statistics with 
   assert.equal(d.querySelectorAll('#finder-cards .finder-card').length,1);
   assert.match(d.getElementById('finder-count').textContent,/1 risultato/);
   assert.match(d.querySelector('#finder-cards .finder-card').textContent,/Second Player/);
+  const toggle=d.querySelector('.finder-details-toggle'),extra=d.getElementById(toggle.getAttribute('aria-controls'));
+  assert.equal(extra.hidden,true);toggle.click();assert.equal(extra.hidden,false);assert.equal(toggle.getAttribute('aria-expanded'),'true');
+  toggle.click();assert.equal(extra.hidden,true);assert.equal(toggle.getAttribute('aria-expanded'),'false');
   assert.equal(d.getElementById('picks').textContent,picksBefore);
   d.querySelector('#finder-cards .finder-player').click();await tick();await tick();await tick();
   assert.equal(d.getElementById('playername').value,'22');assert.equal(d.getElementById('stat').value,'AST');assert.equal(d.getElementById('line').value,'4.5');

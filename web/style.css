@@ -511,3 +511,13 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
  #finder .finder-card details[open] summary::before{content:'▾'}
  #finder .finder-card details[open] div{text-align:left;padding:4px 0 2px;line-height:1.4}
 }
+
+/* Keep the button and the values in place when the details are expanded. */
+@media(max-width:760px){
+ #finder .finder-details-toggle{grid-column:2;grid-row:2;display:flex;align-items:center;justify-content:flex-end;gap:4px;min-height:36px;margin:6px 0 0;padding:4px 0;border:0;background:transparent;color:#e8f1ff;font-size:12px;font-weight:700;white-space:nowrap}
+ #finder .finder-details-toggle::before{content:'▸';color:#a9bfd9}
+ #finder .finder-details-toggle[aria-expanded=true]::before{content:'▾'}
+ #finder .finder-details-toggle:focus-visible{outline:2px solid #ffad6c;outline-offset:2px}
+ #finder .finder-extra{grid-column:1/-1;grid-row:3;color:#c6d7eb;font-size:12px;line-height:1.4;padding:4px 0 2px}
+ #finder .finder-extra[hidden]{display:none}
+}
