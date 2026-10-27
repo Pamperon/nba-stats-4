@@ -311,6 +311,7 @@ PLAYER_NAME_ALIASES = {
     "dariusacuff": "dariusacuffjr",
     "carltoncarrington": "bubcarrington",
     "alexandresarr": "alexsarr",
+    "mikelbrown": "mikelbrownjr",
 }
 
 

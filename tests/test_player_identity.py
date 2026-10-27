@@ -31,7 +31,7 @@ class CurrentIdentityTests(unittest.TestCase):
     def test_known_odds_names_match_espn_roster_names(self):
         self.assertEqual(engine.espn_player_key('Carrington, Carlton'), engine.normalized_name('Bub Carrington'))
         self.assertEqual(engine.espn_player_key('Sarr, Alexandre'), engine.normalized_name('Alex Sarr'))
-        for given, official in [('Johnson, Morez','Morez Johnson Jr.'),('Washington Jr., PJ','PJ Washington'),('Smith, Jabari','Jabari Smith Jr.'),('Acuff, Darius','Darius Acuff Jr.')]:
+        for given, official in [('Johnson, Morez','Morez Johnson Jr.'),('Washington Jr., PJ','PJ Washington'),('Smith, Jabari','Jabari Smith Jr.'),('Acuff, Darius','Darius Acuff Jr.'),('Brown, Mikel','Mikel Brown Jr.')]:
             self.assertEqual(engine.espn_player_key(given),engine.normalized_name(official))
 
     def test_current_roster_index_uses_both_official_names_and_rejects_duplicates(self):
