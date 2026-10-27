@@ -1,0 +1,79 @@
+name: Read-only unmatched prediction audit
+on:
+  push:
+    branches: [audit-settlement-20261027]
+    paths: ['.github/workflows/read-only-unmatched-audit.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Match archived predictions with final ESPN results
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+        run: |
+          python - <<'PY'
+          import urllib.request, urllib.parse, json, math, unicodedata, re, collections
+          from datetime import datetime, date, timedelta
+          from zoneinfo import ZoneInfo
+          import os
+          def get(url, headers=None):
+              request=urllib.request.Request(url,headers=headers or {})
+              with urllib.request.urlopen(request,timeout=60) as r: return json.load(r)
+          def normal(value):
+              s=unicodedata.normalize('NFKD',str(value or ''))
+              s=''.join(c for c in s if not unicodedata.combining(c))
+              p=[x.strip() for x in s.split(',')]
+              if len(p)==2:s=p[1]+' '+p[0]
+              return re.sub(r'[^a-z0-9]','',s.casefold())
+          aliases={'alexandresarr':'alexsarr','carltoncarrington':'bubcarrington','morezjohnson':'morezjohnsonjr','pjwashingtonjr':'pjwashington','jabarismith':'jabarismithjr','dariusacuff':'dariusacuffjr','mikelbrown':'mikelbrownjr'}
+          base='https://site.api.espn.com/apis/site/v2/sports/basketball/nba'
+          scan=get('https://nba-stats-4.onrender.com/api/scan/d05887fb775848df8468e70b9beea03a',{'Authorization':'Bearer '+os.environ['NBA_STATS_ACCESS_TOKEN']})
+          print('ARCHIVE',scan.get('job_id'),scan.get('date'),scan.get('saved_at'),flush=True)
+          rows=scan['results'];fixture_keys={frozenset(normal(z) for z in r['Partita'].split(' - ')) for r in rows}
+          events={}
+          for offset in (-1,0,1):
+              day=(date.fromisoformat('2026-10-27')+timedelta(days=offset)).strftime('%Y%m%d')
+              for e in get(base+'/scoreboard?'+urllib.parse.urlencode({'dates':day,'limit':100})).get('events',[]):
+                  dt=datetime.fromisoformat(e['date'].replace('Z','+00:00'))
+                  if dt.astimezone(ZoneInfo('Europe/Rome')).date().isoformat()!='2026-10-27':continue
+                  teams=frozenset(normal(c['team']['displayName']) for c in e['competitions'][0]['competitors'])
+                  if teams in fixture_keys:events[teams]=e
+          if len(events)!=len(fixture_keys):raise RuntimeError('Unmatched games: '+str(len(fixture_keys)-len(events)))
+          index={}
+          for teams,event in events.items():
+              if not event.get('status',{}).get('type',{}).get('completed'):raise RuntimeError('Game not final')
+              summary=get(base+'/summary?'+urllib.parse.urlencode({'event':event['id']}))
+              for team in summary.get('boxscore',{}).get('players',[]):
+                  t=normal(team.get('team',{}).get('displayName'))
+                  for group in team.get('statistics',[]):
+                      labels=[str(l).upper() for l in group.get('labels',[])]
+                      if not all(k in labels for k in ('PTS','AST','REB')):continue
+                      for a in group.get('athletes',[]):
+                          player=a.get('athlete',{});ident=str(player.get('id') or '');name=normal(player.get('displayName'))
+                          values=a.get('stats',[]);played=not a.get('didNotPlay') and len(values)==len(labels)
+                          try:
+                              if played: [float(values[labels.index(k)]) for k in ('PTS','AST','REB')]
+                          except (ValueError,TypeError):played=False
+                          rec={'dnp':bool(a.get('didNotPlay')),'reason':a.get('reason'),'played':played}
+                          if ident:index[(t,'id:'+ident)]=rec
+                          if name:index[(t,aliases.get(name,name))]=rec
+          grouped=collections.defaultdict(list);n=0;resolved=0
+          for r in rows:
+              try:
+                  p=float(r.get('Prob. stimata %'))
+                  if r.get('Mercato') not in ('PTS','AST','REB') or str(r.get('Scelta','')).lower() not in ('over','under') or not math.isfinite(p) or not 0<=p<=100:continue
+              except (TypeError,ValueError):continue
+              n+=1;t=normal(r.get('Squadra'));ident=str(r.get('ESPN ID') or '').strip();name=normal(r.get('Giocatore'))
+              key='id:'+ident if ident.isdigit() else aliases.get(name,name) if not ident else 'invalid-id'
+              match=index.get((t,key))
+              if match and match['played']:resolved+=1;continue
+              reason='DNP: '+str(match.get('reason') or 'non indicato') if match and match['dnp'] else 'non presente o statistiche incomplete'
+              group=(r.get('Giocatore'),r.get('Squadra'),r.get('Partita'),ident,reason)
+              grouped[group].append({'mercato':r.get('Mercato'),'linea':r.get('Linea'),'quota':r.get('Quota'),'scelta':r.get('Scelta')})
+          print('TOTAL',n,resolved,n-resolved,'players',len(grouped),flush=True)
+          for (player,team,game,ident,reason),legs in grouped.items():
+              print('MISSING',json.dumps({'player':player,'team':team,'game':game,'id':ident,'reason':reason,'count':len(legs),'legs':legs},ensure_ascii=False),flush=True)
+          PY
