@@ -1,4 +1,4 @@
-const CACHE = 'nba-stats-4-shell-v34';
+const CACHE = 'nba-stats-4-shell-v35';
 const ASSETS = ['/', '/static/style.css', '/static/app.js', '/static/icon.svg', '/static/icon-192.png', '/static/icon-512.png', '/static/icon-maskable-192.png', '/static/icon-maskable-512.png', '/static/favicon-32.png', '/static/favicon.ico', '/static/apple-touch-icon.png', '/static/manifest.webmanifest'];
 
 self.addEventListener('install', event => {

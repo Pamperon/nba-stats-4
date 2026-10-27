@@ -60,9 +60,11 @@ function renderDateStrip(){
   chip.setAttribute('aria-pressed',String(offset===0));
   chip.setAttribute('aria-label',parsed.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}));
   if(offset!==0)chip.tabIndex=-1;
-  const day=document.createElement('span');day.className='day-name';day.textContent=parsed.toLocaleDateString('it-IT',{weekday:'short'}).replace('.','').toUpperCase();
+  const day=document.createElement('span');day.className='day-name';day.textContent=parsed.toLocaleDateString('it-IT',{weekday:'long'}).toUpperCase();
+  const shortMonth=document.createElement('span');shortMonth.className='day-month';shortMonth.textContent=parsed.toLocaleDateString('it-IT',{month:'short'}).replace('.','').toUpperCase();
   const number=document.createElement('span');number.className='day-number';number.textContent=String(parsed.getDate());
-  chip.append(day,number);
+  const dateLine=document.createElement('span');dateLine.className='day-date';dateLine.append(number,shortMonth);
+  chip.append(dateLine,day);
   chip.addEventListener('click',()=>{if(Date.now()<wheelSuppressClickUntil)return;if(select.value!==date){select.value=date;select.dispatchEvent(new Event('change',{bubbles:true}));}});
   strip.append(chip);
  }
