@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v23', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v24', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -642,5 +642,23 @@ test('primary navigation keeps forecast date and last quote tab when switching a
   assert.equal(d.getElementById('finder').hidden,false);
   assert.equal(d.getElementById('date').value,'2099-01-01');
   assert.equal(d.getElementById('area-quotes').getAttribute('aria-pressed'),'true');
+ }finally{dom.window.close()}
+});
+
+test('forecast controls precede the date picker and date changes preserve the quote tab', async () => {
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'},{date:'2099-01-02'}]});
+  if(url.startsWith('/api/saved/latest'))return response({date:url.includes('2099-01-02')?'2099-01-02':'2099-01-01',results:[],fixture_count:0,player_count:0});
+  return response({state:'waiting'});
+ });
+ try{
+  await tick();await tick();const d=dom.window.document;
+  assert.ok(d.getElementById('quote-tabs').compareDocumentPosition(d.getElementById('date-area')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
+  d.querySelector('nav button[data-tab="finder"]').click();
+  d.getElementById('date').value='2099-01-02';d.getElementById('date').dispatchEvent(new dom.window.Event('change'));
+  await tick();await tick();
+  assert.equal(d.getElementById('finder').hidden,false);
+  assert.equal(d.getElementById('date').value,'2099-01-02');
+  assert.match(d.getElementById('date-month').textContent,/2099/);
  }finally{dom.window.close()}
 });
