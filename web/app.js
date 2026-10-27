@@ -314,7 +314,7 @@ function render(){
   pending.push(chosen);
   return '<section id="pick-'+title.toLowerCase()+'" class="panel pick-group pick-group-'+count+'" tabindex="-1"><div class="pick-group-heading"><h2>'+title+'</h2></div>'+ 
   (complete?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>'+
-  (count>1?'<div class="pick-combined"><span>Quota totale'+(distinctGames?'':' indicativa')+' <strong>'+fmtOdd(combined)+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span>'+(distinctGames?'':'<p class="pick-combined-warning">Selezioni della stessa partita o partita non verificata: questi valori moltiplicano quote e probabilità come se gli eventi fossero indipendenti e non tengono conto della possibile correlazione. La quota effettiva può essere diversa: verifica la combinazione sul bookmaker.</p>')+'</div>':''):
+  (count>1?'<div class="pick-combined"><span>Quota totale'+(distinctGames?'':' indicativa')+' <strong>'+fmtOdd(combined)+'</strong></span><span>Stima combinata indicativa <strong>'+Math.round(combinedProb*1000)/10+'%</strong></span>'+(distinctGames?'':'<p class="pick-combined-warning">Calcolo senza correlazioni. Verifica la quota sul bookmaker.</p>')+'</div>':''):
   '<p>'+esc(pickEmptyReason(rows,min,max,count,chosen.length))+'</p>')+
   '</section>';
  }).join('');
