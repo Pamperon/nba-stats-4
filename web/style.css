@@ -261,3 +261,30 @@ main{padding-top:14px}
 .pick-explanation-body p{margin:13px 0 0}.pick-explanation-body b{display:block;color:#eef5ff;margin-bottom:3px}
 .pick-explanation-warning{background:#352c28;border-left:3px solid #ffb05e;border-radius:6px;padding:9px 10px}
 .pick-explanation-body .pick-explanation-note{color:#9cb0cb;font-size:12px}
+
+/* Recommendation cards: mobile-first presentation; saved selections are unchanged. */
+#picks .pick-group{padding:16px;border-color:#304967;background:linear-gradient(145deg,#14243b,#101c2e)}
+#picks .pick-group h2{display:inline-block;margin:0 0 6px;padding:6px 11px;border-radius:8px;background:#f58b44;color:#101824;font-size:16px;line-height:1.2}
+#picks .pick-group-range{margin:0 0 14px;color:#a8bdd8}
+#picks .pick-group-items{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+#picks .pick-selection{padding:14px;background:#0d1c2e;border-color:#2c4564}
+#picks .pick-profile{align-items:center;margin:0 0 12px;gap:12px}
+#picks .pick-avatar{width:72px;height:72px;flex:0 0 72px;border-radius:13px}
+#picks .pick-profile-info{flex:1;min-width:0}
+#picks .pick-profile-info h3{margin:0 0 4px}
+#picks .pick-player-link{font-size:clamp(17px,4vw,23px);line-height:1.2;overflow-wrap:anywhere}
+#picks .pick-player-meta,#picks .pick-fixture{font-size:12px;line-height:1.35;margin:0 0 5px;color:#a8bdd8;overflow-wrap:anywhere}
+#picks .pick-market{display:inline-block;margin-top:3px;padding:7px 10px;border:1px solid #b75e2c;border-radius:8px;background:#30231f;color:#ffad6c;font-size:15px}
+#picks .pick-values{max-width:none;margin:0 0 10px;gap:8px}
+#picks .pick-values>div{padding:9px 11px;background:#152a43}
+#picks .pick-values small{font-size:10px;letter-spacing:.3px}
+#picks .pick-values strong{font-size:22px;color:#f8a357}
+#picks .pick-stats-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;background:#f58b44;border:1px solid #f58b44;color:#101824;font-weight:800}
+#picks .pick-stats-button:hover{background:#ffac68}
+#picks .pick-stats-button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#picks .pick-explanation{margin-top:10px;padding:10px 12px;border:1px solid #304967;border-radius:9px;background:#14263d}
+#picks .pick-explanation summary{min-height:24px;display:list-item}
+#picks .pick-combined{margin:12px 0 0;padding:12px;border:1px solid #39506a;border-radius:10px;background:#152a43;line-height:1.5}
+#picks .pick-combined strong{color:#ffad6c}
+@media(min-width:900px){#picks .pick-selection{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(230px,1fr) minmax(160px,.6fr);gap:12px;align-items:center}#picks .pick-profile,#picks .pick-values{margin:0}#picks .pick-explanation{grid-column:1/-1;margin:0}#picks .pick-stats-button{width:100%}}
+@media(max-width:360px){#picks .pick-group{padding:12px}#picks .pick-selection{padding:11px}#picks .pick-avatar{width:60px;height:60px;flex-basis:60px}#picks .pick-values small{font-size:9px}}
