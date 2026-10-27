@@ -301,7 +301,7 @@ function render(){
  if(data){
   const saved=data.saved_at?new Date(data.saved_at):null;
   const valid=saved&&!Number.isNaN(saved.getTime());
-  $('quote-updated').textContent=valid?((data.results||[]).length?'Ultimo aggiornamento dati e quote salvati: ':'Ultimo controllo: ')+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  $('quote-updated').textContent=valid?((data.results||[]).length?'Aggiornato ':'Ultimo controllo: ')+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
  }
 
  if(!data){
