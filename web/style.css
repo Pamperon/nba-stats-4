@@ -521,3 +521,20 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
  #finder .finder-extra{grid-column:1/-1;grid-row:3;color:#c6d7eb;font-size:12px;line-height:1.4;padding:4px 0 2px}
  #finder .finder-extra[hidden]{display:none}
 }
+
+/* Inline, accessible help and saved information for quote cards. */
+#finder .finder-heading{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+#finder .finder-heading h2{margin:0}
+#finder .finder-heading .finder-guide{position:relative;flex:0 0 auto;margin:0;border:0;background:transparent}
+#finder .finder-heading .finder-guide summary{display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid #557394;border-radius:50%;background:#1a304c;color:#f2f7ff;font-size:17px;list-style:none}
+#finder .finder-heading .finder-guide summary::-webkit-details-marker{display:none}
+#finder .finder-heading .finder-guide[open] summary{background:#24476f}
+#finder .finder-heading .finder-guide>div{position:absolute;right:0;top:calc(100% + 8px);z-index:10;width:min(320px,calc(100vw - 56px));padding:14px;border:1px solid #49688c;border-radius:12px;background:#172a43;box-shadow:0 14px 30px #0009;color:#d8e5f5}
+#finder .finder-heading .guide-title{display:block;margin:0 0 9px;color:#fff;font-size:14px}
+#finder .finder-heading .finder-guide p:last-child{margin-bottom:0}
+@media(max-width:760px){
+ #finder .finder-extra{display:flex;flex-wrap:wrap;gap:5px 16px;padding:6px 0 3px}
+ #finder .finder-extra span{display:inline-block}
+ #finder .finder-extra b{color:#eef5ff}
+ #finder .finder-extra[hidden]{display:none}
+}
