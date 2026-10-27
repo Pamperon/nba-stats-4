@@ -37,7 +37,7 @@ function syncArea(tab){
 $('area-quotes').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="'+lastQuoteTab+'"]').click();};
 $('area-stats').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="player"]').click();};
 $('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=!data||b.dataset.tab==='player'});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=b.dataset.tab==='player'});
 function visibleDates(){
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  return Array.from($('date').options).map(o=>o.value).filter(d=>d&&d>=today);
@@ -71,7 +71,16 @@ function renderDateStrip(){
 }
 $('date-prev').onclick=()=>stepDate(-1);
 $('date-next').onclick=()=>stepDate(1);
-$('date-strip').addEventListener('keydown',event=>{if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault();stepDate(event.key==='ArrowUp'?-1:1);}});
+$('date-strip').addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();stepDate(['ArrowLeft','ArrowUp'].includes(event.key)?-1:1);}});
+let dateSwipe=null;
+const dateSwipeArea=document.querySelector('#date-area .wheel-panel');
+dateSwipeArea.addEventListener('pointerdown',event=>{if(event.pointerType!=='touch'&&event.pointerType!=='pen')return;dateSwipe={id:event.pointerId,x:event.clientX,y:event.clientY};});
+dateSwipeArea.addEventListener('pointerup',event=>{if(!dateSwipe||dateSwipe.id!==event.pointerId)return;const dx=event.clientX-dateSwipe.x,dy=event.clientY-dateSwipe.y;dateSwipe=null;if(Math.abs(dx)>=35&&Math.abs(dx)>Math.abs(dy)*1.2)stepDate(dx<0?1:-1);});
+dateSwipeArea.addEventListener('pointercancel',()=>{dateSwipe=null;});
+function renderDateMetrics(snapshot){
+ const values=[['PARTITE',snapshot?.fixture_count],['GIOCATORI',snapshot?.player_count],['QUOTE',snapshot?((snapshot.results||[]).length):null]];
+ $('metrics').innerHTML=values.map(([label,value])=>'<div class="metric"><small>'+label+'</small><strong>'+fmt(value)+'</strong></div>').join('');
+}
 
 let scanStatusTimer=0;
 const scanStateNames={waiting:'In attesa di aggiornamento',queued:'In coda',running:'In elaborazione',done:'Completata',partial:'Parziale',error:'Fallita',save_failed:'Salvataggio fallito',interrupted:'Interrotta'};
@@ -101,8 +110,8 @@ function setDateLoading(loading){
   // Clear the previous day's snapshot immediately; never show stale counts or picks.
   data=null;jobId='';
   ++pickProfileRequest;
-  $('quote-summary').hidden=true;
-  $('metrics').replaceChildren();
+  $('quote-summary').hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
+  renderDateMetrics(null);
   $('quote-updated').textContent='';
   $('picks').replaceChildren();
   $('rows').replaceChildren();
@@ -313,7 +322,8 @@ async function enrichSavedFixtureInfo(snapshot,request){
 function render(){
  const request=++pickProfileRequest;
  const summary=$('quote-summary');
- summary.hidden=!data||document.querySelector('nav button.active')?.dataset.tab==='player';
+ summary.hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
+ renderDateMetrics(data);
  if(data){
   const saved=data.saved_at?new Date(data.saved_at):null;
   const valid=saved&&!Number.isNaN(saved.getTime());
@@ -321,13 +331,12 @@ function render(){
  }
 
  if(!data){
-  $('metrics').innerHTML='';
+  $('quote-updated').textContent='';
   $('picks').innerHTML='<div class="panel"><h2>Pronostici</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p></div>';
   $('rows').innerHTML='';$('finder-cards').innerHTML='';$('finder-count').textContent='';return;
  }
  const rows=data.results||[];
- $('metrics').innerHTML=[['PARTITE',data.fixture_count],['GIOCATORI',data.player_count],['QUOTE',rows.length]]
- .map(([label,value])=>'<div class="metric"><small>'+label+'</small><strong>'+fmt(value)+'</strong></div>').join('');
+
  const groups=[['Singola',1,1.70,2.00],['Doppia',2,1.40,1.69],['Tripla',3,1.20,1.39]];
  const pending=[];
  $('picks').innerHTML=groups.map(([title,count,min,max])=>{
