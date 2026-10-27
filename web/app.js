@@ -355,11 +355,24 @@ const nbaTeams={
  'ATLANTA HAWKS':'ATL','BOSTON CELTICS':'BOS','BROOKLYN NETS':'BKN','CHARLOTTE HORNETS':'CHA','CHICAGO BULLS':'CHI','CLEVELAND CAVALIERS':'CLE','DALLAS MAVERICKS':'DAL','DENVER NUGGETS':'DEN','DETROIT PISTONS':'DET','GOLDEN STATE WARRIORS':'GSW','HOUSTON ROCKETS':'HOU','INDIANA PACERS':'IND','LOS ANGELES CLIPPERS':'LAC','LA CLIPPERS':'LAC','LOS ANGELES LAKERS':'LAL','LA LAKERS':'LAL','MEMPHIS GRIZZLIES':'MEM','MIAMI HEAT':'MIA','MILWAUKEE BUCKS':'MIL','MINNESOTA TIMBERWOLVES':'MIN','NEW ORLEANS PELICANS':'NOP','NEW YORK KNICKS':'NYK','OKLAHOMA CITY THUNDER':'OKC','ORLANDO MAGIC':'ORL','PHILADELPHIA 76ERS':'PHI','PHOENIX SUNS':'PHX','PORTLAND TRAIL BLAZERS':'POR','PORTLAND TRAIL BLAZERS':'POR','SACRAMENTO KINGS':'SAC','SAN ANTONIO SPURS':'SAS','TORONTO RAPTORS':'TOR','UTAH JAZZ':'UTA','WASHINGTON WIZARDS':'WAS'
 };
 function teamAbbrev(team){const key=String(team||'').trim().toUpperCase().replace(/\s+/g,' ');return nbaTeams[key]||(/^[A-Z]{3}$/.test(key)?key:'—')}
+function finderAdditionalData(row){
+ const pairs=[];
+ const val=(key)=>row[key]===null||row[key]===undefined||row[key]===''?null:row[key];
+ const add=(label,value,suffix='')=>{if(value!==null)pairs.push('<span>'+esc(label)+': <b>'+esc(String(value).replace('.',','))+suffix+'</b></span>');};
+ add('Ultime 20',val('Ultime 20'));
+ add('Value',val('Value stimato %'),'%');
+ add('Ultime 5',val('Ultime 5'));
+ const history=val('Stagione %'),games=val('Partite');
+ if(history!==null)add('Storico linea',history,'%'+(games!==null?' ('+esc(games)+' partite)':''));
+ add('Minuti medi',val('Minuti medi'));
+ add('Minuti ultime 5',val('Minuti ultime 5'));
+ return pairs.length?pairs.join(''):'<span>Dati non disponibili.</span>';
+}
 function renderFinder(){
  const all=eligible(),items=all.slice(0,500);
  $('finder-count').textContent=all.length>500?'Primi 500 di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
  $('rows').innerHTML=items.map((r,i)=>`<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`).join('');
- $('finder-cards').innerHTML=items.map((r,i)=>`<article class="finder-card"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>Ultime 20: <b>${esc(r['Ultime 20']||'—')}</b> · Value: <b>${esc(fmt(r['Value stimato %']))}%</b></div></article>`).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
+ $('finder-cards').innerHTML=items.map((r,i)=>`<article class="finder-card"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>${finderAdditionalData(r)}</div></article>`).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
  for(const button of document.querySelectorAll('#finder .finder-details-toggle'))button.onclick=()=>{const extra=document.getElementById(button.getAttribute('aria-controls'));if(!extra)return;extra.hidden=!extra.hidden;button.setAttribute('aria-expanded',String(!extra.hidden));};
  for(const button of document.querySelectorAll('#finder .finder-player'))button.onclick=()=>{const row=items[Number(button.dataset.index)];if(!row)return;returnOrigin='finder';returnPick=button;openPickStats(row);};
  syncFinderScrollWidth();
