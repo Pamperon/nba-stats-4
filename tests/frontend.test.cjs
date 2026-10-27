@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v16', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v17', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -564,4 +564,50 @@ test('explanation never invents streaks or historic counts when data are missing
   assert.doesNotMatch(html,/partite consecutive/);assert.doesNotMatch(html,/2 su 20/);assert.match(html,/70% su 20 partite/);
   w.eval('data = {}');assert.doesNotMatch(w.pickExplanation(pick),/partite consecutive/);
  } finally {dom.window.close()}
+});
+
+test('match details use only the matching saved scan and keep a readable logo fallback', async () => {
+ const pick={Giocatore:'Test Player','ESPN ID':'22',Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'AST',Scelta:'Over',Linea:4.5,Quota:1.8,'Prob. stimata %':80,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
+ const saved={date:'2099-01-01',saved_at:'2099-01-01T12:00:00Z',results:[pick],fixture_count:1,player_count:1};
+ let timestamp='01/01/2099 13:00:01';
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/latest'))return response(saved);
+  if(url.startsWith('/api/saved/time'))return response({saved_at_italy:timestamp,coverage_status:'completa',fixture_reports:[{partita:pick.Partita,inizio_italia:'2099-01-02T01:30:00+01:00'}]});
+  return response({state:'waiting'});
+ });
+ try{
+  await tick();await tick();await tick();
+  const d=dom.window.document;
+  assert.equal(d.querySelector('.fixture-time').hidden,true);
+  assert.doesNotMatch(d.getElementById('quote-updated').textContent,/Copertura completa/);
+  const img=d.querySelector('.team-logo img');img.onerror();
+  assert.match(d.querySelector('.team-logo').textContent,/BOS/);
+  timestamp='01/01/2099 13:00:00';
+  dom.window.render();await tick();await tick();
+  assert.equal(d.querySelector('.fixture-time').hidden,false);
+  assert.match(d.querySelector('.fixture-time').textContent,/01:30/);
+  assert.match(d.getElementById('quote-updated').textContent,/Copertura completa/);
+ }finally{dom.window.close()}
+});
+
+test('return from a pick preserves the selected date and returns to forecasts', async () => {
+ const pick={Giocatore:'Second Player','ESPN ID':'22',Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'AST',Scelta:'Over',Linea:4.5,Quota:1.8,'Prob. stimata %':80,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29};
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/latest'))return response({date:'2099-01-01',results:[pick],season:'2026-27'});
+  if(url==='/api/players/teams')return response({teams:[{id:'2',name:'Boston Celtics'}]});
+  if(url.startsWith('/api/players/roster'))return response({players:[{id:'22',name:'Second Player'}]});
+  if(url.startsWith('/api/players/log?'))return response({games:[]});
+  return response({state:'waiting'});
+ });
+ try{
+  await tick();await tick();const d=dom.window.document;
+  d.querySelector('.pick-stats-button').click();await tick();
+  assert.equal(d.getElementById('back-to-picks').hidden,false);
+  d.getElementById('back-to-picks').click();
+  assert.equal(d.getElementById('dashboard').hidden,false);
+  assert.equal(d.getElementById('date').value,'2099-01-01');
+  assert.equal(d.getElementById('back-to-picks').hidden,true);
+ }finally{dom.window.close()}
 });
