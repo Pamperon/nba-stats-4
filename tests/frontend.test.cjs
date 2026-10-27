@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v28', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v29', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -664,7 +664,7 @@ test('forecast controls precede the date picker and date changes preserve the qu
 });
 
 test('quote search filters only finder results and returns from statistics with filters intact', async () => {
- const base={Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'AST',Scelta:'Over',Linea:4.5,Quota:1.8,'Prob. stimata %':80,'Value stimato %':44,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29,'Ultime 20':'12/20'};
+ const base={Squadra:'Boston Celtics',Partita:'Boston Celtics - Miami Heat',Mercato:'AST',Scelta:'Over',Linea:4.5,Quota:1.8,'Prob. stimata %':80,'Value stimato %':44,'Stato analisi':'Valutabile (stima empirica)',Partite:30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':29,'Ultime 20':'12/20','Ultime 5':'3/5'};
  const rows=[{...base,Giocatore:'Second Player','ESPN ID':'22'},{...base,Giocatore:'Another Player','ESPN ID':'23'}];
  const dom=browser(async url=>{
   if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
@@ -684,6 +684,8 @@ test('quote search filters only finder results and returns from statistics with 
   assert.match(d.querySelector('#finder-cards .finder-card').textContent,/Second Player/);
   const toggle=d.querySelector('.finder-details-toggle'),extra=d.getElementById(toggle.getAttribute('aria-controls'));
   assert.equal(extra.hidden,true);toggle.click();assert.equal(extra.hidden,false);assert.equal(toggle.getAttribute('aria-expanded'),'true');
+  assert.match(extra.textContent,/Ultime 5: 3\/5/);assert.match(extra.textContent,/Storico linea: 80% \(30 partite\)/);assert.match(extra.textContent,/Minuti medi: 30/);assert.match(extra.textContent,/Minuti ultime 5: 29/);
+  assert.ok(d.querySelector('.finder-heading .finder-guide summary[aria-label="Come leggere i dati"]'));
   toggle.click();assert.equal(extra.hidden,true);assert.equal(toggle.getAttribute('aria-expanded'),'false');
   assert.equal(d.getElementById('picks').textContent,picksBefore);
   d.querySelector('#finder-cards .finder-player').click();await tick();await tick();await tick();
