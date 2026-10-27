@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v40', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v41', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -558,7 +558,7 @@ test('explanation shows saved statistics and consecutive misses without changing
   assert.ok(details);assert.equal(details.querySelector('summary').textContent,'Dettagli pronostico');assert.ok(details.closest('.pick-actions').querySelector('.pick-stats-button'));assert.equal(details.open,false);details.querySelector('summary').click();assert.equal(details.open,true);
   assert.match(details.textContent,/3 delle ultime 5 partite/);assert.match(details.textContent,/3 su 5/);
   assert.match(details.textContent,/ultime 2 partite consecutive/);assert.match(details.textContent,/55,6%/);
-  assert.match(details.textContent,/28 minuti/);const help=details.querySelector('.pick-implied-help'),description=details.querySelector('.pick-implied-description');assert.equal(description.hidden,true);help.click();assert.equal(description.hidden,false);assert.equal(help.getAttribute('aria-expanded'),'true');help.click();assert.equal(description.hidden,true);assert.doesNotMatch(details.textContent,/La stima usa le partite precedenti/);
+  assert.match(details.textContent,/28 minuti/);assert.equal(details.querySelector('.pick-implied-help'),null);assert.match(details.textContent,/📊 Ultime partite/);assert.match(details.textContent,/💡 Stima e quota/);assert.doesNotMatch(details.textContent,/La stima usa le partite precedenti/);
   assert.equal(d.querySelectorAll('.pick-selection').length,1);
  } finally {dom.window.close()}
 });

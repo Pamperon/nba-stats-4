@@ -653,3 +653,10 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #picks .pick-implied-help:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #picks .pick-implied-description{display:block;margin-top:6px;color:#bed1e8;font-size:12px;line-height:1.45}
 #picks .pick-implied-description[hidden]{display:none}
+
+/* Slightly larger logo, scaled to the available mobile width. */
+.app-header .brand-icon{width:76px;height:76px;flex-basis:76px}
+.app-header .brand-icon svg{width:76px;height:76px}
+.app-header .brand-copy b{font-size:clamp(28px,5.3vw,42px)}
+@media(max-width:760px){.app-header .brand-icon{width:66px;height:66px;flex-basis:66px}.app-header .brand-icon svg{width:66px;height:66px}.app-header .brand-copy b{font-size:clamp(24px,6.6vw,33px)}}
+@media(max-width:350px){.app-header .brand-icon{width:56px;height:56px;flex-basis:56px}.app-header .brand-icon svg{width:56px;height:56px}.app-header .brand-copy b{font-size:clamp(20px,6.3vw,23px)}}
