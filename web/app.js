@@ -253,19 +253,19 @@ function pickExplanation(row){
  const recent=ratio(row['Ultime 20']),last5=ratio(row['Ultime 5']);
  const sections=[];
  if(recent){
-  let message='<strong>'+recent.hits+'/'+recent.total+'</strong> '+(isUnder?'sotto':'sopra')+' la linea.';
+  let message='Ha '+(isUnder?'chiuso sotto':'superato')+' la linea in <strong>'+recent.hits+' delle ultime '+recent.total+' partite</strong> considerate.';
   if(verified&&games>0)message+=' Storico: <strong>'+historicHits+' su '+games+'</strong>.';
   else if(season!==null&&games>0)message+=' Storico: <strong>'+display(season)+'% su '+games+' partite</strong>.';
   sections.push('<p class="pick-detail-row"><b>Ultime partite</b><span>'+message+'</span></p>');
  }
  const avg=num(row['Minuti medi']),recentMin=num(row['Minuti ultime 5']);
  if(avg!==null&&recentMin!==null){
-  sections.push('<p class="pick-detail-row"><b>Minuti</b><span>Media ultime 5: <strong>'+display(recentMin)+' minuti</strong> · media storica: <strong>'+display(avg)+' minuti</strong>.</span></p>');
+  sections.push('<p class="pick-detail-row"><b>Minuti</b><span>Ha giocato in media <strong>'+display(recentMin)+' minuti nelle ultime 5</strong>, rispetto ai <strong>'+display(avg)+' minuti</strong> della media storica.</span></p>');
  }
  const probability=num(row['Prob. stimata %']),odd=num(row.Quota);
  if(probability!==null&&odd!==null&&odd>1){
   const implied=100/odd;
-  sections.push('<p class="pick-detail-row"><b>Confronto quota</b><span>Stima: <strong>'+display(probability)+'%</strong> · probabilità implicita: <strong>'+display(implied)+'%</strong>.</span></p>');
+  sections.push('<div class="pick-detail-row"><b>Stima e quota</b><span>Il modello stima una probabilità del <strong>'+display(probability)+'%</strong>. La quota <strong>'+fmtOdd(odd)+'</strong> corrisponde a una probabilità implicita del <strong>'+display(implied)+'%</strong>. <button type="button" class="pick-implied-help" aria-label="Che cos’è la probabilità implicita?" aria-expanded="false">?</button><span class="pick-implied-description" hidden>La probabilità implicita si ricava dalla quota e serve a confrontarla con la stima del modello.</span></span></div>');
  }
  const warnings=[];
  // A sequence is only reported when each of the latest observations has a
@@ -362,6 +362,7 @@ function render(){
    const row=pending[i][j],open=()=>{returnOrigin='dashboard';returnPick=card.querySelector('.pick-stats-button');openPickStats(row);};
    card.querySelector('.pick-player-link').onclick=open;
    card.querySelector('.pick-stats-button').onclick=open;
+   const help=card.querySelector('.pick-implied-help');if(help)help.onclick=()=>{const description=card.querySelector('.pick-implied-description');description.hidden=!description.hidden;help.setAttribute('aria-expanded',String(!description.hidden));};
    const avatar=card.querySelector('.pick-avatar');
    avatar.setAttribute('role','button');avatar.tabIndex=0;
    avatar.setAttribute('aria-label','Apri le statistiche di '+row.Giocatore);
