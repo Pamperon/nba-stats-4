@@ -4,7 +4,7 @@ from PIL import Image
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, HTTPException, Header, Depends, Query
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import requests
@@ -800,6 +800,17 @@ def scan_csv(job_id: str):
     if not job or job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
     data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
     return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="basketlab_completo.csv"'})
+
+@app.get('/robots.txt', include_in_schema=False)
+def robots_txt():
+    return PlainTextResponse('User-agent: *\nAllow: /\nSitemap: https://basketlab.it/sitemap.xml\n')
+
+@app.get('/sitemap.xml', include_in_schema=False)
+def sitemap_xml():
+    return Response(content='<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                    '<url><loc>https://basketlab.it/</loc></url></urlset>',
+                    media_type='application/xml')
 
 app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')

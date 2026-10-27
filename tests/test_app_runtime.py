@@ -30,6 +30,19 @@ class AppRuntimeTests(unittest.TestCase):
         self.client = TestClient(main.app)
         self.addCleanup(self.client.close)
 
+    def test_public_search_metadata(self):
+        home = self.client.get('/')
+        self.assertEqual(home.status_code, 200)
+        self.assertIn('<title>Basket Lab | Statistiche e analisi NBA</title>', home.text)
+        self.assertIn('rel="canonical" href="https://basketlab.it/"', home.text)
+        robots = self.client.get('/robots.txt')
+        self.assertEqual(robots.status_code, 200)
+        self.assertIn('Sitemap: https://basketlab.it/sitemap.xml', robots.text)
+        sitemap = self.client.get('/sitemap.xml')
+        self.assertEqual(sitemap.status_code, 200)
+        self.assertIn('application/xml', sitemap.headers['content-type'])
+        self.assertIn('<loc>https://basketlab.it/</loc>', sitemap.text)
+
     def test_scan_requires_authentication(self):
         with patch.object(main.engine, 'get_fixtures') as odds:
             self.assertEqual(self.client.post('/api/scan?date=2026-10-25').status_code, 401)
