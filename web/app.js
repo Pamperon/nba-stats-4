@@ -246,9 +246,9 @@ function pickExplanation(row){
 function pickCard(row){
  return '<article class="pick-selection"><div class="pick-profile">'+candidateAvatar(row)+
  '<div class="pick-profile-info"><h3><button type="button" class="pick-player-link" aria-label="Apri le statistiche di '+esc(row.Giocatore)+'">'+esc(row.Giocatore)+'</button></h3><p class="pick-player-meta">'+esc(row.Squadra||row.Partita)+'</p>'+
- '<div class="pick-market">OVER '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div></div></div>'+
+ (row.Partita?'<p class="pick-fixture">'+esc(row.Partita)+'</p>':'')+'<div class="pick-market">'+esc(row.Scelta||'Over').toUpperCase()+' '+esc(row.Linea)+' '+esc(marketNames[row.Mercato]||row.Mercato)+'</div></div></div>'+
  '<div class="pick-values"><div><small>QUOTA</small><strong>'+esc(fmtOdd(row.Quota))+'</strong></div>'+
- '<div><small>STIMA</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div>'+pickExplanation(row)+'</article>';
+ '<div><small>STIMA DEL MODELLO</small><strong>'+esc(row['Prob. stimata %'])+'%</strong></div></div><button type="button" class="pick-stats-button">Vedi statistiche <span aria-hidden="true">›</span></button>'+pickExplanation(row)+'</article>';
 }
 function render(){
  const request=++pickProfileRequest;
@@ -291,6 +291,7 @@ function render(){
   group.querySelectorAll('.pick-selection').forEach((card,j)=>{
    const row=pending[i][j],open=()=>openPickStats(row);
    card.querySelector('.pick-player-link').onclick=open;
+   card.querySelector('.pick-stats-button').onclick=open;
    const avatar=card.querySelector('.pick-avatar');
    avatar.setAttribute('role','button');avatar.tabIndex=0;
    avatar.setAttribute('aria-label','Apri le statistiche di '+row.Giocatore);
