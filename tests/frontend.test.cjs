@@ -79,7 +79,7 @@ function serviceWorker(fetch, caches) {
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v21', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v22', 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
@@ -511,11 +511,10 @@ test('same-game combinations show indicative products and warn about dependence'
   assert.equal(cards.length,2);
   for(const card of cards){assert.match(card.textContent,/QUOTA\s*1,50/);assert.match(card.textContent,/STIMA DEL MODELLO\s*80%/)}
   assert.equal(d.querySelectorAll('.pick-group-range').length,0);
-  assert.match(text,/Selezioni della stessa partita/);
+  assert.match(text,/Calcolo senza correlazioni/);
   assert.match(text,/Quota totale indicativa\s*2,25/);
   assert.match(text,/Stima combinata indicativa\s*64%/);
-  assert.match(text,/come se gli eventi fossero indipendenti/);
-  assert.match(text,/verifica la combinazione sul bookmaker/i);
+  assert.match(text,/Verifica la quota sul bookmaker/);
  }finally{dom.window.close()}
 });
 
