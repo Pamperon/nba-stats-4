@@ -568,3 +568,6 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #date-area #metrics .metric small{font-size:11px}
 #date-area #quote-updated{grid-area:updated;padding:5px 0 0;border-top:1px solid #2b405b;text-align:center;font-size:11px}
 @media(max-width:350px){#date-area .date-control{grid-template-columns:minmax(0,1fr) minmax(94px,.75fr);gap:4px 8px;padding:8px}#date-area #metrics{padding-left:8px}#date-area .date-arrows{flex-basis:26px}#date-area .date-arrows button{width:26px}}
+/* Keep neighbouring date labels partially visible inside the wheel. */
+#date-area .wheel-previous .day-name,#date-area .wheel-previous .day-number{transform:translateY(12px)}
+#date-area .wheel-next .day-name,#date-area .wheel-next .day-number{transform:translateY(-12px)}
