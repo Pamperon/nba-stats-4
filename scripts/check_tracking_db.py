@@ -197,7 +197,19 @@ def main():
                 finally:
                     client.close()
                     tracking.release_deploy_guard(app.RUNTIME_ID)
-            print('PostgreSQL integration OK: migrations, durable requests, failures, restarts, duplicate guards, two-date deployment drain and HTTP startup/status')
+            import public_views
+            archive = public_views.history('2026-10-23')
+            assert archive['versions'][0]['groups']['Singola']['status'] == 'won'
+            assert 'model_shadow' not in str(archive)
+            assert public_views.history_dates(dt.date(2026,10,23))['dates'][0]['date'] == '2026-10-23'
+            storage.save('movement-before', {'date':'2026-10-28','state':'done','results':[ticket_row]})
+            storage.save('movement-after', {'date':'2026-10-28','state':'done','results':[{**ticket_row,'Quota':1.71}]})
+            movement = public_views.movements('2026-10-28')
+            assert movement['summary']['down'] == 1
+            assert movement['changes'][0]['before'] == 1.8
+            assert movement['changes'][0]['after'] == 1.71
+            assert not public_views.movements('2000-01-01')['versions']
+            print('PostgreSQL integration OK: migrations, durable requests, deployment coordination, public archive and saved-quote comparisons')
     finally:
         db.close()
 

@@ -759,6 +759,56 @@ def saved_status(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         raise HTTPException(503, 'Stato aggiornamento temporaneamente non disponibile')
 
 
+@app.get('/api/history/dates')
+def public_history_dates():
+    import public_views
+    try:
+        return public_views.history_dates(datetime.now(ZoneInfo('Europe/Rome')).date())
+    except Exception:
+        logger.exception('Cannot list public recommendation archive')
+        raise HTTPException(503, 'Archivio temporaneamente non disponibile')
+
+
+@app.get('/api/history')
+def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    import public_views
+    try:
+        day = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+    if day > datetime.now(ZoneInfo('Europe/Rome')).date():
+        raise HTTPException(400, 'La giornata non è ancora archiviabile')
+    try:
+        return public_views.history(date)
+    except Exception:
+        logger.exception('Cannot read public recommendation archive')
+        raise HTTPException(503, 'Archivio temporaneamente non disponibile')
+
+
+@app.get('/api/odds/dates')
+def public_odds_dates():
+    import public_views
+    try:
+        return public_views.movement_dates()
+    except Exception:
+        logger.exception('Cannot list saved quote dates')
+        raise HTTPException(503, 'Giornate temporaneamente non disponibili')
+
+
+@app.get('/api/odds/changes')
+def public_odds_changes(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    import public_views
+    try:
+        datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+    try:
+        return public_views.movements(date)
+    except Exception:
+        logger.exception('Cannot compare saved odds')
+        raise HTTPException(503, 'Confronto temporaneamente non disponibile')
+
+
 
 @app.post('/api/diagnostics/odds-tournament', dependencies=[Depends(auth)])
 def diagnose_odds_tournament(check_missing: bool = False):

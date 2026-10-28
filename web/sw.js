@@ -1,5 +1,5 @@
-const CACHE = 'nba-stats-4-shell-v47';
-const ASSETS = ['/', '/static/style.css', '/static/app.js', '/static/icon.svg', '/static/icon-192.png', '/static/icon-512.png', '/static/icon-maskable-192.png', '/static/icon-maskable-512.png', '/static/favicon-32.png', '/static/favicon.ico', '/static/apple-touch-icon.png', '/static/manifest.webmanifest'];
+const CACHE = 'nba-stats-4-shell-v48';
+const ASSETS = ['/', '/static/style.css', '/static/app.js', '/static/features.js', '/static/icon.svg', '/static/icon-192.png', '/static/icon-512.png', '/static/icon-maskable-192.png', '/static/icon-maskable-512.png', '/static/favicon-32.png', '/static/favicon.ico', '/static/apple-touch-icon.png', '/static/manifest.webmanifest'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
