@@ -142,6 +142,7 @@ function setDateLoading(loading){
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
  renderDateStrip();
+ finderVisibleLimit=100;
  const request=++dateSelectionRequest;
  clearTimeout(scanStatusTimer);
  setDateLoading(true);
@@ -411,13 +412,17 @@ function finderAdditionalData(row){
  return pairs.length?pairs.join(''):'<span>Dati non disponibili.</span>';
 }
 let finderVisibleLimit=100;
-function renderFinder(){
+function renderFinder({append=false}={}){
  const limit=window.matchMedia?.('(max-width:760px)')?.matches?finderVisibleLimit:500;
  const all=eligible(),items=all.slice(0,limit);
+ const start=append?$('finder-cards').querySelectorAll('.finder-card').length:0;
+ const added=items.slice(start);
  $('finder-more').hidden=all.length<=limit||limit>=500;
  $('finder-count').textContent=all.length>limit?'Primi '+limit+' di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
- $('rows').innerHTML=items.map((r,i)=>`<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`).join('');
- $('finder-cards').innerHTML=items.map((r,i)=>`<article class="finder-card"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>${finderAdditionalData(r)}</div></article>`).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
+ const tableHTML=added.map((r,offset)=>{const i=start+offset;return `<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`}).join('');
+ const cardsHTML=added.map((r,offset)=>{const i=start+offset;return `<article class="finder-card"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>${finderAdditionalData(r)}</div></article>`}).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
+ if(append&&start){$('rows').insertAdjacentHTML('beforeend',tableHTML);$('finder-cards').insertAdjacentHTML('beforeend',cardsHTML);}
+ else{$('rows').innerHTML=tableHTML;$('finder-cards').innerHTML=cardsHTML;}
  for(const button of document.querySelectorAll('#finder .finder-details-toggle'))button.onclick=()=>{const extra=document.getElementById(button.getAttribute('aria-controls'));if(!extra)return;extra.hidden=!extra.hidden;button.setAttribute('aria-expanded',String(!extra.hidden));};
  for(const button of document.querySelectorAll('#finder .finder-player'))button.onclick=()=>{const row=items[Number(button.dataset.index)];if(!row)return;returnOrigin='finder';returnPick=button;openPickStats(row);};
  syncFinderScrollWidth();
@@ -464,9 +469,10 @@ function initFinderSelects(){
  prob.value='0';
 }
 initFinderSelects();
-$('finder-search').addEventListener('input',renderFinder);
+function filterFinder(){finderVisibleLimit=100;renderFinder();}
+$('finder-search').addEventListener('input',filterFinder);
 ['oddmin','oddmax','market','probmin'].forEach(id=>{
- $(id).addEventListener('change',renderFinder);
+ $(id).addEventListener('change',filterFinder);
 });
 function csvCell(value){
  const text=String(value??'');
@@ -778,5 +784,12 @@ async function initializeArchive(){
 initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
 
-$('finder-more').onclick=()=>{finderVisibleLimit=Math.min(500,finderVisibleLimit+100);renderFinder()};
+$('finder-more').onclick=()=>{
+ const firstNew=$('finder-cards').querySelectorAll('.finder-card').length;
+ finderVisibleLimit=Math.min(500,finderVisibleLimit+100);renderFinder({append:true});
+ const target=$('finder-cards').querySelectorAll('.finder-card')[firstNew]?.querySelector('.finder-player');
+ target?.focus({preventScroll:true});target?.scrollIntoView?.({block:'nearest'});
+};
+// Keep the displayed batch in sync when rotating a tablet or resizing a window.
+window.matchMedia?.('(max-width:760px)')?.addEventListener?.('change',()=>renderFinder());
 $('finder-reset').onclick=()=>{$('finder-search').value='';$('market').value='Tutti';$('oddmin').value='1.10';$('oddmax').value='2.20';$('probmin').value='0';finderVisibleLimit=100;renderFinder()};
