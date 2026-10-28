@@ -177,7 +177,7 @@ $('date').addEventListener('change',async()=>{
   if(request===dateSelectionRequest&&$('date').value===selected)setDateLoading(false);
  }
 });
-const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
+const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&(!$('finder-favorites')?.checked||window.basketLabFavorites?.has(String(r['ESPN ID']||'')))&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
 const marketNames={PTS:'PUNTI',REB:'RIMBALZI',AST:'ASSIST'};
 const pickIdentityCache=new Map();
 let pickProfileRequest=0;
@@ -391,6 +391,7 @@ function render(){
  });
  enrichSavedFixtureInfo(data,request);
  renderFinder();
+ document.dispatchEvent(new CustomEvent('basketlab:render'));
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const nbaTeams={
@@ -410,9 +411,12 @@ function finderAdditionalData(row){
  add('Minuti medi',val('Minuti medi'));
  return pairs.length?pairs.join(''):'<span>Dati non disponibili.</span>';
 }
+let finderVisibleLimit=100;
 function renderFinder(){
- const all=eligible(),items=all.slice(0,500);
- $('finder-count').textContent=all.length>500?'Primi 500 di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
+ const limit=window.matchMedia?.('(max-width:760px)')?.matches?finderVisibleLimit:500;
+ const all=eligible(),items=all.slice(0,limit);
+ $('finder-more').hidden=all.length<=limit||limit>=500;
+ $('finder-count').textContent=all.length>limit?'Primi '+limit+' di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
  $('rows').innerHTML=items.map((r,i)=>`<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`).join('');
  $('finder-cards').innerHTML=items.map((r,i)=>`<article class="finder-card"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>${finderAdditionalData(r)}</div></article>`).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
  for(const button of document.querySelectorAll('#finder .finder-details-toggle'))button.onclick=()=>{const extra=document.getElementById(button.getAttribute('aria-controls'));if(!extra)return;extra.hidden=!extra.hidden;button.setAttribute('aria-expanded',String(!extra.hidden));};
@@ -774,3 +778,6 @@ async function initializeArchive(){
 }
 initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
+
+$('finder-more').onclick=()=>{finderVisibleLimit=Math.min(500,finderVisibleLimit+100);renderFinder()};
+window.basketLab={snapshot:()=>data,refreshFinder:()=>{finderVisibleLimit=100;renderFinder()},openPlayer:row=>{returnOrigin='dashboard';returnPick=null;openPickStats(row)}};

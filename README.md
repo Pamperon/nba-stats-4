@@ -82,6 +82,37 @@ Gli snapshot salvati vengono riletti dal database quando richiesti, anche per
 l'esportazione CSV dopo un riavvio. Quelli non salvati restano disponibili in RAM
 per il recupero. Le risposte HTTP grandi vengono compresse quando il client lo supporta.
 
+## Consultazione del sito
+
+Gli strumenti aggiuntivi sono accessibili dalla barra sotto le aree principali:
+
+- **Archivio esiti** (`#archivio`): giornate archiviate e versioni dei pronostici
+  realmente salvati. Il selettore dell'aggiornamento mantiene separate le diverse
+  scansioni. Gli esiti sono letti dalle verifiche ESPN già persistite per quello
+  stesso job; dati mancanti o giocatori non scesi in campo restano da verificare.
+  Non vengono ricostruite selezioni storiche, simulate quote combinate della
+  stessa partita o presentati rendimenti economici.
+- **Preferiti** (`#preferiti`): fino a 100 giocatori salvati in `localStorage`,
+  senza account o sincronizzazione tra dispositivi. La stella sui pronostici e
+  il pulsante nella scheda giocatore gestiscono la lista; il filtro “Solo
+  preferiti” limita esclusivamente Analisi quote, senza modificare i pronostici.
+- **Movimenti quote** (`#movimenti`): confronto degli ultimi due snapshot della
+  stessa giornata, anche passata, da PostgreSQL. Identità, partita, mercato,
+  scelta e linea devono coincidere per confrontare i prezzi. Linee aggiunte e
+  rimosse sono mostrate separatamente; selezioni duplicate ambigue sono escluse.
+- **Come funziona** (`#come-funziona`): fonti, orari italiani, significato delle
+  stime e limiti della lettura degli esiti.
+
+I nuovi endpoint pubblici `/api/history/dates`, `/api/history?date=YYYY-MM-DD`,
+`/api/odds/dates` e `/api/odds/changes?date=YYYY-MM-DD` leggono solo dati già
+salvati. Non richiedono un token, non avviano scansioni, non contattano ESPN o
+OddsPapi e non scrivono nel database. Nessuna risposta dell'archivio contiene
+gli storici completi dei giocatori o i dati dei modelli sperimentali.
+
+Da telefono Analisi quote mostra inizialmente 100 righe, con caricamento
+progressivo fino al limite di 500 già esistente. Ricerca, filtri, preferiti e
+caricamento progressivo non modificano le selezioni archiviate.
+
 ## Verifiche offline
 
 ```
