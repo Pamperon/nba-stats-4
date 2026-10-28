@@ -90,6 +90,22 @@ def roster(team_id):
                        for a in players], key=lambda p: p["name"])
     return cached("nba:roster:v3:" + team_id, 12, build)
 
+def directory():
+    """Current NBA players for name search; reuse roster caches, never game logs."""
+    def build():
+        teams = catalog()
+        if not teams:
+            raise ValueError("Catalogo NBA non disponibile")
+        def team_players(team):
+            return [{"id": str(player["id"]), "name": player["name"],
+                     "team_id": team["id"], "team": team["name"]}
+                    for player in roster(team["id"])]
+        # A failed roster must not become a cached, incomplete search directory.
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            players = [player for group in pool.map(team_players, teams) for player in group]
+        return sorted(players, key=lambda player: (player["name"].casefold(), player["team_id"], player["id"]))
+    return cached("nba:player-directory:v1", 6, build)
+
 def validate_season(season):
     if not (season.isdigit() and len(season) == 4):
         raise ValueError("Stagione non valida")

@@ -24,6 +24,21 @@ let pickNavigationRequest=0;
 let returnPick=null;
 let returnOrigin='dashboard';
 let lastQuoteTab='dashboard';
+const quotePositions=new Map();
+function rememberQuotePosition(tab){
+ if(!['dashboard','finder'].includes(tab)||$(tab).hidden)return;
+ quotePositions.set(tab,{date:$('date').value,y:window.scrollY,x:$('finder-scroll').scrollLeft});
+}
+function restoreQuotePosition(tab){
+ const saved=quotePositions.get(tab);
+ if(!saved||saved.date!==$('date').value)return false;
+ requestAnimationFrame(()=>{
+  if(document.querySelector('nav button.active')?.dataset.tab!==tab||saved.date!==$('date').value)return;
+  if(tab==='finder'){$('finder-scroll').scrollLeft=saved.x;$('finder-top-scroll').scrollLeft=saved.x;}
+  window.scrollTo({top:saved.y,behavior:'instant'});
+ });
+ return true;
+}
 function syncArea(tab){
  const stats=tab==='player';
  document.body.classList.toggle('statistics-area',stats);
@@ -36,8 +51,8 @@ function syncArea(tab){
 }
 $('area-quotes').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="'+lastQuoteTab+'"]').click();};
 $('area-stats').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="player"]').click();};
-$('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=b.dataset.tab==='player'});
+$('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});if(!restoreQuotePosition(returnOrigin))returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='player')rememberQuotePosition(document.querySelector('nav button.active')?.dataset.tab);document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=b.dataset.tab==='player';if(b.dataset.tab!=='player')restoreQuotePosition(b.dataset.tab);else window.scrollTo({top:0,behavior:'instant'});});
 function visibleDates(){
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  return Array.from($('date').options).map(o=>o.value).filter(d=>d&&d>=today);
@@ -136,13 +151,13 @@ function setDateLoading(loading){
   $('quote-updated').textContent='';
   $('picks').replaceChildren();
   $('rows').replaceChildren();
-  $('finder-cards').replaceChildren();$('finder-count').textContent='';
+  $('finder-cards').replaceChildren();$('finder-count').textContent='';syncFinderFixtures();
  }
 }
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
  renderDateStrip();
- finderVisibleLimit=100;
+ finderVisibleLimit=100;quotePositions.clear();$('finder-fixture').value='';
  const request=++dateSelectionRequest;
  clearTimeout(scanStatusTimer);
  setDateLoading(true);
@@ -178,7 +193,7 @@ $('date').addEventListener('change',async()=>{
   if(request===dateSelectionRequest&&$('date').value===selected)setDateLoading(false);
  }
 });
-const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
+const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&(!$('finder-fixture').value||r.Partita===$('finder-fixture').value)&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
 const marketNames={PTS:'PUNTI',REB:'RIMBALZI',AST:'ASSIST'};
 const pickIdentityCache=new Map();
 let pickProfileRequest=0;
@@ -411,8 +426,15 @@ function finderAdditionalData(row){
  add('Minuti medi',val('Minuti medi'));
  return pairs.length?pairs.join(''):'<span>Dati non disponibili.</span>';
 }
+function syncFinderFixtures(){
+ const select=$('finder-fixture'),selected=select.value;
+ const fixtures=[...new Set((data?.results||[]).map(row=>row.Partita).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
+ select.innerHTML='<option value="">Tutte le partite</option>'+fixtures.map(match=>'<option value="'+esc(match)+'">'+esc(match)+'</option>').join('');
+ select.value=fixtures.includes(selected)?selected:'';
+}
 let finderVisibleLimit=100;
 function renderFinder({append=false}={}){
+ syncFinderFixtures();
  const limit=window.matchMedia?.('(max-width:760px)')?.matches?finderVisibleLimit:500;
  const all=eligible(),items=all.slice(0,limit);
  const start=append?$('finder-cards').querySelectorAll('.finder-card').length:0;
@@ -471,7 +493,7 @@ function initFinderSelects(){
 initFinderSelects();
 function filterFinder(){finderVisibleLimit=100;renderFinder();}
 $('finder-search').addEventListener('input',filterFinder);
-['oddmin','oddmax','market','probmin'].forEach(id=>{
+['oddmin','oddmax','market','probmin','finder-fixture'].forEach(id=>{
  $(id).addEventListener('change',filterFinder);
 });
 function csvCell(value){
@@ -550,6 +572,47 @@ async function playerCatalog(path){
  try{sessionStorage.setItem(key,JSON.stringify(item))}catch(e){}
  return payload;
 }
+let playerDirectory=null,playerDirectoryPending=null,playerDirectoryAt=0,playerSearchRequest=0;
+async function getPlayerDirectory(){
+ if(playerDirectory&&Date.now()-playerDirectoryAt<PLAYER_CACHE_TTL)return playerDirectory;
+ if(!playerDirectoryPending)playerDirectoryPending=playerCatalog('/api/players/directory').then(payload=>{
+  if(!Array.isArray(payload.players))throw Error('Catalogo non disponibile');
+  playerDirectory=payload.players;playerDirectoryAt=Date.now();return playerDirectory;
+ }).finally(()=>{playerDirectoryPending=null;});
+ return playerDirectoryPending;
+}
+async function searchPlayers(){
+ const request=++playerSearchRequest,query=normalizeFinder($('player-search').value).trim();
+ const results=$('player-search-results'),status=$('player-search-status');
+ results.replaceChildren();results.hidden=true;
+ if(query.length<2){status.textContent='Scrivi almeno 2 caratteri, senza selezionare la squadra.';return;}
+ status.textContent='Ricerca giocatori…';
+ try{
+  const players=await getPlayerDirectory();
+  if(request!==playerSearchRequest)return;
+  const words=query.split(/\s+/),matches=players.filter(player=>words.every(word=>normalizeFinder(player.name).includes(word)));
+  const shown=matches.slice(0,20);
+  status.textContent=!matches.length?'Nessun giocatore trovato. Prova un altro nome.':matches.length>20?'Primi 20 di '+matches.length+' giocatori: completa il nome per restringere la ricerca.':matches.length+' giocator'+(matches.length===1?'e trovato.':'i trovati.');
+  results.innerHTML=shown.map((player,index)=>'<button type="button" data-player-result="'+index+'"><strong>'+esc(player.name)+'</strong><span>'+esc(player.team)+'</span></button>').join('');
+  results.hidden=!shown.length;
+  for(const button of results.querySelectorAll('button'))button.onclick=async()=>{
+   const player=shown[Number(button.dataset.playerResult)],navigation=++pickNavigationRequest;
+   ++playerSearchRequest;results.hidden=true;results.replaceChildren();$('player-search').value=player.name;status.textContent='';
+   playerStatsInitialized=true;setPlayerLoading(true);
+   await initPlayers({id:String(player.id),team:player.team,market:$('stat').value||'PTS',line:Number($('line').value)||9.5,season:$('playerseason').value,navigation});
+  };
+ }catch{
+  if(request!==playerSearchRequest)return;
+  status.textContent='Ricerca temporaneamente non disponibile. Riprova o usa i selettori di squadra e giocatore.';
+  const retry=document.createElement('button');retry.type='button';retry.textContent='Riprova ricerca';retry.onclick=searchPlayers;results.append(retry);results.hidden=false;
+ }
+}
+$('player-search').addEventListener('input',searchPlayers);
+$('player-search').addEventListener('keydown',event=>{
+ if(event.key==='ArrowDown'){$('player-search-results').querySelector('button')?.focus();event.preventDefault();}
+ if(event.key==='Escape'){++playerSearchRequest;$('player-search-results').hidden=true;}
+});
+
 const teamLogBatches=new Map();
 function prepareTeamLogs(team,season){
  const players=activeRoster.slice();
@@ -588,7 +651,9 @@ function preloadPlayerSeasons(team,id){
 const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
  const navigation=++pickNavigationRequest;
+ rememberQuotePosition(document.querySelector('nav button.active')?.dataset.tab);
  syncArea('player');
+ window.scrollTo({top:0,behavior:'instant'});
  $('back-to-picks').textContent=returnOrigin==='finder'?'← Torna ad Analisi quote':'← Torna ai pronostici';
  $('back-to-picks').hidden=false;
  ++rosterRequest;++playerRequest;++seasonPrefetchGeneration;
@@ -792,4 +857,4 @@ $('finder-more').onclick=()=>{
 };
 // Keep the displayed batch in sync when rotating a tablet or resizing a window.
 window.matchMedia?.('(max-width:760px)')?.addEventListener?.('change',()=>renderFinder());
-$('finder-reset').onclick=()=>{$('finder-search').value='';$('market').value='Tutti';$('oddmin').value='1.10';$('oddmax').value='2.20';$('probmin').value='0';finderVisibleLimit=100;renderFinder()};
+$('finder-reset').onclick=()=>{$('finder-search').value='';$('finder-fixture').value='';$('market').value='Tutti';$('oddmin').value='1.10';$('oddmax').value='2.20';$('probmin').value='0';finderVisibleLimit=100;renderFinder()};

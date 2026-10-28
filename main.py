@@ -466,6 +466,13 @@ def player_teams():
         logger.exception('NBA teams unavailable')
         raise HTTPException(503, 'Squadre ESPN temporaneamente non disponibili')
 
+@app.get('/api/players/directory')
+def player_directory():
+    try: return {'players': player_stats.directory(), 'odds_api_calls': 0}
+    except Exception:
+        logger.exception('NBA player directory unavailable')
+        raise HTTPException(503, 'Ricerca giocatori temporaneamente non disponibile')
+
 @app.get('/api/players/roster')
 def player_roster(team_id: str = Query(pattern=r'^[0-9]{1,8}$')):
     try: return {'players': player_stats.roster(team_id), 'odds_api_calls': 0}
