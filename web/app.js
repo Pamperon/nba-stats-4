@@ -86,19 +86,38 @@ function renderDateMetrics(snapshot){
 
 let scanStatusTimer=0;
 const scanStateNames={waiting:'In attesa di aggiornamento',queued:'In coda',running:'In elaborazione',done:'Completata',partial:'Parziale',error:'Fallita',save_failed:'Salvataggio fallito',interrupted:'Interrotta'};
+function snapshotVisibilityExpired(){
+ const until=Date.parse(data?.visibility_valid_until||'');
+ return Number.isFinite(until)&&Date.now()>=until;
+}
+function recheckVisibleSnapshot(){
+ if(!document.hidden&&snapshotVisibilityExpired()){
+  clearTimeout(scanStatusTimer);
+  $('date').dispatchEvent(new Event('change',{bubbles:true}));
+ }
+}
+document.addEventListener('visibilitychange',recheckVisibleSnapshot);
+window.addEventListener('focus',recheckVisibleSnapshot);
 async function loadScanStatus(date,request,previousState=null){
+ if(request!==dateSelectionRequest||$('date').value!==date)return;
+ if(snapshotVisibilityExpired()){
+  $('date').dispatchEvent(new Event('change',{bubbles:true}));
+  return;
+ }
  try{
   const payload=await(await api('/api/saved/status?date='+encodeURIComponent(date))).json();
   if(request!==dateSelectionRequest||$('date').value!==date)return;
   if(!Object.hasOwn(scanStateNames,payload.state))throw Error('Stato non disponibile');
   const finished=['done','partial'].includes(payload.state);
-  const newerSave=payload.last_saved?.job_id&&data?.job_id&&payload.last_saved.job_id!==data.job_id;
-  if(previousState!==null&&finished&&(previousState!==payload.state||newerSave)){
+  const newerSave=payload.last_saved?.job_id&&payload.last_saved.job_id!==data?.job_id;
+  if(previousState!==null&&(newerSave||(finished&&previousState!==payload.state))){
    // The only refresh here reads a saved snapshot. Never starts a paid scan.
    $('date').dispatchEvent(new Event('change',{bubbles:true}));
    return;
   }
-  scanStatusTimer=setTimeout(()=>loadScanStatus(date,request,payload.state),['queued','running'].includes(payload.state)?15000:60000);
+  const until=Date.parse(data?.visibility_valid_until||'');
+  const interval=['queued','running'].includes(payload.state)?15000:60000;
+  scanStatusTimer=setTimeout(()=>loadScanStatus(date,request,payload.state),Number.isFinite(until)?Math.max(1000,Math.min(interval,until-Date.now())):interval);
  }catch(error){
   if(request!==dateSelectionRequest||$('date').value!==date)return;
   scanStatusTimer=setTimeout(()=>loadScanStatus(date,request,previousState),60000);
@@ -125,10 +144,10 @@ $('date').addEventListener('change',async()=>{
  renderDateStrip();
  const request=++dateSelectionRequest;
  clearTimeout(scanStatusTimer);
+ setDateLoading(true);
  loadScanStatus(selected,request);
  // Android Chrome can retain the native focus ring after the date menu closes.
  $('date').blur();
- setDateLoading(true);
  setArchiveStatus('Caricamento archivio del '+selected+'…');
  try{
   const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));

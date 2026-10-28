@@ -1,4 +1,4 @@
-"""FastAPI app. One process for the free-tier MVP; persistent jobs need external storage later."""
+"""Single-process FastAPI app with durable PostgreSQL scans and request tracking."""
 import os, secrets, threading, uuid, io, time, asyncio
 from PIL import Image
 from datetime import datetime, timedelta
@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, HTTPException, Header, Depends, Query
 from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
 import pandas as pd
 import requests
 import engine
@@ -17,6 +18,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title='BasketLab', docs_url=None, redoc_url=None)
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=4)
+# Explicit release gate: collecting results must not activate live calibration.
+# Change only after a separate review of the accumulated NBA evidence.
+LIVE_CALIBRATION_ENABLED = False
 TOKEN = os.getenv('NBA_STATS_ACCESS_TOKEN', '')
 if not TOKEN:
     raise RuntimeError('Set NBA_STATS_ACCESS_TOKEN before starting the server')
@@ -111,6 +116,7 @@ def health():
     with lock:
         active = sum(job['state'] in ('queued','running') for job in jobs.values())
     return {'status': 'ok', 'version': '4.0-optimized', 'odds_download_method': 'tournament-v1',
+            'live_calibration_enabled': LIVE_CALIBRATION_ENABLED,
             'deployment_commit': os.getenv('RENDER_GIT_COMMIT'),
             'scheduler_revision': 'rome-five-slots-v3',
             'scan_slots_italy': ['07:00', '11:00', '14:30', '18:00', '21:00'],
@@ -154,6 +160,7 @@ def schedule(date: str):
                         'home': home.get('team', {}).get('displayName', ''),
                         'away': away.get('team', {}).get('displayName', ''),
                         'time': rome.strftime('%H:%M'),
+                        'start_at': rome.isoformat(),
                         'status': event.get('status', {}).get('type', {}).get('description', ''),
                         'upcoming': event.get('status', {}).get('type', {}).get('state') == 'pre'
                     }
@@ -198,7 +205,7 @@ def do_scan(job_id, date):
         # Apply calibration only after independent walk-forward validation on
         # previously settled days. Never block the scan on a calibration error.
         calibration_status = {'active': False, 'adjusted': 0}
-        if storage.configured():
+        if LIVE_CALIBRATION_ENABLED and storage.configured():
             try:
                 import progressive_calibration
                 with storage.connection() as conn:
@@ -273,7 +280,11 @@ def do_scan(job_id, date):
                                     stage='Analisi completata ma NON salvata su Supabase; esporta subito il CSV')
             return
         with lock:
-            jobs[job_id].update(snapshot, cloud_saved=True)
+            # The durable snapshot owns results and history. Avoid accumulating
+            # up to 16 full copies in the 512 MiB Render instance.
+            jobs[job_id].update({key: snapshot[key] for key in (
+                'date', 'state', 'progress', 'stage', 'scan_started_at',
+                'scan_finished_at', 'odds_api_http_requests_scan')}, cloud_saved=True)
     except Exception as exc:
         logger.exception('Scan %s failed for %s', job_id, date)
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
@@ -320,6 +331,16 @@ def visible_snapshot(snapshot):
     result['player_count'] = len(players)
     # Games exist independently of whether the provider offers player odds.
     result['fixture_count'] = len(upcoming)
+    now = datetime.now(ZoneInfo('UTC'))
+    starts = []
+    for game in games:
+        if not game.get('upcoming') or not game.get('start_at'):
+            continue
+        start = datetime.fromisoformat(game['start_at'])
+        # If ESPN still reports pregame after the announced start (a delay),
+        # check again in a minute rather than creating an immediate reload loop.
+        starts.append(start if start > now else now + timedelta(seconds=60))
+    result['visibility_valid_until'] = min(starts).isoformat() if starts else None
     return result
 
 @app.get('/api/saved/latest')
@@ -810,7 +831,7 @@ def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
 def scan_result(job_id: str):
     with lock:
         job = dict(jobs[job_id]) if job_id in jobs else None
-    if job is not None:
+    if job is not None and not job.get('cloud_saved'):
         return job
     if storage.configured():
         try:
@@ -822,12 +843,13 @@ def scan_result(job_id: str):
                 return attempt
         except Exception:
             logger.exception('Cannot restore scan from database')
+            raise HTTPException(503, 'Analisi salvata temporaneamente non disponibile')
     raise HTTPException(404,'Scansione non trovata')
 
 @app.get('/api/scan/{job_id}/csv', dependencies=[Depends(auth)])
 def scan_csv(job_id: str):
-    with lock: job=jobs.get(job_id)
-    if not job or job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
+    job = scan_result(job_id)
+    if job['state'] not in ('done','partial','save_failed'): raise HTTPException(404,'Analisi non disponibile')
     data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
     return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="basketlab_completo.csv"'})
 

@@ -13,19 +13,22 @@ def cached_payload(key, max_age_seconds, loader):
     # Three stable database rows (calendar/catalog/feed), not a growing row per slot/day.
     persistent_key = key.split(":v1:", 1)[0] + ":v1" if ":v1:" in key else key
     with _LOCK:
-        envelope = _MEMORY.get(key)
-        if envelope is None and storage.configured():
+        # Retain only the latest calendar/catalog/feed in RAM, as in PostgreSQL.
+        # Logical identity still forces a fresh download for every new slot.
+        envelope = _MEMORY.get(persistent_key)
+        if (envelope is None or envelope.get('identity', key) != key
+                or not 0 <= time.time() - envelope.get('fetched_at', 0) < max_age_seconds) and storage.configured():
             envelope = storage.cache_read(persistent_key, max_age_hours=48)
         if isinstance(envelope, dict) and envelope.get("identity", key) == key:
             age = time.time() - envelope.get("fetched_at", 0)
             if 0 <= age < max_age_seconds and "data" in envelope:
-                _MEMORY[key] = envelope
+                _MEMORY[persistent_key] = envelope
                 return {**envelope, "source": "cache"}
         data = loader()  # Validators run inside the loader before persistence.
         envelope = {"data": data, "fetched_at": time.time(), "identity": key}
         if storage.configured():
             storage.cache_write(persistent_key, envelope)
-        _MEMORY[key] = envelope
+        _MEMORY[persistent_key] = envelope
         return {**envelope, "source": "api"}
 
 

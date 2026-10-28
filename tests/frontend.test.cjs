@@ -78,14 +78,15 @@ function serviceWorker(fetch, caches) {
 }
 test('service worker registers lifecycle and preserves unrelated caches', async () => {
   const deleted = [];
+  const current = fs.readFileSync(path.join(root, 'web/sw.js'), 'utf8').match(/const CACHE = '([^']+)'/)[1];
   const handlers = serviceWorker(null, {
-    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v46', 'other-app-cache'],
+    keys: async () => ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v46', current, 'other-app-cache'],
     delete: async key => deleted.push(key),
   });
   let task;
   handlers.activate({waitUntil: promise => {task = promise;}});
   await task;
-  assert.deepEqual(deleted, ['nba-stats-4-shell-v2']);
+  assert.deepEqual(deleted, ['nba-stats-4-shell-v2', 'nba-stats-4-shell-v46']);
   assert.ok(handlers.install);
 });
 test('service worker excludes API traffic and resolves versioned shell assets offline', async () => {
@@ -221,6 +222,65 @@ test('status endpoint outage does not hide a successfully loaded snapshot', asyn
     assert.equal(dom.window.__audit.getData().date,'2099-01-01');
     assert.equal(dom.window.document.getElementById('scan-status'),null);
   }finally{dom.window.close();}
+});
+
+test('a completed saved job retries a failed snapshot read without waiting for another scan', async () => {
+ const timers=[],calls=[];let reads=0;
+ const dom=browser(async(url,options={})=>{
+  calls.push({url,method:options.method||'GET'});
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/status'))return response({state:'done',last_saved:{job_id:'saved'}});
+  if(url.startsWith('/api/saved/latest')){
+   if(++reads===1)return {ok:false,status:503};
+   return response({job_id:'saved',date:'2099-01-01',results:[]});
+  }
+  return response({});
+ });
+ try{
+  dom.window.setTimeout=fn=>{timers.push(fn);return timers.length};
+  await tick();assert.equal(dom.window.__audit.getData(),null);
+  await timers[0]();await tick();
+  assert.equal(reads,2);
+  assert.equal(dom.window.__audit.getData().job_id,'saved');
+  assert.ok(calls.every(c=>c.method==='GET'&&c.url.startsWith('/api/saved/')));
+ }finally{dom.window.close();}
+});
+
+test('an open page rechecks started games even when the saved job never changes', async () => {
+ const timers=[],calls=[];let reads=0;
+ const dom=browser(async(url,options={})=>{
+  calls.push({url,method:options.method||'GET'});
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/status'))return response({state:'done',last_saved:{job_id:'same'}});
+  if(url.startsWith('/api/saved/latest'))return response({job_id:'same',date:'2099-01-01',results:[],
+   fixture_count:++reads===1?2:1,visibility_valid_until:reads===1?'2000-01-01T00:00:00Z':'2099-01-01T00:00:00Z'});
+  return response({});
+ });
+ try{
+  dom.window.setTimeout=fn=>{timers.push(fn);return timers.length};
+  await tick();assert.equal(dom.window.__audit.getData().fixture_count,2);
+  await timers[0]();await tick();
+  assert.equal(reads,2);
+  assert.equal(dom.window.__audit.getData().fixture_count,1);
+  assert.ok(calls.every(c=>c.method==='GET'&&c.url.startsWith('/api/saved/')));
+ }finally{dom.window.close();}
+});
+
+test('returning to an expired page refreshes immediately without recursive reloads', async () => {
+ let reads=0;
+ const dom=browser(async url=>{
+  if(url==='/api/saved/dates')return response({dates:[{date:'2099-01-01'}]});
+  if(url.startsWith('/api/saved/status'))return response({state:'done',last_saved:{job_id:'same'}});
+  if(url.startsWith('/api/saved/latest'))return response({job_id:'same',date:'2099-01-01',results:[],
+   fixture_count:++reads===1?2:1,visibility_valid_until:reads===1?'2000-01-01T00:00:00Z':'2099-01-01T00:00:00Z'});
+  return response({});
+ });
+ try{
+  await tick();assert.equal(reads,1);
+  dom.window.dispatchEvent(new dom.window.Event('focus'));await tick();
+  assert.equal(reads,2);
+  assert.equal(dom.window.__audit.getData().fixture_count,1);
+ }finally{dom.window.close();}
 });
 
 test('an open page checks again after completion to detect the next scheduled scan', async () => {

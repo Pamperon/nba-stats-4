@@ -117,6 +117,63 @@ class AppRuntimeTests(unittest.TestCase):
             self.assertEqual(saved['state'], 'done' if status == 'ok' else 'partial')
             self.assertEqual(saved['odds_api_http_requests_scan'], 4)
             self.assertIn('odds_api_http_requests=4', log.getvalue())
+            self.assertTrue(main.jobs['offline']['cloud_saved'])
+            self.assertNotIn('results', main.jobs['offline'])
+            self.assertNotIn('player_logs', main.jobs['offline'])
+
+    def test_saved_job_is_restored_instead_of_retaining_full_snapshot_in_memory(self):
+        main.jobs['saved'] = {'state': 'done', 'cloud_saved': True}
+        snapshot = {'job_id':'saved', 'date':'2026-10-25', 'state':'done',
+                    'results':[{'Giocatore':'A','Quota':1.8}], 'player_logs':{'A':[]}}
+        headers = {'Authorization': 'Bearer ' + main.TOKEN}
+        with patch.object(main.storage, 'configured', return_value=True), patch.object(main.storage, 'by_job_id', return_value=snapshot) as read:
+            result = self.client.get('/api/scan/saved', headers=headers)
+            self.assertEqual(result.json()['results'], snapshot['results'])
+            main.jobs.clear()  # CSV remains usable after process restart too.
+            csv = self.client.get('/api/scan/saved/csv', headers=headers)
+        self.assertEqual(read.call_count, 2)
+        self.assertEqual(csv.status_code, 200)
+        self.assertIn('Giocatore', csv.text)
+        self.assertIn('A', csv.text)
+        self.assertFalse(main.jobs)
+
+    def test_database_outage_does_not_report_saved_job_as_missing_or_empty(self):
+        main.jobs['saved'] = {'state':'done', 'cloud_saved':True}
+        with patch.object(main.storage, 'configured', return_value=True), patch.object(main.storage, 'by_job_id', side_effect=RuntimeError('db unavailable')), self.assertLogs(main.logger, 'ERROR'):
+            response = self.client.get('/api/scan/saved', headers={'Authorization':'Bearer '+main.TOKEN})
+        self.assertEqual(response.status_code, 503)
+
+    def test_unsaved_results_remain_available_for_emergency_export(self):
+        main.jobs['unsaved'] = {'state':'save_failed', 'results':[{'Giocatore':'A','Quota':1.8}]}
+        with patch.object(main.storage, 'by_job_id', side_effect=AssertionError('No database read')):
+            response = self.client.get('/api/scan/unsaved/csv', headers={'Authorization':'Bearer '+main.TOKEN})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('A', response.text)
+
+    def test_public_snapshot_expiry_tracks_next_tipoff_and_delays_recheck_without_looping(self):
+        now = dt.datetime.now(dt.timezone.utc)
+        future = now + dt.timedelta(hours=1)
+        snapshot = {'date':'2026-10-29','results':[]}
+        game = {'home':'A','away':'B','upcoming':True,'start_at':future.isoformat()}
+        with patch.object(main, 'schedule', return_value={'games':[game]}):
+            result = main.visible_snapshot(snapshot)
+        self.assertEqual(result['visibility_valid_until'], future.isoformat())
+        game['start_at'] = (now-dt.timedelta(minutes=5)).isoformat()
+        with patch.object(main, 'schedule', return_value={'games':[game]}):
+            result = main.visible_snapshot(snapshot)
+        expiry = dt.datetime.fromisoformat(result['visibility_valid_until'])
+        self.assertGreater(expiry, now + dt.timedelta(seconds=59))
+        self.assertLess(expiry, now + dt.timedelta(seconds=65))
+        with patch.object(main, 'schedule', return_value={'games':[]}):
+            self.assertIsNone(main.visible_snapshot(snapshot)['visibility_valid_until'])
+
+    def test_large_responses_are_compressed_without_changing_snapshot_contents(self):
+        snapshot = {'date':'2026-10-29', 'results':[{'Giocatore':'Player','Nota':'x'*10000}]}
+        with patch.object(main.storage, 'configured', return_value=True), patch.object(main.storage, 'latest', return_value=snapshot), patch.object(main, 'visible_snapshot', return_value=snapshot):
+            response = self.client.get('/api/saved/latest?date=2026-10-29', headers={'Accept-Encoding':'gzip'})
+        self.assertEqual(response.headers.get('content-encoding'), 'gzip')
+        self.assertEqual(response.json(), snapshot)
+        self.assertLess(int(response.headers['content-length']), 1000)
 
     def test_shadow_failure_cannot_change_or_block_live_predictions(self):
         import availability
