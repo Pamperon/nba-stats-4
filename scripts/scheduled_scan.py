@@ -15,15 +15,24 @@ TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
 # GitHub and Render recovery checks cover two hours after each Rome-time slot.
 # Supabase reserves each slot at most once, including after ambiguous failures.
-SLOTS = (7, 12, 17, 21)
+SLOTS = ((7, 0), (11, 0), (14, 30), (18, 0), (21, 0))
 MAX_DELAY = dt.timedelta(hours=2)
+
+def valid_slot(value):
+    try:
+        parsed = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M")
+        return parsed.strftime("%Y-%m-%dT%H:%M") == value and (parsed.hour, parsed.minute) in SLOTS
+    except (ValueError, TypeError):
+        return False
+
 
 def due_slot(now):
     candidates = []
+    now = now.astimezone(ROME)
     for days_back in (0, 1):
         day = now.date() - dt.timedelta(days=days_back)
-        for hour in SLOTS:
-            target = dt.datetime.combine(day, dt.time(hour), tzinfo=ROME)
+        for hour, minute in SLOTS:
+            target = dt.datetime.combine(day, dt.time(hour, minute), tzinfo=ROME)
             delay = now.astimezone(dt.timezone.utc) - target.astimezone(dt.timezone.utc)
             if dt.timedelta(0) <= delay <= MAX_DELAY:
                 candidates.append(target)
@@ -34,8 +43,8 @@ def seconds_until_check(now=None, maximum=600):
     now = now or dt.datetime.now(ROME)
     local = now.astimezone(ROME)
     targets = [dt.datetime.combine(local.date() + dt.timedelta(days=offset),
-                                   dt.time(hour), tzinfo=ROME)
-               for offset in (0, 1) for hour in SLOTS]
+                                   dt.time(hour, minute), tzinfo=ROME)
+               for offset in (0, 1) for hour, minute in SLOTS]
     delays = [(target.astimezone(dt.timezone.utc) - now.astimezone(dt.timezone.utc)).total_seconds()
               for target in targets]
     return min([maximum] + [delay for delay in delays if delay > 0])
@@ -72,14 +81,14 @@ def run(source=None):
         # Do not consume a slot against an old deployment with incompatible
         # slot validation or retry policy. A later automatic check can recover.
         health = call("/api/health")
-        if health.get("scheduler_revision") != "rome-slots-at-most-once-v2":
+        if health.get("scheduler_revision") != "rome-five-slots-v3":
             raise RuntimeError("Render scheduler update is not deployed yet; slot not claimed")
     # Verify both free ESPN calendars before consuming the durable reservation.
     # If either is unavailable, the next heartbeat may retry without paid calls.
     scan_day = slot.date() if slot is not None else now.date()
     schedules = load_schedules(scan_day)
     if slot is not None:
-        slot_key = slot.strftime("%Y-%m-%dT%H:00")
+        slot_key = slot.strftime("%Y-%m-%dT%H:%M")
         reservation = call("/api/storage/slot/claim?slot=" + urllib.parse.quote(slot_key),
                            method="POST")
         if not reservation.get("claimed"):
@@ -159,7 +168,7 @@ def execute_scan(now, slot, manual, source, schedules=None):
         try:
             path = "/api/scan?date=" + date + "&source=" + urllib.parse.quote(source)
             if slot is not None:
-                path += "&slot=" + urllib.parse.quote(slot.strftime("%Y-%m-%dT%H:00"))
+                path += "&slot=" + urllib.parse.quote(slot.strftime("%Y-%m-%dT%H:%M"))
             job = call(path, method="POST")
             job_id = job["job_id"]
             print("Job", job_id, "reused:", job.get("reused"), flush=True)

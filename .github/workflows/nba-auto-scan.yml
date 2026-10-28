@@ -3,10 +3,16 @@ name: NBA STATS - scansioni automatiche
 on:
   schedule:
     # Local Italian time, including automatic CET/CEST changes.
-    - cron: "0 7,12,17,21 * * *"
+    - cron: "0 7,11,18,21 * * *"
+      timezone: Europe/Rome
+    - cron: "30 14 * * *"
       timezone: Europe/Rome
     # Recovery checks within each two-hour window; claimed slots never repeat.
-    - cron: "7,17,27,37,47,57 7,8,12,13,17,18,21,22 * * *"
+    - cron: "7,17,27,37,47,57 7,8,11,12,15,18,19,21,22 * * *"
+      timezone: Europe/Rome
+    - cron: "37,47,57 14 * * *"
+      timezone: Europe/Rome
+    - cron: "7,17,27 16 * * *"
       timezone: Europe/Rome
   workflow_dispatch:
     inputs:

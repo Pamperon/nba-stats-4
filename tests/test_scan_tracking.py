@@ -27,8 +27,9 @@ class SchedulerTimingTests(unittest.TestCase):
 
     def test_each_italian_slot_is_a_wakeup_target_in_summer_and_winter(self):
         for month in (7, 10):
-            for hour in scheduled_scan.SLOTS:
-                now = dt.datetime(2026, month, 25, hour-1, 59, 50, tzinfo=scheduled_scan.ROME)
+            for hour, minute in scheduled_scan.SLOTS:
+                target = dt.datetime(2026, month, 25, hour, minute, tzinfo=scheduled_scan.ROME)
+                now = target - dt.timedelta(seconds=10)
                 self.assertEqual(scheduled_scan.seconds_until_check(now), 10)
                 self.assertEqual(scheduled_scan.seconds_until_check(now.astimezone(dt.timezone.utc)), 10)
 

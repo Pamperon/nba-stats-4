@@ -112,7 +112,8 @@ def health():
         active = sum(job['state'] in ('queued','running') for job in jobs.values())
     return {'status': 'ok', 'version': '4.0-optimized', 'odds_download_method': 'tournament-v1',
             'deployment_commit': os.getenv('RENDER_GIT_COMMIT'),
-            'scheduler_revision': 'rome-slots-at-most-once-v2',
+            'scheduler_revision': 'rome-five-slots-v3',
+            'scan_slots_italy': ['07:00', '11:00', '14:30', '18:00', '21:00'],
             'runtime_instance': RUNTIME_ID, 'scan_tracking_ready': tracking_ready,
             'active_scans': active}
 
@@ -544,9 +545,8 @@ def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
 @app.post('/api/storage/slot/claim', dependencies=[Depends(auth)])
 def slot_claim(slot: str = Query()):
     try:
-        from scripts.scheduled_scan import SLOTS
-        parsed = datetime.strptime(slot, '%Y-%m-%dT%H:%M')
-        if parsed.strftime('%Y-%m-%dT%H:%M') != slot or parsed.minute != 0 or parsed.hour not in SLOTS:
+        from scripts.scheduled_scan import valid_slot
+        if not valid_slot(slot):
             raise ValueError('Invalid slot')
     except ValueError:
         raise HTTPException(400, 'Fascia oraria non valida')
@@ -558,7 +558,10 @@ def slot_claim(slot: str = Query()):
 
 
 @app.post('/api/storage/slot/heartbeat', dependencies=[Depends(auth)])
-def slot_heartbeat(slot: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:00$')):
+def slot_heartbeat(slot: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$')):
+    from scripts.scheduled_scan import valid_slot
+    if not valid_slot(slot):
+        raise HTTPException(400, 'Slot non valido')
     try:
         storage.touch_slot(slot)
         return {'ok': True, 'odds_api_calls': 0}
@@ -569,9 +572,8 @@ def slot_heartbeat(slot: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:00$')):
 @app.post('/api/storage/slot/finish', dependencies=[Depends(auth)])
 def slot_finish(slot: str = Query(), success: bool = Query()):
     try:
-        from scripts.scheduled_scan import SLOTS
-        parsed = datetime.strptime(slot, '%Y-%m-%dT%H:%M')
-        if parsed.strftime('%Y-%m-%dT%H:%M') != slot or parsed.minute != 0 or parsed.hour not in SLOTS:
+        from scripts.scheduled_scan import valid_slot
+        if not valid_slot(slot):
             raise ValueError('Invalid slot')
     except ValueError:
         raise HTTPException(400, 'Fascia oraria non valida')
@@ -753,11 +755,15 @@ def diagnose_odds_tournament(check_missing: bool = False):
 @app.post('/api/scan', dependencies=[Depends(auth)])
 def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
          source: str = Query(default='manual', pattern=r'^(github|render|manual)$'),
-         slot: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:00$')):
+         slot: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$')):
     try:
         datetime.strptime(date, '%Y-%m-%d')
     except ValueError:
         raise HTTPException(400, 'Data non valida')
+    if slot is not None:
+        from scripts.scheduled_scan import valid_slot
+        if not valid_slot(slot):
+            raise HTTPException(400, 'Slot non valido')
     if shutdown_event.is_set():
         raise HTTPException(503, 'Servizio in aggiornamento; nuova scansione rinviata')
     with lock:
