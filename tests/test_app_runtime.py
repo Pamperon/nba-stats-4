@@ -52,17 +52,16 @@ class AppRuntimeTests(unittest.TestCase):
             self.assertEqual(self.client.post('/api/scan?date=2026-10-25').status_code, 401)
             odds.assert_not_called()
 
-    def test_new_public_views_are_read_only_and_validate_dates(self):
+    def test_public_daily_archive_is_read_only_and_retired_endpoints_are_gone(self):
         import public_views
-        with patch.object(public_views,'history_dates',return_value={'dates':[],'odds_api_calls':0}) as dates, patch.object(public_views,'history',return_value={'versions':[],'odds_api_calls':0}) as history, patch.object(public_views,'movements',return_value={'changes':[],'odds_api_calls':0}) as changes, patch.object(main.engine,'get_json',side_effect=AssertionError('No bookmaker requests')):
+        with patch.object(public_views,'history_dates',return_value={'dates':[],'odds_api_calls':0}) as dates, patch.object(public_views,'history',return_value={'groups':{},'odds_api_calls':0}) as history, patch.object(main.engine,'get_json',side_effect=AssertionError('No bookmaker requests')):
             self.assertEqual(self.client.get('/api/history/dates').json()['odds_api_calls'],0)
             self.assertEqual(self.client.get('/api/history?date=2026-10-23').status_code,200)
-            self.assertEqual(self.client.get('/api/odds/changes?date=2026-10-29').status_code,200)
             self.assertEqual(self.client.get('/api/history?date=2026-02-31').status_code,400)
             self.assertEqual(self.client.get('/api/history?date=2099-01-01').status_code,400)
-            self.assertEqual(self.client.get('/api/odds/changes?date=2026-02-31').status_code,400)
+            self.assertEqual(self.client.get('/api/odds/dates').status_code,404)
+            self.assertEqual(self.client.get('/api/odds/changes?date=2026-10-29').status_code,404)
             history.assert_called_once_with('2026-10-23')
-            changes.assert_called_once_with('2026-10-29')
             dates.assert_called_once()
 
     def test_archive_includes_exact_saved_history_only_when_requested(self):

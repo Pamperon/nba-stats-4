@@ -84,34 +84,31 @@ per il recupero. Le risposte HTTP grandi vengono compresse quando il client lo s
 
 ## Consultazione del sito
 
-Gli strumenti aggiuntivi sono accessibili dalla barra sotto le aree principali:
+I collegamenti **Archivio esiti** (`#archivio`) e **Come funziona**
+(`#come-funziona`) sono discreti e si trovano nel footer. Non occupano la
+navigazione principale di pronostici e statistiche.
 
-- **Archivio esiti** (`#archivio`): giornate archiviate e versioni dei pronostici
-  realmente salvati. Il selettore dell'aggiornamento mantiene separate le diverse
-  scansioni. Gli esiti sono letti dalle verifiche ESPN già persistite per quello
-  stesso job; dati mancanti o giocatori non scesi in campo restano da verificare.
-  Non vengono ricostruite selezioni storiche, simulate quote combinate della
-  stessa partita o presentati rendimenti economici.
-- **Preferiti** (`#preferiti`): fino a 100 giocatori salvati in `localStorage`,
-  senza account o sincronizzazione tra dispositivi. La stella sui pronostici e
-  il pulsante nella scheda giocatore gestiscono la lista; il filtro “Solo
-  preferiti” limita esclusivamente Analisi quote, senza modificare i pronostici.
-- **Movimenti quote** (`#movimenti`): confronto degli ultimi due snapshot della
-  stessa giornata, anche passata, da PostgreSQL. Identità, partita, mercato,
-  scelta e linea devono coincidere per confrontare i prezzi. Linee aggiunte e
-  rimosse sono mostrate separatamente; selezioni duplicate ambigue sono escluse.
-- **Come funziona** (`#come-funziona`): fonti, orari italiani, significato delle
-  stime e limiti della lettura degli esiti.
+L'archivio presenta una sola raccolta per giornata di tutti i pronostici distinti
+realmente pubblicati, raggruppati in singole, doppie e triple. Lo stesso
+pronostico ripetuto in più aggiornamenti compare una sola volta, con la quota
+e la stima della prima pubblicazione. I soli cambi di quota o di ordine delle
+selezioni non creano nuove voci. Un cambio di partita, giocatore, mercato,
+scelta o linea distingue il pronostico. Le multiple rimangono le combinazioni
+originali pubblicate: non vengono create combinazioni nuove a posteriori.
 
-I nuovi endpoint pubblici `/api/history/dates`, `/api/history?date=YYYY-MM-DD`,
-`/api/odds/dates` e `/api/odds/changes?date=YYYY-MM-DD` leggono solo dati già
-salvati. Non richiedono un token, non avviano scansioni, non contattano ESPN o
-OddsPapi e non scrivono nel database. Nessuna risposta dell'archivio contiene
-gli storici completi dei giocatori o i dati dei modelli sperimentali.
+Gli esiti provengono dalle verifiche ESPN persistite. Dati mancanti o in
+conflitto rimangono da verificare; non vengono simulati rimborsi o rendimenti.
+Gli snapshot originali sono conservati per gli studi sul modello. Il riepilogo
+giornaliero è una vista di sola lettura e non modifica dati o selezioni salvate.
+
+`/api/history/dates` e `/api/history?date=YYYY-MM-DD` sono pubblici e leggono
+solo PostgreSQL, senza chiamate ai provider o scritture. L'interfaccia non
+espone un selettore delle scansioni. Preferiti e movimenti quote, inclusi i
+relativi endpoint e filtri, sono stati rimossi; al caricamento viene eliminata
+solo la vecchia chiave locale di quella funzione.
 
 Da telefono Analisi quote mostra inizialmente 100 righe, con caricamento
-progressivo fino al limite di 500 già esistente. Ricerca, filtri, preferiti e
-caricamento progressivo non modificano le selezioni archiviate.
+progressivo fino a 500; resta disponibile l'azzeramento dei filtri.
 
 ## Verifiche offline
 

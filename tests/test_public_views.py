@@ -8,42 +8,6 @@ ROW = {'Giocatore':'A Player', 'ESPN ID':'123', 'Squadra':'A', 'Partita':'A - B'
 
 
 class PublicViewsTests(unittest.TestCase):
-    def test_quote_change_matches_exact_selection_and_preserves_original_prices(self):
-        before=[dict(ROW),{**ROW,'Linea':14.5,'Quota':1.2}]
-        current=[{**ROW,'Quota':1.71},{**ROW,'Linea':24.5,'Quota':2.3}]
-        original=deepcopy(before)
-        result=public_views.compare_quotes(current,before)
-        self.assertEqual(result['summary']['down'],1)
-        self.assertEqual(result['summary']['added'],1)
-        self.assertEqual(result['summary']['removed'],1)
-        self.assertEqual(result['summary']['comparable'],1)
-        self.assertEqual(result['summary']['line_groups_changed'],1)
-        changed=next(row for row in result['changes'] if row['kind']=='down')
-        self.assertEqual((changed['before'],changed['after']),(1.74,1.71))
-        self.assertEqual(before,original)
-
-    def test_different_games_or_players_are_not_same_selection(self):
-        result=public_views.compare_quotes([{**ROW,'Partita':'A - C'}],[ROW])
-        self.assertEqual(result['summary']['comparable'],0)
-        self.assertEqual(result['summary']['down'],0)
-        self.assertEqual(result['summary']['added'],1)
-
-    def test_search_input_includes_all_movements_beyond_one_thousand_players(self):
-        rows=[{**ROW,'ESPN ID':str(i),'Giocatore':f'Player {i:04d}'} for i in range(1251)]
-        result=public_views.compare_quotes(rows,[])
-        self.assertEqual(len(result['changes']),1251)
-        self.assertEqual(result['changes'][-1]['player'],'Player 1250')
-        self.assertFalse(result['truncated'])
-
-    def test_unchanged_quotes_not_reported_as_changes_and_ambiguous_rows_excluded(self):
-        result=public_views.compare_quotes([ROW],[ROW])
-        self.assertEqual(result['summary']['unchanged'],1)
-        self.assertEqual(result['changes'],[])
-        index,ambiguous=public_views.selection_index([ROW,{**ROW,'Quota':1.71}])
-        self.assertFalse(index)
-        self.assertEqual(ambiguous,1)
-        self.assertEqual(public_views.selection_index([{**ROW,'Quota':float('nan')}]),({},0))
-
     def test_missing_final_result_is_unresolved_not_a_loss(self):
         saved={'groups':{'Singola':{'complete':True,'legs':[ROW]}}}
         result=public_views.ticket_groups(saved,None)['Singola']
@@ -69,3 +33,50 @@ class PublicViewsTests(unittest.TestCase):
     def test_correlated_multiple_does_not_invent_bookmaker_combined_price(self):
         saved={'groups':{'Doppia':{'complete':True,'legs':[ROW,{**ROW,'Giocatore':'B Player','ESPN ID':'456'}]}}}
         self.assertIsNone(public_views.ticket_groups(saved,None)['Doppia']['combined_odds'])
+
+    def version(self, rows, at='2026-10-28T07:00:00+00:00', name='Singola'):
+        saved={'groups':{name:{'complete':True,'legs':rows}}}
+        return {'saved_at':at,'groups':public_views.ticket_groups(saved,None)}
+
+    def test_daily_dedup_ignores_changed_odds_and_probability_and_keeps_first_price(self):
+        first=self.version([ROW])
+        later=self.version([{**ROW,'Quota':1.71,'Prob. stimata %':82}],at='2026-10-28T11:00:00+00:00')
+        before=deepcopy([later,first])
+        result=public_views.daily_groups([later,first])
+        self.assertEqual(len(result['Singola']),1)
+        self.assertEqual(result['Singola'][0]['legs'][0]['Quota'],1.74)
+        self.assertEqual(result['Singola'][0]['legs'][0]['Prob. stimata %'],80)
+        self.assertEqual([later,first],before)
+
+    def test_changed_line_game_or_player_is_a_distinct_daily_prediction(self):
+        versions=[self.version([ROW]),self.version([{**ROW,'Linea':24.5}]),
+                  self.version([{**ROW,'Partita':'A - C'}]),self.version([{**ROW,'ESPN ID':'456'}])]
+        self.assertEqual(len(public_views.daily_groups(versions)['Singola']),4)
+
+    def test_multiples_are_deduplicated_as_whole_tickets_without_inventing_combinations(self):
+        second={**ROW,'Giocatore':'B Player','ESPN ID':'456','Partita':'C - D'}
+        third={**second,'Giocatore':'C Player','ESPN ID':'789'}
+        result=public_views.daily_groups([self.version([ROW,second],name='Doppia'),
+            self.version([{**second,'Quota':1.5},ROW],name='Doppia'),
+            self.version([ROW,third],name='Doppia')])
+        self.assertEqual(len(result['Doppia']),2)
+        self.assertFalse(result['Singola'])
+        self.assertEqual([r['Giocatore'] for r in result['Doppia'][0]['legs']],['A Player','B Player'])
+
+    def test_daily_merge_uses_verified_evidence_without_repeating_the_same_ticket(self):
+        first=self.version([ROW])
+        second=self.version([{**ROW,'Quota':1.71}],at='2026-10-28T11:00:00+00:00')
+        second['groups']['Singola']['legs'][0].update(actual=22,win=True)
+        result=public_views.daily_groups([first,second])['Singola']
+        self.assertEqual(len(result),1)
+        self.assertEqual(result[0]['status'],'won')
+        self.assertEqual(result[0]['legs'][0]['Quota'],1.74)
+        self.assertEqual(result[0]['legs'][0]['actual'],22)
+
+    def test_conflicting_results_remain_unresolved(self):
+        first=self.version([ROW]);second=self.version([ROW])
+        first['groups']['Singola']['legs'][0].update(actual=22,win=True)
+        second['groups']['Singola']['legs'][0].update(actual=9,win=False)
+        result=public_views.daily_groups([first,second])['Singola'][0]
+        self.assertEqual(result['status'],'unresolved')
+        self.assertIsNone(result['legs'][0]['actual'])
