@@ -135,3 +135,78 @@ test('switching between desktop and mobile reuses saved quotes with the correct 
   assert.equal(calls.length,before);
  }finally{dom.window.close();}
 });
+
+const statsPayload=url=>url==='/api/players/teams'?{teams:[{id:'1',name:'Boston Celtics'},{id:'2',name:'Miami Heat'}]}:url.startsWith('/api/players/roster')?{players:[{id:url.endsWith('2')?'22':'11',name:url.endsWith('2')?'José Player':'First Player'}]}:url.startsWith('/api/players/log?')?{games:[]}:base(url);
+const quoteRow=(name,match)=>({Giocatore:name,'ESPN ID':'11',Squadra:'Boston Celtics',Partita:match,Mercato:'PTS',Scelta:'Over',Linea:9.5,Quota:1.8,'Stato analisi':'Valutabile (stima empirica)','Prob. stimata %':80});
+
+test('fixture filter combines with player and market search without changing forecasts or requesting data',async()=>{
+ const rows=[quoteRow('First Player','Boston Celtics - Miami Heat'),quoteRow('Other Player','A < B - C')],calls=[];let returnedRows=rows;
+ const dom=app(async url=>{calls.push(url);return response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:returnedRows}:base(url));},true);
+ try{
+  await tick();const d=dom.window.document,picks=d.getElementById('picks').innerHTML,before=calls.length;
+  const filter=d.getElementById('finder-fixture');assert.equal(filter.options.length,3);assert.equal(filter.options[1].textContent,'A < B - C');
+  filter.value='Boston Celtics - Miami Heat';filter.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(d.querySelectorAll('.finder-card').length,1);assert.match(d.querySelector('.finder-card').textContent,/First Player/);
+  d.getElementById('finder-search').value='Other';d.getElementById('finder-search').dispatchEvent(new dom.window.Event('input'));
+  assert.equal(d.querySelectorAll('.finder-card').length,0);
+  assert.equal(d.getElementById('picks').innerHTML,picks);assert.equal(calls.length,before);
+  d.getElementById('finder-reset').click();assert.equal(filter.value,'');assert.equal(d.querySelectorAll('.finder-card').length,2);
+  filter.value='A < B - C';returnedRows=[];d.getElementById('date').dispatchEvent(new dom.window.Event('change'));await tick();await tick();assert.equal(filter.value,'');assert.equal(filter.options.length,1);
+ }finally{dom.window.close();}
+});
+
+test('direct NBA search loads its directory once, ignores accents and selects the exact player and team',async()=>{
+ const calls=[];let release;
+ const dom=app(async url=>{
+  calls.push(url);
+  if(url==='/api/players/directory')return new Promise(resolve=>{release=()=>resolve(response({players:[{id:'11',name:'First Player',team_id:'1',team:'Boston Celtics'},{id:'22',name:'José Player',team_id:'2',team:'Miami Heat'}]}));});
+  return response(statsPayload(url));
+ });
+ try{
+  await tick();const w=dom.window,d=w.document;assert.equal(calls.includes('/api/players/directory'),false);
+  d.getElementById('area-stats').click();await tick();await tick();
+  const input=d.getElementById('player-search');
+  input.value='jo';input.dispatchEvent(new w.Event('input'));input.value='PLAYER jose';input.dispatchEvent(new w.Event('input'));
+  assert.equal(calls.filter(url=>url==='/api/players/directory').length,1);release();await tick();await tick();
+  const results=d.querySelectorAll('[data-player-result]');assert.equal(results.length,1);assert.match(results[0].textContent,/José PlayerMiami Heat/);
+  results[0].click();await tick();await tick();await tick();
+  assert.equal(d.getElementById('team').value,'2');assert.equal(d.getElementById('playername').value,'22');
+  assert.equal(d.getElementById('player-search-results').hidden,true);
+  input.value='Jose';input.dispatchEvent(new w.Event('input'));await tick();assert.equal(calls.filter(url=>url==='/api/players/directory').length,1);
+  assert.ok(calls.every(url=>!url.includes('odds')&&!url.startsWith('/api/scan')));
+ }finally{dom.window.close();}
+});
+
+test('player search failures can retry and old results cannot overwrite a cleared query',async()=>{
+ let failed=true,release;
+ const dom=app(async url=>url==='/api/players/directory'?(failed?{ok:false,status:503}:new Promise(resolve=>{release=()=>resolve(response({players:[{id:'11',name:'First Player',team:'Boston Celtics'}]}));})):response(statsPayload(url)));
+ try{
+  await tick();const w=dom.window,d=w.document,input=d.getElementById('player-search');
+  input.value='First';input.dispatchEvent(new w.Event('input'));await tick();await tick();
+  assert.match(d.getElementById('player-search-status').textContent,/temporaneamente non disponibile/);
+  failed=false;d.querySelector('#player-search-results button').click();
+  input.value='';input.dispatchEvent(new w.Event('input'));release();await tick();await tick();
+  assert.equal(d.querySelectorAll('[data-player-result]').length,0);assert.match(d.getElementById('player-search-status').textContent,/almeno 2/);
+ }finally{dom.window.close();}
+});
+
+test('returning from statistics restores quote position, filters, loaded batches and expanded details',async()=>{
+ const match='Boston Celtics - Miami Heat',rows=Array.from({length:230},()=>quoteRow('First Player',match));
+ const dom=app(async url=>response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:rows,season:'2026-27'}:statsPayload(url)),true);
+ try{
+  await tick();const w=dom.window,d=w.document,moves=[];
+  Object.defineProperty(w,'scrollY',{value:0,writable:true});w.scrollTo=options=>{moves.push(options.top);w.scrollY=options.top;};
+  d.querySelector('[data-tab=finder]').click();
+  d.getElementById('finder-fixture').value=match;d.getElementById('finder-fixture').dispatchEvent(new w.Event('change'));
+  d.getElementById('finder-search').value='First';d.getElementById('finder-search').dispatchEvent(new w.Event('input'));
+  d.getElementById('finder-more').click();
+  const first=d.querySelector('.finder-card');first.querySelector('.finder-details-toggle').click();
+  d.getElementById('finder-scroll').scrollLeft=120;w.scrollY=1234;
+  first.querySelector('.finder-player').click();await tick();await tick();
+  assert.equal(w.scrollY,0);d.getElementById('back-to-picks').click();await new Promise(resolve=>setTimeout(resolve,35));
+  assert.equal(moves.at(-1),1234);assert.equal(d.getElementById('finder-scroll').scrollLeft,120);
+  assert.equal(d.getElementById('finder-fixture').value,match);assert.equal(d.getElementById('finder-search').value,'First');
+  assert.equal(d.querySelectorAll('.finder-card').length,200);assert.equal(first.querySelector('.finder-extra').hidden,false);
+  w.scrollY=1600;d.getElementById('area-stats').click();await tick();d.getElementById('area-quotes').click();await new Promise(resolve=>setTimeout(resolve,35));assert.equal(moves.at(-1),1600);
+ }finally{dom.window.close();}
+});

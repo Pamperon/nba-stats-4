@@ -47,6 +47,16 @@ class AppRuntimeTests(unittest.TestCase):
         self.assertIn('application/xml', sitemap.headers['content-type'])
         self.assertIn('<loc>https://basketlab.it/</loc>', sitemap.text)
 
+    def test_public_player_directory_is_read_only_and_retryable(self):
+        players = [{'id': '22', 'name': 'Test Player', 'team_id': '2', 'team': 'Miami Heat'}]
+        with patch.object(main.player_stats, 'directory', return_value=players), \
+             patch.object(main.engine, 'get_json', side_effect=AssertionError('No OddsPapi')):
+            response = self.client.get('/api/players/directory')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'players': players, 'odds_api_calls': 0})
+        with patch.object(main.player_stats, 'directory', side_effect=RuntimeError('ESPN unavailable')):
+            self.assertEqual(self.client.get('/api/players/directory').status_code, 503)
+
     def test_scan_requires_authentication(self):
         with patch.object(main.engine, 'get_fixtures') as odds:
             self.assertEqual(self.client.post('/api/scan?date=2026-10-25').status_code, 401)

@@ -152,3 +152,9 @@ in passato. Nessun archivio viene eliminato automaticamente.
 I risultati live dipendono dalla disponibilità dei provider esterni; i test
 simulati non certificano quote o risultati futuri. Il service worker conserva
 la shell dell'app e non memorizza le risposte API.
+
+### Consultazione dei giocatori e delle quote
+
+Nelle statistiche si può cercare un giocatore NBA per nome senza scegliere prima la squadra. L’elenco usa i roster ESPN già memorizzati, con caricamento condiviso e riutilizzo nel browser; non scarica game log durante la ricerca e non usa OddsPapi. In caso di indisponibilità si può riprovare o usare i selettori esistenti.
+
+Analisi Quote permette di filtrare per partita, insieme a giocatore, mercato e filtri avanzati, usando solo le selezioni salvate della giornata. Il ritorno dalle statistiche conserva filtri, risultati già caricati, dettagli aperti e posizione verticale e orizzontale nella stessa giornata. Cambiare giornata azzera la partita selezionata e la posizione salvata.

@@ -124,3 +124,31 @@ class StatsLatencyTests(unittest.TestCase):
             self.assertNotIn(key, player_stats._pending)
             self.assertEqual(player_stats.cached(key, 1, lambda: {'games': []}), {'games': []})
         player_stats._memory_cache.pop(key, None)
+
+    def test_directory_reuses_rosters_without_loading_statistics(self):
+        teams = [{'id': '1', 'name': 'Boston Celtics'}, {'id': '2', 'name': 'Miami Heat'}]
+        with patch.object(player_stats, 'cached', side_effect=lambda key, hours, loader: loader()), \
+             patch.object(player_stats, 'catalog', return_value=teams), \
+             patch.object(player_stats, 'roster', side_effect=lambda team: [{'id': team + '1', 'name': 'Same Name'}]) as rosters, \
+             patch.object(engine, 'selected_game_log', side_effect=AssertionError('No game downloads')), \
+             patch.object(engine, 'get_json', side_effect=AssertionError('No OddsPapi')):
+            result = player_stats.directory()
+        self.assertEqual([(p['id'], p['team_id']) for p in result], [('11', '1'), ('21', '2')])
+        self.assertEqual(rosters.call_count, 2)
+
+    def test_directory_does_not_cache_a_partial_roster_failure(self):
+        key = 'nba:player-directory:v1'
+        player_stats._memory_cache.pop(key, None)
+        teams = [{'id': '1', 'name': 'Boston Celtics'}, {'id': '2', 'name': 'Miami Heat'}]
+        def load(team):
+            if team == '2':
+                raise RuntimeError('ESPN unavailable')
+            return [{'id': '11', 'name': 'First Player'}]
+        with patch.object(player_stats.storage, 'cache_read', return_value=None), \
+             patch.object(player_stats, 'persist_cache') as persist, \
+             patch.object(player_stats, 'catalog', return_value=teams), \
+             patch.object(player_stats, 'roster', side_effect=load):
+            with self.assertRaises(RuntimeError):
+                player_stats.directory()
+            self.assertNotIn(key, player_stats._memory_cache)
+            persist.assert_not_called()
