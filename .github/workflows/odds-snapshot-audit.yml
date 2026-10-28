@@ -78,6 +78,12 @@ jobs:
             if not saved[a].get("results") or not saved[b].get("results"):
              print("EXCLUDED_EMPTY",a,b,flush=True);continue
             print("COMPARISON",a,b,json.dumps(compare(saved[a],saved[b])),flush=True)
+            x,y=indexed(saved[a]),indexed(saved[b])
+            for low,high in ((1.1,2.2),(1.7,2.0)):
+             keys=[k for k in x.keys()&y.keys() if low<=x[k]<=high]
+             moved=[k for k in keys if abs(x[k]-y[k])>1e-8]
+             deltas=[abs(x[k]-y[k]) for k in moved]
+             print("PRICE_BAND",a,b,json.dumps({"band":[low,high],"basis":"initial snapshot price; same selection and line at both times","common":len(keys),"changed":len(moved),"changed_pct":round(100*len(moved)/len(keys),2) if keys else None,"delta_median_changed":round(statistics.median(deltas),4) if deltas else 0,"moved_outside_band":sum(not low<=y[k]<=high for k in keys)}),flush=True)
           print("ODDSPAPI_HTTP_CALLS",0,flush=True)
           print("ODDSPAPI_TEST_KEY_AVAILABLE",bool(os.environ.get("ODDSPAPI_API_KEY")),flush=True)
           PY
