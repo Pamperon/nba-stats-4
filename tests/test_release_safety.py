@@ -6,6 +6,17 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 class ReleaseSafetyTests(unittest.TestCase):
+    def test_live_calibration_requires_explicit_release_even_when_evidence_qualifies(self):
+        tree = ast.parse((ROOT / 'main.py').read_text(encoding='utf-8'))
+        flag = next(node for node in tree.body if isinstance(node, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == 'LIVE_CALIBRATION_ENABLED'
+                            for target in node.targets))
+        self.assertIs(flag.value.value, False)
+        scan = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'do_scan')
+        gate = next(node for node in ast.walk(scan) if isinstance(node, ast.If)
+                    and 'LIVE_CALIBRATION_ENABLED' in ast.unparse(node.test))
+        self.assertIn('progressive_calibration.apply', ast.unparse(gate))
+
     def test_live_server_does_not_import_experimental_selector(self):
         tree = ast.parse((ROOT / "main.py").read_text(encoding="utf-8"))
         imports = []

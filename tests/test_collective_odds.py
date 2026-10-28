@@ -120,3 +120,18 @@ class CollectiveOddsTests(unittest.TestCase):
             odds_feed.cached_payload("odds:fixtures:v1:2026-10-29", 1000, loader)
         self.assertEqual(loader.call_count, 2)
         self.assertEqual(list(saved), ["odds:fixtures:v1"])
+
+    def test_many_slots_retain_only_latest_feed_in_memory_without_changing_freshness(self):
+        loader = Mock(side_effect=lambda: {"large_feed": ["payload"] * 100})
+        with patch.object(odds_feed.time, "time", return_value=1000):
+            for slot in range(30):
+                current = odds_feed.cached_payload(f"odds:nba:bet365.it:v1:{slot}", 10800, loader)
+            again = odds_feed.cached_payload("odds:nba:bet365.it:v1:29", 10800, loader)
+        self.assertEqual(len(odds_feed._MEMORY), 1)
+        self.assertEqual(loader.call_count, 30)
+        self.assertEqual(again["source"], "cache")
+        self.assertEqual(again["fetched_at"], current["fetched_at"])
+        with patch.object(odds_feed.time, "time", return_value=11801):
+            refreshed = odds_feed.cached_payload("odds:nba:bet365.it:v1:29", 10800, loader)
+        self.assertEqual(loader.call_count, 31)
+        self.assertEqual(refreshed["source"], "api")

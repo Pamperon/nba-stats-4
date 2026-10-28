@@ -1,6 +1,6 @@
 # NBA STATS PRO
 
-Web app privata per l'analisi dei player props NBA Bet365, con statistiche ESPN,
+Web app per l'analisi dei player props NBA Bet365, con statistiche ESPN,
 archivio PostgreSQL/Supabase e interfaccia PWA. Repository indipendente dalla versione 3.5.
 
 ## Avvio
@@ -20,15 +20,16 @@ come sistema multiutente con autenticazione individuale.
 
 ## Aggiornamenti automatici
 
-GitHub Actions programma le scansioni alle **07:00, 12:00, 17:00 e 21:00** nel
-fuso `Europe/Rome`, con cambio automatico tra ora solare e legale. Il secret
+Render programma le scansioni alle **07:00, 11:00, 14:30, 18:00 e 21:00** nel
+fuso `Europe/Rome`, con cambio automatico tra ora solare e legale. GitHub Actions
+esegue controlli secondari di recupero sulle stesse fasce. Il secret
 GitHub `NBA_STATS_ACCESS_TOKEN` deve corrispondere al token del server.
 Sono previsti controlli di recupero ogni dieci minuti, fino a due ore dopo
 ogni fascia. Prima di prenotare una fascia vengono verificati entrambi i calendari
 ESPN gratuiti: se non sono disponibili, il controllo successivo può riprovare
 senza aver consumato la prenotazione o richieste OddsPapi. Render esegue anche
 un controllo interno mentre il server è attivo: al massimo ogni dieci minuti,
-con attesa abbreviata se si avvicina una delle quattro fasce, per non superarla.
+con attesa abbreviata se si avvicina una delle cinque fasce, per non superarla.
 GitHub può ritardare o perdere eventi pianificati; Render Free può sospendersi.
 
 La prenotazione atomica `nba_scan_slots` impedisce che GitHub e Render ripetano
@@ -59,10 +60,27 @@ con certezza se il provider l'abbia conteggiato. Non si effettuano replay per
 ricostruire il consumo. Il registro copre le nuove richieste dall'attivazione;
 non ricostruisce gli arresti precedenti né richieste effettuate fuori dall'app.
 
+Le quote NBA Bet365 Italia dei tre mercati giocatore vengono recuperate insieme
+con `odds-by-tournaments` (torneo 132), senza ripiego a chiamate per partita.
+Oggi e domani condividono il download della fascia; calendario e catalogo vengono
+scaricati una volta per giornata italiana. La validità delle quote resta di tre
+ore, ma una nuova fascia richiede dati nuovi anche prima della scadenza. Le
+letture dalla cache conservano l'orario originale del download. Database e RAM
+conservano solo l'ultima versione di ciascuno dei tre feed; gli snapshot completi
+restano nell'archivio PostgreSQL. In condizioni ordinarie cinque aggiornamenti
+costano fino a 7 chiamate al giorno (217 in 31 giorni); prove, scansioni manuali
+e richieste aggiuntive possono aumentare il consumo.
+
 `GET /api/saved/status?date=YYYY-MM-DD` distingue l'ultimo tentativo dall'ultimo
 snapshot salvato. L'interfaccia controlla lo stato in sottofondo con sole letture
 per caricare i nuovi dati salvati, senza mostrare un riquadro tecnico. Un errore
 non aggiorna l'orario delle quote precedenti.
+La pagina ricontrolla lo snapshot anche all'inizio annunciato delle partite,
+senza richieste OddsPapi, e riprova le letture fallite. Al ritorno su una scheda
+rimasta in sottofondo verifica subito se la visibilità delle selezioni è scaduta.
+Gli snapshot salvati vengono riletti dal database quando richiesti, anche per
+l'esportazione CSV dopo un riavvio. Quelli non salvati restano disponibili in RAM
+per il recupero. Le risposte HTTP grandi vengono compresse quando il client lo supporta.
 
 ## Verifiche offline
 
@@ -95,7 +113,10 @@ la memoria sul servizio Render da 512 MB. Questi controlli non richiedono OddsPa
 riscrivere gli archivi precedenti.
 
 Le probabilità sono stime empiriche, non garanzie di esito. Le correzioni di
-calibrazione esistenti richiedono validazione storica walk-forward; il controllo
+calibrazione esistenti richiedono validazione storica walk-forward e sono
+bloccate dal flag di rilascio `LIVE_CALIBRATION_ENABLED = False` in `main.py`:
+la sola raccolta di nuovi risultati non può attivarle. Un'eventuale abilitazione
+richiede una revisione e una decisione separata. Il controllo
 sul minutaggio resta in modalità osservazione. I backtest sperimentali delle
 multiple non rappresentano necessariamente le selezioni effettivamente mostrate
 in passato. Nessun archivio viene eliminato automaticamente.
