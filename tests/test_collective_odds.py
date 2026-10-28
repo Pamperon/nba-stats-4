@@ -108,3 +108,15 @@ class CollectiveOddsTests(unittest.TestCase):
         slim = odds_feed.slim_tournament([fixture], {"m"})["f"]
         self.assertEqual(engine.parse_odds(fixture, catalog, "Punti (PTS)"),
                          engine.parse_odds(slim, catalog, "Punti (PTS)"))
+
+    def test_new_days_and_slots_replace_fixed_database_rows(self):
+        saved = {}
+        loader = Mock(return_value=[])
+        with patch.object(odds_feed.storage, "configured", return_value=True), \
+             patch.object(odds_feed.storage, "cache_read", side_effect=lambda key,**kw:saved.get(key)), \
+             patch.object(odds_feed.storage, "cache_write", side_effect=lambda key,value:saved.update({key:value})):
+            odds_feed.cached_payload("odds:fixtures:v1:2026-10-28", 1000, loader)
+            odds_feed._MEMORY.clear()
+            odds_feed.cached_payload("odds:fixtures:v1:2026-10-29", 1000, loader)
+        self.assertEqual(loader.call_count, 2)
+        self.assertEqual(list(saved), ["odds:fixtures:v1"])
