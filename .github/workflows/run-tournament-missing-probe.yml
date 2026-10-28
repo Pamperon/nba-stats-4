@@ -1,0 +1,45 @@
+name: Check missing NBA tournament fixtures
+on:
+  push:
+    branches: ['audit/odds-costs-20261028']
+    paths: ['.github/workflows/run-tournament-missing-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Wait for verified source deployment and check missing fixtures
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os,json,time,urllib.request,urllib.error
+          base="https://nba-stats-4.onrender.com"
+          token=os.environ.get("NBA_STATS_ACCESS_TOKEN")
+          if not token:raise SystemExit("Authentication secret unavailable")
+          expected="f7dde5b72b74ce60b07211e2d3907467c2ff0a4e"
+          for attempt in range(40):
+              try:
+                  with urllib.request.urlopen(base+"/api/health",timeout=10) as r:health=json.load(r)
+                  if health.get("deployment_commit")==expected:
+                      print("Verified source deployed; allowing old-instance drain",flush=True)
+                      time.sleep(35)
+                      break
+              except (urllib.error.URLError,TimeoutError):pass
+              print("Waiting for source deployment",attempt+1,flush=True)
+              time.sleep(10)
+          else:raise SystemExit("Deployment unavailable; no supplementary probe started")
+          req=urllib.request.Request(base+"/api/diagnostics/odds-tournament?check_missing=true",
+              method="POST",headers={"Authorization":"Bearer "+token,"Accept":"application/json"})
+          try:
+              with urllib.request.urlopen(req,timeout=240) as r:result=json.load(r)
+          except urllib.error.HTTPError as e:
+              raise SystemExit("Diagnostic HTTP "+str(e.code)+"; no automatic retry")
+          except (urllib.error.URLError,TimeoutError):
+              raise SystemExit("Response unavailable; durable reservation prevents repeat provider calls")
+          print("SUPPLEMENTARY_TEST_REPORT",json.dumps(result,ensure_ascii=False),flush=True)
+          if result.get("state")!="done" or result.get("test_id")!="nba-tournament-compatibility-v1-missing":
+              raise SystemExit("Supplementary test not completed")
+          PY
