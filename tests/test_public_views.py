@@ -28,6 +28,13 @@ class PublicViewsTests(unittest.TestCase):
         self.assertEqual(result['summary']['down'],0)
         self.assertEqual(result['summary']['added'],1)
 
+    def test_search_input_includes_all_movements_beyond_one_thousand_players(self):
+        rows=[{**ROW,'ESPN ID':str(i),'Giocatore':f'Player {i:04d}'} for i in range(1251)]
+        result=public_views.compare_quotes(rows,[])
+        self.assertEqual(len(result['changes']),1251)
+        self.assertEqual(result['changes'][-1]['player'],'Player 1250')
+        self.assertFalse(result['truncated'])
+
     def test_unchanged_quotes_not_reported_as_changes_and_ambiguous_rows_excluded(self):
         result=public_views.compare_quotes([ROW],[ROW])
         self.assertEqual(result['summary']['unchanged'],1)

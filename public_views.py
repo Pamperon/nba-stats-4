@@ -117,8 +117,9 @@ def compare_quotes(current, previous):
         lines_before[key[:-1]].add(key[-1])
     counts['line_groups_changed'] = sum(lines_now[k] != lines_before[k] for k in lines_now.keys() & lines_before.keys())
     changes.sort(key=lambda row: (str(row['player']), str(row['game']), str(row['market']), float(row['line'])))
+    # The browser renders in batches, but search must cover every player.
     return {'summary': {**counts, 'comparable': len(common), 'ambiguous': bad_now + bad_before},
-            'changes': changes[:1000], 'truncated': len(changes) > 1000}
+            'changes': changes, 'truncated': False}
 
 
 def movements(day):
