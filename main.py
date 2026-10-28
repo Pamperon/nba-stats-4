@@ -728,11 +728,12 @@ def saved_status(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
 
 
 @app.post('/api/diagnostics/odds-tournament', dependencies=[Depends(auth)])
-def diagnose_odds_tournament():
+def diagnose_odds_tournament(check_missing: bool = False):
     """One explicit, durable, five-request probe; never starts a scan."""
     import odds_provider_probe
     try:
-        return odds_provider_probe.run_once(engine.API_KEY)
+        return (odds_provider_probe.check_missing_once(engine.API_KEY) if check_missing
+                else odds_provider_probe.run_once(engine.API_KEY))
     except odds_provider_probe.ProbeError as exc:
         raise HTTPException(409, str(exc)) from None
     except Exception:

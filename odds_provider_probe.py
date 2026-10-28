@@ -82,8 +82,10 @@ def compare(bulk, single, catalog):
 
 
 class Caller:
-    def __init__(self, api_key):
+    def __init__(self, api_key, limit=MAX_CALLS, job_id=TEST_ID):
         self.api_key = api_key
+        self.limit = limit
+        self.job_id = job_id
         self.count = 0
         self.history = []
         self.next_at = 0
@@ -92,13 +94,13 @@ class Caller:
         if endpoint not in ("account", "fixtures", "markets", "odds-by-tournaments", "odds"):
             raise ProbeError("Endpoint not allowed")
         billable = endpoint != "account"
-        if billable and self.count >= MAX_CALLS:
-            raise ProbeError("Five-request budget reached")
+        if billable and self.count >= self.limit:
+            raise ProbeError("Request budget reached")
         time.sleep(max(0, self.next_at - time.monotonic()))
         self.next_at = time.monotonic() + 1.2
         request_id = None
         if billable:
-            request_id = scan_tracking.start_request(TEST_ID, endpoint)
+            request_id = scan_tracking.start_request(self.job_id, endpoint)
             self.count += 1
         response = None
         entry = {"endpoint": endpoint}
@@ -190,4 +192,65 @@ def run_once(api_key):
         report.update(billable_http_attempts=caller.count, requests=caller.history)
         with storage.connection() as conn:
             conn.execute("UPDATE nba_provider_probe SET result=%s WHERE test_id=%s", (Jsonb(report), TEST_ID))
+    return {"reused": False, **report}
+
+
+def check_missing_once(api_key):
+    """Only inspect the missing fixtures recorded by the primary test, at most three."""
+    key = TEST_ID + "-missing"
+    with storage.connection() as conn:
+        existing = conn.execute("SELECT result FROM nba_provider_probe WHERE test_id=%s", (key,)).fetchone()
+        if existing:
+            return {"reused": True, **existing[0]}
+        parent = conn.execute("SELECT result FROM nba_provider_probe WHERE test_id=%s", (TEST_ID,)).fetchone()
+        if not parent or parent[0].get("state") != "done":
+            raise ProbeError("Primary test not completed")
+        missing = parent[0].get("missing_fixture_ids", [])
+        if not isinstance(missing, list) or len(missing) > 3:
+            raise ProbeError("Supplementary test requires at most three recorded missing fixtures")
+        active = conn.execute("""
+            SELECT COUNT(*) FROM nba_scan_attempts WHERE state IN ('queued','running')
+            AND heartbeat_at > NOW()-INTERVAL '2 minutes'
+        """).fetchone()[0]
+        if active:
+            raise ProbeError("Automatic scan active; probe not started")
+        reserved = conn.execute("""
+            INSERT INTO nba_provider_probe(test_id,result) VALUES(%s,%s)
+            ON CONFLICT DO NOTHING RETURNING test_id
+        """, (key, Jsonb({"state": "reserved", "billable_request_budget": 3}))).fetchone()
+        if not reserved:
+            return {"reused": True, "state": "reserved"}
+    caller = Caller(api_key, limit=3, job_id=key)
+    report = {"test_id": key, "state": "running", "fixtures": [], "billable_request_budget": 3}
+    try:
+        for fid in missing:
+            fixture = caller.get("odds", fixtureId=fid, bookmakers="bet365.it", verbosity=3)
+            book = (fixture.get("bookmakerOdds") or {}).get("bet365.it") or {}
+            markets = book.get("markets") or {}
+            active_players = sum(
+                bool(p.get("active") and p.get("playerName") and isinstance(p.get("price"), (int, float))
+                     and p["price"] > 1)
+                for m in markets.values() if m.get("marketActive") is True
+                for o in (m.get("outcomes") or {}).values()
+                for p in (o.get("players") or {}).values())
+            report["fixtures"].append({"fixture_id": fid,
+                "bookmaker_present": "bet365.it" in (fixture.get("bookmakerOdds") or {}),
+                "bookmaker_active": book.get("bookmakerIsActive"), "suspended": book.get("suspended"),
+                "markets_total": len(markets), "active_player_outcomes_all_markets": active_players})
+        account = caller.get("account")
+        report["account_final"] = account_summary(account)
+        report["observed_free_subscriptions"] = [
+            {"request_limit": s.get("request_limit"), "is_active": s.get("is_active"),
+             "bet365_it_player_props": ((s.get("bookmakers") or {}).get("bet365.it") or {}).get("has_player_props"),
+             "nba_sport_allowed": 11 in (s.get("sport_ids") or [])}
+            for s in account.get("subscriptions", []) if s.get("request_limit") == 250]
+        report["state"] = "done"
+    except ProbeError as exc:
+        report.update(state="error", error=str(exc))
+    except Exception:
+        report.update(state="error", error="Internal supplementary probe error; no automatic retry")
+    finally:
+        report.update(billable_http_attempts=caller.count, requests=caller.history)
+        with storage.connection() as conn:
+            conn.execute("UPDATE nba_provider_probe SET result=%s WHERE test_id=%s", (Jsonb(report), key))
     return {"reused": False, **report}

@@ -70,3 +70,26 @@ class ProviderProbeTests(unittest.TestCase):
         result = probe.run_once("SECRET")
         self.assertTrue(result["reused"])
         caller.assert_not_called()
+
+    @patch.object(probe.time, "sleep")
+    @patch.object(probe.scan_tracking, "finish_request")
+    @patch.object(probe.scan_tracking, "start_request", return_value="request")
+    @patch.object(probe.requests, "get")
+    def test_supplementary_budget_is_three(self, get, start, finish, sleep):
+        get.return_value = MagicMock(ok=True, status_code=200)
+        get.return_value.json.return_value = {}
+        caller = probe.Caller("SECRET", limit=3, job_id="supplement")
+        for _ in range(3):
+            caller.get("odds", fixtureId="f")
+        with self.assertRaises(probe.ProbeError):
+            caller.get("odds", fixtureId="f")
+        self.assertEqual(get.call_count, 3)
+        self.assertEqual(start.call_args.args[0], "supplement")
+
+    @patch.object(probe, "Caller")
+    @patch.object(probe.storage, "connection")
+    def test_supplementary_reservation_prevents_repeat(self, connection, caller):
+        conn = connection.return_value.__enter__.return_value
+        conn.execute.return_value.fetchone.return_value = ({"state": "reserved"},)
+        self.assertTrue(probe.check_missing_once("SECRET")["reused"])
+        caller.assert_not_called()
