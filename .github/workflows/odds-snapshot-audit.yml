@@ -1,0 +1,83 @@
+name: Odds snapshot cost audit (read only)
+on:
+  push:
+    branches: ['audit/odds-costs-20261028']
+    paths: ['.github/workflows/odds-snapshot-audit.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Compare existing snapshots without scans or database writes
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+          ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request,urllib.error,unicodedata,statistics
+          BASE="https://nba-stats-4.onrender.com"
+          TOKEN=os.environ.get("NBA_STATS_ACCESS_TOKEN","")
+          if not TOKEN: raise SystemExit("NBA_STATS_ACCESS_TOKEN unavailable")
+          JOBS=[
+          ("26-07","5be47d3995964ba08bd80dbc446c97ac"),
+          ("26-12","d05887fb775848df8468e70b9beea03a"),
+          ("26-17","333738d89a8e45c28d6c9d03ce9fffb1"),
+          ("26-21","6bf8857308724d30b1948d784001107c"),
+          ("27-07","f84bab037d4945f5a6fc261daf457d0a"),
+          ("27-12","f135b601fbc74558abbf2ae8718a7cde"),
+          ("27-17","2fa15a0e5fd34cb98444ee472fa0e927"),
+          ("27-21","b897096866ca4696ad4baf5ffe98b3ba")]
+          def read(path):
+           req=urllib.request.Request(BASE+path,headers={"Authorization":"Bearer "+TOKEN})
+           try:
+            with urllib.request.urlopen(req,timeout=90) as r:return json.load(r)
+           except urllib.error.HTTPError as e: raise RuntimeError("Saved snapshot HTTP "+str(e.code)) from None
+          def norm(v):return " ".join(unicodedata.normalize("NFKC",str(v or "")).casefold().split())
+          def key(r):return(norm(r.get("Partita")),norm(r.get("Giocatore")),norm(r.get("Mercato")),norm(r.get("Scelta")),float(r["Linea"]))
+          def indexed(s):
+           rows=s.get("results",[]); out={}
+           for r in rows:
+            k=key(r);q=float(r["Quota"])
+            if k in out and abs(q-out[k])>1e-8:raise RuntimeError("Conflicting duplicate selections")
+            out[k]=q
+           return out
+          def compare(a,b):
+           x,y=indexed(a),indexed(b); common=x.keys()&y.keys()
+           changes=[abs(y[k]-x[k]) for k in common if abs(y[k]-x[k])>1e-8]
+           relative=[abs(y[k]/x[k]-1)*100 for k in common if abs(y[k]-x[k])>1e-8]
+           gx,gy={},{}
+           for k in x:gx.setdefault(k[:-1],set()).add(k[-1])
+           for k in y:gy.setdefault(k[:-1],set()).add(k[-1])
+           groups=gx.keys()&gy.keys()
+           return {"before":len(x),"after":len(y),"common":len(common),"price_changed":len(changes),
+           "price_changed_pct":round(100*len(changes)/len(common),2) if common else None,
+           "price_delta_median":round(statistics.median(changes),4) if changes else 0,
+           "price_delta_max":round(max(changes),4) if changes else 0,
+           "relative_change_median_pct":round(statistics.median(relative),2) if relative else 0,
+           "added":len(y.keys()-x.keys()),"removed":len(x.keys()-y.keys()),
+           "common_player_market_groups":len(groups),
+           "groups_with_different_line_sets":sum(gx[k]!=gy[k] for k in groups),
+           "new_lines_in_common_groups":sum(len(gy[k]-gx[k]) for k in groups),
+           "removed_lines_in_common_groups":sum(len(gx[k]-gy[k]) for k in groups),
+           "note":"Line-set differences do not prove replacement of a main line; snapshots contain filtered published selections."}
+          saved={}
+          for label,job in JOBS:
+           try:s=read("/api/scan/"+job)
+           except RuntimeError as e:print("UNAVAILABLE",label,str(e),flush=True);continue
+           saved[label]=s
+           print("SNAPSHOT",label,json.dumps({"job":job,"date":s.get("date"),"state":s.get("state"),
+           "started":s.get("scan_started_at"),"rows":len(s.get("results",[])),
+           "http_requests":s.get("odds_api_http_requests_scan"),
+           "fixtures":[{"id":r.get("id"),"state":r.get("stato"),"lines":r.get("linee")} for r in s.get("fixture_reports",[])]}),flush=True)
+          for day in ("26","27"):
+           for first,last in (("07","12"),("12","17"),("17","21"),("07","21"),("12","21")):
+            a,b=day+"-"+first,day+"-"+last
+            if a not in saved or b not in saved:continue
+            if not saved[a].get("results") or not saved[b].get("results"):
+             print("EXCLUDED_EMPTY",a,b,flush=True);continue
+            print("COMPARISON",a,b,json.dumps(compare(saved[a],saved[b])),flush=True)
+          print("ODDSPAPI_HTTP_CALLS",0,flush=True)
+          print("ODDSPAPI_TEST_KEY_AVAILABLE",bool(os.environ.get("ODDSPAPI_API_KEY")),flush=True)
+          PY
