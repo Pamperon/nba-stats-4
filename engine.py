@@ -10,6 +10,7 @@ import json, time, threading
 from pathlib import Path
 import logging
 import scan_tracking
+import odds_feed
 logger = logging.getLogger(__name__)
 BASE = "https://api.oddspapi.io/v4"
 ROME_TZ = ZoneInfo("Europe/Rome")
@@ -167,12 +168,14 @@ def get_json(path, **params):
                 raise RuntimeError("OddsPapi: risposta JSON non valida.") from None
     raise RuntimeError("OddsPapi: HTTP 429 dopo il tentativo controllato.")
 
-@cached(TTLCache(maxsize=512,ttl=21600))
 def get_markets():
-    data = get_json("markets")
-    if not isinstance(data, list):
-        raise ValueError("Formato catalogo mercati inatteso")
-    return {str(m["marketId"]): m for m in data if str(m.get("sportId")) == "11"}
+    day = datetime.now(ROME_TZ).date().isoformat()
+    def download():
+        data = get_json("markets")
+        if not isinstance(data, list):
+            raise ValueError("Formato catalogo mercati inatteso")
+        return {str(m["marketId"]): m for m in data if str(m.get("sportId")) == "11"}
+    return odds_feed.cached_payload("odds:markets:v1:" + day, 48 * 3600, download)["data"]
 
 def fixture_start_rome(fixture):
     """Convert an OddsPapi ISO timestamp to Italian local time."""
@@ -197,29 +200,45 @@ def fixture_start_rome(fixture):
     except (ValueError, TypeError, OverflowError, OSError):
         return None
 
-@cached(TTLCache(maxsize=512,ttl=1800))
-def get_fixtures(day_string):
-    # Calendar day is Europe/Rome, including daylight-saving transitions.
-    local_start = datetime.strptime(day_string, "%Y-%m-%d").replace(tzinfo=ROME_TZ)
-    local_end = (local_start + timedelta(days=1))
-    utc_start = local_start.astimezone(timezone.utc)
-    utc_end = local_end.astimezone(timezone.utc)
-    data = get_json("fixtures", sportId=11, **{
-        "from": utc_start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "to": (utc_end - timedelta(seconds=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    })
-    if isinstance(data, dict):
-        data = data.get("fixtures", data.get("data", []))
-    if not isinstance(data, list):
-        raise ValueError("Formato calendario inatteso")
-    matches = []
-    for fixture in data:
-        if str(fixture.get("tournamentName", "")).casefold() != "nba":
-            continue
-        start_rome = fixture_start_rome(fixture)
-        if start_rome is not None and start_rome.date().isoformat() == day_string:
-            matches.append(fixture)
-    return sorted(matches, key=lambda f: fixture_start_rome(f))
+def get_fixtures(day_string, odds_batch=None):
+    requested = datetime.strptime(day_string, "%Y-%m-%d").date()
+    today = datetime.now(ROME_TZ).date()
+    anchor = today if today <= requested <= today + timedelta(days=1) else requested
+    def download():
+        local_start = datetime.combine(anchor, datetime.min.time(), tzinfo=ROME_TZ)
+        local_end = local_start + timedelta(days=2)
+        data = get_json("fixtures", sportId=11, **{
+            "from": local_start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "to": (local_end.astimezone(timezone.utc) - timedelta(seconds=1)).strftime("%Y-%m-%dT%H:%M:%SZ")})
+        return [f for f in odds_feed.fixture_rows(data)
+                if str(f.get("tournamentName", "")).casefold() == "nba"]
+    saved = odds_feed.cached_payload("odds:fixtures:v1:" + anchor.isoformat(), 48 * 3600, download)["data"]
+    all_fixtures = {str(f["fixtureId"]): dict(f) for f in saved}
+    if odds_batch is not None:
+        # Latest feed metadata can move/reschedule a known fixture during the day.
+        # Do not infer names for events outside the downloaded two-day calendar.
+        for fid, fresh in odds_batch["data"].items():
+            if fid in all_fixtures:
+                all_fixtures[fid].update({k: v for k, v in fresh.items()
+                                          if k != "bookmakerOdds" and v is not None})
+    matches = [f for f in all_fixtures.values()
+               if fixture_start_rome(f) is not None and fixture_start_rome(f).date() == requested]
+    return sorted(matches, key=fixture_start_rome)
+
+
+def get_tournament_odds(slot_key=None, catalog=None):
+    catalog = get_markets() if catalog is None else catalog
+    wanted = {kind for kinds in MARKETS.values() for kind in kinds}
+    market_ids = {str(mid) for mid, definition in catalog.items() if definition.get("marketType") in wanted}
+    if not market_ids:
+        raise ValueError("Catalogo privo dei mercati giocatore richiesti")
+    key = slot_key or datetime.now(ROME_TZ).strftime("%Y-%m-%dT%H:manual")
+    def download():
+        payload = get_json("odds-by-tournaments", tournamentIds="132",
+                           bookmakers="bet365.it", verbosity=3)
+        return odds_feed.slim_tournament(payload, market_ids)
+    return odds_feed.cached_payload("odds:nba:bet365.it:v1:" + key,
+                                    ODDS_CACHE_TTL_SECONDS, download)
 
 def fixture_is_completed(fixture):
     """Hide completed games, not games merely underway."""
@@ -941,10 +960,10 @@ def finder_detailed_stats(log, stat, line):
             "Minuti ultime 5": round(float(minutes.head(5).mean()), 1) if minutes.head(5).notna().any() else None}
 
 def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
-                min_value, progress_callback=None):
+                min_value, progress_callback=None, odds_batch=None):
     """Esporta tutte le linee alternative attive ricevute, incluse non valutabili.
 
-    Un'unica risposta OddsPapi per partita; se già presente in sessione la riusa.
+    Le scansioni automatiche riusano la risposta collettiva NBA per tutte le partite.
     I filtri sono soltanto per la vista, mai per il CSV completo.
     """
     results, issues, raw_audit, filter_audit = [], [], [], []
@@ -967,10 +986,16 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
         fixture_reports.append(report)
         count_before = quote_count
         try:
-            odds, source, fetched_at = _cache_read(fid)
-            if odds is None:
-                odds = get_odds(fid)
-                fetched_at = time.time()
+            if odds_batch is not None:
+                odds = odds_batch["data"].get(fid, {"fixtureId": fid, "bookmakerOdds": {}})
+                source = "tournament" if odds_batch["source"] == "api" else "tournament-cache"
+                fetched_at = odds_batch["fetched_at"]
+            else:
+                # Legacy direct callers only; automatic scans always pass the collective feed.
+                odds, source, fetched_at = _cache_read(fid)
+                if odds is None:
+                    odds = get_odds(fid)
+                    fetched_at = time.time()
             report["quota_rilevata_at"] = (datetime.fromtimestamp(fetched_at, timezone.utc).isoformat() if fetched_at is not None else None)
             report["origine"] = source if source != "none" else "api"
             report["diagnostica"] = _odds_diagnostics(odds, catalog)

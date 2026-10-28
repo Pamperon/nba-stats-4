@@ -19,6 +19,10 @@ class AppRuntimeTests(unittest.TestCase):
         self.network = patch.object(socket.socket, 'connect', side_effect=AssertionError('Network is disabled'))
         self.network.start()
         self.addCleanup(self.network.stop)
+        feed = patch.object(main.engine, 'get_tournament_odds',
+                            return_value={'data': {}, 'fetched_at': 1000000000, 'source': 'api'})
+        feed.start()
+        self.addCleanup(feed.stop)
         main.jobs.clear()
         heartbeat = patch.object(main, '_scan_heartbeat')
         heartbeat.start()

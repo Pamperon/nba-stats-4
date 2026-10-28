@@ -110,7 +110,7 @@ def auth(authorization: str = Header(default='')):
 def health():
     with lock:
         active = sum(job['state'] in ('queued','running') for job in jobs.values())
-    return {'status': 'ok', 'version': '4.0-optimized',
+    return {'status': 'ok', 'version': '4.0-optimized', 'odds_download_method': 'tournament-v1',
             'deployment_commit': os.getenv('RENDER_GIT_COMMIT'),
             'scheduler_revision': 'rome-slots-at-most-once-v2',
             'runtime_instance': RUNTIME_ID, 'scan_tracking_ready': tracking_ready,
@@ -185,11 +185,15 @@ def do_scan(job_id, date):
         fixtures = [f for f in engine.get_fixtures(date) if engine.fixture_is_upcoming(f)]
         if not fixtures: raise ValueError('Nessuna partita futura disponibile')
         catalog = engine.get_markets()
+        odds_batch = engine.get_tournament_odds(jobs[job_id].get('scan_slot'), catalog=catalog)
+        fixtures = [f for f in engine.get_fixtures(date, odds_batch=odds_batch) if engine.fixture_is_upcoming(f)]
+        if not fixtures:
+            raise ValueError('Nessuna partita futura disponibile nel calendario aggiornato')
         setup_seconds = round(time.monotonic() - started_at, 2)
         analysis_started = time.monotonic()
         def progress(p, label):
             with lock: jobs[job_id].update(progress=round(p*100),stage=label)
-        rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress)
+        rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress,odds_batch=odds_batch)
         # Apply calibration only after independent walk-forward validation on
         # previously settled days. Never block the scan on a calibration error.
         calibration_status = {'active': False, 'adjusted': 0}
@@ -248,6 +252,9 @@ def do_scan(job_id, date):
             'odds_api_calls_scan': odds_count,  # Legacy field: counts quote lines, NOT API requests.
             'odds_api_http_requests_scan': engine.odds_api_request_count(),
             'quote_lines_scan': odds_count,
+            'odds_download_method': 'tournament',
+            'odds_feed_source': odds_batch['source'],
+            'odds_feed_fetched_at': datetime.fromtimestamp(odds_batch['fetched_at'], ZoneInfo('UTC')).isoformat(),
             'timings': {'preparazione_s': setup_seconds,
                         'scansione_s': analysis_seconds,
                         'totale_s': round(time.monotonic()-started_at, 2)}
@@ -388,6 +395,9 @@ def saved_time(date: str):
             'quote_lines_scan': snapshot.get('quote_lines_scan', snapshot.get('odds_api_calls_scan', 'non registrato')),
             'odds_api_requests_scan': snapshot.get('odds_api_http_requests_scan', 'non misurate'),
             'odds_api_http_requests_scan': snapshot.get('odds_api_http_requests_scan'),
+            'odds_download_method': snapshot.get('odds_download_method', 'per-fixture'),
+            'odds_feed_source': snapshot.get('odds_feed_source'),
+            'odds_feed_fetched_at': snapshot.get('odds_feed_fetched_at'),
             'coverage_status': ('completa' if snapshot.get('fixture_reports') and all(item.get('stato') == 'ok' for item in snapshot['fixture_reports']) else 'in_attesa_quote' if snapshot.get('fixture_reports') and all(item.get('stato') in ('ok', 'vuota') for item in snapshot['fixture_reports']) else 'errore_o_dati_incompleti'),
             'fixture_count': snapshot.get('fixture_count', 0),
             'fixture_status_counts': {state: sum(1 for item in snapshot.get('fixture_reports', []) if item.get('stato') == state) for state in ('ok', 'vuota', 'errore', 'in_elaborazione')},
@@ -775,7 +785,7 @@ def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
                     scan_threads.pop(old_id, None)
                 if len(jobs) <= 10:
                     break
-        jobs[job_id] = {'date':date,'state':'queued','progress':0,'stage':'In coda','scan_source':source}
+        jobs[job_id] = {'date':date,'state':'queued','progress':0,'stage':'In coda','scan_source':source,'scan_slot':slot}
         thread = threading.Thread(target=do_scan, args=(job_id,date), daemon=True)
         scan_threads[job_id] = thread
     try:
