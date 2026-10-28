@@ -785,31 +785,6 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
 
 
-@app.get('/api/odds/dates')
-def public_odds_dates():
-    import public_views
-    try:
-        return public_views.movement_dates()
-    except Exception:
-        logger.exception('Cannot list saved quote dates')
-        raise HTTPException(503, 'Giornate temporaneamente non disponibili')
-
-
-@app.get('/api/odds/changes')
-def public_odds_changes(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
-    import public_views
-    try:
-        datetime.strptime(date, '%Y-%m-%d')
-    except ValueError:
-        raise HTTPException(400, 'Data non valida')
-    try:
-        return public_views.movements(date)
-    except Exception:
-        logger.exception('Cannot compare saved odds')
-        raise HTTPException(503, 'Confronto temporaneamente non disponibile')
-
-
-
 @app.post('/api/diagnostics/odds-tournament', dependencies=[Depends(auth)])
 def diagnose_odds_tournament(check_missing: bool = False):
     """One explicit, durable, five-request probe; never starts a scan."""

@@ -177,7 +177,7 @@ $('date').addEventListener('change',async()=>{
   if(request===dateSelectionRequest&&$('date').value===selected)setDateLoading(false);
  }
 });
-const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&(!$('finder-favorites')?.checked||window.basketLabFavorites?.has(String(r['ESPN ID']||'')))&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
+const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
 const marketNames={PTS:'PUNTI',REB:'RIMBALZI',AST:'ASSIST'};
 const pickIdentityCache=new Map();
 let pickProfileRequest=0;
@@ -391,7 +391,6 @@ function render(){
  });
  enrichSavedFixtureInfo(data,request);
  renderFinder();
- document.dispatchEvent(new CustomEvent('basketlab:render'));
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const nbaTeams={
@@ -780,4 +779,4 @@ initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
 
 $('finder-more').onclick=()=>{finderVisibleLimit=Math.min(500,finderVisibleLimit+100);renderFinder()};
-window.basketLab={snapshot:()=>data,refreshFinder:()=>{finderVisibleLimit=100;renderFinder()},openPlayer:row=>{returnOrigin='dashboard';returnPick=null;openPickStats(row)}};
+$('finder-reset').onclick=()=>{$('finder-search').value='';$('market').value='Tutti';$('oddmin').value='1.10';$('oddmax').value='2.20';$('probmin').value='0';finderVisibleLimit=100;renderFinder()};
