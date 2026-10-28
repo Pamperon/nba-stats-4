@@ -726,6 +726,19 @@ def saved_status(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         raise HTTPException(503, 'Stato aggiornamento temporaneamente non disponibile')
 
 
+
+@app.post('/api/diagnostics/odds-tournament', dependencies=[Depends(auth)])
+def diagnose_odds_tournament():
+    """One explicit, durable, five-request probe; never starts a scan."""
+    import odds_provider_probe
+    try:
+        return odds_provider_probe.run_once(engine.API_KEY)
+    except odds_provider_probe.ProbeError as exc:
+        raise HTTPException(409, str(exc)) from None
+    except Exception:
+        logger.exception('Cannot access one-shot provider diagnostic')
+        raise HTTPException(503, 'Diagnostica temporaneamente non disponibile') from None
+
 @app.post('/api/scan', dependencies=[Depends(auth)])
 def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
          source: str = Query(default='manual', pattern=r'^(github|render|manual)$'),
