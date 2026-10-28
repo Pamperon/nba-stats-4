@@ -7,12 +7,15 @@ const {JSDOM}=require('jsdom');
 const root=path.resolve(__dirname,'..');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const response=value=>({ok:true,json:async()=>value});
-function app(fetch,seed=null,mobile=false){
+function app(fetch,seed=null,mobile=false,bridge=true){
  const dom=new JSDOM(fs.readFileSync(path.join(root,'web/index.html'),'utf8'),{url:'https://basket.invalid',runScripts:'outside-only',pretendToBeVisual:true});
  dom.window.fetch=fetch;
  dom.window.matchMedia=()=>({matches:mobile});
  if(seed!==null)dom.window.localStorage.setItem('basketlab:favorites:v1',seed);
- for(const file of ['app.js','features.js'])dom.window.eval(fs.readFileSync(path.join(root,'web',file),'utf8'));
+ for(const file of ['app.js','features.js']){
+  if(file==='features.js'&&!bridge)delete dom.window.basketLab;
+  dom.window.eval(fs.readFileSync(path.join(root,'web',file),'utf8'));
+ }
  return dom;
 }
 function base(url){
@@ -51,6 +54,14 @@ test('corrupt favorite storage is ignored and saved names render as text',async(
   try{await tick();dom.window.document.querySelector('[data-extra="favorites"]').click();assert.equal(dom.window.document.querySelector('#favorite-list img'),null);}
   finally{dom.window.close();}
  }
+});
+
+test('saved-data sections tolerate an older base asset during a rolling deployment',async()=>{
+ const dom=app(async url=>response(url.startsWith('/api/odds/changes')?{versions:[],summary:null,changes:[]}:base(url)),null,false,false);
+ try{
+  await tick();dom.window.document.querySelector('[data-extra="movements"]').click();await tick();await tick();
+  assert.match(dom.window.document.getElementById('movements-status').textContent,/almeno due scansioni/);
+ }finally{dom.window.close();}
 });
 
 test('archive keeps versions separate and never substitutes selections or current prices',async()=>{

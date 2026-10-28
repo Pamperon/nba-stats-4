@@ -48,7 +48,7 @@
   if(favorites.has(String(player.id)))favorites.delete(String(player.id));
   else if(favorites.size<100)favorites.set(String(player.id),{id:String(player.id),name:String(player.name).slice(0,100),team:String(player.team||'').slice(0,100)});
   else{el('favorites-status').textContent='Hai raggiunto 100 preferiti. Rimuovine uno per aggiungere altri giocatori.';return;}
-  persist();renderFavorites();decoratePicks();profileStar();window.basketLab.refreshFinder();
+  persist();renderFavorites();decoratePicks();profileStar();window.basketLab?.refreshFinder?.();
  }
  function currentPlayer(){return {id:el('playername').value,name:el('playername').selectedOptions[0]?.textContent||'',team:el('team').selectedOptions[0]?.textContent||''};}
  function profileStar(){const player=currentPlayer(),button=el('favorite-player'),selected=favorites.has(player.id);button.disabled=!/^\d{1,12}$/.test(player.id);button.textContent=selected?'★ Giocatore seguito':'☆ Segui giocatore';button.setAttribute('aria-pressed',String(selected));}
@@ -57,7 +57,7 @@
  new MutationObserver(profileStar).observe(el('player-profile'),{attributes:true,attributeFilter:['hidden']});
  document.addEventListener('change',event=>{if(['playername','team'].includes(event.target.id))profileStar();});
  function decoratePicks(){
-  const rows=window.basketLab.snapshot()?.results||[];
+  const rows=window.basketLab?.snapshot?.()?.results||[];
   for(const card of document.querySelectorAll('.pick-selection')){
    const name=card.querySelector('.pick-player-link')?.textContent;
    const row=rows.find(item=>item.Giocatore===name&&/^\d{1,12}$/.test(String(item['ESPN ID']||'')));
@@ -75,13 +75,13 @@
   for(const button of el('favorite-list').querySelectorAll('[data-remove-favorite]'))button.onclick=()=>toggle(favorites.get(button.dataset.removeFavorite));
   for(const button of el('favorite-list').querySelectorAll('[data-open-favorite]'))button.onclick=()=>{
    const player=favorites.get(button.dataset.openFavorite);if(!player)return;show('');
-   window.basketLab.openPlayer({'ESPN ID':player.id,Giocatore:player.name,Squadra:player.team,Mercato:'PTS',Linea:9.5});
+   window.basketLab?.openPlayer?.({'ESPN ID':player.id,Giocatore:player.name,Squadra:player.team,Mercato:'PTS',Linea:9.5});
   };
  }
- window.addEventListener('storage',event=>{if(event.key===key||event.key===null){restore();renderFavorites();decoratePicks();profileStar();window.basketLab.refreshFinder();}});
+ window.addEventListener('storage',event=>{if(event.key===key||event.key===null){restore();renderFavorites();decoratePicks();profileStar();window.basketLab?.refreshFinder?.();}});
  el('favorites-explore').onclick=()=>el('area-stats').click();
- el('finder-favorites').onchange=()=>window.basketLab.refreshFinder();
- el('finder-reset').onclick=()=>{el('finder-search').value='';el('market').value='Tutti';el('oddmin').value='1.10';el('oddmax').value='2.20';el('probmin').value='0';el('finder-favorites').checked=false;window.basketLab.refreshFinder();};
+ el('finder-favorites').onchange=()=>window.basketLab?.refreshFinder?.();
+ el('finder-reset').onclick=()=>{el('finder-search').value='';el('market').value='Tutti';el('oddmin').value='1.10';el('oddmax').value='2.20';el('probmin').value='0';el('finder-favorites').checked=false;window.basketLab?.refreshFinder?.();};
 
  async function loadHistory(){
   const request=++historyRequest;
@@ -119,7 +119,7 @@
   el('movements-status').textContent='Confronto degli aggiornamenti salvati…';
   try{
    const dates=await read('/api/odds/dates');if(request!==movementRequest)return;
-   const selected=el('movements-date').value||window.basketLab.snapshot()?.date||dates.default_date;
+   const selected=el('movements-date').value||window.basketLab?.snapshot?.()?.date||dates.default_date;
    el('movements-date').innerHTML=dates.dates.map(item=>'<option value="'+escape(item.date)+'">'+escape(day(item.date))+'</option>').join('');
    if(dates.dates.some(item=>item.date===selected))el('movements-date').value=selected;
    const date=el('movements-date').value;
