@@ -9,7 +9,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const response=value=>({ok:true,json:async()=>value});
 function app(fetch,mobile=false,hash=''){
  const dom=new JSDOM(fs.readFileSync(path.join(root,'web/index.html'),'utf8'),{url:'https://basket.invalid/'+hash,runScripts:'outside-only',pretendToBeVisual:true});
- dom.window.fetch=fetch;dom.window.matchMedia=()=>({matches:mobile});dom.window.scrollTo=()=>{};
+ dom.window.fetch=fetch;dom.window.matchMedia=()=>typeof mobile==='object'?mobile:({matches:mobile});dom.window.scrollTo=()=>{};
  dom.window.localStorage.setItem('basketlab:favorites:v1','[{"id":"123","name":"Old favorite"}]');
  dom.window.localStorage.setItem('unrelated-data','keep');
  for(const file of ['app.js','features.js'])dom.window.eval(fs.readFileSync(path.join(root,'web',file),'utf8'));
@@ -93,5 +93,45 @@ test('mobile quote pagination and reset remain available after removing favorite
   d.getElementById('finder-search').value='Player 249';d.getElementById('finder-search').dispatchEvent(new dom.window.Event('input'));
   assert.equal(d.querySelectorAll('.finder-card').length,1);
   d.getElementById('finder-reset').click();assert.equal(d.querySelectorAll('.finder-card').length,100);
+ }finally{dom.window.close();}
+});
+
+test('loading more quotes preserves expanded details and moves focus to the added batch',async()=>{
+ const rows=Array.from({length:350},(_,i)=>({Giocatore:'Player '+i,Squadra:'A',Mercato:'PTS',Linea:9.5,Quota:1.8,'Stato analisi':'Valutabile (stima empirica)','Prob. stimata %':80}));
+ const calls=[];
+ const dom=app(async url=>{calls.push(url);return response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:rows}:base(url));},true);
+ try{
+  await tick();const d=dom.window.document;
+  d.querySelector('[data-tab="finder"]').click();
+  const first=d.querySelector('.finder-card');
+  first.querySelector('.finder-details-toggle').click();
+  const before=calls.length;
+  d.getElementById('finder-more').click();
+  assert.equal(d.querySelector('.finder-card'),first);
+  assert.equal(first.querySelector('.finder-extra').hidden,false);
+  assert.equal(first.querySelector('.finder-details-toggle').getAttribute('aria-expanded'),'true');
+  assert.equal(d.activeElement,d.querySelectorAll('.finder-card')[100].querySelector('.finder-player'));
+  assert.equal(d.querySelectorAll('.finder-card').length,200);
+  assert.equal(d.querySelectorAll('#rows tr').length,200);
+  assert.equal(calls.length,before);
+  d.getElementById('finder-search').value='Player';
+  d.getElementById('finder-search').dispatchEvent(new dom.window.Event('input'));
+  assert.equal(d.querySelectorAll('.finder-card').length,100);
+ }finally{dom.window.close();}
+});
+
+test('switching between desktop and mobile reuses saved quotes with the correct batch size',async()=>{
+ let changed;const media={matches:true,addEventListener:(event,fn)=>{assert.equal(event,'change');changed=fn;}};
+ const rows=Array.from({length:550},(_,i)=>({Giocatore:'Player '+i,Squadra:'A',Mercato:'PTS',Linea:9.5,Quota:1.8,'Stato analisi':'Valutabile (stima empirica)','Prob. stimata %':80}));
+ const calls=[];
+ const dom=app(async url=>{calls.push(url);return response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:rows}:base(url));},media);
+ try{
+  await tick();const d=dom.window.document,before=calls.length;
+  assert.equal(d.querySelectorAll('.finder-card').length,100);
+  media.matches=false;changed();
+  assert.equal(d.querySelectorAll('#rows tr').length,500);
+  media.matches=true;changed();
+  assert.equal(d.querySelectorAll('.finder-card').length,100);
+  assert.equal(calls.length,before);
  }finally{dom.window.close();}
 });

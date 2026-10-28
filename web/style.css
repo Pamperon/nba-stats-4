@@ -689,3 +689,44 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 .about-panel h2{margin:28px 0 10px}.about-panel p{line-height:1.75;max-width:850px;color:#c0cee1}.back-to-top{position:fixed;right:18px;bottom:20px;z-index:20;min-height:44px;padding:10px 16px;border:1px solid #e68b49;border-radius:24px;background:#172c43;color:#ffb277;box-shadow:0 4px 18px #0006;cursor:pointer}.footer-links a:focus-visible,.extra-panel button:focus-visible,.back-to-site:focus-visible{outline:3px solid #ffad66;outline-offset:3px}
 @media(max-width:900px){.history-grid{grid-template-columns:1fr}.history-ticket{padding:20px}}
 @media(max-width:760px){.footer-links{font-size:12px;gap:10px}.extra-filters label{min-width:100%;font-size:14px}.extra-filters select{font-size:16px}.feature-metrics{gap:8px}.feature-metrics>div{min-width:64px;padding:12px}.feature-metrics strong{font-size:22px}.finder-more{display:block;width:100%;margin:12px 0}.finder-primary-filters input,.finder-primary-filters select{font-size:16px}.back-to-top{bottom:14px;right:12px}}
+
+/* Mobile refinements: comfortable controls without widening the page. */
+@media(max-width:760px){
+ #finder .finder-heading .finder-guide summary{width:44px;height:44px}
+ #finder .finder-card-top button{min-height:44px;padding:8px 10px;font-size:12px}
+ #finder .finder-details-toggle{min-height:44px;min-width:88px;padding:6px 4px;margin-top:2px}
+ #finder .finder-actions #csv{min-height:44px}
+ #finder .finder-advanced select,#player .filters select{font-size:16px;min-height:44px}
+ #finder .finder-primary-filters{grid-template-columns:minmax(0,1fr) minmax(100px,.6fr)}
+ #finder .finder-card-values{gap:4px 10px}
+ #finder .finder-quick-actions{margin:6px 0 10px}
+ #player .filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;align-items:end}
+ #player .filters label{min-width:0;gap:6px}
+ #player .filters label:nth-child(-n+2){grid-column:1/-1}
+ #player .filters select{width:100%;min-width:0;max-width:100%;padding-left:9px;padding-right:6px}
+ #player .player-profile{display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 12px;padding:14px;min-height:0}
+ #player .player-profile[hidden]{display:none}
+ #player .player-profile-body{display:contents}
+ #player .player-avatar{grid-column:1;grid-row:1/4;width:64px;height:64px;align-self:center}
+ #player .player-eyebrow,#player #player-display-name,#player #player-meta{grid-column:2;min-width:0;overflow-wrap:anywhere}
+ #player #player-display-name{font-size:21px;margin:0;line-height:1.2}
+ #player #player-meta{font-size:12px;margin:0;line-height:1.4}
+ #player .player-season-stats{grid-column:1/-1;width:100%;max-width:none;margin-top:10px}
+ #player .player-season-stats .season-stat{padding:10px 6px;text-align:center}
+ #player .player-season-stats .season-stat small{font-size:10px}
+ #player .player-season-stats .season-stat strong{font-size:18px}
+ #picks .pick-player-meta{overflow-wrap:anywhere}
+ .back-to-top{bottom:calc(14px + env(safe-area-inset-bottom,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+ footer{padding-bottom:calc(25px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-width:360px){
+ #finder .finder-card-top{flex-wrap:wrap}
+ #finder .finder-card-top .finder-card-identity{flex:1 1 100%}
+ #finder .finder-card-top button{width:100%;margin-top:2px}
+ #finder .finder-card-values{flex-wrap:wrap}
+ #picks .pick-selection{grid-template-columns:minmax(0,1fr)}
+ #picks .pick-profile{grid-column:1;grid-row:1}
+ #picks .pick-fixture{grid-column:1;grid-row:2;padding:8px}
+ #picks .fixture-team{flex-direction:row}
+ #picks .pick-avatar,#picks .pick-group-1 .pick-avatar{width:56px;height:64px;flex-basis:56px}
+}
