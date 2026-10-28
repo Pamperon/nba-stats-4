@@ -158,7 +158,7 @@ def finish_attempt(job_id, state, progress, stage):
 
 def start_request(job_id, endpoint):
     """Commit BEFORE HTTP. If persistence fails, callers must not send the request."""
-    if endpoint not in ('fixtures', 'markets', 'odds'):
+    if endpoint not in ('fixtures', 'markets', 'odds', 'odds-by-tournaments'):
         raise ValueError('Unrecognized metered endpoint')
     request_id = uuid.uuid4().hex
     with storage.connection() as conn:
