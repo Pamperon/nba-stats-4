@@ -1,0 +1,48 @@
+name: Run bounded OddsPapi tournament test
+on:
+  push:
+    branches: ['audit/odds-costs-20261028']
+    paths: ['.github/workflows/run-tournament-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Wait for diagnostic deployment and invoke the idempotent test once
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os,json,time,urllib.request,urllib.error
+          base="https://nba-stats-4.onrender.com"
+          path="/api/diagnostics/odds-tournament"
+          token=os.environ.get("NBA_STATS_ACCESS_TOKEN")
+          if not token:raise SystemExit("Authentication secret unavailable")
+          ready=False
+          for attempt in range(36):
+              try:
+                  urllib.request.urlopen(base+path,timeout=10).close()
+              except urllib.error.HTTPError as e:
+                  if e.code==405:
+                      ready=True
+                      break
+                  if e.code not in (404,502,503):raise SystemExit("Readiness HTTP "+str(e.code))
+              except (urllib.error.URLError,TimeoutError):
+                  pass
+              print("Waiting for diagnostic deployment",attempt+1,flush=True)
+              time.sleep(10)
+          if not ready:raise SystemExit("Diagnostic deployment not ready; no provider test invoked")
+          req=urllib.request.Request(base+path,method="POST",
+              headers={"Authorization":"Bearer "+token,"Accept":"application/json"})
+          try:
+              with urllib.request.urlopen(req,timeout=360) as response:
+                  result=json.load(response)
+          except urllib.error.HTTPError as e:
+              raise SystemExit("Diagnostic HTTP "+str(e.code)+"; no automatic retry")
+          except (urllib.error.URLError,TimeoutError):
+              raise SystemExit("Diagnostic response unavailable; durable reservation prevents repeat calls")
+          print("PROVIDER_TEST_REPORT",json.dumps(result,ensure_ascii=False),flush=True)
+          if result.get("state")!="done":raise SystemExit("Probe did not complete; review the saved report")
+          PY
