@@ -842,3 +842,38 @@ test('statistics venue filters, game details and recent denominators use known d
   assert.doesNotMatch(d.getElementById('chart').textContent,/BOS|LAL/);
  }finally{dom.window.close()}
 });
+
+test('chart game details request a final score only when opened and reuse it', async()=>{
+ const calls=[];
+ const dom=browser(async url=>{
+  calls.push(url);
+  if(url.startsWith('/api/players/game'))return response({event_id:'123',final:true,home:{abbreviation:'BOS',score:120},away:{abbreviation:'NYK',score:115}});
+  return response(url==='/api/saved/dates'?{dates:[]}:{});
+ });
+ try{
+  const w=dom.window,d=w.document;
+  w.__audit.setPlayerGames([{GAME_ID:'123',GAME_DATE:'2026-10-25',SEASON_TYPE:2,MATCHUP:'vs NYK',MIN:28.5,PTS:22,REB:5,AST:6}]);
+  d.getElementById('line').innerHTML='<option value="19.5">19.5</option>';w.drawPlayer();
+  assert.equal(calls.filter(x=>x.startsWith('/api/players/game')).length,0);
+  const detail=d.querySelector('#chart details');assert.ok(detail.querySelector('summary'));
+  detail.open=true;await tick();await tick();await tick();
+  assert.match(detail.textContent,/Casa/);assert.match(detail.textContent,/28.5 min/);
+  assert.match(detail.querySelector('.player-game-result').textContent,/BOS 120 – 115 NYK · Finale · Vittoria/);
+  detail.open=false;await tick();detail.open=true;await tick();await tick();
+  assert.equal(calls.filter(x=>x.startsWith('/api/players/game')).length,1);
+ }finally{dom.window.close();}
+});
+
+test('unavailable scores preserve statistics and do not invent a result',async()=>{
+ const dom=browser(async url=>{if(url.startsWith('/api/players/game'))return {ok:false,status:503};return response(url==='/api/saved/dates'?{dates:[]}:{});});
+ try{
+  const w=dom.window,d=w.document;
+  w.__audit.setPlayerGames([{GAME_ID:'123',GAME_DATE:'2026-10-25',SEASON_TYPE:2,MATCHUP:'? LAL',MIN:null,PTS:22,REB:5,AST:6}]);
+  d.getElementById('line').innerHTML='<option value="19.5">19.5</option>';w.drawPlayer();
+  const detail=d.querySelector('#chart details');detail.open=true;await tick();await tick();await tick();
+  assert.match(detail.textContent,/Campo non verificato/);assert.match(detail.textContent,/min n.d./);
+  assert.match(detail.querySelector('.player-game-result').textContent,/non disponibile/);
+  assert.match(d.getElementById('player-summary').textContent,/1\/1/);
+  assert.doesNotMatch(detail.querySelector('.player-game-result').textContent,/Vittoria|Sconfitta/);
+ }finally{dom.window.close();}
+});

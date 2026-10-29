@@ -745,3 +745,17 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 
 /* Categories occupy full rows; only the tickets within each category form a grid. */
 .history-groups{display:block}.daily-group{min-width:0}.history-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}.history-leg h4,.history-leg p,.leg-selection{overflow-wrap:anywhere}
+
+/* Game details stay inside their chart row and work with touch or keyboard. */
+.player-chart-help{font-size:12px;color:#a8bdd8;margin:0 0 14px}
+.player-game>summary{list-style:none;cursor:pointer;border-radius:8px;padding:8px 4px;min-height:44px}
+.player-game>summary::-webkit-details-marker{display:none}
+.player-game>summary:focus-visible{outline:2px solid #fa9148;outline-offset:3px}
+.player-game>summary:hover{background:#203047}
+.player-game-chevron{float:right;color:#fa9148;font-size:17px;line-height:12px;margin-left:8px}
+.player-game[open] .player-game-chevron{transform:rotate(180deg)}
+.player-game-detail{background:#132238;border:1px solid #304866;border-radius:10px;padding:12px;margin:6px 0 12px}
+.player-game-detail dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
+.player-game-detail dt{font-size:11px;color:#a8bdd8;margin-bottom:4px}
+.player-game-detail dd{font-size:13px;margin:0;overflow-wrap:anywhere}
+.player-game-result{font-size:13px;color:#e8effa;border-top:1px solid #304866;margin:12px 0 0;padding-top:10px;overflow-wrap:anywhere}
