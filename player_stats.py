@@ -151,12 +151,12 @@ def player_log(team_id, athlete_id, season):
                     minutes = None
             except (TypeError, ValueError, OverflowError):
                 minutes = None
-            records.append({"GAME_DATE": date, "MIN": minutes, "PTS": float(row["PTS"]),
+            records.append({"GAME_ID": str(row.get("GAME_ID", "")), "GAME_DATE": date, "MIN": minutes, "PTS": float(row["PTS"]),
                             "REB": float(row["REB"]), "AST": float(row["AST"]),
                             "SEASON_TYPE": int(row["SEASON_TYPE"]),
                             "MATCHUP": str(row.get("MATCHUP", ""))})
         return {"games": records, "season": season, "athlete_id": athlete_id}
-    return cached("nba:log:final-v3:" + team_id + ":" + athlete_id + ":" + season,
+    return cached("nba:log:final-v4:" + team_id + ":" + athlete_id + ":" + season,
                   log_cache_hours(year), build)
 
 def team_cached_logs(team_id, season):
@@ -164,12 +164,12 @@ def team_cached_logs(team_id, season):
     year, current = validate_season(season)
     hours = log_cache_hours(year)
     memory = _historical_cache if hours >= 720 else _memory_cache
-    batch_key = "nba:team-logs:v2:" + team_id + ":" + season
+    batch_key = "nba:team-logs:v3:" + team_id + ":" + season
     with _memory_lock:
         if batch_key in memory:
             return memory[batch_key]
     players = roster(team_id)
-    keys = {"nba:log:final-v3:" + team_id + ":" + p["id"] + ":" + season: p["id"]
+    keys = {"nba:log:final-v4:" + team_id + ":" + p["id"] + ":" + season: p["id"]
             for p in players}
     logs = {}
     with _memory_lock:
@@ -208,3 +208,38 @@ def player_profile(team_id, athlete_id):
         "height": athlete.get("height", ""),
         "weight": athlete.get("weight", ""),
     }
+
+
+def game_details(event_id):
+    """Fetch final score only on an explicit game-detail request; retain no box score."""
+    def build():
+        payload = engine.espn_json(f"{engine.ESPN_SITE}/summary", event=event_id)
+        header = payload.get('header') if isinstance(payload, dict) else None
+        if not isinstance(header, dict) or str(header.get('id')) != event_id:
+            raise ValueError('Partita ESPN non verificabile')
+        if engine.espn_event_completed(header) is not True:
+            raise ValueError('Risultato finale non ancora verificato')
+        competitions = header.get('competitions')
+        if not isinstance(competitions, list) or len(competitions) != 1:
+            raise ValueError('Partita ESPN ambigua')
+        competitors = competitions[0].get('competitors', [])
+        teams = {}
+        for competitor in competitors:
+            side = competitor.get('homeAway')
+            team = competitor.get('team') or {}
+            score = competitor.get('score')
+            if isinstance(score, dict):
+                score = score.get('displayValue')
+            value = str(score)
+            if side not in ('home', 'away') or side in teams or not value.isdigit():
+                raise ValueError('Punteggio ESPN non verificabile')
+            if not team.get('id') or not team.get('abbreviation') or not 0 <= int(value) <= 1000:
+                raise ValueError('Squadra o punteggio ESPN mancante')
+            teams[side] = {'id': str(team['id']), 'name': str(team.get('displayName') or team['abbreviation']),
+                           'abbreviation': str(team['abbreviation']), 'score': int(value)}
+        if len(competitors) != 2 or set(teams) != {'home', 'away'} or teams['home']['id'] == teams['away']['id']:
+            raise ValueError('Squadre ESPN non verificabili')
+        if teams['home']['score'] == teams['away']['score']:
+            raise ValueError('Punteggio finale ESPN incoerente')
+        return {'event_id': event_id, 'final': True, **teams}
+    return cached('nba:game-details:v1:' + event_id, 720, build)

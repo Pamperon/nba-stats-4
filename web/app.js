@@ -883,6 +883,33 @@ function playerVenue(game){
  if(/^vs\s+\S/i.test(matchup))return 'home';
  return 'unknown';
 }
+const playerGameResults=new Map();
+async function loadPlayerGameResult(details,game){
+ const output=details.querySelector('.player-game-result');
+ const id=String(game.GAME_ID||'');
+ if(!/^[0-9]{1,12}$/.test(id)){output.textContent='Risultato non disponibile nello storico salvato.';return;}
+ output.textContent='Caricamento risultato finale…';
+ try{
+  if(!playerGameResults.has(id)){
+   if(playerGameResults.size>=128)playerGameResults.delete(playerGameResults.keys().next().value);
+   const pending=api('/api/players/game?event_id='+encodeURIComponent(id)).then(r=>r.json()).then(result=>{
+    if(result.event_id!==id||result.final!==true||!result.home||!result.away)throw Error('Risultato non verificato');
+    return result;
+   });
+   playerGameResults.set(id,pending);pending.catch(()=>{if(playerGameResults.get(id)===pending)playerGameResults.delete(id);});
+  }
+  const result=await playerGameResults.get(id);if(!details.isConnected)return;
+  const {home,away}=result;
+  let outcome='';const venue=playerVenue(game),opponent=String(game.MATCHUP||'').replace(/^(@|vs|\?)\s+/i,'').toUpperCase();
+  const other=venue==='home'?away:venue==='away'?home:null;
+  if(other&&teamAbbrev(other.abbreviation)===teamAbbrev(opponent)){
+   const own=venue==='home'?home:away;
+   outcome=own.score>other.score?' · Vittoria':' · Sconfitta';
+   if(other.name)details.querySelector('.player-game-opponent').textContent=other.name;
+  }
+  output.textContent=home.abbreviation+' '+home.score+' – '+away.score+' '+away.abbreviation+' · Finale'+outcome;
+ }catch{if(details.isConnected)output.textContent='Risultato finale non disponibile. Chiudi e riapri per riprovare.';}
+}
 function drawPlayer(){
  renderPlayerSeason();
  const mode=$('playermode').value,window=$('playerwindow').value,stat=$('stat').value,line=playerNum($('line').value),venue=$('player-venue').value;
@@ -904,8 +931,15 @@ function drawPlayer(){
   const location=playerVenue(g)==='home'?'vs':playerVenue(g)==='away'?'@':'';
   const min=g.MIN===null||g.MIN===undefined||g.MIN===''||!Number.isFinite(Number(g.MIN))?'min n.d.':Math.round(Number(g.MIN)*10)/10+' min';
   const label=[date,(location?location+' ':'')+opponent,min].filter(Boolean).join(' · ');
-  return '<div class="player-game"><div class="player-game-info">'+esc(label)+'</div><div class="barrow"><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+esc(val)+'</strong></div></div>';
+  const field=playerVenue(g)==='home'?'Casa':playerVenue(g)==='away'?'Trasferta':'Campo non verificato';
+  return '<details class="player-game"><summary aria-label="Dettagli partita: '+esc(label)+'"><div class="player-game-info">'+esc(label)+'<span class="player-game-chevron" aria-hidden="true">⌄</span></div><div class="barrow"><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+esc(val)+'</strong></div></summary><div class="player-game-detail"><dl><div><dt>Avversario</dt><dd class="player-game-opponent">'+esc(opponent)+'</dd></div><div><dt>Campo</dt><dd>'+esc(field)+'</dd></div><div><dt>Minuti giocati</dt><dd>'+esc(min)+'</dd></div><div><dt>Punti · Rimbalzi · Assist</dt><dd>'+['PTS','REB','AST'].map(key=>g[key]===null||g[key]===undefined||g[key]===''||!Number.isFinite(Number(g[key]))?'—':esc(g[key])).join(' · ')+'</dd></div></dl><p class="player-game-result" role="status" aria-live="polite"></p></div></details>';
+
  }).join('')||'<p>Nessuna partita disponibile per i filtri selezionati.</p>';
+ if(games.length){
+  const hint=document.createElement('p');hint.className='player-chart-help';hint.textContent='Tocca una barra per vedere i dettagli della partita.';$('chart').prepend(hint);
+  const ordered=games.slice().reverse();
+  $('chart').querySelectorAll('.player-game').forEach((details,index)=>{details.addEventListener('toggle',()=>{if(details.open)loadPlayerGameResult(details,ordered[index]);});});
+ }
 }
 $('team').onchange=()=>{closePlayerPicker();++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;$('player-venue').onchange=drawPlayer;
 

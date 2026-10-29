@@ -180,3 +180,9 @@ La home espone metadati Open Graph e Twitter Card nell'HTML iniziale, con immagi
 ### Nome e icona nei risultati Google
 
 La home dichiara `Basket Lab` come nome preferito e `BasketLab` come alternativa nello stesso nodo JSON-LD `WebSite`; titolo, marchio e `og:site_name` mantengono il nome principale. La favicon principale è il logo PNG quadrato 192×192 già presente, con URL stabile `/static/icon-192.png`; il fallback ICO conserva taglie 16/32/48. Google sceglie autonomamente nome e icona e li aggiorna dopo la propria scansione: il deploy non modifica immediatamente i risultati. Il tag di verifica Search Console è conservato. Dopo accesso all'account proprietario, usare Controllo URL sulla home e verificare la sitemap esistente.
+
+### Dettagli delle partite nel grafico giocatore
+
+Ogni barra è apribile con tocco/clic o tastiera. Mostra avversario, casa/trasferta, minuti e punti/rimbalzi/assist della partita selezionata. Il risultato finale viene richiesto a ESPN solo all'apertura del dettaglio, tramite `/api/players/game?event_id=...`; nessun caricamento di risultati in blocco o chiamata OddsPapi. Si pubblicano soltanto partite esplicitamente concluse, con ID, due squadre e punteggi verificabili. Esito vittoria/sconfitta solo quando campo e avversario permettono di abbinare la squadra del giocatore; i dati mancanti restano indicati come non disponibili. I risultati compatti vengono condivisi tra visitatori e conservati tramite la cache ESPN esistente; errori non vengono salvati.
+
+I log pubblici includono GAME_ID: versione schema final-v4 (batch team-logs-v3); durate della cache statistiche invariate. Motore delle previsioni, formule, soglie, aggiornamenti e cache OddsPapi non cambiano.

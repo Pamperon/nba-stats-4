@@ -605,6 +605,17 @@ def player_team_logs(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
         logger.exception('Saved team statistics unavailable')
         raise HTTPException(503, 'Statistiche salvate temporaneamente non disponibili')
 
+@app.get('/api/players/game')
+def player_game_details(event_id: str = Query(pattern=r'^[0-9]{1,12}$')):
+    try:
+        return {**player_stats.game_details(event_id), 'odds_api_calls': 0}
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
+    except Exception:
+        logger.warning('NBA final score temporarily unavailable')
+        raise HTTPException(503, 'Risultato ESPN temporaneamente non disponibile')
+
+
 @app.get('/api/players/log')
 def player_log(team_id: str = Query(pattern=r'^[0-9]{1,8}$'),
                athlete_id: str = Query(pattern=r'^[0-9]{1,12}$'),
