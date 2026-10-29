@@ -581,6 +581,26 @@ async function getPlayerDirectory(){
  }).finally(()=>{playerDirectoryPending=null;});
  return playerDirectoryPending;
 }
+let playerGlobalSearch=false,playerTeamLabel=null;
+function endPlayerSearch(){
+ playerGlobalSearch=false;
+ if(playerTeamLabel?.option.isConnected)playerTeamLabel.option.textContent=playerTeamLabel.text;
+ playerTeamLabel=null;
+ $('player-search').readOnly=true;$('player-search').setAttribute('inputmode','none');
+ if(document.activeElement===$('player-search'))$('player-search').blur();
+}
+function showGlobalTeamLabel(){
+ if(playerTeamLabel&&!playerTeamLabel.option.isConnected)playerTeamLabel=null;
+ if(!playerTeamLabel){const option=$('team').selectedOptions[0];if(option){playerTeamLabel={option,text:option.textContent};option.textContent='Tutte le squadre';}}
+}
+function startPlayerSearch(){
+ playerGlobalSearch=true;showGlobalTeamLabel();
+ $('player-search').readOnly=false;$('player-search').setAttribute('inputmode','search');
+ $('player-search').value='';$('player-search').focus();searchPlayers();
+}
+function openPlayerRoster(){
+ endPlayerSearch();$('player-search').focus();searchPlayers('');
+}
 function setPlayerPickerOpen(open){
  document.querySelector('.player-picker-popup').hidden=!open;
  if(!open)$('player-search-results').hidden=true;
@@ -589,7 +609,7 @@ function setPlayerPickerOpen(open){
  $('player-search').removeAttribute('aria-activedescendant');
 }
 function closePlayerPicker(){
- ++playerSearchRequest;setPlayerPickerOpen(false);
+ ++playerSearchRequest;setPlayerPickerOpen(false);endPlayerSearch();
  $('player-search').value=$('playername').selectedOptions[0]?.textContent||'';
 }
 async function searchPlayers(queryOverride){
@@ -597,6 +617,7 @@ async function searchPlayers(queryOverride){
  const results=$('player-search-results'),status=$('player-search-status');
  results.replaceChildren();results.hidden=true;setPlayerPickerOpen(true);
  status.textContent=query?'Ricerca giocatori…':'';
+ if(playerGlobalSearch&&!query){status.textContent='Digita il nome del giocatore.';return;}
  try{
   const players=query?await getPlayerDirectory():activeRoster.map(player=>({...player,team:$('team').selectedOptions[0]?.textContent||''}));
   if(request!==playerSearchRequest)return;
@@ -607,7 +628,7 @@ async function searchPlayers(queryOverride){
   results.hidden=!shown.length;
   for(const button of results.querySelectorAll('button'))button.onclick=async()=>{
    const player=shown[Number(button.dataset.playerResult)],navigation=++pickNavigationRequest;
-   ++playerSearchRequest;setPlayerPickerOpen(false);$('player-search').value=player.name;status.textContent='';
+   ++playerSearchRequest;setPlayerPickerOpen(false);endPlayerSearch();$('player-search').value=player.name;status.textContent='';
    playerStatsInitialized=true;setPlayerLoading(true);
    if(!query){$('playername').value=String(player.id);await changePlayer();}
    else await initPlayers({id:String(player.id),team:player.team,market:$('stat').value||'PTS',line:Number($('line').value)||9.5,season:$('playerseason').value,navigation});
@@ -618,11 +639,14 @@ async function searchPlayers(queryOverride){
   const retry=document.createElement('button');retry.type='button';retry.textContent='Riprova ricerca';retry.onclick=()=>searchPlayers();results.append(retry);results.hidden=false;
  }
 }
-$('player-search').addEventListener('input',()=>searchPlayers());
+$('player-search').addEventListener('input',()=>{if(!$('player-search').readOnly)searchPlayers();});
+$('player-search').addEventListener('click',()=>{if($('player-search').readOnly)openPlayerRoster();});
+$('player-search-activate').onclick=startPlayerSearch;
 $('player-search').addEventListener('focus',()=>$('player-search').select());
 $('player-picker-toggle').onclick=()=>{
- if($('player-search').getAttribute('aria-expanded')==='true')closePlayerPicker();
- else{$('player-search').focus();searchPlayers('');}
+ if(playerGlobalSearch)openPlayerRoster();
+ else if($('player-search').getAttribute('aria-expanded')==='true')closePlayerPicker();
+ else openPlayerRoster();
 };
 $('player-search').addEventListener('keydown',event=>{
  const options=[...$('player-search-results').querySelectorAll('[role=option]')];
@@ -633,7 +657,7 @@ $('player-search').addEventListener('keydown',event=>{
  }
  if(!['ArrowDown','ArrowUp'].includes(event.key))return;
  event.preventDefault();
- if($('player-search').getAttribute('aria-expanded')!=='true'){searchPlayers('');return;}
+ if($('player-search').getAttribute('aria-expanded')!=='true'){openPlayerRoster();return;}
  if(!options.length)return;
  const current=options.findIndex(option=>option.getAttribute('aria-selected')==='true');
  const next=current<0?(event.key==='ArrowDown'?0:options.length-1):(current+(event.key==='ArrowDown'?1:-1)+options.length)%options.length;
@@ -715,6 +739,7 @@ async function initPlayers(selection=null){
  try{const payload=await playerCatalog('/api/players/teams');
  if(navigation!==pickNavigationRequest)return;
  $('team').innerHTML=payload.teams.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('');
+ if(playerGlobalSearch&&!selection)showGlobalTeamLabel();
  if(selection){
   const abbreviation=teamAbbrev(selection.team);
   const team=payload.teams.find(t=>t.name===selection.team||(abbreviation!=='—'&&teamAbbrev(t.name)===abbreviation));

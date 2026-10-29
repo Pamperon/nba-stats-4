@@ -155,6 +155,6 @@ la shell dell'app e non memorizza le risposte API.
 
 ### Consultazione dei giocatori e delle quote
 
-Nelle statistiche il campo Giocatore è un unico selettore modificabile: la freccia apre il roster della squadra selezionata; digitando anche un solo carattere compaiono i suggerimenti di tutta la NBA. Non esiste un riquadro di ricerca separato. L’elenco usa i roster ESPN già memorizzati, con caricamento condiviso e riutilizzo nel browser; non scarica game log durante la ricerca e non usa OddsPapi. In caso di indisponibilità si può riprovare o usare i selettori esistenti.
+Nelle statistiche il campo Giocatore apre il roster della squadra selezionata senza abilitare la tastiera. La lente abilita la ricerca digitata in tutta la NBA, mostrando temporaneamente “Tutte le squadre”; scegliendo un risultato si ripristina la modalità tendina e si imposta la squadra corretta. Annullando si ripristina la selezione precedente. Non esiste un riquadro di ricerca separato. L’elenco usa i roster ESPN già memorizzati, con caricamento condiviso e riutilizzo nel browser; non scarica game log durante la ricerca e non usa OddsPapi. In caso di indisponibilità si può riprovare o usare i selettori esistenti.
 
 Analisi Quote permette di filtrare per partita, insieme a giocatore, mercato e filtri avanzati, usando solo le selezioni salvate della giornata. Il ritorno dalle statistiche conserva filtri, risultati già caricati, dettagli aperti e posizione verticale e orizzontale nella stessa giornata. Cambiare giornata azzera la partita selezionata e la posizione salvata.

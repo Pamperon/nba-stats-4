@@ -166,13 +166,13 @@ test('direct NBA search loads its directory once, ignores accents and selects th
   await tick();const w=dom.window,d=w.document;assert.equal(calls.includes('/api/players/directory'),false);
   d.getElementById('area-stats').click();await tick();await tick();
   const input=d.getElementById('player-search');
-  input.value='jo';input.dispatchEvent(new w.Event('input'));input.value='PLAYER jose';input.dispatchEvent(new w.Event('input'));
+  d.getElementById('player-search-activate').click();input.value='jo';input.dispatchEvent(new w.Event('input'));input.value='PLAYER jose';input.dispatchEvent(new w.Event('input'));
   assert.equal(calls.filter(url=>url==='/api/players/directory').length,1);release();await tick();await tick();
   const results=d.querySelectorAll('[data-player-result]');assert.equal(results.length,1);assert.match(results[0].textContent,/José PlayerMiami Heat/);
   results[0].click();await tick();await tick();await tick();
   assert.equal(d.getElementById('team').value,'2');assert.equal(d.getElementById('playername').value,'22');
   assert.equal(d.getElementById('player-search-results').hidden,true);
-  input.value='Jose';input.dispatchEvent(new w.Event('input'));await tick();assert.equal(calls.filter(url=>url==='/api/players/directory').length,1);
+  d.getElementById('player-search-activate').click();input.value='Jose';input.dispatchEvent(new w.Event('input'));await tick();assert.equal(calls.filter(url=>url==='/api/players/directory').length,1);
   assert.ok(calls.every(url=>!url.includes('odds')&&!url.startsWith('/api/scan')));
  }finally{dom.window.close();}
 });
@@ -182,7 +182,7 @@ test('player search failures can retry and old results cannot overwrite a cleare
  const dom=app(async url=>url==='/api/players/directory'?(failed?{ok:false,status:503}:new Promise(resolve=>{release=()=>resolve(response({players:[{id:'11',name:'First Player',team:'Boston Celtics'}]}));})):response(statsPayload(url)));
  try{
   await tick();const w=dom.window,d=w.document,input=d.getElementById('player-search');
-  input.value='First';input.dispatchEvent(new w.Event('input'));await tick();await tick();
+  d.getElementById('player-search-activate').click();input.value='First';input.dispatchEvent(new w.Event('input'));await tick();await tick();
   assert.match(d.getElementById('player-search-status').textContent,/temporaneamente non disponibile/);
   failed=false;d.querySelector('#player-search-results button').click();
   input.value='';input.dispatchEvent(new w.Event('input'));release();await tick();await tick();
@@ -227,10 +227,30 @@ test('the existing player field supports both team dropdown and typing without a
   assert.ok(input.getAttribute('aria-activedescendant'));
   input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));await tick();
   assert.equal(input.value,'First Player');assert.equal(input.getAttribute('aria-expanded'),'false');
-  input.value='j';input.dispatchEvent(new w.Event('input'));await tick();await tick();
+  d.getElementById('player-search-activate').click();input.value='j';input.dispatchEvent(new w.Event('input'));await tick();await tick();
   assert.match(d.getElementById('player-search-results').textContent,/José Player/);
   input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
   assert.equal(input.getAttribute('aria-expanded'),'false');assert.equal(input.value,'First Player');
   d.getElementById('player-picker-toggle').click();await tick();d.body.click();assert.equal(input.getAttribute('aria-expanded'),'false');
+ }finally{dom.window.close();}
+});
+
+test('keyboard is enabled only by the search icon and global team wording is restored on cancel or selection',async()=>{
+ const calls=[];
+ const dom=app(async url=>{calls.push(url);return response(url==='/api/players/directory'?{players:[{id:'22',name:'José Player',team:'Miami Heat',team_id:'2'}]}:statsPayload(url));});
+ try{
+  await tick();const w=dom.window,d=w.document;d.getElementById('area-stats').click();await tick();await tick();
+  const input=d.getElementById('player-search'),team=d.getElementById('team');
+  assert.equal(input.readOnly,true);assert.equal(input.getAttribute('inputmode'),'none');
+  input.click();await tick();
+  assert.equal(input.readOnly,true);assert.equal(input.getAttribute('aria-expanded'),'true');assert.equal(calls.includes('/api/players/directory'),false);
+  d.getElementById('player-search-activate').click();
+  assert.equal(input.readOnly,false);assert.equal(d.activeElement,input);assert.equal(team.selectedOptions[0].textContent,'Tutte le squadre');assert.equal(team.value,'1');
+  assert.equal(calls.includes('/api/players/directory'),false);
+  input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+  assert.equal(input.readOnly,true);assert.equal(team.selectedOptions[0].textContent,'Boston Celtics');assert.equal(input.value,'First Player');assert.notEqual(d.activeElement,input);
+  d.getElementById('player-search-activate').click();input.value='Jose';input.dispatchEvent(new w.Event('input'));await tick();await tick();
+  d.querySelector('[data-player-result]').click();await tick();await tick();await tick();
+  assert.equal(team.value,'2');assert.equal(team.selectedOptions[0].textContent,'Miami Heat');assert.equal(input.value,'José Player');assert.equal(input.readOnly,true);assert.notEqual(d.activeElement,input);
  }finally{dom.window.close();}
 });
