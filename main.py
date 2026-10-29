@@ -941,6 +941,11 @@ def scan_csv(job_id: str):
     data=engine.csv_excel_friendly(pd.DataFrame(job['results']))
     return StreamingResponse(io.BytesIO(data),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="basketlab_completo.csv"'})
 
+@app.get('/ads.txt', include_in_schema=False)
+def ads_txt():
+    return FileResponse('web/ads.txt', media_type='text/plain')
+
+
 @app.get('/robots.txt', include_in_schema=False)
 def robots_txt():
     return PlainTextResponse('User-agent: *\nAllow: /\nSitemap: https://basketlab.it/sitemap.xml\n')

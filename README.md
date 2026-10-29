@@ -186,3 +186,7 @@ La home dichiara `Basket Lab` come nome preferito e `BasketLab` come alternativa
 Ogni barra è apribile con tocco/clic o tastiera. Mostra avversario, casa/trasferta, minuti e punti/rimbalzi/assist della partita selezionata. Il risultato finale viene richiesto a ESPN solo all'apertura del dettaglio, tramite `/api/players/game?event_id=...`; nessun caricamento di risultati in blocco o chiamata OddsPapi. Si pubblicano soltanto partite esplicitamente concluse, con ID, due squadre e punteggi verificabili. Esito vittoria/sconfitta solo quando campo e avversario permettono di abbinare la squadra del giocatore; i dati mancanti restano indicati come non disponibili. I risultati compatti vengono condivisi tra visitatori e conservati tramite la cache ESPN esistente; errori non vengono salvati.
 
 I log pubblici includono GAME_ID: versione schema final-v4 (batch team-logs-v3); durate della cache statistiche invariate. Motore delle previsioni, formule, soglie, aggiornamenti e cache OddsPapi non cambiano.
+
+### Collegamento AdSense per revisione
+
+Il meta tag `google-adsense-account` nella home e il file pubblico `/ads.txt` identificano l'account publisher autorizzato. Sono usati per collegare Basket Lab e richiedere la revisione del sito. Questa configurazione non include script pubblicitari, unità annunci o annunci automatici: l'eventuale pubblicazione degli annunci e la gestione del consenso saranno configurate separatamente dopo la verifica dei requisiti.
