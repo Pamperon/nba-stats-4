@@ -112,7 +112,7 @@ test('loading more quotes preserves expanded details and moves focus to the adde
   assert.equal(first.querySelector('.finder-details-toggle').getAttribute('aria-expanded'),'true');
   assert.equal(d.activeElement,d.querySelectorAll('.finder-card')[100].querySelector('.finder-player'));
   assert.equal(d.querySelectorAll('.finder-card').length,200);
-  assert.equal(d.querySelectorAll('#rows tr').length,200);
+  assert.equal(d.querySelectorAll('#rows tr').length,0);
   assert.equal(calls.length,before);
   d.getElementById('finder-search').value='Player';
   d.getElementById('finder-search').dispatchEvent(new dom.window.Event('input'));
@@ -128,10 +128,11 @@ test('switching between desktop and mobile reuses saved quotes with the correct 
  try{
   await tick();const d=dom.window.document,before=calls.length;
   assert.equal(d.querySelectorAll('.finder-card').length,100);
+  assert.equal(d.querySelectorAll('#rows tr').length,0);
   media.matches=false;changed();
-  assert.equal(d.querySelectorAll('#rows tr').length,500);
+  assert.equal(d.querySelectorAll('#rows tr').length,500);assert.equal(d.querySelectorAll('.finder-card').length,0);
   media.matches=true;changed();
-  assert.equal(d.querySelectorAll('.finder-card').length,100);
+  assert.equal(d.querySelectorAll('.finder-card').length,100);assert.equal(d.querySelectorAll('#rows tr').length,0);
   assert.equal(calls.length,before);
  }finally{dom.window.close();}
 });
@@ -252,5 +253,56 @@ test('keyboard is enabled only by the search icon and global team wording is res
   d.getElementById('player-search-activate').click();input.value='Jose';input.dispatchEvent(new w.Event('input'));await tick();await tick();
   d.querySelector('[data-player-result]').click();await tick();await tick();await tick();
   assert.equal(team.value,'2');assert.equal(team.selectedOptions[0].textContent,'Miami Heat');assert.equal(input.value,'José Player');assert.equal(input.readOnly,true);assert.notEqual(d.activeElement,input);
+ }finally{dom.window.close();}
+});
+
+test('same-day snapshot refresh keeps fixture, batch, expanded data and scroll while updating prices',async()=>{
+ const match='Boston Celtics - Miami Heat';let price=1.8,release;
+ const rows=()=>Array.from({length:180},(_,i)=>({...quoteRow('Player '+i,match),'ESPN ID':String(i+1),Quota:i===0?price:1.8}));
+ const snapshot=()=>({date:'2099-01-01',results:rows(),job_id:'saved-'+price});
+ const dom=app(async url=>url.startsWith('/api/saved/latest')?(price===1.8?response(snapshot()):new Promise(resolve=>{release=()=>resolve(response(snapshot()));})):response(base(url)),true);
+ try{
+  await tick();const w=dom.window,d=w.document;
+  Object.defineProperty(w,'scrollY',{value:1200,writable:true});const moves=[];w.scrollTo=options=>moves.push(options.top);
+  d.querySelector('[data-tab=finder]').click();
+  const fixture=d.getElementById('finder-fixture');fixture.value=match;fixture.dispatchEvent(new w.Event('change'));
+  d.getElementById('finder-more').click();d.querySelector('.finder-details-toggle').click();
+  d.getElementById('finder-scroll').scrollLeft=90;
+  price=2;d.getElementById('date').dispatchEvent(new w.Event('change'));
+  assert.equal(d.getElementById('app').classList.contains('date-is-loading'),true);
+  assert.equal(fixture.value,match);release();await tick();await tick();await new Promise(resolve=>setTimeout(resolve,35));
+  assert.equal(fixture.value,match);assert.equal(d.querySelectorAll('.finder-card').length,180);
+  assert.equal(d.querySelector('.finder-extra').hidden,false);assert.match(d.querySelector('.finder-card').textContent,/2,00/);
+  assert.equal(moves.at(-1),1200);assert.equal(d.getElementById('finder-scroll').scrollLeft,90);
+  assert.equal(d.getElementById('app').classList.contains('date-is-loading'),false);
+ }finally{dom.window.close();}
+});
+
+test('a genuinely different day clears fixture, loaded batch and open details',async()=>{
+ const match='Boston Celtics - Miami Heat',rows=Array.from({length:220},(_,i)=>quoteRow('Player '+i,match));
+ const dom=app(async url=>response(url==='/api/saved/dates'?{dates:[{date:'2099-01-01'},{date:'2099-01-02'}]}:url.startsWith('/api/saved/latest')?{date:url.slice(-10),results:rows}:base(url)),true);
+ try{
+  await tick();const w=dom.window,d=w.document,fixture=d.getElementById('finder-fixture');
+  fixture.value=match;fixture.dispatchEvent(new w.Event('change'));d.getElementById('finder-more').click();d.querySelector('.finder-details-toggle').click();
+  d.getElementById('date').value='2099-01-02';d.getElementById('date').dispatchEvent(new w.Event('change'));await tick();await tick();
+  assert.equal(fixture.value,'');assert.equal(d.querySelectorAll('.finder-card').length,100);assert.equal(d.querySelector('.finder-extra').hidden,true);
+ }finally{dom.window.close();}
+});
+
+test('archive reload discovers new dates, retains the selected day and allows opening the added day',async()=>{
+ let dates=['2026-10-28'],dateCalls=0;const requested=[];
+ const dom=app(async url=>{
+  if(url==='/api/history/dates'){dateCalls++;return response({dates:dates.map(date=>({date}))});}
+  if(url.startsWith('/api/history?')){const date=url.split('=')[1];requested.push(date);return response({date,groups:{Singola:[ticket(date)],Doppia:[],Tripla:[]}});}
+  return response(base(url));
+ });
+ try{
+  await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
+  dates=['2026-10-29','2026-10-28'];d.getElementById('history-retry').click();await tick();await tick();
+  const select=d.getElementById('history-date');assert.equal(dateCalls,2);assert.equal(select.options.length,2);assert.equal(select.value,'2026-10-28');
+  select.value='2026-10-29';select.dispatchEvent(new dom.window.Event('change'));await tick();await tick();
+  assert.equal(requested.at(-1),'2026-10-29');assert.equal(dateCalls,2);assert.match(d.getElementById('history-tickets').textContent,/2026-10-29/);
+  assert.equal(d.getElementById('history-tickets').classList.contains('history-grid'),false);
+  assert.equal(d.querySelectorAll('#history-tickets>.daily-group>.history-grid').length,1);
  }finally{dom.window.close();}
 });

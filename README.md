@@ -158,3 +158,9 @@ la shell dell'app e non memorizza le risposte API.
 Nelle statistiche il campo Giocatore apre il roster della squadra selezionata senza abilitare la tastiera. La lente abilita la ricerca digitata in tutta la NBA, mostrando temporaneamente “Tutte le squadre”; scegliendo un risultato si ripristina la modalità tendina e si imposta la squadra corretta. Annullando si ripristina la selezione precedente. Non esiste un riquadro di ricerca separato. L’elenco usa i roster ESPN già memorizzati, con caricamento condiviso e riutilizzo nel browser; non scarica game log durante la ricerca e non usa OddsPapi. In caso di indisponibilità si può riprovare o usare i selettori esistenti.
 
 Analisi Quote permette di filtrare per partita, insieme a giocatore, mercato e filtri avanzati, usando solo le selezioni salvate della giornata. Il ritorno dalle statistiche conserva filtri, risultati già caricati, dettagli aperti e posizione verticale e orizzontale nella stessa giornata. Cambiare giornata azzera la partita selezionata e la posizione salvata.
+
+### Ripristino della navigazione e aggiornamento archivio
+
+Il refresh di uno snapshot della stessa giornata conserva i filtri, il numero di quote caricate, i dettagli aperti e la posizione della vista attiva. Il cambio effettivo di giornata azzera il filtro partita e la posizione; durante il caricamento le proposte precedenti restano nascoste. La lista quote costruisce solo le schede mobile oppure la tabella desktop, secondo lo schermo.
+
+Riaprire l’archivio o usare “Ricarica archivio” aggiorna anche le date disponibili, mantenendo la data selezionata se ancora presente. Le categorie occupano righe separate, con una griglia di schede adattiva al loro interno. Il CSV continua a esportare tutte le righe dello snapshot pubblico caricato, senza nuove richieste.
