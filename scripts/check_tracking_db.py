@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 import storage
 import scan_tracking as tracking
 import calibration
+import audience
 
 
 class Database:
@@ -93,6 +94,13 @@ def main():
         with patch.object(storage, 'configured', return_value=True), patch.object(storage, 'connection', side_effect=db.connection):
             storage.initialize()
             tracking.initialize()
+            audience.initialize()
+            audience.record('whatsapp', ['apertura', 'quote', 'quote'])
+            audience.record('whatsapp', ['quote'])
+            report = audience.report(1)
+            counts = {row['event']: int(row['total']) for row in report['rows']}
+            assert counts == {'apertura': 1, 'quote': 3}, report
+
             calibration.initialize()
             calibration.initialize()
             from psycopg.types.json import Jsonb
@@ -210,7 +218,7 @@ def main():
             assert merged['groups']['Singola'][0]['status'] == 'won'
             assert merged['summary']['won'] == 1
             assert not public_views.history('2000-01-01')['groups']['Singola']
-            print('PostgreSQL integration OK: migrations, durable requests, deployment coordination, deduplicated daily archive')
+            print('PostgreSQL integration OK: migrations, aggregate audience counters, durable requests, deployment coordination, deduplicated daily archive')
     finally:
         db.close()
 

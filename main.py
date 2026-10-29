@@ -3,7 +3,7 @@ import os, secrets, threading, uuid, io, time, asyncio
 from PIL import Image
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from fastapi import FastAPI, HTTPException, Header, Depends, Query
+from fastapi import FastAPI, HTTPException, Header, Depends, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
@@ -12,6 +12,7 @@ import requests
 import engine
 import storage
 import scan_tracking
+import audience
 import player_stats
 from cachetools import TTLCache
 import logging
@@ -46,6 +47,7 @@ def init_storage():
         raise RuntimeError('Database required for durable scan/API tracking')
     storage.initialize()
     scan_tracking.initialize()
+    audience.initialize()
     import calibration
     calibration.initialize()
     # Uvicorn has not opened its listening port yet. Render keeps the previous
@@ -110,6 +112,49 @@ def _scan_heartbeat(job_id, stop):
 def auth(authorization: str = Header(default='')):
     if not secrets.compare_digest(authorization, f'Bearer {TOKEN}'):
         raise HTTPException(401, 'Accesso non autorizzato')
+
+@app.post('/api/audience/event', status_code=204)
+async def audience_event(request: Request):
+    # Collection is best effort; counts are not billing or audited human traffic.
+    origin = request.headers.get('origin', '')
+    if origin not in ('https://basketlab.it', 'https://www.basketlab.it',
+                      'https://nba-stats-4.onrender.com'):
+        return Response(status_code=204)
+    ua = request.headers.get('user-agent', '').lower()
+    if (request.headers.get('dnt') == '1' or request.headers.get('sec-gpc') == '1'
+            or any(word in ua for word in ('bot', 'crawler', 'spider', 'headless', 'uptime'))
+            or not audience.allowed()):
+        return Response(status_code=204)
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > 2048:
+            return Response(status_code=204)
+    try:
+        import json
+        source, events = audience.validate(json.loads(body))
+    except (ValueError, TypeError, UnicodeError):
+        return Response(status_code=204)
+    try:
+        from starlette.concurrency import run_in_threadpool
+        await run_in_threadpool(audience.record, source, events)
+    except Exception:
+        logger.warning('Aggregate audience counter unavailable')
+    return Response(status_code=204)
+
+
+@app.get('/api/audience/report', dependencies=[Depends(auth)])
+def audience_report(days: int = Query(default=30, ge=1, le=90)):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(audience.report(days), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/admin/visite', include_in_schema=False)
+def audience_admin():
+    return FileResponse('web/audience-admin.html', headers={
+        'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow',
+        'Referrer-Policy': 'no-referrer'})
+
 
 @app.get('/api/health')
 def health():
@@ -677,157 +722,7 @@ def calibration_settlement_status():
     """Read-only confirmation of committed daily calibration rows."""
     with storage.connection() as conn:
         rows = conn.execute("""
-            SELECT s.scan_date, s.snapshot_job_id, s.prediction_count,
-                   s.matched_count, COUNT(d.market)
-            FROM nba_calibration_settled s
-            LEFT JOIN nba_calibration_daily d ON d.scan_date = s.scan_date
-            GROUP BY s.scan_date, s.snapshot_job_id, s.prediction_count, s.matched_count
-            ORDER BY s.scan_date DESC LIMIT 30
-        """).fetchall()
-    return {'settled': [{'date': day.isoformat(), 'job_id': job,
-                         'eligible': expected, 'verified': matched, 'bins': bins}
-                        for day, job, expected, matched, bins in rows],
-            'odds_api_calls': 0}
-
-
-@app.get('/api/calibration/summary', dependencies=[Depends(auth)])
-def calibration_summary():
-    import calibration
-    return {'calibration':calibration.summary(),'odds_api_calls':0}
-
-
-@app.get('/api/calibration/recommendation-results', dependencies=[Depends(auth)])
-def recommendation_results(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$')):
-    with storage.connection() as conn:
-        rows = conn.execute("""
-            SELECT scan_date,snapshot_job_id,report FROM nba_recommendation_results
-            WHERE (%s::date IS NULL OR scan_date=%s::date)
-            ORDER BY scan_date DESC,settled_at DESC LIMIT 100
-        """, (date, date)).fetchall()
-    return {'snapshots': [{'date': day.isoformat(), 'job_id': job, 'report': report}
-                          for day, job, report in rows], 'odds_api_calls': 0}
-
-
-@app.get('/api/calibration/performance', dependencies=[Depends(auth)])
-def calibration_performance():
-    """Descriptive outcomes by market/date/probability bin; read-only."""
-    import performance_report
-    with storage.connection() as conn:
-        rows = conn.execute("""
-            SELECT scan_date,market,probability_bin,n,wins,sum_p,sum_brier
-            FROM nba_calibration_daily ORDER BY scan_date,market,probability_bin
-        """).fetchall()
-    data = [dict(date=day.isoformat(),market=market,probability_bin=bucket,
-                 n=n,wins=wins,sum_p=sp,sum_brier=sb)
-            for day,market,bucket,n,wins,sp,sb in rows]
-    return performance_report.report(data)
-
-
-@app.get('/api/calibration/validation', dependencies=[Depends(auth)])
-def calibration_validation_report():
-    """Leakage-free walk-forward report; never activates a model automatically."""
-    import calibration_validation
-    with storage.connection() as conn:
-        rows = conn.execute("""
-            SELECT scan_date,market,probability_bin,n,wins,sum_p,sum_brier
-            FROM nba_calibration_daily ORDER BY scan_date,market,probability_bin
-        """).fetchall()
-    data = [dict(date=day.isoformat(),market=market,probability_bin=bucket,
-                 n=n,wins=wins,sum_p=sp,sum_brier=sb)
-            for day,market,bucket,n,wins,sp,sb in rows]
-    return {**calibration_validation.walk_forward(data), 'odds_api_calls':0}
-
-
-@app.get('/api/calibration/retention-preview', dependencies=[Depends(auth)])
-def calibration_retention_preview():
-    """Report potentially removable snapshots; does not delete any records."""
-    return storage.calibration_retention_preview(retention_days=7)
-
-
-@app.post('/api/storage/cleanup', dependencies=[Depends(auth)])
-def storage_cleanup():
-    """Protected, idempotent cleanup; does not contact OddsPapi."""
-    try:
-        return storage.cleanup_expired(retention_days=7)
-    except Exception:
-        logger.exception('NBA archive retention cleanup failed')
-        raise HTTPException(503, 'Pulizia archivio non riuscita')
-
-@app.get('/api/saved/status')
-def saved_status(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
-    try:
-        datetime.strptime(date, '%Y-%m-%d')
-    except ValueError:
-        raise HTTPException(400, 'Data non valida')
-    try:
-        return scan_tracking.day_status(date)
-    except Exception:
-        logger.exception('Cannot read durable scan status')
-        raise HTTPException(503, 'Stato aggiornamento temporaneamente non disponibile')
-
-
-@app.get('/api/history/dates')
-def public_history_dates():
-    import public_views
-    try:
-        return public_views.history_dates(datetime.now(ZoneInfo('Europe/Rome')).date())
-    except Exception:
-        logger.exception('Cannot list public recommendation archive')
-        raise HTTPException(503, 'Archivio temporaneamente non disponibile')
-
-
-@app.get('/api/history')
-def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
-    import public_views
-    try:
-        day = datetime.strptime(date, '%Y-%m-%d').date()
-    except ValueError:
-        raise HTTPException(400, 'Data non valida')
-    if day > datetime.now(ZoneInfo('Europe/Rome')).date():
-        raise HTTPException(400, 'La giornata non è ancora archiviabile')
-    try:
-        return public_views.history(date)
-    except Exception:
-        logger.exception('Cannot read public recommendation archive')
-        raise HTTPException(503, 'Archivio temporaneamente non disponibile')
-
-
-@app.post('/api/diagnostics/odds-tournament', dependencies=[Depends(auth)])
-def diagnose_odds_tournament(check_missing: bool = False):
-    """One explicit, durable, five-request probe; never starts a scan."""
-    import odds_provider_probe
-    try:
-        return (odds_provider_probe.check_missing_once(engine.API_KEY) if check_missing
-                else odds_provider_probe.run_once(engine.API_KEY))
-    except odds_provider_probe.ProbeError as exc:
-        raise HTTPException(409, str(exc)) from None
-    except Exception:
-        logger.exception('Cannot access one-shot provider diagnostic')
-        raise HTTPException(503, 'Diagnostica temporaneamente non disponibile') from None
-
-@app.post('/api/scan', dependencies=[Depends(auth)])
-def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
-         source: str = Query(default='manual', pattern=r'^(github|render|manual)$'),
-         slot: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$')):
-    try:
-        datetime.strptime(date, '%Y-%m-%d')
-    except ValueError:
-        raise HTTPException(400, 'Data non valida')
-    if slot is not None:
-        from scripts.scheduled_scan import valid_slot
-        if not valid_slot(slot):
-            raise HTTPException(400, 'Slot non valido')
-    if shutdown_event.is_set():
-        raise HTTPException(503, 'Servizio in aggiornamento; nuova scansione rinviata')
-    with lock:
-        for job_id, job in jobs.items():
-            if job['date'] == date and job['state'] in ('queued','running'):
-                return {'job_id': job_id, 'reused': True}
-        if any(job['state'] in ('queued','running') for job in jobs.values()):
-            raise HTTPException(409, 'Una scansione è già in corso')
-        job_id = uuid.uuid4().hex
-        try:
-            reservation = scan_tracking.begin_attempt(job_id, date, RUNTIME_ID, source, slot)
+            SELECT s.sc…1763 tokens truncated…e, RUNTIME_ID, source, slot)
         except scan_tracking.ScanPaused as exc:
             raise HTTPException(503, str(exc))
         except Exception:
