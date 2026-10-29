@@ -3,7 +3,7 @@ import os, secrets, threading, uuid, io, time, asyncio
 from PIL import Image
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from fastapi import FastAPI, HTTPException, Header, Depends, Query
+from fastapi import FastAPI, HTTPException, Header, Depends, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
@@ -12,6 +12,7 @@ import requests
 import engine
 import storage
 import scan_tracking
+import audience
 import player_stats
 from cachetools import TTLCache
 import logging
@@ -46,6 +47,7 @@ def init_storage():
         raise RuntimeError('Database required for durable scan/API tracking')
     storage.initialize()
     scan_tracking.initialize()
+    audience.initialize()
     import calibration
     calibration.initialize()
     # Uvicorn has not opened its listening port yet. Render keeps the previous
@@ -110,6 +112,49 @@ def _scan_heartbeat(job_id, stop):
 def auth(authorization: str = Header(default='')):
     if not secrets.compare_digest(authorization, f'Bearer {TOKEN}'):
         raise HTTPException(401, 'Accesso non autorizzato')
+
+@app.post('/api/audience/event', status_code=204)
+async def audience_event(request: Request):
+    # Collection is best effort; counts are not billing or audited human traffic.
+    origin = request.headers.get('origin', '')
+    if origin not in ('https://basketlab.it', 'https://www.basketlab.it',
+                      'https://nba-stats-4.onrender.com'):
+        return Response(status_code=204)
+    ua = request.headers.get('user-agent', '').lower()
+    if (request.headers.get('dnt') == '1' or request.headers.get('sec-gpc') == '1'
+            or any(word in ua for word in ('bot', 'crawler', 'spider', 'headless', 'uptime'))
+            or not audience.allowed()):
+        return Response(status_code=204)
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > 2048:
+            return Response(status_code=204)
+    try:
+        import json
+        source, events = audience.validate(json.loads(body))
+    except (ValueError, TypeError, UnicodeError):
+        return Response(status_code=204)
+    try:
+        from starlette.concurrency import run_in_threadpool
+        await run_in_threadpool(audience.record, source, events)
+    except Exception:
+        logger.warning('Aggregate audience counter unavailable')
+    return Response(status_code=204)
+
+
+@app.get('/api/audience/report', dependencies=[Depends(auth)])
+def audience_report(days: int = Query(default=30, ge=1, le=90)):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(audience.report(days), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/admin/visite', include_in_schema=False)
+def audience_admin():
+    return FileResponse('web/audience-admin.html', headers={
+        'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow',
+        'Referrer-Policy': 'no-referrer'})
+
 
 @app.get('/api/health')
 def health():

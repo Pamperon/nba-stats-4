@@ -2,7 +2,7 @@
   "name": "nba-stats-4-offline-checks",
   "private": true,
   "scripts": {
-    "test": "node --check web/app.js && node --check web/sw.js && node --check web/features.js && node --test tests/*.test.cjs"
+    "test": "node --check web/app.js && node --check web/sw.js && node --check web/features.js && node --check web/audience.js && node --check web/audience-admin.js && node --test tests/*.test.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.11",
