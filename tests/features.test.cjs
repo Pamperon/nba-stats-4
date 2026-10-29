@@ -186,7 +186,7 @@ test('player search failures can retry and old results cannot overwrite a cleare
   assert.match(d.getElementById('player-search-status').textContent,/temporaneamente non disponibile/);
   failed=false;d.querySelector('#player-search-results button').click();
   input.value='';input.dispatchEvent(new w.Event('input'));release();await tick();await tick();
-  assert.equal(d.querySelectorAll('[data-player-result]').length,0);assert.match(d.getElementById('player-search-status').textContent,/almeno 2/);
+  assert.equal(d.querySelectorAll('[data-player-result]').length,0);assert.equal(d.querySelectorAll('[data-player-result]').length,0);
  }finally{dom.window.close();}
 });
 
@@ -208,5 +208,29 @@ test('returning from statistics restores quote position, filters, loaded batches
   assert.equal(d.getElementById('finder-fixture').value,match);assert.equal(d.getElementById('finder-search').value,'First');
   assert.equal(d.querySelectorAll('.finder-card').length,200);assert.equal(first.querySelector('.finder-extra').hidden,false);
   w.scrollY=1600;d.getElementById('area-stats').click();await tick();d.getElementById('area-quotes').click();await new Promise(resolve=>setTimeout(resolve,35));assert.equal(moves.at(-1),1600);
+ }finally{dom.window.close();}
+});
+
+test('the existing player field supports both team dropdown and typing without a separate search panel',async()=>{
+ const calls=[];
+ const dom=app(async url=>{calls.push(url);return response(url==='/api/players/directory'?{players:[{id:'22',name:'José Player',team:'Miami Heat',team_id:'2'}]}:statsPayload(url));});
+ try{
+  await tick();const w=dom.window,d=w.document;d.getElementById('area-stats').click();await tick();await tick();
+  const input=d.getElementById('player-search');
+  assert.equal(d.querySelector('.player-search'),null);
+  assert.ok(d.querySelector('#player .filters .player-picker').contains(input));
+  assert.equal(d.getElementById('playername').hidden,true);assert.equal(input.getAttribute('role'),'combobox');
+  d.getElementById('player-picker-toggle').click();await tick();
+  assert.equal(input.getAttribute('aria-expanded'),'true');assert.match(d.getElementById('player-search-results').textContent,/First Player/);
+  assert.equal(calls.includes('/api/players/directory'),false);
+  input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+  assert.ok(input.getAttribute('aria-activedescendant'));
+  input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));await tick();
+  assert.equal(input.value,'First Player');assert.equal(input.getAttribute('aria-expanded'),'false');
+  input.value='j';input.dispatchEvent(new w.Event('input'));await tick();await tick();
+  assert.match(d.getElementById('player-search-results').textContent,/José Player/);
+  input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+  assert.equal(input.getAttribute('aria-expanded'),'false');assert.equal(input.value,'First Player');
+  d.getElementById('player-picker-toggle').click();await tick();d.body.click();assert.equal(input.getAttribute('aria-expanded'),'false');
  }finally{dom.window.close();}
 });

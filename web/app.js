@@ -581,37 +581,67 @@ async function getPlayerDirectory(){
  }).finally(()=>{playerDirectoryPending=null;});
  return playerDirectoryPending;
 }
-async function searchPlayers(){
- const request=++playerSearchRequest,query=normalizeFinder($('player-search').value).trim();
+function setPlayerPickerOpen(open){
+ document.querySelector('.player-picker-popup').hidden=!open;
+ if(!open)$('player-search-results').hidden=true;
+ $('player-search').setAttribute('aria-expanded',String(open));
+ $('player-picker-toggle').setAttribute('aria-expanded',String(open));
+ $('player-search').removeAttribute('aria-activedescendant');
+}
+function closePlayerPicker(){
+ ++playerSearchRequest;setPlayerPickerOpen(false);
+ $('player-search').value=$('playername').selectedOptions[0]?.textContent||'';
+}
+async function searchPlayers(queryOverride){
+ const request=++playerSearchRequest,query=normalizeFinder(typeof queryOverride==='string'?queryOverride:$('player-search').value).trim();
  const results=$('player-search-results'),status=$('player-search-status');
- results.replaceChildren();results.hidden=true;
- if(query.length<2){status.textContent='Scrivi almeno 2 caratteri, senza selezionare la squadra.';return;}
- status.textContent='Ricerca giocatori…';
+ results.replaceChildren();results.hidden=true;setPlayerPickerOpen(true);
+ status.textContent=query?'Ricerca giocatori…':'';
  try{
-  const players=await getPlayerDirectory();
+  const players=query?await getPlayerDirectory():activeRoster.map(player=>({...player,team:$('team').selectedOptions[0]?.textContent||''}));
   if(request!==playerSearchRequest)return;
   const words=query.split(/\s+/),matches=players.filter(player=>words.every(word=>normalizeFinder(player.name).includes(word)));
-  const shown=matches.slice(0,20);
-  status.textContent=!matches.length?'Nessun giocatore trovato. Prova un altro nome.':matches.length>20?'Primi 20 di '+matches.length+' giocatori: completa il nome per restringere la ricerca.':matches.length+' giocator'+(matches.length===1?'e trovato.':'i trovati.');
-  results.innerHTML=shown.map((player,index)=>'<button type="button" data-player-result="'+index+'"><strong>'+esc(player.name)+'</strong><span>'+esc(player.team)+'</span></button>').join('');
+  const shown=query?matches.slice(0,20):matches;
+  status.textContent=!matches.length?'Nessun giocatore trovato.':query&&matches.length>20?'Primi 20 risultati: completa il nome.':'';
+  results.innerHTML=shown.map((player,index)=>'<button type="button" role="option" id="player-option-'+index+'" aria-selected="false" tabindex="-1" data-player-result="'+index+'"><strong>'+esc(player.name)+'</strong>'+(query?'<span>'+esc(player.team)+'</span>':'')+'</button>').join('');
   results.hidden=!shown.length;
   for(const button of results.querySelectorAll('button'))button.onclick=async()=>{
    const player=shown[Number(button.dataset.playerResult)],navigation=++pickNavigationRequest;
-   ++playerSearchRequest;results.hidden=true;results.replaceChildren();$('player-search').value=player.name;status.textContent='';
+   ++playerSearchRequest;setPlayerPickerOpen(false);$('player-search').value=player.name;status.textContent='';
    playerStatsInitialized=true;setPlayerLoading(true);
-   await initPlayers({id:String(player.id),team:player.team,market:$('stat').value||'PTS',line:Number($('line').value)||9.5,season:$('playerseason').value,navigation});
+   if(!query){$('playername').value=String(player.id);await changePlayer();}
+   else await initPlayers({id:String(player.id),team:player.team,market:$('stat').value||'PTS',line:Number($('line').value)||9.5,season:$('playerseason').value,navigation});
   };
  }catch{
   if(request!==playerSearchRequest)return;
-  status.textContent='Ricerca temporaneamente non disponibile. Riprova o usa i selettori di squadra e giocatore.';
-  const retry=document.createElement('button');retry.type='button';retry.textContent='Riprova ricerca';retry.onclick=searchPlayers;results.append(retry);results.hidden=false;
+  status.textContent='Ricerca temporaneamente non disponibile. Riprova o apri la tendina per scegliere dalla squadra.';
+  const retry=document.createElement('button');retry.type='button';retry.textContent='Riprova ricerca';retry.onclick=()=>searchPlayers();results.append(retry);results.hidden=false;
  }
 }
-$('player-search').addEventListener('input',searchPlayers);
+$('player-search').addEventListener('input',()=>searchPlayers());
+$('player-search').addEventListener('focus',()=>$('player-search').select());
+$('player-picker-toggle').onclick=()=>{
+ if($('player-search').getAttribute('aria-expanded')==='true')closePlayerPicker();
+ else{$('player-search').focus();searchPlayers('');}
+};
 $('player-search').addEventListener('keydown',event=>{
- if(event.key==='ArrowDown'){$('player-search-results').querySelector('button')?.focus();event.preventDefault();}
- if(event.key==='Escape'){++playerSearchRequest;$('player-search-results').hidden=true;}
+ const options=[...$('player-search-results').querySelectorAll('[role=option]')];
+ if(event.key==='Escape'){closePlayerPicker();return;}
+ if(event.key==='Enter'){
+  const selected=options.find(option=>option.getAttribute('aria-selected')==='true');
+  if(selected){event.preventDefault();selected.click();}return;
+ }
+ if(!['ArrowDown','ArrowUp'].includes(event.key))return;
+ event.preventDefault();
+ if($('player-search').getAttribute('aria-expanded')!=='true'){searchPlayers('');return;}
+ if(!options.length)return;
+ const current=options.findIndex(option=>option.getAttribute('aria-selected')==='true');
+ const next=current<0?(event.key==='ArrowDown'?0:options.length-1):(current+(event.key==='ArrowDown'?1:-1)+options.length)%options.length;
+ options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
+ $('player-search').setAttribute('aria-activedescendant',options[next].id);options[next].scrollIntoView?.({block:'nearest'});
 });
+document.addEventListener('click',event=>{if(!event.target.closest('.player-picker'))closePlayerPicker();});
+document.querySelector('.player-picker').addEventListener('focusout',event=>{if(!event.currentTarget.contains(event.relatedTarget))closePlayerPicker();});
 
 const teamLogBatches=new Map();
 function prepareTeamLogs(team,season){
@@ -763,6 +793,7 @@ async function loadPlayerProfile(request,team,id){
 async function changePlayer(selection=null,preserveLine=false){
  clearTimeout(seasonPrefetchTimer);++seasonPrefetchGeneration;
  const request=++playerRequest,team=$('team').value,id=$('playername').value,season=$('playerseason').value;
+ if($('player-search').getAttribute('aria-expanded')!=='true')$('player-search').value=$('playername').selectedOptions[0]?.textContent||'';
  playerGames=[];
  $('player-summary').innerHTML='';$('player-trends').innerHTML='';
  $('chart').innerHTML='';
@@ -830,7 +861,7 @@ function drawPlayer(){
   return '<div class="player-game"><div class="player-game-info">'+esc(label)+'</div><div class="barrow"><div class="track"><div class="fill '+(val>line?'':'under')+'" style="width:'+Math.min(100,val/max*100)+'%"></div><div class="line" style="left:'+Math.min(100,line/max*100)+'%"></div></div><strong>'+esc(val)+'</strong></div></div>';
  }).join('')||'<p>Nessuna partita disponibile per i filtri selezionati.</p>';
 }
-$('team').onchange=()=>{++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;$('player-venue').onchange=drawPlayer;
+$('team').onchange=()=>{closePlayerPicker();++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;$('player-venue').onchange=drawPlayer;
 
 async function initializeArchive(){
  setArchiveStatus('Caricamento giornate disponibili…');

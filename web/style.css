@@ -732,18 +732,28 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 }
 
 /* Direct player search and fixture filtering use the existing visual language. */
-.player-search{margin:0 0 22px;padding:14px;background:#102035;border:1px solid #304a69;border-radius:12px}
-.player-search>label{display:block;margin-bottom:8px;color:#bfd1e7;font-size:13px}
-.player-search>input{width:100%;min-width:0;min-height:44px;font-size:16px}
-#player-search-status{font-size:12px;line-height:1.5;color:#a9bfd9;margin:8px 0 0}
-.player-search-results{display:grid;gap:6px;margin-top:10px}
-.player-search-results[hidden]{display:none}
-.player-search-results button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:48px;text-align:left;white-space:normal}
-.player-search-results button span{font-size:12px;color:#adc4df}
-.player-search-results button:focus-visible{outline:2px solid #ffad6c;outline-offset:2px}
 #finder .finder-primary-filters{grid-template-columns:minmax(0,1.3fr) minmax(100px,.6fr) minmax(0,1.5fr)}
 @media(max-width:760px){
  #finder .finder-primary-filters{grid-template-columns:minmax(0,1fr) minmax(100px,.6fr)}
  #finder .finder-fixture-filter{grid-column:1/-1}
- .player-search{padding:12px}
+}
+
+/* One editable player selector, alongside the existing team selector. */
+.player-picker{position:relative;display:flex;flex-direction:column;gap:7px;min-width:0;flex:1 1 185px;color:#9cb0cb;font-size:12px}
+.player-picker-control{display:flex;min-height:44px;border:1px solid #354862;border-radius:10px;background:#17263b;overflow:hidden}
+.player-picker-control:focus-within{outline:2px solid #ffad6c;outline-offset:2px}
+#player-search{width:100%;min-width:0;border:0;border-radius:0;padding:11px 10px;background:transparent;outline:none}
+#player-picker-toggle{flex:0 0 42px;min-height:44px;padding:0;border:0;border-left:1px solid #354862;border-radius:0;background:transparent;font-size:18px}
+.player-picker-popup{position:absolute;left:0;top:100%;z-index:30;width:max(100%,280px);max-width:calc(100vw - 54px);padding:6px;background:#13243b;border:1px solid #46617e;border-radius:10px;box-shadow:0 12px 24px #0006}
+.player-picker-popup[hidden],.player-search-results[hidden]{display:none}
+#player-search-status{color:#b7cbe3;font-size:12px;line-height:1.4;margin:4px 6px}
+#player-search-status:empty{display:none}
+.player-search-results{max-height:280px;overflow-y:auto;overscroll-behavior:contain;display:grid;gap:3px}
+.player-search-results button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:44px;gap:3px;border:0;background:transparent;white-space:normal;padding:9px;font-size:13px}
+.player-search-results button span{font-size:11px;color:#adc4df}
+.player-search-results button:hover,.player-search-results [aria-selected=true]{background:#294969}
+@media(max-width:760px){
+ #player .filters>.player-picker{grid-column:1/-1;gap:6px}
+ #player-search{font-size:16px}
+ .player-picker-popup{width:100%;max-width:100%}
 }
