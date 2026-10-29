@@ -4,11 +4,9 @@ function setArchiveStatus(message,kind='info'){
  status.hidden=kind==='info';
  status.setAttribute('role',kind==='error'?'alert':'status');
 }
-const $=id=>document.getElementById(id);let token='',jobId='',data=null;const savedKey='nba-stats-4-last-scan';const dbName='nba-stats-4-local-results';
+const $=id=>document.getElementById(id);let data=null;const dbName='nba-stats-4-local-results';
 function scanDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window))return reject(new Error('Archivio browser non disponibile'));const r=indexedDB.open(dbName,1);r.onupgradeneeded=()=>r.result.createObjectStore('scans');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-async function saveLocalScan(j){try{const db=await scanDB();await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readwrite');tx.objectStore('scans').put(j,j.date);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();$('status').textContent+=' · copia salvata nel browser';}catch(e){$('status').textContent+=' · salvataggio locale non riuscito';}}
 async function readLocalScan(date){const db=await scanDB();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readonly');const r=tx.objectStore('scans').get(date);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}finally{db.close()}}
-async function showLocalScan(date){try{const j=await readLocalScan(date);if(!j)return false;data=j;jobId='';render();setArchiveStatus(updatedStatus(j,true),'notice');return true}catch{return false}}
 function updatedStatus(snapshot,local=false){
  const saved=snapshot?.saved_at;
  const when=saved?new Date(saved):null;
@@ -18,7 +16,6 @@ function updatedStatus(snapshot,local=false){
 const fmtOdd=x=>x==null||x===''?'—':Number.isFinite(Number(x))?Number(x).toFixed(2).replace('.',','):String(x);
 const fmt=x=>x==null?'—':x;
 async function api(path,options={}){let r=await fetch(path,{...options,headers:{...options.headers}});if(!r.ok)throw new Error('HTTP '+r.status);return r}
-async function loadCloudScan(date=null){try{const r=await api('/api/saved/latest'+(date?'?date='+encodeURIComponent(date):''));const j=await r.json();data=j;jobId='';render();setArchiveStatus(updatedStatus(j));return true}catch{return false}}
 let playerStatsInitialized=false;
 let pickNavigationRequest=0;
 let returnPick=null;
@@ -62,11 +59,9 @@ function stepDate(delta){
  if(current<0||next<0||next>=dates.length)return;
  $('date').value=dates[next];$('date').dispatchEvent(new Event('change',{bubbles:true}));
 }
-let wheelSuppressClickUntil=0;
 function renderDateStrip(){
  const select=$('date'),strip=$('date-strip'),month=$('date-month');
  const dates=visibleDates(),index=dates.indexOf(select.value);
- const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  strip.replaceChildren();
  for(const [offset,position] of [[-1,'previous'],[0,'selected'],[1,'next']]){
   const date=index<0?null:dates[index+offset];if(!date)continue;
@@ -80,7 +75,7 @@ function renderDateStrip(){
   const number=document.createElement('span');number.className='day-number';number.textContent=String(parsed.getDate());
   const dateLine=document.createElement('span');dateLine.className='day-date';dateLine.append(number,shortMonth);
   chip.append(dateLine,day);
-  chip.addEventListener('click',()=>{if(Date.now()<wheelSuppressClickUntil)return;if(select.value!==date){select.value=date;select.dispatchEvent(new Event('change',{bubbles:true}));}});
+  chip.addEventListener('click',()=>{if(select.value!==date){select.value=date;select.dispatchEvent(new Event('change',{bubbles:true}));}});
   strip.append(chip);
  }
  $('date-prev').disabled=index<=0;$('date-next').disabled=index<0||index>=dates.length-1;
@@ -106,7 +101,7 @@ function snapshotVisibilityExpired(){
  return Number.isFinite(until)&&Date.now()>=until;
 }
 function recheckVisibleSnapshot(){
- if(!document.hidden&&snapshotVisibilityExpired()){
+ if(!document.hidden&&!$('app').classList.contains('date-is-loading')&&snapshotVisibilityExpired()){
   clearTimeout(scanStatusTimer);
   $('date').dispatchEvent(new Event('change',{bubbles:true}));
  }
@@ -115,7 +110,7 @@ document.addEventListener('visibilitychange',recheckVisibleSnapshot);
 window.addEventListener('focus',recheckVisibleSnapshot);
 async function loadScanStatus(date,request,previousState=null){
  if(request!==dateSelectionRequest||$('date').value!==date)return;
- if(snapshotVisibilityExpired()){
+ if(!$('app').classList.contains('date-is-loading')&&snapshotVisibilityExpired()){
   $('date').dispatchEvent(new Event('change',{bubbles:true}));
   return;
  }
@@ -139,12 +134,12 @@ async function loadScanStatus(date,request,previousState=null){
  }
 }
 let dateSelectionRequest=0;
-function setDateLoading(loading){
+function setDateLoading(loading,clearSnapshot=true){
  $('app').classList.toggle('date-is-loading',loading);
  $('date-loading').hidden=!loading;
- if(loading){
+ if(loading&&clearSnapshot){
   // Clear the previous day's snapshot immediately; never show stale counts or picks.
-  data=null;jobId='';
+  data=null;
   ++pickProfileRequest;
   $('quote-summary').hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
   renderDateMetrics(null);
@@ -154,13 +149,18 @@ function setDateLoading(loading){
   $('finder-cards').replaceChildren();$('finder-count').textContent='';syncFinderFixtures();
  }
 }
+let selectedQuoteDate=null;
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
  renderDateStrip();
- finderVisibleLimit=100;quotePositions.clear();$('finder-fixture').value='';
+ const changedDay=selected!==selectedQuoteDate;
+ selectedQuoteDate=selected;
+ const tab=document.querySelector('nav button.active')?.dataset.tab;
+ const view=!changedDay&&['dashboard','finder'].includes(tab)?{tab,y:window.scrollY,x:$('finder-scroll').scrollLeft}:null;
+ if(changedDay){finderVisibleLimit=100;finderExpandedKeys.clear();quotePositions.clear();$('finder-fixture').value='';}
  const request=++dateSelectionRequest;
  clearTimeout(scanStatusTimer);
- setDateLoading(true);
+ setDateLoading(true,changedDay);
  loadScanStatus(selected,request);
  // Android Chrome can retain the native focus ring after the date menu closes.
  $('date').blur();
@@ -169,7 +169,7 @@ $('date').addEventListener('change',async()=>{
   const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));
   const saved=await response.json();
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
-  data=saved;jobId='';render();
+  data=saved;render();
   setArchiveStatus(updatedStatus(saved));
  }catch(error){
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
@@ -179,18 +179,25 @@ $('date').addEventListener('change',async()=>{
    try{local=await readLocalScan(selected)}catch(e){}
    if(request!==dateSelectionRequest||$('date').value!==selected)return;
    if(local){
-    data=local;jobId='';render();setArchiveStatus(updatedStatus(local,true),'notice');
+    data=local;render();setArchiveStatus(updatedStatus(local,true),'notice');
    }else{
-    data=null;jobId='';render();
+    data=null;render();
     $('quote-updated').textContent='Dati non ancora disponibili';
     setArchiveStatus('');
    }
   }else{
-   data=null;jobId='';render();
+   data=null;render();
    setArchiveStatus('Archivio temporaneamente non disponibile per il '+selected+' · riprova più tardi','error');
   }
  }finally{
-  if(request===dateSelectionRequest&&$('date').value===selected)setDateLoading(false);
+  if(request===dateSelectionRequest&&$('date').value===selected){
+   setDateLoading(false);
+   if(view)requestAnimationFrame(()=>{
+    if(request!==dateSelectionRequest||document.querySelector('nav button.active')?.dataset.tab!==view.tab)return;
+    if(view.tab==='finder'){$('finder-scroll').scrollLeft=view.x;$('finder-top-scroll').scrollLeft=view.x;}
+    window.scrollTo({top:view.y,behavior:'instant'});
+   });
+  }
  }
 });
 const number=x=>Number(x)||0;const normalizeFinder=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();function eligible(){const words=normalizeFinder($('finder-search').value).trim().split(/\s+/).filter(Boolean);return (data?.results||[]).filter(r=>words.every(word=>normalizeFinder(r.Giocatore).includes(word))&&(!$('finder-fixture').value||r.Partita===$('finder-fixture').value)&&r['Stato analisi']==='Valutabile (stima empirica)'&&number(r['Quota'])>=number($('oddmin').value)&&number(r['Quota'])<=number($('oddmax').value)&&number(r['Prob. stimata %'])>=number($('probmin').value)&&($('market').value==='Tutti'||r.Mercato===$('market').value)).sort((a,b)=>number(b['Prob. stimata %'])-number(a['Prob. stimata %']))}
@@ -433,19 +440,27 @@ function syncFinderFixtures(){
  select.value=fixtures.includes(selected)?selected:'';
 }
 let finderVisibleLimit=100;
+const finderExpandedKeys=new Set();
+const finderSelectionKey=row=>JSON.stringify([row.Partita,row.Squadra,row['ESPN ID']||row.Giocatore,row.Mercato,row.Scelta,row.Linea]);
 function renderFinder({append=false}={}){
  syncFinderFixtures();
- const limit=window.matchMedia?.('(max-width:760px)')?.matches?finderVisibleLimit:500;
+ const media=window.matchMedia?.('(max-width:760px)');
+ const mobile=media?.matches;
+ const limit=mobile?finderVisibleLimit:500;
  const all=eligible(),items=all.slice(0,limit);
- const start=append?$('finder-cards').querySelectorAll('.finder-card').length:0;
+ const start=append?(mobile===false?$('rows').children.length:$('finder-cards').querySelectorAll('.finder-card').length):0;
  const added=items.slice(start);
  $('finder-more').hidden=all.length<=limit||limit>=500;
  $('finder-count').textContent=all.length>limit?'Primi '+limit+' di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
- const tableHTML=added.map((r,offset)=>{const i=start+offset;return `<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`}).join('');
- const cardsHTML=added.map((r,offset)=>{const i=start+offset;return `<article class="finder-card"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>${finderAdditionalData(r)}</div></article>`}).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
+ const tableHTML=mobile===true?'':added.map((r,offset)=>{const i=start+offset;return `<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`}).join('');
+ const cardsHTML=mobile===false?'':added.map((r,offset)=>{const i=start+offset;return `<article class="finder-card" data-selection-key="${esc(finderSelectionKey(r))}"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>${finderAdditionalData(r)}</div></article>`}).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
  if(append&&start){$('rows').insertAdjacentHTML('beforeend',tableHTML);$('finder-cards').insertAdjacentHTML('beforeend',cardsHTML);}
  else{$('rows').innerHTML=tableHTML;$('finder-cards').innerHTML=cardsHTML;}
- for(const button of document.querySelectorAll('#finder .finder-details-toggle'))button.onclick=()=>{const extra=document.getElementById(button.getAttribute('aria-controls'));if(!extra)return;extra.hidden=!extra.hidden;button.setAttribute('aria-expanded',String(!extra.hidden));};
+ for(const button of document.querySelectorAll('#finder .finder-details-toggle')){
+  const extra=document.getElementById(button.getAttribute('aria-controls')),key=button.closest('.finder-card').dataset.selectionKey;
+  extra.hidden=!finderExpandedKeys.has(key);button.setAttribute('aria-expanded',String(!extra.hidden));
+  button.onclick=()=>{extra.hidden=!extra.hidden;button.setAttribute('aria-expanded',String(!extra.hidden));if(extra.hidden)finderExpandedKeys.delete(key);else finderExpandedKeys.add(key);};
+ }
  for(const button of document.querySelectorAll('#finder .finder-player'))button.onclick=()=>{const row=items[Number(button.dataset.index)];if(!row)return;returnOrigin='finder';returnPick=button;openPickStats(row);};
  syncFinderScrollWidth();
 }
@@ -501,7 +516,13 @@ function csvCell(value){
  const guarded=/^[=+@\-\t\r]/.test(text)||/^\d+\/\d+$/.test(text)?"'"+text:text;
  return '"'+guarded.replace(/"/g,'""')+'"';
 }
-$('csv').onclick=async()=>{if(!jobId){if(!data?.results?.length)return;const rows=data.results,keys=Object.keys(rows[0]);const safe=csvCell;const csv='\uFEFF'+[keys.map(safe).join(';'),...rows.map(r=>keys.map(k=>safe(r[k])).join(';'))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='basketlab_salvato.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}try{const r=await api('/api/scan/'+jobId+'/csv');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='basketlab_completo.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{alert('CSV non disponibile')}};
+$('csv').onclick=()=>{
+ if(!data?.results?.length)return;
+ const rows=data.results,keys=Object.keys(rows[0]);
+ const csv='\uFEFF'+[keys.map(csvCell).join(';'),...rows.map(row=>keys.map(key=>csvCell(row[key])).join(';'))].join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download='basketlab_salvato.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
 let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
 const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
 const PLAYER_CACHE_LIMIT=80;

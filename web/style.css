@@ -1,4 +1,4 @@
-:root{font-family:Inter,system-ui,Arial,sans-serif;color:#e8effa;background:#0b1220}*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;justify-content:space-between;padding:18px max(22px,4vw);border-bottom:1px solid #25344b;background:#101a2a}.brand{display:flex;align-items:center;gap:12px;font-size:20px}.brand b{color:#f5f8ff}.brand span{font-size:10px;letter-spacing:1px;background:#273c5a;padding:5px 8px;border-radius:8px;color:#9dbde5}.right{display:flex;gap:20px;align-items:center;color:#9cb0cb;font-size:12px}main{max-width:1440px;margin:auto;padding:28px 26px}.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:26px}.hero small{color:#f49b58;letter-spacing:2px;font-weight:700}.hero h1{font-size:clamp(27px,4vw,42px);margin:8px 0}.hero p,.note,footer{color:#9cb0cb}.actions{display:flex;gap:10px}button,input,select{font:inherit;border:1px solid #354862;border-radius:10px;padding:11px 13px;background:#17263b;color:#f0f5ff}button{cursor:pointer}button:hover{background:#25405e}#scan,#login{background:#f58b44;color:#101824;font-weight:800;border:0}nav{display:flex;gap:8px;margin-bottom:18px}nav button{flex:1}nav .active{background:#275386;border-color:#5292d9}.panel,.metric{background:linear-gradient(135deg,#162338,#101a29);border:1px solid #293b54;border-radius:17px;padding:22px;margin-bottom:18px;box-shadow:0 12px 30px #0002}.panel h2{margin:0 0 18px}.status{padding:14px 16px;background:#13253b;border:1px solid #264a70;border-radius:12px;margin-bottom:20px;color:#bad6f6}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric small{display:block;color:#9cb0cb;margin-bottom:8px}.metric strong{font-size:27px}.filters{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:20px}.filters label{display:flex;flex-direction:column;gap:7px;color:#9cb0cb;font-size:12px}.filters input{width:115px}.filters select{min-width:130px}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left}th,td{padding:12px;border-bottom:1px solid #2b3b52;font-size:13px}th{color:#9cb0cb}tr:hover{background:#203047}.good{color:#53c99a}.bad{color:#f08091}.barrow{display:grid;grid-template-columns:74px 1fr 42px;gap:12px;align-items:center;margin:10px 0;font-size:12px}.track{height:25px;border-radius:6px;background:#27354a;position:relative;overflow:hidden}.fill{height:100%;background:#48aa82;border-radius:5px}.fill.under{background:#c96578}.line{position:absolute;top:0;bottom:0;border-left:2px dashed #f4a749}footer{padding:25px 0;text-align:center;font-size:12px}#auth{max-width:550px;margin:30px auto}#auth input{width:100%;margin:10px 0}@media(max-width:760px){main{padding:18px 12px}.hero{align-items:stretch;flex-direction:column}.actions{flex-direction:column}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:15px}.brand{font-size:16px}.right{font-size:10px;gap:6px}.filters label{flex:1}.filters input,.filters select{width:100%}nav button{padding:10px 4px;font-size:12px}}
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#e8effa;background:#0b1220}*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;justify-content:space-between;padding:18px max(22px,4vw);border-bottom:1px solid #25344b;background:#101a2a}.brand{display:flex;align-items:center;gap:12px;font-size:20px}.brand b{color:#f5f8ff}.brand span{font-size:10px;letter-spacing:1px;background:#273c5a;padding:5px 8px;border-radius:8px;color:#9dbde5}main{max-width:1440px;margin:auto;padding:28px 26px}.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:26px}.hero small{color:#f49b58;letter-spacing:2px;font-weight:700}.hero h1{font-size:clamp(27px,4vw,42px);margin:8px 0}.hero p,.note,footer{color:#9cb0cb}.actions{display:flex;gap:10px}button,input,select{font:inherit;border:1px solid #354862;border-radius:10px;padding:11px 13px;background:#17263b;color:#f0f5ff}button{cursor:pointer}button:hover{background:#25405e}nav{display:flex;gap:8px;margin-bottom:18px}nav button{flex:1}nav .active{background:#275386;border-color:#5292d9}.panel,.metric{background:linear-gradient(135deg,#162338,#101a29);border:1px solid #293b54;border-radius:17px;padding:22px;margin-bottom:18px;box-shadow:0 12px 30px #0002}.panel h2{margin:0 0 18px}.status{padding:14px 16px;background:#13253b;border:1px solid #264a70;border-radius:12px;margin-bottom:20px;color:#bad6f6}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric small{display:block;color:#9cb0cb;margin-bottom:8px}.metric strong{font-size:27px}.filters{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:20px}.filters label{display:flex;flex-direction:column;gap:7px;color:#9cb0cb;font-size:12px}.filters input{width:115px}.filters select{min-width:130px}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left}th,td{padding:12px;border-bottom:1px solid #2b3b52;font-size:13px}th{color:#9cb0cb}tr:hover{background:#203047}.good{color:#53c99a}.bad{color:#f08091}.barrow{display:grid;grid-template-columns:74px 1fr 42px;gap:12px;align-items:center;margin:10px 0;font-size:12px}.track{height:25px;border-radius:6px;background:#27354a;position:relative;overflow:hidden}.fill{height:100%;background:#48aa82;border-radius:5px}.fill.under{background:#c96578}.line{position:absolute;top:0;bottom:0;border-left:2px dashed #f4a749}footer{padding:25px 0;text-align:center;font-size:12px}@media(max-width:760px){main{padding:18px 12px}.hero{align-items:stretch;flex-direction:column}.actions{flex-direction:column}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:15px}.brand{font-size:16px}.filters label{flex:1}.filters input,.filters select{width:100%}nav button{padding:10px 4px;font-size:12px}}
 
 .player-profile{display:flex;align-items:center;gap:24px;margin:6px 0 20px;padding:22px;border:1px solid #345174;border-radius:18px;background:radial-gradient(ellipse at 5% 0%,#244568 0%,#16263d 50%,#101a29 100%);min-height:170px}
 .player-profile[hidden]{display:none}
@@ -71,33 +71,27 @@
 .app-header .brand-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
 .app-header .brand-copy b{font-size:21px;line-height:1.1;letter-spacing:.2px;white-space:nowrap}
 .app-header .brand-copy small{font-size:9px;letter-spacing:1.2px;color:#8fa7c7;white-space:nowrap}
-.app-header .version-tag{flex-shrink:0;border-radius:18px;background:#1a2d46;padding:7px 12px;color:#9dbde5;font-size:12px;letter-spacing:.4px}
+
 .app-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,320px);gap:15px 25px;align-items:center;margin-bottom:19px}
-.app-hero .hero-intro{min-width:0}
-.app-hero .hero-intro>small{font-size:11px;letter-spacing:1.5px}
-.app-hero .hero-intro h1{font-size:clamp(25px,3.5vw,36px);margin:6px 0}
-.app-hero .hero-intro p{font-size:14px;margin:0;line-height:1.45}
+
 .app-hero .actions{display:block;min-width:0}
 .app-hero .date-control{display:flex;flex-direction:column;gap:9px;background:#16263b;border:1px solid #354862;border-radius:16px;padding:13px 16px;min-width:0}
 .app-hero .date-label{font-size:11px;font-weight:700;letter-spacing:1.2px;color:#9cb0cb}
 .app-hero .date-label span{font-size:16px;color:#f59a55;margin-right:6px}
 .app-hero #date{width:100%;min-width:0;padding:5px 22px 5px 0;border:0;background:transparent;color:#f2f6ff;font-size:clamp(16px,2.4vw,20px);font-weight:650;cursor:pointer}
 .app-hero #date:focus-visible{outline:2px solid #f59a55;outline-offset:4px}
-.app-hero .hero-source{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;color:#8fa7c7;font-size:11px}
-.app-hero .hero-source span:last-child{color:#86b8a5}
+
 @media(max-width:760px){
  .app-header{padding:13px 16px}
  .app-header .brand-copy b{font-size:20px}
  .app-hero{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-bottom:16px}
- .app-hero .hero-intro h1{font-size:29px}
- .app-hero .hero-intro p{font-size:13px}
+
  .app-hero .date-control{padding:12px 15px}
  .app-hero #date{font-size:18px}
 }
 @media(max-width:370px){
  .app-header .brand-copy b{font-size:17px}
  .app-header .brand-copy small{font-size:8px;letter-spacing:.8px}
- .app-header .version-tag{font-size:11px;padding:6px 9px}
 }
 
 /* Keep the date selector visually neutral after tapping on Android Chrome. */
@@ -118,7 +112,6 @@
 #player-summary.player-summary-grid .metric strong{font-size:clamp(16px,4.2vw,25px);white-space:nowrap}
 #player-loading[hidden]{display:none}
 #player.player-is-loading #player-profile,#player.player-is-loading #player-summary,#player.player-is-loading #player-chart-title,#player.player-is-loading #chart{display:none!important}
-
 
 /* Compact, accessible quote finder dropdowns */
 #finder .filters{gap:9px;align-items:flex-end}
@@ -192,8 +185,7 @@
 .date-chip[aria-pressed="true"]{background:#f28a45;color:#101522;border-color:#f28a45}
 .date-chip[aria-pressed="true"] .day-name{color:#101522}
 .date-chip:focus-visible{outline:2px solid #fff;outline-offset:2px}
-.date-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#9baac0;font-size:13px}
-.calendar-action{color:#f28a45;cursor:pointer;font-weight:700}
+
 .app-hero #date{font-size:13px;width:100%;padding:8px 10px;border:1px solid #354862;border-radius:9px;background:#1b2638;color:#dce7f7}
 @media(max-width:760px){.app-header{padding:15px 16px}.app-hero .date-control{padding:16px}.date-chip{flex-basis:73px;min-height:75px}.app-header .brand-copy b{font-size:19px}}
 
@@ -206,7 +198,7 @@
 .date-chip{flex-basis:65px;min-height:65px;gap:3px;border-radius:11px}
 .date-chip .day-name{font-size:10px}
 .date-chip .day-number{font-size:23px}
-.date-bottom{font-size:11px}
+
 .app-hero #date.date-native-select{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;opacity:0!important;pointer-events:none!important}
 @media(max-width:760px){.app-hero .date-control{padding:13px 14px 11px;gap:10px}.date-chip{flex-basis:64px;min-height:64px}.app-hero{margin-bottom:12px}}
 
@@ -216,7 +208,6 @@
 .date-chip{flex:1 0 0;min-width:68px;min-height:51px;padding:5px 4px;gap:1px;border-radius:10px}
 .date-chip .day-name{font-size:10px;line-height:1.15}
 .date-chip .day-number{font-size:21px;line-height:1.1}
-.date-bottom{font-size:10px;line-height:1.2}
 
 #app.date-is-loading #status{display:none!important}
 #app.date-is-loading #dashboard,#app.date-is-loading #finder{display:none!important}
@@ -341,9 +332,7 @@ main{padding-top:14px}
 }
 
 /* Matchup, navigation and layout. Saved data remains the source of truth. */
-#dashboard .pick-jump{display:flex;gap:8px;margin:0 0 12px;overflow-x:auto}
-#dashboard .pick-jump a{display:flex;align-items:center;justify-content:center;flex:1;min-height:44px;padding:9px 12px;border:1px solid #395575;border-radius:10px;background:#14263d;color:#f0f5ff;text-decoration:none;font-weight:750;font-size:13px}
-#dashboard .pick-jump a:hover,#dashboard .pick-jump a:focus-visible{border-color:#ff984f;background:#213b5a;outline:none}
+
 #picks .pick-group{scroll-margin-top:100px}
 #picks .pick-group:focus{outline:none}
 #picks .pick-selection{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:center}
@@ -380,8 +369,7 @@ main{padding-top:14px}
  #picks .pick-group-2 .pick-stats-button,#picks .pick-group-3 .pick-stats-button{padding:8px}
 }
 @media(max-width:500px){
- #dashboard .pick-jump{gap:6px}
- #dashboard .pick-jump a{padding:9px 4px;font-size:12px}
+
  #picks .pick-selection{gap:9px}
  #picks .fixture-team-name{font-size:11px}
  #picks .team-logo{width:28px;height:28px;flex-basis:28px}
@@ -478,8 +466,7 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
  #finder .finder-card-values span{padding:8px 10px;background:#192e49;border:1px solid #304b6a;border-radius:8px}
  #finder .finder-card-values small{display:block;color:#adbed6;font-size:10px}
  #finder .finder-card-values b{display:block;margin-top:3px;color:#f6f8fc;font-size:19px}
- #finder .finder-card details{margin-top:9px;color:#c6d7eb;font-size:12px}
- #finder .finder-card details summary{padding:6px 0;cursor:pointer;font-weight:700;color:#e8f1ff}
+
  #finder .finder-empty{color:#b8cbe0;line-height:1.5}
 }
 
@@ -495,8 +482,7 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
  #finder .finder-card-values span{display:flex;align-items:baseline;gap:5px;padding:0;background:transparent;border:0;border-radius:0}
  #finder .finder-card-values small{display:inline;font-size:11px}
  #finder .finder-card-values b{display:inline;margin:0;font-size:15px}
- #finder .finder-card details{margin-top:5px}
- #finder .finder-card details summary{padding:4px 0}
+
 }
 
 /* Keep the extra-data control aligned with the quote and estimate on mobile. */
@@ -504,12 +490,7 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
  #finder .finder-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;align-items:center}
  #finder .finder-card-top{grid-column:1/-1}
  #finder .finder-card-values{grid-column:1;gap:4px 12px;margin-top:6px}
- #finder .finder-card details{grid-column:2;margin:6px 0 0;text-align:right}
- #finder .finder-card details summary{min-height:36px;display:flex;align-items:center;justify-content:flex-end;gap:4px;white-space:nowrap}
- #finder .finder-card details summary::before{content:'▸';color:#a9bfd9}
- #finder .finder-card details[open]{grid-column:1/-1;margin-top:3px}
- #finder .finder-card details[open] summary::before{content:'▾'}
- #finder .finder-card details[open] div{text-align:left;padding:4px 0 2px;line-height:1.4}
+
 }
 
 /* Keep the button and the values in place when the details are expanded. */
@@ -761,3 +742,6 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #player-search[readonly]{cursor:pointer}
 #player-search-activate{display:grid;place-items:center;color:#b8cbe3}
 #player-search-activate:hover{background:#294969;color:#fff}
+
+/* Categories occupy full rows; only the tickets within each category form a grid. */
+.history-groups{display:block}.daily-group{min-width:0}.history-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}.history-leg h4,.history-leg p,.leg-selection{overflow-wrap:anywhere}
