@@ -175,7 +175,7 @@ Fonti consentite: diretto, instagram, facebook, tiktok, whatsapp, telegram, goog
 
 ### Anteprima dei link
 
-La home espone metadati Open Graph e Twitter Card nell'HTML iniziale, con immagine PNG pubblica 1200×630 in `/static/social-card-v1.png`. La copertina riutilizza il marchio della home; sorgente SVG e script `scripts/build_social_card.py` sono conservati nel repository. Per rigenerarla serve CairoSVG solo in fase di progettazione, senza nuove dipendenze di produzione. Le anteprime delle piattaforme possono mantenere copie precedenti nella propria cache.
+La home espone metadati Open Graph e Twitter Card nell'HTML iniziale, con immagine PNG pubblica compatta 1200×400 in `/static/social-card-v2.png`. La copertina riutilizza il marchio della home; sorgente SVG e script `scripts/build_social_card.py` sono conservati nel repository. Per rigenerarla serve CairoSVG solo in fase di progettazione, senza nuove dipendenze di produzione. Le anteprime delle piattaforme possono mantenere copie precedenti nella propria cache.
 
 ### Nome e icona nei risultati Google
 
