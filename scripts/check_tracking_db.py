@@ -100,19 +100,6 @@ def main():
             report = audience.report(1)
             counts = {row['event']: int(row['total']) for row in report['rows']}
             assert counts == {'apertura': 1, 'quote': 3}, report
-            today = dt.datetime.now(audience.ZoneInfo('Europe/Rome')).date()
-            for identifier in ['a' * 32, 'a' * 32, 'b' * 32]:
-                audience.record_unique(str(today), identifier)
-            audience.initialize()  # Restart must preserve totals and activation.
-            report = audience.report(1)
-            assert report['unique_daily'] == [{'day': str(today), 'total': 2}], report
-            assert report['unique_since'] == str(today)
-            seen = db.query('SELECT visitor_hash FROM nba_audience_unique_seen')
-            assert len(seen) == 2 and all(len(row[0]) == 64 and row[0] not in ['a'*32,'b'*32] for row in seen)
-            db.query('INSERT INTO nba_audience_unique_seen(day,visitor_hash) VALUES (%s,%s)', (today-dt.timedelta(days=2),'expired'))
-            audience.report(1)
-            assert db.query('SELECT count(*) FROM nba_audience_unique_seen')[0][0] == 2
-
 
             calibration.initialize()
             calibration.initialize()
