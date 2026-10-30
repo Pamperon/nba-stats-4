@@ -82,6 +82,9 @@ def parse_summary(event_id):
                             pass
                 if len(row) == 3:
                     stats[(norm(team_name), norm(athlete.get("displayName")))] = row
+                    abbreviation = norm(team.get("team", {}).get("abbreviation", ""))
+                    if abbreviation:
+                        stats[(abbreviation, norm(athlete.get("displayName")))] = row
     return stats
 
 def load_predictions(conn, start, end):
