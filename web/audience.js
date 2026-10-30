@@ -12,7 +12,7 @@
  try{const saved=JSON.parse(localStorage.getItem(choiceKey));if(saved&&['yes','no'].includes(saved.value)&&saved.at<=Date.now()&&Date.now()-saved.at<180*86400000)choice=saved.value;}catch{}
  if(choice!=='yes'){try{localStorage.removeItem(idKey);}catch{}}
  if(settings){settings.hidden=false;settings.addEventListener('click',()=>{preferences.hidden=!preferences.hidden;settings.setAttribute('aria-expanded',String(!preferences.hidden));});}
- if(preferences)preferences.hidden=choice!==null;
+ if(preferences)preferences.hidden=true;
  if(settings)settings.setAttribute('aria-expanded',String(preferences&&!preferences.hidden));
  function choose(value){
   choice=value;
