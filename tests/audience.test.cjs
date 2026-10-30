@@ -32,7 +32,8 @@ function privacySetup(options={}){
 function dayRome(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const get=t=>p.find(x=>x.type===t).value;return get('year')+'-'+get('month')+'-'+get('day');}
 test('no daily identifier before consent; acceptance counts once and revocation removes it',()=>{
  const {dom,calls,timer}=privacySetup(),w=dom.window,d=w.document;
- assert.equal(calls.filter(c=>c.url.endsWith('/unique')).length,0);assert.equal(w.localStorage.length,0);assert.equal(d.getElementById('audience-preferences').hidden,false);
+ assert.equal(calls.filter(c=>c.url.endsWith('/unique')).length,0);assert.equal(w.localStorage.length,0);assert.equal(d.getElementById('audience-preferences').hidden,true);
+ d.getElementById('audience-settings').click();assert.equal(d.getElementById('audience-preferences').hidden,false);
  d.getElementById('audience-accept').click();timer();
  const uniques=calls.filter(c=>c.url.endsWith('/unique'));assert.equal(uniques.length,1);assert.match(uniques[0].body.id,/^[0-9a-f]{32}$/);assert.equal(uniques[0].body.day,dayRome());
  d.getElementById('audience-settings').click();d.getElementById('audience-decline').click();timer();assert.equal(w.localStorage.getItem('basketlab:audience-day:v1'),null);assert.equal(calls.filter(c=>c.url.endsWith('/unique')).length,1);dom.window.close();
