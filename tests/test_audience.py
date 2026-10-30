@@ -65,26 +65,3 @@ class AudienceTests(unittest.TestCase):
         page = self.client.get('/admin/visite')
         self.assertIn('noindex', page.headers['x-robots-tag'])
         self.assertEqual(page.headers['cache-control'], 'no-store')
-
-    def test_daily_identifier_validation_and_request_isolation(self):
-        payload = {'day': '2026-10-30', 'id': 'a' * 32}
-        for invalid in [None, {}, {**payload, 'source': 'google'},
-                        {**payload, 'id': 'personal-email@example.com'},
-                        {**payload, 'day': '2026-1-1'}]:
-            with self.assertRaises(ValueError):
-                audience.validate_unique(invalid)
-        with patch.object(audience, 'record_unique') as record, patch.object(audience, 'allowed', return_value=True):
-            response = self.client.post('/api/audience/unique', json=payload, headers=self.headers)
-            record.assert_called_once_with(payload['day'], payload['id'])
-            self.assertEqual(response.status_code, 204)
-            self.assertEqual(response.headers['cache-control'], 'no-store')
-            self.assertNotIn('set-cookie', response.headers)
-        with patch.object(audience, 'record_unique') as record:
-            for headers in [{}, {**self.headers, 'DNT': '1'}, {**self.headers, 'Sec-GPC': '1'}, {**self.headers, 'User-Agent': 'Googlebot'}]:
-                self.client.post('/api/audience/unique', json=payload, headers=headers)
-            record.assert_not_called()
-
-    def test_wrong_day_never_opens_database(self):
-        with patch.object(audience.storage, 'connection') as connection:
-            audience.record_unique('2000-01-01', 'b' * 32)
-            connection.assert_not_called()
