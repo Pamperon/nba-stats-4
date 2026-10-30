@@ -113,27 +113,34 @@ def auth(authorization: str = Header(default='')):
     if not secrets.compare_digest(authorization, f'Bearer {TOKEN}'):
         raise HTTPException(401, 'Accesso non autorizzato')
 
-@app.post('/api/audience/event', status_code=204)
-async def audience_event(request: Request):
+async def audience_payload(request: Request):
     # Collection is best effort; counts are not billing or audited human traffic.
     origin = request.headers.get('origin', '')
     if origin not in ('https://basketlab.it', 'https://www.basketlab.it',
                       'https://nba-stats-4.onrender.com'):
-        return Response(status_code=204)
+        return None
     ua = request.headers.get('user-agent', '').lower()
     if (request.headers.get('dnt') == '1' or request.headers.get('sec-gpc') == '1'
             or any(word in ua for word in ('bot', 'crawler', 'spider', 'headless', 'uptime'))
             or not audience.allowed()):
-        return Response(status_code=204)
+        return None
     body = bytearray()
     async for chunk in request.stream():
         body.extend(chunk)
         if len(body) > 2048:
-            return Response(status_code=204)
+            return None
     try:
         import json
-        source, events = audience.validate(json.loads(body))
+        return json.loads(body)
     except (ValueError, TypeError, UnicodeError):
+        return None
+
+
+@app.post('/api/audience/event', status_code=204)
+async def audience_event(request: Request):
+    try:
+        source, events = audience.validate(await audience_payload(request))
+    except (ValueError, TypeError):
         return Response(status_code=204)
     try:
         from starlette.concurrency import run_in_threadpool
@@ -141,6 +148,20 @@ async def audience_event(request: Request):
     except Exception:
         logger.warning('Aggregate audience counter unavailable')
     return Response(status_code=204)
+
+
+@app.post('/api/audience/unique', status_code=204)
+async def audience_unique(request: Request):
+    try:
+        day, identifier = audience.validate_unique(await audience_payload(request))
+    except (ValueError, TypeError):
+        return Response(status_code=204)
+    try:
+        from starlette.concurrency import run_in_threadpool
+        await run_in_threadpool(audience.record_unique, day, identifier)
+    except Exception:
+        logger.warning('Daily browser counter unavailable')
+    return Response(status_code=204, headers={'Cache-Control': 'no-store'})
 
 
 @app.get('/api/audience/report', dependencies=[Depends(auth)])

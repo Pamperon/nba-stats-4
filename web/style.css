@@ -759,3 +759,6 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 .player-game-detail dt{font-size:11px;color:#a8bdd8;margin-bottom:4px}
 .player-game-detail dd{font-size:13px;margin:0;overflow-wrap:anywhere}
 .player-game-result{font-size:13px;color:#e8effa;border-top:1px solid #304866;margin:12px 0 0;padding-top:10px;overflow-wrap:anywhere}
+
+/* Optional daily analytics remain a secondary footer preference, in normal flow. */
+.footer-links{flex-wrap:wrap}.footer-links #audience-settings{font-size:12px;min-height:44px;background:transparent;border:0;color:#9eb1ca;padding:4px;text-decoration:underline}.audience-preferences{max-width:740px;margin:16px auto;padding:18px;border:1px solid #354862;border-radius:12px;text-align:left;background:#101d2e}.audience-preferences h2{font-size:16px;margin:0 0 8px}.audience-preferences p{line-height:1.6;margin:0 0 12px}.audience-preferences a{color:#b9d4f6}.audience-preferences>div{display:flex;flex-wrap:wrap;gap:10px}.audience-preferences button{min-height:44px;font-size:13px}.audience-preferences button:focus-visible,#audience-settings:focus-visible{outline:3px solid #ffad66;outline-offset:3px}
