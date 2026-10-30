@@ -179,8 +179,11 @@ def main():
                 missing["boxscore_request_failed"] += 1
         team = norm(TEAM_ALIASES.get(str(row.get("Squadra")), row.get("Squadra")))
         player = norm(row.get("Giocatore"))
+        if team == norm("Squadra non identificata"):
+            missing["unknown_player_team"] += 1
+            continue
         candidates = [v for (t, p), v in boxscores[event_id].items()
-                      if p == player and (not team or t == team)]
+                      if p == player and t == team]
         if len(candidates) != 1:
             missing["player_unmatched_or_dnp"] += 1
             continue
@@ -219,6 +222,10 @@ def main():
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     print(json.dumps({k: v for k, v in report.items() if k != "outcomes"}, indent=2))
+    coverage = len(outcomes) / len(dedup) if dedup else 0
+    print(f"VERIFIED COVERAGE: {len(outcomes)}/{len(dedup)} ({coverage:.1%})")
+    if coverage < .75:
+        print("WARNING: LOW COVERAGE. Do not draw conclusions about minutes or betting ROI.", file=sys.stderr)
     if not outcomes:
         sys.exit("No verifiable outcomes; inspect fixture/team mapping before drawing conclusions")
 
