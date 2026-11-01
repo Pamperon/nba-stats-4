@@ -366,7 +366,7 @@ function render(){
  const request=++pickProfileRequest;
  const summary=$('quote-summary');
  summary.hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
- renderDateMetrics(data);
+ renderDateMetrics(sessionPicksData&&document.querySelector('nav button.active')?.dataset.tab==='dashboard'?sessionPicksData:data);
  if(data){
   const saved=data.saved_at?new Date(data.saved_at):null;
   const valid=saved&&!Number.isNaN(saved.getTime());
