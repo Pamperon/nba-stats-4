@@ -716,3 +716,27 @@ body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-summary 
  body.hub-match-open .hub-match-comparison{grid-template-columns:1fr}
  body.hub-match-open .hub-match-compare-column+ .hub-match-compare-column{border-left:0;border-top:1px solid rgba(160,190,214,.25);padding-top:12px}
 }
+
+/* Dedicated matchup tab content */
+body.hub-match-open.hub-match-stats-tab #hub-match-charts,
+body.hub-match-open.hub-match-stats-tab .hub-match-facts,
+body.hub-match-open.hub-match-stats-tab .hub-match-summary{display:none!important}
+body.hub-match-open:not(.hub-match-stats-tab) #hub-match-market-distribution{display:none!important}
+body.hub-match-open .hub-match-market-distribution{padding:16px 14px;border:1px solid rgba(120,170,205,.4);border-radius:16px;background:rgba(9,34,54,.5);margin-top:12px;display:grid;gap:13px}
+body.hub-match-open .hub-match-market-distribution>strong{font-size:15px}
+body.hub-match-open .hub-match-market-track{height:15px;display:flex;overflow:hidden;border-radius:12px;background:#092135}
+body.hub-match-open .hub-match-market-track>span.market-pts{background:#f59b35}
+body.hub-match-open .hub-match-market-track>span.market-reb{background:#4388c7}
+body.hub-match-open .hub-match-market-track>span.market-ast{background:#31a47c}
+body.hub-match-open .hub-match-market-legend{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#d5e2ed;font-size:12px}
+body.hub-match-open .hub-match-market-distribution>p{font-size:12px;color:#9fb7c9;line-height:1.45;margin:0}
+body.hub-match-open .hub-match-form-streak{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 14px;border:1px solid rgba(120,170,205,.3);border-radius:13px}
+body.hub-match-open .hub-match-form-streak>div{display:grid;gap:7px}
+body.hub-match-open .hub-match-form-streak small{font-size:11px;color:#c4d5e3}
+body.hub-match-open .hub-match-form-dots{display:flex;gap:7px}
+body.hub-match-open .hub-match-form-dots span{height:12px;width:12px;border-radius:50%;display:inline-block}
+body.hub-match-open .hub-match-form-dots span.won{background:#27a86c}
+body.hub-match-open .hub-match-form-dots span.lost{background:#d96760}
+body.hub-match-open .hub-match-odds-extra{display:none}
+body.hub-match-open .show-all-lines .hub-match-odds-extra{display:grid}
+body.hub-match-open .hub-match-all-lines{width:100%;padding:11px;background:rgba(45,87,119,.4);border:0;border-top:1px solid rgba(140,180,210,.3);color:#f7b06d;font-size:12px;cursor:pointer}
