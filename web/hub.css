@@ -1,0 +1,32 @@
+/* Basket Lab A+C concept — isolated visual layer, no model/data changes */
+:root{--hub-bg:#081321;--hub-surface:#101f32;--hub-border:#294563;--hub-orange:#fa9148}
+body{background:radial-gradient(ellipse at 75% -10%,#12375b 0%,#0b1220 48%) fixed;color:#f5f9ff}
+.hub-shell{max-width:1660px;margin:auto;display:grid;grid-template-columns:242px minmax(0,1fr);gap:20px;padding:22px 22px 0}
+.hub-shell>main{min-width:0;width:100%;max-width:none;padding:0 0 26px}
+.hub-sidebar{position:sticky;top:18px;align-self:start;background:linear-gradient(165deg,#112840,#0b1727);border:1px solid var(--hub-border);border-radius:18px;padding:18px 12px;min-height:75vh;box-shadow:0 12px 30px #0003}
+.hub-side-title{font-size:11px;color:#8daecf;text-transform:uppercase;letter-spacing:1.5px;margin:8px 12px 18px}
+.hub-link{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;text-align:left;padding:10px 13px;margin:4px 0;border:1px solid transparent;background:transparent;border-radius:11px;color:#dce9f9;font-size:14px;font-weight:650;cursor:pointer;text-decoration:none}
+.hub-link:hover,.hub-link:focus-visible{background:#203d5c;outline-offset:2px}
+.hub-link[aria-current=page]{background:linear-gradient(100deg,#f47823,#ffad4f);color:#101c2b}
+.hub-link .hub-symbol{font-size:19px;min-width:22px;text-align:center}
+.hub-side-note{margin:25px 12px 8px;color:#9fb5d0;font-size:12px;line-height:1.6;border-top:1px solid #2b415b;padding-top:16px}
+.hub-landing{border:1px solid #31577b;border-radius:19px;background:linear-gradient(110deg,#102c49 0%,#11243c 55%,#162b43 100%);overflow:hidden;margin-bottom:20px;position:relative;box-shadow:0 15px 40px #0003}
+.hub-landing:before{content:"";position:absolute;right:-60px;top:-120px;width:430px;height:430px;border:2px solid #fb924522;border-radius:50%;box-shadow:0 0 0 52px #fb92450a,0 0 0 105px #fb924508;pointer-events:none}
+.hub-landing-inner{position:relative;padding:32px clamp(18px,4vw,48px)}
+.hub-kicker{font-size:11px;letter-spacing:2px;color:#ffad6e;font-weight:800}
+.hub-landing h1{font-size:clamp(27px,3.4vw,45px);line-height:1.12;max-width:620px;margin:10px 0 14px}
+.hub-landing h1 em{font-style:normal;color:#ff9a50}
+.hub-landing p{max-width:520px;color:#bcd0e8;font-size:15px;line-height:1.6}
+.hub-quick{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.hub-quick button{background:linear-gradient(120deg,#ef7925,#ffa145);border-color:#ffae6b;color:#111c2b;font-weight:800;min-height:44px}
+.hub-quick button.secondary{background:#132840;border-color:#53708e;color:#f5f9ff}
+.hub-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.hub-tile{min-width:0;padding:16px;background:linear-gradient(145deg,#132b44,#101b2c);border:1px solid #30506d;border-radius:14px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;color:#f3f7ff}
+.hub-tile:hover{border-color:#f79752;background:#1b3854}
+.hub-tile strong{display:block;font-size:14px}.hub-tile small{display:block;color:#a8bdd7;margin-top:4px;font-size:11px;line-height:1.35}.hub-tile-icon{color:#ffa04c;font-size:25px}
+.hub-mobile-bar{display:none}
+.hub-shell .panel{border-color:#2b435f}
+.hub-shell .primary-nav-wrap{display:none}
+@media(max-width:1000px){.hub-shell{grid-template-columns:205px minmax(0,1fr);gap:12px;padding:14px}.hub-sidebar{padding:12px 7px}.hub-tiles{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.hub-shell{display:block;padding:10px 12px 85px}.hub-sidebar{display:none}.hub-landing-inner{padding:22px 18px}.hub-landing h1{font-size:29px}.hub-landing p{font-size:13px}.hub-tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.hub-tile{display:block;text-align:center;padding:12px 4px}.hub-tile strong{font-size:11px}.hub-tile small{font-size:10px}.hub-tile-icon{display:block;margin-bottom:5px}.hub-mobile-bar{position:fixed;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));bottom:0;left:0;right:0;z-index:100;background:#0b1b2ded;border-top:1px solid #3c5772;backdrop-filter:blur(14px);padding:7px 6px calc(7px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 24px #0005}.hub-mobile-bar button{border:0;background:transparent;border-radius:10px;min-width:0;padding:5px 0;color:#afc5df;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px}.hub-mobile-bar button span{font-size:21px}.hub-mobile-bar button[aria-current=page]{color:#ff9a49;background:#203148}.hub-shell footer{padding-bottom:26px}.hub-shell .back-to-top{bottom:90px}.hub-shell #quote-tabs{overflow:auto}.hub-shell .hero{margin-top:10px}}
+@media(max-width:360px){.hub-tiles{grid-template-columns:1fr 1fr}.hub-landing h1{font-size:26px}}
