@@ -159,6 +159,7 @@ function setMatchTab(tab){
  document.querySelectorAll('[data-match-tab]').forEach(button=>{button.classList.toggle('active',button.dataset.matchTab===tab);button.setAttribute('aria-selected',String(button.dataset.matchTab===tab))});
  const analysis=$('#hub-match-analysis'),players=$('#hub-match-player-section');
  if(analysis)analysis.hidden=tab==='players';
+ const charts=$('#hub-match-charts');if(charts)charts.hidden=tab==='stats';
  if(players)players.hidden=tab==='stats';
  if(analysis){
   const title=analysis.querySelector('h3');
