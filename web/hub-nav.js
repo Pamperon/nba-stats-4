@@ -506,7 +506,9 @@ function refreshShowcase(){
     }
     const center=document.createElement('span');center.className='hub-premium-center';
     const names=document.createElement('strong');names.className='hub-premium-names';
-    const shortName=t=>({ 'Golden State Warriors':'Warriors','Los Angeles Lakers':'Lakers','LA Clippers':'Clippers','Los Angeles Clippers':'Clippers','Toronto Raptors':'Raptors' }[t]||String(t||'NBA').replace(/^Los Angeles /,'').replace(/^Golden State /,'').replace(/^Oklahoma City /,'OKC ').replace(/^New Orleans /,'NO ').replace(/^Portland /,''));
+    // Always use the franchise nickname for every team: never mix full and shortened names.
+    const nicknames={'Orlando Magic':'Magic','Boston Celtics':'Celtics','Brooklyn Nets':'Nets','Indiana Pacers':'Pacers','Atlanta Hawks':'Hawks','Charlotte Hornets':'Hornets','Chicago Bulls':'Bulls','Cleveland Cavaliers':'Cavaliers','Dallas Mavericks':'Mavericks','Denver Nuggets':'Nuggets','Detroit Pistons':'Pistons','Golden State Warriors':'Warriors','Houston Rockets':'Rockets','Los Angeles Clippers':'Clippers','LA Clippers':'Clippers','L.A. Clippers':'Clippers','Los Angeles Lakers':'Lakers','Memphis Grizzlies':'Grizzlies','Miami Heat':'Heat','Milwaukee Bucks':'Bucks','Minnesota Timberwolves':'Timberwolves','New Orleans Pelicans':'Pelicans','New York Knicks':'Knicks','Oklahoma City Thunder':'Thunder','Philadelphia 76ers':'76ers','Phoenix Suns':'Suns','Portland Trail Blazers':'Blazers','Sacramento Kings':'Kings','San Antonio Spurs':'Spurs','Toronto Raptors':'Raptors','Utah Jazz':'Jazz','Washington Wizards':'Wizards'};
+    const shortName=t=>nicknames[String(t||'').trim()]||String(t||'NBA').trim().split(' ').slice(-1)[0];
     names.textContent=shortName(game.away)+' vs '+shortName(game.home);
     const stamp=new Date(game.start_at);
     const dateTime=document.createElement('span');dateTime.className='hub-premium-timing';
