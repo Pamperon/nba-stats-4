@@ -79,7 +79,7 @@ function updateInsights(){
  const counts=new Map();for(const market of markets){const type=market.toUpperCase().startsWith('UNDER')?'Under':'Over';counts.set(type,(counts.get(type)||0)+1)}
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
-const matchTeamCodes={'Orlando Magic':'orl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Indiana Pacers':'ind','Atlanta Hawks':'atl','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Los Angeles Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
+const matchTeamCodes={'Orlando Magic':'orl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Indiana Pacers':'ind','Atlanta Hawks':'atl','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Los Angeles Clippers':'lac','LA Clippers':'lac','L.A. Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
 let activeMatch='',matchMarket='PTS',matchFormRequest=0,matchTeamFilter='';
 const cleanName=name=>String(name||'').split(',').reverse().map(x=>x.trim()).filter(Boolean).join(' ')||String(name||'');
 const displayNum=value=>{const n=Number(String(value??'').replace(',','.'));return Number.isFinite(n)?n.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'};
@@ -376,7 +376,7 @@ function renderCalendar(){
    teams.forEach((team,i)=>{
     if(i){const center=document.createElement('span');center.className='hub-calendar-versus';center.textContent='VS';row.append(center)}
     const side=document.createElement('span');side.className='hub-calendar-team';
-    const code=matchTeamCodes[team];
+    const code=matchTeamCodes[team]||matchTeamCodes[team.replace(/^LA /,'Los Angeles ')];
     if(code){const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';logo.alt='';logo.loading='lazy';logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)}
     const label=document.createElement('span');label.textContent=team;side.append(label);row.append(side)
    });
