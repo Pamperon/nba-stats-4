@@ -943,7 +943,8 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         # New category remains separate from existing historical Top 5.
         # No backfilling: only explicitly published singles count.
         import daily_single_archive
-        result['single_archive'] = daily_single_archive.read(date)
+        result['single_archive'] = (daily_single_archive.read(date) if official_top5.eligible_day(date)
+                                    else {'published': False, 'selection': None, 'outcome': None})
         single_record = result['single_archive']
         if (single_record.get('published') and single_record.get('selection')
                 and not single_record.get('outcome')):
