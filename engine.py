@@ -229,7 +229,10 @@ def get_fixtures(day_string, odds_batch=None):
 def get_tournament_odds(slot_key=None, catalog=None):
     catalog = get_markets() if catalog is None else catalog
     wanted = {kind for kinds in MARKETS.values() for kind in kinds}
-    market_ids = {str(mid) for mid, definition in catalog.items() if definition.get("marketType") in wanted}
+    winner_types = {"moneyline", "match-winner", "match-winner-2-way", "winner-2-way"}
+    market_ids = {str(mid) for mid, definition in catalog.items()
+                  if definition.get("marketType") in wanted
+                  or definition.get("marketType") in winner_types}
     if not market_ids:
         raise ValueError("Catalogo privo dei mercati giocatore richiesti")
     key = slot_key or datetime.now(ROME_TZ).strftime("%Y-%m-%dT%H:manual")
