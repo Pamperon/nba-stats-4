@@ -243,7 +243,7 @@ def schedule(date: str):
 
 _match_form_cache = TTLCache(maxsize=40, ttl=1800)
 
-@app.get('/api/match/form', dependencies=[Depends(auth)])
+@app.get('/api/match/form')
 def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
                team_a: str = Query(min_length=2, max_length=80),
                team_b: str = Query(min_length=2, max_length=80)):
