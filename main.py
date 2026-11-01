@@ -270,8 +270,7 @@ def _cached_match_moneyline(date, team_a, team_b):
         if not isinstance(envelope, dict):
             return None
         for fixture in (envelope.get("data") or {}).values():
-            if (str(fixture.get("participant1Name", "")).casefold() != team_a.casefold()
-                    or str(fixture.get("participant2Name", "")).casefold() != team_b.casefold()):
+            if {str(fixture.get("participant1Name", "")).casefold(), str(fixture.get("participant2Name", "")).casefold()} != {team_a.casefold(), team_b.casefold()}:
                 continue
             start = engine.fixture_start_rome(fixture)
             if start is None or start.date().isoformat() != date:
@@ -293,7 +292,7 @@ def _cached_match_moneyline(date, team_a, team_b):
                     break
                 prices.append(float(price))
             if len(prices) == 2:
-                return prices
+                return prices if str(fixture.get("participant1Name", "")).casefold() == team_a.casefold() else prices[::-1]
     except Exception:
         logger.exception("Cannot read saved match winner odds")
     return None
