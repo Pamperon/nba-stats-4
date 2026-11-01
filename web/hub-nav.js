@@ -162,48 +162,40 @@ async function loadMatchForm(match){
   for(const fact of facts)fact.querySelector('small').textContent='Dati temporaneamente non disponibili';
  }
 }
+function renderMatchMarketStats(){
+ const analysis=$('#hub-match-analysis');if(!analysis)return;
+ const rows=window.BasketLabMatchRows?.(activeMatch)||[];
+ const markets=['PTS','REB','AST'].map(m=>({market:m,count:rows.filter(row=>row.Mercato===m).length}));
+ let statsPanel=$('#hub-match-market-distribution');
+ if(!statsPanel){statsPanel=document.createElement('div');statsPanel.id='hub-match-market-distribution';statsPanel.className='hub-match-market-distribution';analysis.append(statsPanel)}
+ statsPanel.replaceChildren();
+ const heading=document.createElement('strong');heading.textContent='Statistiche delle linee disponibili';statsPanel.append(heading);
+ const overview=document.createElement('p');overview.textContent=rows.length+' linee analizzate · '+markets.filter(m=>m.count).length+' mercati su 3';statsPanel.append(overview);
+ const track=document.createElement('div');track.className='hub-match-market-track';
+ for(const m of markets){if(!m.count)continue;const seg=document.createElement('span');seg.className='market-'+m.market.toLowerCase();seg.style.width=(m.count/rows.length*100)+'%';seg.title=m.market+': '+m.count;track.append(seg)}
+ statsPanel.append(track);
+ const legend=document.createElement('div');legend.className='hub-match-market-legend';
+ markets.forEach(m=>{const item=document.createElement('span');item.textContent=m.market+' · '+m.count;legend.append(item)});statsPanel.append(legend);
+ const hint=document.createElement('p');hint.textContent='Distribuzione delle linee giocatore salvate per questa partita.';statsPanel.append(hint);
+}
 function setMatchTab(tab){
+ if(tab!=='players')tab='analysis';
  document.querySelectorAll('[data-match-tab]').forEach(button=>{button.classList.toggle('active',button.dataset.matchTab===tab);button.setAttribute('aria-selected',String(button.dataset.matchTab===tab))});
  const analysis=$('#hub-match-analysis'),players=$('#hub-match-player-section');
- document.body.classList.toggle('hub-match-stats-tab',tab==='stats');
- if(analysis)analysis.hidden=tab==='players';
- const charts=$('#hub-match-charts');if(charts)charts.hidden=tab==='stats';
- analysis?.classList.toggle('hub-match-chart-mode',tab==='analysis');
- if(players)players.hidden=tab==='stats';
- if(analysis){
-  const title=analysis.querySelector('h3');
-  if(tab==='stats'){
-   title.textContent='Statistiche delle linee disponibili';
-   const rows=window.BasketLabMatchRows?.(activeMatch)||[];
-   const markets=['PTS','REB','AST'].map(m=>({market:m,count:rows.filter(row=>row.Mercato===m).length}));
-   let statsPanel=$('#hub-match-market-distribution');
-   if(!statsPanel){statsPanel=document.createElement('div');statsPanel.id='hub-match-market-distribution';statsPanel.className='hub-match-market-distribution';analysis.append(statsPanel)}
-   statsPanel.replaceChildren();
-   const heading=document.createElement('strong');heading.textContent='Distribuzione delle linee per mercato';statsPanel.append(heading);
-   const total=rows.length;
-   const track=document.createElement('div');track.className='hub-match-market-track';
-   for(const m of markets){if(!m.count)continue;const seg=document.createElement('span');seg.className='market-'+m.market.toLowerCase();seg.style.width=(m.count/total*100)+'%';seg.title=m.market+': '+m.count;track.append(seg)}
-   statsPanel.append(track);
-   const legend=document.createElement('div');legend.className='hub-match-market-legend';
-   markets.forEach(m=>{const item=document.createElement('span');item.textContent=m.market+' · '+m.count;legend.append(item)});statsPanel.append(legend);
-   const hint=document.createElement('p');hint.textContent='Conteggio delle linee salvate, non probabilità di successo. Per forma e quote vincente consulta Analisi.';statsPanel.append(hint);
-   const boxes=analysis.querySelectorAll('.hub-match-data-block');
-   if(boxes[0]){boxes[0].querySelector('small').textContent='Linee analizzate';boxes[0].querySelector('strong').textContent=String(rows.length);boxes[0].querySelector('p').textContent='Linee player props salvate per questa partita.'}
-   if(boxes[1]){boxes[1].querySelector('small').textContent='Mercati disponibili';boxes[1].querySelector('strong').textContent=markets.filter(m=>m.count).length+' su 3';boxes[1].querySelector('p').textContent=markets.map(m=>m.market+': '+m.count).join(' · ')}
-  }else{
-   title.textContent='Analisi partita';
-   const boxes=analysis.querySelectorAll('.hub-match-data-block');
-   if(boxes[0]){boxes[0].querySelector('small').textContent='Probabilità di vittoria';boxes[0].querySelector('strong').textContent='Non disponibile';boxes[0].querySelector('p').textContent='Non viene calcolata dal modello player props.'}
-   if(boxes[1]){boxes[1].querySelector('small').textContent='Punti attesi';boxes[1].querySelector('strong').textContent='Non disponibili';boxes[1].querySelector('p').textContent='Serve un modello dedicato ai punteggi di squadra.'}
-   if(tab==='analysis'&&activeMatch)loadMatchForm(activeMatch);
-  }
- }
- if(tab==='players')players?.scrollIntoView({block:'nearest',behavior:'smooth'});
+ document.body.classList.remove('hub-match-stats-tab');
+ if(analysis){analysis.hidden=tab==='players';analysis.classList.toggle('hub-match-chart-mode',tab==='analysis')}
+ if(players)players.hidden=tab!=='players';
+ const charts=$('#hub-match-charts');if(charts)charts.hidden=false;
+ if(tab==='analysis'){
+  const title=analysis?.querySelector('h3');if(title)title.textContent='Analisi partita';
+  renderMatchMarketStats();
+  if(activeMatch)loadMatchForm(activeMatch);
+ }else{renderMatchPlayers();players?.scrollIntoView({block:'nearest',behavior:'smooth'})}
 }
 
 // Refresh the dedicated match cards when asynchronous saved daily quotes finish loading.
 const finderCount=$('#finder-count');
-if(finderCount)new MutationObserver(()=>{if(activeMatch&&document.body.classList.contains('hub-match-open'))renderMatchPlayers()}).observe(finderCount,{childList:true,characterData:true,subtree:true});
+if(finderCount)new MutationObserver(()=>{if(activeMatch&&document.body.classList.contains('hub-match-open')){renderMatchPlayers();renderMatchMarketStats()}}).observe(finderCount,{childList:true,characterData:true,subtree:true});
 function renderMatchPlayers(){
  if(!document.body.classList.contains('hub-match-open'))return;
  const list=$('#hub-match-player-list'),count=$('#hub-match-player-count');if(!list)return;
