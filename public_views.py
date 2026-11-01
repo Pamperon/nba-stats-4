@@ -225,7 +225,21 @@ def progressive_preview(versions, starts, margin_minutes=15, as_of=None):
     return confirmed
 
 
-def history(day):
+
+def fixture_start_map(games):
+    """Match saved 'Home - Away' fixtures to verified ESPN tip-off times."""
+    starts = {}
+    for game in games:
+        home = str(game.get('home') or '').strip()
+        away = str(game.get('away') or '').strip()
+        start = game.get('start_at')
+        if home and away and start:
+            starts[f'{home} - {away}'.casefold()] = start
+            starts[f'{away} - {home}'.casefold()] = start
+    return starts
+
+
+def history(day, starts=None):
     with storage.connection() as conn:
         rows = conn.execute("""
             SELECT s.created_at, s.payload->'recommendations', r.report
@@ -250,11 +264,14 @@ def history(day):
             row = by_identity.get(leg_identity(selected))
             if row is not None:
                 official.append(row)
+    preview = progressive_preview(versions, starts) if starts else []
     official_ids = {leg_identity(row) for row in official}
     other = [row for row in lines if leg_identity(row) not in official_ids]
     return {'date': day, 'groups': groups, 'lines': lines,
             'official_lines': official, 'other_lines': other,
             'scan_comparison': scan_comparison(versions),
+            'progressive_preview': preview,
+            'progressive_preview_count': len(preview),
             'has_daily_model': first_daily is not None,
             'official_saved_at': first_daily['saved_at'] if first_daily else None,
             'official_summary': {state: sum(line['status'] == state for line in official) for state in ('won', 'lost', 'unresolved')},
