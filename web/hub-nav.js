@@ -99,7 +99,7 @@ function openMatchQuotes(match){
  }
  const fixture=$('#finder-fixture');
  if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
- matchMarket='ALL';$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();loadMatchForm(match);
+ matchMarket='ALL';$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
 async function loadMatchForm(match){
@@ -160,6 +160,7 @@ function setMatchTab(tab){
    const boxes=analysis.querySelectorAll('.hub-match-data-block');
    if(boxes[0]){boxes[0].querySelector('small').textContent='Probabilità di vittoria';boxes[0].querySelector('strong').textContent='Non disponibile';boxes[0].querySelector('p').textContent='Non viene calcolata dal modello player props.'}
    if(boxes[1]){boxes[1].querySelector('small').textContent='Punti attesi';boxes[1].querySelector('strong').textContent='Non disponibili';boxes[1].querySelector('p').textContent='Serve un modello dedicato ai punteggi di squadra.'}
+   if(tab==='analysis'&&activeMatch)loadMatchForm(activeMatch);
   }
  }
  if(tab==='players')players?.scrollIntoView({block:'nearest',behavior:'smooth'});
