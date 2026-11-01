@@ -105,7 +105,7 @@ function openMatchQuotes(match){
 function renderMatchCharts(teams,a,b,windowDays){
  const area=$('#hub-match-charts');if(!area)return;
  area.replaceChildren();
- const sections=[{title:'Forma nelle ultime 5',unit:'vittorie',max:5,values:[a.wins,b.wins],suffix:(x,idx)=>x+'/'+[a.games,b.games][idx]},{title:'Media punti segnati',unit:'punti a partita',max:Math.max(130,Number(a.avg_points)||0,Number(b.avg_points)||0),values:[a.avg_points,b.avg_points],suffix:x=>x==null?'—':displayNum(x)}];
+ const sections=[{title:'Forma · ultime 5',unit:'vittorie',max:5,values:[a.wins,b.wins],suffix:(x,idx)=>x+'/'+[a.games,b.games][idx]},{title:'Media punti',unit:'punti a partita',max:Math.max(130,Number(a.avg_points)||0,Number(b.avg_points)||0),values:[a.avg_points,b.avg_points],suffix:x=>x==null?'—':displayNum(x)}];
  for(const section of sections){
   const card=document.createElement('div');card.className='hub-match-chart-card';
   const heading=document.createElement('div');heading.className='hub-match-chart-heading';const title=document.createElement('strong');title.textContent=section.title;const unit=document.createElement('small');unit.textContent=section.unit;heading.append(title,unit);card.append(heading);
