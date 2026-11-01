@@ -3,6 +3,11 @@
 const $=s=>document.querySelector(s);
 const landing=$('.hub-landing'),tiles=$('.hub-tiles'),metrics=$('.hub-live-metrics'),featured=$('.hub-featured'),insights=$('.hub-insights');
 if(!landing||!tiles)return;
+const menuToggle=$('.hub-menu-toggle'),menuDrawer=$('#hub-menu-drawer');
+function closeMenu(){if(!menuDrawer)return;menuDrawer.hidden=true;menuToggle?.setAttribute('aria-expanded','false');menuToggle?.setAttribute('aria-label','Apri menu di navigazione')}
+menuToggle?.addEventListener('click',()=>{const opening=menuDrawer.hidden;menuDrawer.hidden=!opening;menuToggle.setAttribute('aria-expanded',String(opening));menuToggle.setAttribute('aria-label',opening?'Chiudi menu di navigazione':'Apri menu di navigazione')});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu()});
+document.addEventListener('click',event=>{if(menuDrawer&&!menuDrawer.hidden&&!event.target.closest('.hub-menu-drawer,.hub-menu-toggle'))closeMenu()});
 const tab=name=>$('[data-tab="'+name+'"]');
 const go={
  home(){ $('#area-quotes')?.click();tab('dashboard')?.click();window.scrollTo({top:0,behavior:'smooth'});},
@@ -16,7 +21,7 @@ let home=true;
 function mark(key){document.querySelectorAll('[data-hub]').forEach(el=>{if(el.dataset.hub===key)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')})}
 function display(){const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;}
 function select(key){home=key==='home';mark(key);display();document.body.dataset.hubView=key;}
-document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub)});
+document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
 $('#area-stats')?.addEventListener('click',()=>select('stats'));
 document.querySelectorAll('[data-extra]').forEach(el=>el.addEventListener('click',()=>select(el.dataset.extra==='history'?'history':'about')));
@@ -37,7 +42,7 @@ function refresh(){
 if(metricTarget){new MutationObserver(refresh).observe(metricTarget,{childList:true,subtree:true,characterData:true})}
 if(updated){new MutationObserver(refresh).observe(updated,{childList:true,subtree:true,characterData:true})}
 if($('#picks'))new MutationObserver(refresh).observe($('#picks'),{childList:true,subtree:true});
-document.querySelectorAll('[data-pick-group]').forEach(b=>b.addEventListener('click',()=>{go.picks();select('picks');$('#pick-'+b.dataset.pickGroup)?.scrollIntoView({block:'start',behavior:'smooth'})}));
+document.querySelectorAll('[data-pick-group]').forEach(b=>b.addEventListener('click',()=>{go.picks();select('picks');$('#pick-'+b.dataset.pickGroup)?.scrollIntoView({block:'start',behavior:'smooth'});closeMenu()}));
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');
  if(!list||!picks)return;

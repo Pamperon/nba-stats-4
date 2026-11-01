@@ -59,7 +59,8 @@ test('homepage cards and metrics hide on other destinations',()=>{
 });
 test('category shortcuts target actual pick groups',()=>{
  const {window,doc}=setup();
- assert.equal(doc.querySelectorAll('[data-pick-group]').length,3);
+ assert.equal(doc.querySelectorAll('.hub-sidebar [data-pick-group]').length,3);
+ assert.equal(doc.querySelectorAll('.hub-menu-drawer [data-pick-group]').length,3);
  doc.querySelector('[data-pick-group="doppia"]').click();
  assert.equal(doc.querySelector('.hub-landing').hidden,true);
  window.close();
@@ -118,5 +119,15 @@ test('featured cards display separate odds and probability values',async()=>{
  assert.equal(values.length,2);
  assert.equal(values[0].querySelector('strong').textContent,'1,86');
  assert.equal(values[1].querySelector('strong').textContent,'67.5%');
+ window.close();
+});
+
+test('mobile navigation drawer opens, navigates and closes',()=>{
+ const {window,doc}=setup();
+ const toggle=doc.querySelector('.hub-menu-toggle'),drawer=doc.querySelector('#hub-menu-drawer');
+ assert.ok(toggle);assert.ok(drawer);assert.equal(drawer.hidden,true);
+ toggle.click();assert.equal(drawer.hidden,false);assert.equal(toggle.getAttribute('aria-expanded'),'true');
+ drawer.querySelector('[data-hub="picks"]').click();assert.equal(drawer.hidden,true);assert.equal(doc.body.dataset.hubView,'picks');
+ toggle.click();doc.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(drawer.hidden,true);
  window.close();
 });
