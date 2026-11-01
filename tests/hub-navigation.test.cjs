@@ -84,3 +84,15 @@ test('no live picks means no fabricated probabilities',async()=>{
  assert.equal(doc.querySelector('#hub-total').textContent,'0');
  window.close();
 });
+
+test('homepage has a separate view state and internal navigation restores dashboard',()=>{
+ const {window,doc}=setup();
+ assert.equal(doc.body.dataset.hubView,'home');
+ doc.querySelector('.hub-sidebar [data-hub="picks"]').click();
+ assert.equal(doc.body.dataset.hubView,'picks');
+ doc.querySelector('.hub-sidebar [data-hub="finder"]').click();
+ assert.equal(doc.body.dataset.hubView,'finder');
+ doc.querySelector('.hub-sidebar [data-hub="home"]').click();
+ assert.equal(doc.body.dataset.hubView,'home');
+ window.close();
+});
