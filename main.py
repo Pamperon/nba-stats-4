@@ -288,6 +288,15 @@ def nba_publication_session(day: str):
             'source': 'ESPN', 'odds_api_calls': 0}
 
 
+@app.get('/api/nba/fixtures')
+def public_nba_fixtures(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    """Public ESPN fixtures by Italian tipoff date, independent of odds."""
+    try:
+        return schedule(date)
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+
+
 @app.get('/api/nba/publication-session')
 def publication_session(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
     """Read-only session fixture manifest; not yet an official picks endpoint."""
