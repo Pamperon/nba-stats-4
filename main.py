@@ -292,7 +292,7 @@ def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
         if failed_days == len(days):
             raise HTTPException(503, 'Risultati ESPN temporaneamente non disponibili')
         games = []
-        for event in response.json().get('events', []):
+        for event in events:
             if event.get('status', {}).get('type', {}).get('state') != 'post':
                 continue
             competitors = (event.get('competitions') or [{}])[0].get('competitors') or []
