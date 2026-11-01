@@ -53,8 +53,12 @@
   const rate=resolved?(100*won/resolved).toFixed(1).replace('.',',')+'%':'—';
   const scored=lines.filter(line=>(line.status==='won'||line.status==='lost')&&Number.isFinite(Number(line['Prob. stimata %']))&&Number(line['Prob. stimata %'])>=0&&Number(line['Prob. stimata %'])<=100);
   const brier=scored.length?(scored.reduce((total,line)=>total+(Number(line['Prob. stimata %'])/100-(line.status==='won'?1:0))**2,0)/scored.length).toFixed(3).replace('.',','):'—';
+  const priced=lines.filter(line=>(line.status==='won'||line.status==='lost')&&Number.isFinite(Number(line.Quota))&&Number(line.Quota)>1);
+  const unitProfit=priced.reduce((total,line)=>total+(line.status==='won'?Number(line.Quota)-1:-1),0);
+  const roi=priced.length?(100*unitProfit/priced.length).toFixed(1).replace('.',',')+'%':'—';
+  const avgOdds=priced.length?(priced.reduce((total,line)=>total+Number(line.Quota),0)/priced.length).toFixed(2).replace('.',','):'—';
   el('history-status').textContent=lines.length?lines.length+' linee distinte pubblicate il '+day(payload.date)+'.':'Nessuna linea pubblicata per questa giornata.';
-  el('history-summary').innerHTML=[['Vinte',won],['Perse',lost],['Da verificare',lines.length-resolved],['Successo',rate],['Brier Score',brier]].map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
+  el('history-summary').innerHTML=[['Vinte',won],['Perse',lost],['Da verificare',lines.length-resolved],['Successo',rate],['Brier Score',brier],['Quota media',avgOdds],['ROI teorico',roi]].map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
   el('history-tickets').innerHTML=lines.length?'<section class="daily-group"><h2>Selezioni individuali</h2><div class="history-grid">'+lines.map(row=>'<article class="history-ticket"><div class="ticket-heading"><h3>'+escape(row.Giocatore)+'</h3><span class="outcome outcome-'+escape(row.status)+'">'+escape(statusNames[row.status]||'Da verificare')+'</span></div><div class="history-leg"><p>'+escape(row.Partita)+'</p><div class="leg-selection">'+escape(row.Scelta)+' '+escape(row.Linea)+' '+escape(row.Mercato)+' <span>Quota <b>'+odd(row.Quota)+'</b></span></div><p>Probabilità prepartita: '+escape(row['Prob. stimata %'])+'%</p><p class="leg-result">'+(row.actual==null?'Risultato non ancora verificato':'Risultato finale: <strong>'+escape(row.actual)+'</strong>')+'</p></div></article>').join('')+'</div></section>':'';
  }
 
