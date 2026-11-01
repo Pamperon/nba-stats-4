@@ -38,5 +38,31 @@ class ProgressivePreviewTests(unittest.TestCase):
         self.assertEqual(len(result), 5)
 
 
+    def test_partial_scan_uses_last_observed_fixture(self):
+        versions = [
+            snapshot('2026-11-01T16:00:00+00:00', [leg('One', odds=1.8)]),
+            snapshot('2026-11-01T17:30:00+00:00', [leg('Other', game='C - D')]),
+        ]
+        result = progressive_preview(versions, {'A - B': '2026-11-01T18:00:00+00:00'},
+                                     as_of=datetime(2026, 11, 1, 19, tzinfo=timezone.utc))
+        self.assertEqual([r['row']['Giocatore'] for r in result], ['One'])
+
+    def test_stale_quotes_are_rejected(self):
+        versions = [snapshot('2026-11-01T12:00:00+00:00', [leg('One')])]
+        result = progressive_preview(versions, {'A - B': '2026-11-01T18:00:00+00:00'},
+                                     as_of=datetime(2026, 11, 1, 19, tzinfo=timezone.utc))
+        self.assertEqual(result, [])
+
+    def test_does_not_use_post_deadline_quote(self):
+        versions = [
+            snapshot('2026-11-01T17:30:00+00:00', [leg('One', odds=1.8)]),
+            snapshot('2026-11-01T17:50:00+00:00', [leg('Two', odds=2.2)]),
+        ]
+        result = progressive_preview(versions, {'A - B': '2026-11-01T18:00:00+00:00'},
+                                     as_of=datetime(2026, 11, 1, 19, tzinfo=timezone.utc))
+        self.assertEqual(result[0]['row']['Giocatore'], 'One')
+
+
+
 if __name__ == '__main__':
     unittest.main()
