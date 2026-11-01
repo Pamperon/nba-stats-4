@@ -333,6 +333,20 @@ function sessionDay(){
  if(hour>=12)return italyDay(now);
  return italyDay(new Date(now.getTime()-12*60*60*1000));
 }
+function fixtureKey(match){
+ const aliases={'la clippers':'los angeles clippers','l.a. clippers':'los angeles clippers'};
+ return String(match||'').split(/\s+-\s+|\s+vs\.?\s+|\s+@\s+/i).map(t=>{const v=t.trim().toLowerCase();return aliases[v]||v}).sort().join('|');
+}
+function matchingFixtureOption(match){
+ const opts=[...($('#finder-fixture')?.options||[])].map(o=>o.value).filter(Boolean);
+ const key=fixtureKey(match);
+ return opts.find(v=>fixtureKey(v)===key)||'';
+}
+function openFixtureDetails(match){
+ const available=matchingFixtureOption(match);
+ openMatchQuotes(available||match);
+ if(!available){const area=$('#hub-match-fixture-meta');if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.'}
+}
 function fixtureName(game){return String(game.away||'')+' - '+String(game.home||'')}
 function fixtureTime(game){
  if(!game.start_at)return game.time||'';
@@ -364,7 +378,7 @@ function renderCalendar(){
    if(summary){const count=summary.querySelector('span');if(count)count.textContent=fixtures.length+' '+(fixtures.length===1?'partita':'partite')}
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
    for(const game of fixtures){
-    const match=fixtureName(game),hasOdds=quoted.has(match);
+    const match=fixtureName(game),hasOdds=!!matchingFixtureOption(match);
     const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';
     const names=[game.away,game.home];
     names.forEach((team,i)=>{
@@ -375,8 +389,7 @@ function renderCalendar(){
      const label=document.createElement('span');label.textContent=team||'NBA';side.append(label);row.append(side)
     });
     const info=document.createElement('span');info.className='hub-calendar-match-arrow';info.textContent=fixtureTime(game)+' · '+(game.status|| (hasOdds?'Quote disponibili':'Quote non disponibili'))+(game.status?' · '+(hasOdds?'Quote disponibili':'Quote non disponibili'):'');row.append(info);
-    if(hasOdds&&game.upcoming){row.addEventListener('click',()=>openMatchQuotes(match));row.setAttribute('aria-label',match+' · Apri quote')}
-    else {row.disabled=true;row.setAttribute('aria-label',match+' · Quote non disponibili')}
+    row.addEventListener('click',()=>openFixtureDetails(match));row.setAttribute('aria-label',match+' · Apri dettagli partita');
     games.append(row)
    }
   }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
@@ -471,7 +484,7 @@ function refreshShowcase(){
    if(homeToken!==homeFixturesRequest)return;
    games.replaceChildren();
    if(!fixtures.length){games.textContent='Nessuna partita NBA nella sessione serale/notturna.';return}
-   const quoted=new Set([...picks.querySelectorAll('.pick-fixture')].map(el=>el.dataset.match||el.textContent.trim()));
+   const quoted=new Set([...($('#finder-fixture')?.options||[])].map(el=>fixtureKey(el.value)));
    for(const game of fixtures){
     const match=fixtureName(game),hasOdds=quoted.has(match);
     const row=document.createElement('button');row.type='button';row.className='hub-match-row';
@@ -485,7 +498,7 @@ function refreshShowcase(){
     });
     const detail=document.createElement('span');detail.className='hub-match-count';detail.textContent=fixtureTime(game)+' · '+(hasOdds?'Quote e linee ›':'Quote non disponibili');
     row.append(pair,detail);
-    if(hasOdds)row.addEventListener('click',()=>openMatchQuotes(match));else row.disabled=true;
+    row.addEventListener('click',()=>openFixtureDetails(match));
     games.append(row)
    }
   }).catch(()=>{ /* Keep existing saved-odds fallback if ESPN is unreachable. */ });
