@@ -427,3 +427,81 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
 .hub-match-analysis-grid p{font-size:12px;line-height:1.5;color:#b4c9da}
 body.hub-match-open #finder .finder-heading{margin-top:14px}
 @media(max-width:760px){.hub-calendar-view,.hub-match-detail{padding:13px}.hub-match-title{gap:8px;font-size:18px}.hub-match-analysis-grid{grid-template-columns:1fr}.hub-match-tabs button{font-size:11px;padding:11px 3px}}
+
+
+/* Matchday 2.0: dedicated screen, not the old quote-finder nested underneath */
+body.hub-match-open #finder>.panel>:not(#hub-match-detail){display:none!important}
+body.hub-match-open #quote-tabs{display:none!important}
+body.hub-match-open #date-area{display:none!important}
+body.hub-match-open .hub-match-detail{margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+.hub-match-detail[hidden],.hub-match-analysis[hidden],.hub-match-player-section[hidden]{display:none!important}
+.hub-match-back{padding:8px 2px 14px;color:#ffab65;font-weight:650}
+.hub-match-title{display:flex;align-items:center;justify-content:space-around;gap:12px;padding:17px 12px;border:1px solid #3c6789;border-radius:18px;background:linear-gradient(120deg,#092238,#12344c,#071b2d);box-shadow:0 6px 28px #0004}
+.hub-match-team{display:flex;flex:1;align-items:center;justify-content:center;gap:10px;min-width:0}
+.hub-match-team img{width:58px;height:58px;object-fit:contain;flex:0 0 58px}
+.hub-match-team strong{font-size:clamp(15px,2.2vw,24px);line-height:1.25}
+.hub-match-title>b{font-size:24px;color:#ff9134}
+.hub-match-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin:14px 0 16px;padding:3px;border:1px solid #385e7c;border-radius:30px;background:#0a2034}
+.hub-match-tabs button{border-radius:26px;padding:12px 5px;font-weight:650;font-size:13px}
+.hub-match-tabs button.active{background:linear-gradient(#ffa03d,#f47c14);color:#071625}
+.hub-match-analysis,.hub-match-player-section{border:1px solid #315c7e;border-radius:17px;padding:18px;margin:0 0 15px;background:linear-gradient(145deg,#0c263d,#071a2b)}
+.hub-match-analysis h3,.hub-match-section-heading h3{font-size:22px;margin:0 0 16px}
+.hub-accent-icon{color:#ff8b26}
+.hub-match-analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hub-match-data-block{padding:17px;border:1px solid #365d7c;border-radius:12px;background:#102b43}
+.hub-match-data-block small{display:block;font-size:13px;color:#c1d3e3}
+.hub-match-data-block strong{font-size:18px;margin-top:10px}
+.hub-match-data-block p{font-size:12px;color:#a6bed3;line-height:1.5}
+.hub-match-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:13px 0}
+.hub-match-facts>div{border:1px solid #355e7e;border-radius:12px;background:#103049;padding:12px;display:grid;gap:4px}
+.hub-match-facts span{font-size:24px;color:#ff942d}
+.hub-match-facts strong{font-size:13px}
+.hub-match-facts small{color:#a8c2d6;font-size:11px}
+.hub-match-summary{display:flex;gap:14px;border:1px solid #f4922d;border-radius:12px;padding:14px;background:#2a2727}
+.hub-match-summary>span{font-size:25px;color:#ffab3c}
+.hub-match-summary strong{font-size:17px}
+.hub-match-summary p{font-size:13px;color:#e0d8d0;line-height:1.5;margin:5px 0 0}
+.hub-match-section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hub-match-section-heading span{color:#a6c4d9;font-size:12px}
+.hub-match-player-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.hub-match-player-toolbar input{flex:1;min-width:0;background:#081b2d;border:1px solid #49718d;border-radius:24px;padding:12px 16px;color:#fff;font:inherit}
+.hub-match-market-buttons{display:flex;gap:5px;flex-wrap:wrap}
+.hub-match-market-buttons button{border:1px solid #426c89;background:#14324c;border-radius:20px;padding:9px 13px;color:#e3f0fc;cursor:pointer}
+.hub-match-market-buttons button.active{background:#fa922e;color:#101a26;font-weight:800}
+.hub-match-player-list{display:grid;gap:9px}
+.hub-match-player-card{display:flex;align-items:center;gap:12px;border:1px solid #345e7e;background:#10314a;border-radius:13px;padding:13px}
+.hub-match-player-identity{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:0 0 23%;min-width:0}
+.hub-match-player-identity>div{display:grid;gap:5px;min-width:0}
+.hub-match-player-identity strong{font-size:15px;line-height:1.3}
+.hub-match-player-identity small{color:#b7ccdf;font-size:11px}
+.hub-match-player-identity button{border:0;background:none;color:#ffae6b;cursor:pointer;font-size:11px}
+.hub-match-player-markets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1;gap:8px}
+.hub-match-player-market{border-left:1px solid #4b6d88;padding-left:10px;display:grid;gap:3px;min-width:0}
+.hub-match-player-market>small{color:#bed5e8;font-size:10px}
+.hub-match-player-market>strong{font-size:19px;color:#fff}
+.hub-match-player-market>span{font-size:13px;color:#8de5b3;font-weight:700}
+.hub-match-player-market details summary{font-size:10px;color:#c6d9e8;cursor:pointer}
+.hub-match-quote-line{padding:6px 0;font-size:11px;color:#d9e8f5;border-top:1px solid #34536d}
+.hub-match-data-note{font-size:11px;color:#a3bed1;line-height:1.5}
+@media(max-width:760px){
+ .hub-match-title{padding:13px 8px;gap:5px}
+ .hub-match-team{flex-direction:column;gap:5px}
+ .hub-match-team img{width:48px;height:48px;flex-basis:auto}
+ .hub-match-team strong{font-size:13px;text-align:center}
+ .hub-match-title>b{font-size:20px}
+ .hub-match-analysis,.hub-match-player-section{padding:12px}
+ .hub-match-analysis h3,.hub-match-section-heading h3{font-size:18px}
+ .hub-match-facts{gap:5px}
+ .hub-match-facts>div{padding:8px}
+ .hub-match-facts strong{font-size:11px}
+ .hub-match-facts small{font-size:10px}
+ .hub-match-player-toolbar{flex-direction:column;align-items:stretch}
+ .hub-match-market-buttons{justify-content:space-between}
+ .hub-match-market-buttons button{padding:8px 10px;font-size:11px}
+ .hub-match-player-card{display:block}
+ .hub-match-player-identity{margin-bottom:12px}
+ .hub-match-player-markets{gap:5px}
+ .hub-match-player-market{padding-left:7px}
+ .hub-match-player-market>strong{font-size:16px}
+ .hub-match-player-market>span{font-size:11px}
+}
