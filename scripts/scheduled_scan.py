@@ -85,7 +85,7 @@ def run(source=None):
         # Do not consume a slot against an old deployment with incompatible
         # slot validation or retry policy. A later automatic check can recover.
         health = call("/api/health")
-        if health.get("scheduler_revision") != "rome-five-slots-v3":
+        if health.get("scheduler_revision") != "rome-three-slots-v1":
             raise RuntimeError("Render scheduler update is not deployed yet; slot not claimed")
     # Verify both free ESPN calendars before consuming the durable reservation.
     # If either is unavailable, the next heartbeat may retry without paid calls.
