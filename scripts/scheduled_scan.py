@@ -30,6 +30,9 @@ def valid_slot(value):
 def due_slot(now):
     candidates = []
     now = now.astimezone(ROME)
+    # Never recover an afternoon slot after the official publication cutoff.
+    if now.hour >= 18:
+        return None
     for days_back in (0, 1):
         day = now.date() - dt.timedelta(days=days_back)
         for hour, minute in SLOTS:
