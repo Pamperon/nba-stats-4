@@ -1197,6 +1197,37 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
                 result['official_lines'] = []
                 result['official_summary'] = {status: 0 for status in ('won','lost','unresolved')}
                 result['has_daily_model'] = False
+        # Session-era archive: official picks belong to their publication day,
+        # even if the NBA game starts after midnight on the next calendar date.
+        import nba_session_picks
+        if nba_session_picks.eligible(date):
+            session_official = nba_session_picks.read(date)
+            if session_official:
+                tomorrow = (day + timedelta(days=1)).isoformat()
+                next_history = public_views.history(tomorrow)
+                all_scored = list(result.get('lines', [])) + list(next_history.get('lines', []))
+                by_identity = {public_views.leg_identity(row): row for row in all_scored}
+                result['official_lines'] = [
+                    by_identity.get(public_views.leg_identity(row), row)
+                    for row in session_official['lines']
+                ]
+                result['official_saved_at'] = session_official['published_at']
+                result['has_daily_model'] = True
+                result['official_policy'] = session_official['policy']
+                result['official_summary'] = {
+                    status: sum(row.get('status') == status for row in result['official_lines'])
+                    for status in ('won', 'lost', 'unresolved')
+                }
+                single = session_official.get('single')
+                scored_single = (by_identity.get(public_views.leg_identity(single), single)
+                                 if single else None)
+                result['session_single_archive'] = {
+                    'published': bool(single), 'selection': scored_single,
+                    'outcome': {'status': scored_single.get('status', 'unresolved'),
+                                'actual': scored_single.get('actual')} if scored_single else None,
+                    'status': scored_single.get('status', 'unresolved') if scored_single else 'not_published',
+                    'published_at': session_official['published_at']
+                }
         # New category remains separate from existing historical Top 5.
         # No backfilling: only explicitly published singles count.
         import daily_single_archive
@@ -1216,6 +1247,8 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
             else:
                 single_record['outcome'] = {'status': 'unresolved', 'actual': None}
                 single_record['status'] = 'unresolved'
+        if result.get('session_single_archive'):
+            result['single_archive'] = result['session_single_archive']
         result['top5_archive'] = {
             'lines': result.get('official_lines', []),
             'summary': result.get('official_summary', {}),
