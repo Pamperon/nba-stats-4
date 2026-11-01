@@ -82,7 +82,7 @@ function updateInsights(){
 function openMatchQuotes(match){
  calendar=false;
  const panel=$('#hub-match-detail');if(panel)panel.hidden=false;
- const title=$('#hub-match-title');if(title){title.replaceChildren();const teams=match.split(/\\s+-\\s+|\\s+vs\\.?\\s+/i);teams.forEach((team,i)=>{if(i){const vs=document.createElement('b');vs.textContent='VS';title.append(vs)}const name=document.createElement('strong');name.textContent=team;title.append(name)})}
+ const title=$('#hub-match-title');if(title){title.replaceChildren();const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i);teams.forEach((team,i)=>{if(i){const vs=document.createElement('b');vs.textContent='VS';title.append(vs)}const name=document.createElement('strong');name.textContent=team;title.append(name)})}
  document.body.classList.add('hub-match-open');setMatchTab('analysis');
  // Reuse the original complete odds explorer and its saved dataset.
  go.finder();select('finder');document.body.classList.add('hub-match-open');
