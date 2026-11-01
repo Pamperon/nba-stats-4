@@ -80,7 +80,7 @@ function updateInsights(){
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
 const matchTeamCodes={'Orlando Magic':'orl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Indiana Pacers':'ind','Atlanta Hawks':'atl','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Los Angeles Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
-let activeMatch='',matchMarket='ALL';
+let activeMatch='',matchMarket='ALL',matchFormRequest=0;
 const cleanName=name=>String(name||'').split(',').reverse().map(x=>x.trim()).filter(Boolean).join(' ')||String(name||'');
 const displayNum=value=>{const n=Number(String(value??'').replace(',','.'));return Number.isFinite(n)?n.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'};
 function openMatchQuotes(match){
@@ -99,8 +99,47 @@ function openMatchQuotes(match){
  }
  const fixture=$('#finder-fixture');
  if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
- matchMarket='ALL';$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
+ matchMarket='ALL';$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();loadMatchForm(match);
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
+}
+async function loadMatchForm(match){
+ const request=++matchFormRequest;
+ const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
+ const panel=$('#hub-match-analysis');if(!panel||teams.length!==2)return;
+ const boxes=panel.querySelectorAll('.hub-match-data-block');
+ const facts=panel.querySelectorAll('.hub-match-facts>div');
+ const summary=panel.querySelector('.hub-match-summary p');
+ for(const block of boxes){block.querySelector('strong').textContent='Caricamento…';block.querySelector('p').textContent='Consultazione risultati ESPN verificati'}
+ for(const fact of facts)fact.querySelector('small').textContent='Caricamento…';
+ try{
+  const date=$('#date')?.value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))throw new Error('Data non disponibile');
+  const url='/api/match/form?date='+encodeURIComponent(date)+'&team_a='+encodeURIComponent(teams[0])+'&team_b='+encodeURIComponent(teams[1]);
+  const response=await fetch(url);
+  if(!response.ok)throw new Error('ESPN temporaneamente non disponibile');
+  const data=await response.json();
+  if(request!==matchFormRequest||activeMatch!==match)return;
+  const [a,b]=data.teams||[];
+  if(!a||!b)throw new Error('Dati incompleti');
+  boxes[0].querySelector('small').textContent='Forma recente · ultime 5 disponibili';
+  boxes[0].querySelector('strong').textContent=teams[0]+': '+a.wins+'V / '+a.losses+'P';
+  boxes[0].querySelector('p').textContent=teams[1]+': '+b.wins+'V / '+b.losses+'P · Campione: '+a.games+' e '+b.games+' partite negli ultimi '+data.window_days+' giorni';
+  boxes[1].querySelector('small').textContent='Media punti segnati · ultime 5';
+  boxes[1].querySelector('strong').textContent=(a.avg_points??'—')+' vs '+(b.avg_points??'—');
+  boxes[1].querySelector('p').textContent='Medie osservate, non previsioni del risultato finale';
+  facts[0].querySelector('small').textContent=a.games&&b.games?teams[0]+': '+a.wins+'/'+a.games+' · '+teams[1]+': '+b.wins+'/'+b.games:'Campione storico insufficiente';
+  const h2h=data.h2h||[];
+  facts[1].querySelector('small').textContent=h2h.length?h2h.map(g=>g.date+': '+g.scores.join('–')).join(' · '):'Nessuno scontro diretto nei '+data.window_days+' giorni esaminati';
+  facts[2].querySelector('small').textContent=a.avg_points!=null&&b.avg_points!=null?'Medie segnate: '+a.avg_points+' / '+b.avg_points:'Dati insufficienti';
+  if(summary)summary.textContent='Dati ESPN: '+a.games+' partite recenti per '+teams[0]+', '+b.games+' per '+teams[1]+'. Le medie sono descrittive e non indicano probabilità di vittoria. Consulta le quote dei giocatori qui sotto.';
+ }catch(error){
+  if(request!==matchFormRequest)return;
+  boxes[0].querySelector('strong').textContent='Dati non disponibili';
+  boxes[0].querySelector('p').textContent='Risultati ESPN non accessibili in questo momento';
+  boxes[1].querySelector('strong').textContent='—';
+  boxes[1].querySelector('p').textContent='Nessuna stima inventata';
+  for(const fact of facts)fact.querySelector('small').textContent='Dati temporaneamente non disponibili';
+ }
 }
 function setMatchTab(tab){
  document.querySelectorAll('[data-match-tab]').forEach(button=>{button.classList.toggle('active',button.dataset.matchTab===tab);button.setAttribute('aria-selected',String(button.dataset.matchTab===tab))});
