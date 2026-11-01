@@ -104,15 +104,19 @@ function openMatchQuotes(match){
 }
 const matchTeamPalette={atl:'#e03a3e',bos:'#007a33',bkn:'#c5c5c5',cha:'#1d8cab',chi:'#ce1141',cle:'#b58a43',dal:'#0053bc',den:'#fdb927',det:'#c8102e',gs:'#ffc72c',hou:'#ce1141',ind:'#fdbb30',lac:'#c8102e',lal:'#fdb927',mem:'#5d76a9',mia:'#98002e',mil:'#00471b',min:'#236192',no:'#b4975a',ny:'#f58426',okc:'#007ac1',orl:'#0077c0',phi:'#006bb6',phx:'#e56020',por:'#e03a3e',sac:'#5a2d81',sa:'#a5acaf',tor:'#ce1141',utah:'#753bbd',wsh:'#e31837'};
 function renderMatchCharts(teams,a,b,windowDays){
- const area=$('#hub-match-charts');if(!area)return;
- area.replaceChildren();
+ const area=$('#hub-match-charts');if(!area)return;area.replaceChildren();
  const colors=teams.map(t=>matchTeamPalette[matchTeamCodes[t]]||'#4388b9');
  const panel=$('#hub-match-analysis');if(panel){panel.style.setProperty('--match-team-a',colors[0]);panel.style.setProperty('--match-team-b',colors[1]);}
  const card=document.createElement('div');card.className='hub-match-chart-card hub-match-comparison';
- const columns=[{title:'Forma · ultime 5',unit:'Vittorie nelle ultime gare',values:[a.wins,b.wins],max:5,format:(v,i)=>v==null?'—':v+'/'+[a.games,b.games][i]},{title:'Media punti segnati',unit:'Ultime gare disponibili',values:[a.avg_points,b.avg_points],max:Math.max(130,Number(a.avg_points)||0,Number(b.avg_points)||0),format:v=>v==null?'—':displayNum(v)}];
- for(const section of columns){const column=document.createElement('div');column.className='hub-match-compare-column';const heading=document.createElement('div');heading.className='hub-match-chart-heading';const title=document.createElement('strong');title.textContent=section.title;const unit=document.createElement('small');unit.textContent=section.unit;heading.append(title,unit);column.append(heading);
- teams.forEach((team,i)=>{const value=section.values[i];const row=document.createElement('div');row.className='hub-match-chart-row';const label=document.createElement('div');label.className='hub-match-chart-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=section.format(value,i);label.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill team-'+i;fill.style.backgroundColor=colors[i];fill.style.backgroundImage='none';fill.style.width=(value==null?0:Math.min(100,Math.max(0,Number(value)/section.max*100)))+'%';track.append(fill);row.append(label,track);column.append(row)});card.append(column)}
- area.append(card);const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni · Medie osservate, non previsioni.';area.append(note);
+ const win=document.createElement('div');win.className='hub-match-compare-column';
+ const winTitle=document.createElement('strong');winTitle.className='hub-match-compare-title';winTitle.textContent='Probabilità di vittoria';win.append(winTitle);
+ const unavailable=document.createElement('p');unavailable.className='hub-match-win-unavailable';unavailable.textContent='Quote vincente partita non disponibili';win.append(unavailable);
+ const points=document.createElement('div');points.className='hub-match-compare-column';
+ const ptsTitle=document.createElement('strong');ptsTitle.className='hub-match-compare-title';ptsTitle.textContent='Media punti segnati';points.append(ptsTitle);
+ teams.forEach((team,i)=>{const row=document.createElement('div');row.className='hub-match-points-row';const name=document.createElement('span');name.textContent=team;const value=document.createElement('b');value.textContent=[a,b][i].avg_points==null?'—':displayNum([a,b][i].avg_points);row.append(name,value);points.append(row)});
+ card.append(win,points);area.append(card);
+ const form=document.createElement('div');form.className='hub-match-quick-tile';const label=document.createElement('strong');label.textContent='▥ Forma (ultime 5)';const value=document.createElement('span');value.textContent=teams.map((team,i)=>team.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ');form.append(label,value);area.append(form);
+ const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni. Medie osservate, non punti attesi.';area.append(note);
 }
 async function loadMatchForm(match){
  const request=++matchFormRequest;
