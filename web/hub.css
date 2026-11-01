@@ -238,3 +238,9 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
  .hub-mobile-bar button span{font-size:19px}
 }
 @media(max-width:390px){.hub-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}.hub-tile strong{font-size:9px}.hub-featured-summary{grid-template-columns:70px minmax(0,1fr)}.hub-featured-summary img{width:70px;height:110px}.hub-featured-value{min-width:65px;padding:6px}}
+
+.hub-featured-summary .hub-featured-avatar{grid-row:span 3;width:76px;height:102px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 80%,#315878,#0b2136 75%);border-radius:11px;overflow:hidden}
+.hub-featured-summary .hub-featured-avatar img{width:100%;height:100%;object-fit:contain;object-position:bottom;border-radius:0;background:none}
+.hub-featured-summary .hub-featured-avatar span{font-size:22px;font-weight:800;color:#b8d2eb}
+@media(max-width:760px){.hub-featured-summary .hub-featured-avatar{width:86px;height:125px}}
+@media(max-width:390px){.hub-featured-summary .hub-featured-avatar{width:70px;height:110px}}
