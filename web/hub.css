@@ -150,3 +150,10 @@ body{background:radial-gradient(ellipse at 75% -10%,#12375b 0%,#0b1220 48%) fixe
  .hub-shell #extra-history .feature-metrics{gap:7px}
  .hub-mobile-bar{z-index:200}
 }
+
+.hub-featured-summary{display:grid;grid-template-columns:58px minmax(0,1fr);gap:4px 11px;min-height:90px;align-content:center}
+.hub-featured-summary img{width:58px;height:70px;object-fit:cover;grid-row:span 3;border-radius:8px;align-self:center}
+.hub-featured-summary strong{font-size:15px;color:#fff;line-height:1.2}
+.hub-featured-summary p{margin:0;color:#d4e3f5;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.hub-featured-summary p:last-child{font-size:11px;color:#a8dfc2}
+@media(max-width:760px){.hub-featured-summary{grid-template-columns:48px minmax(0,1fr)}.hub-featured-summary img{width:48px;height:60px}}
