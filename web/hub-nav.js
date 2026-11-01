@@ -80,7 +80,7 @@ function updateInsights(){
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
 const matchTeamCodes={'Orlando Magic':'orl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Indiana Pacers':'ind','Atlanta Hawks':'atl','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Los Angeles Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
-let activeMatch='',matchMarket='PTS',matchFormRequest=0;
+let activeMatch='',matchMarket='PTS',matchFormRequest=0,matchTeamFilter='';
 const cleanName=name=>String(name||'').split(',').reverse().map(x=>x.trim()).filter(Boolean).join(' ')||String(name||'');
 const displayNum=value=>{const n=Number(String(value??'').replace(',','.'));return Number.isFinite(n)?n.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'};
 function openMatchQuotes(match){
@@ -99,11 +99,11 @@ function openMatchQuotes(match){
  }
  const fixture=$('#finder-fixture');
  if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
- const teamSelect=$('#hub-match-team-filter');if(teamSelect){teamSelect.replaceChildren();const both=document.createElement('option');both.value='';both.textContent='Entrambe le squadre';teamSelect.append(both);for(const teamName of match.split(/\s+-\s+|\s+vs\.?\s+/i)){const option=document.createElement('option');option.value=teamName.trim();option.textContent=teamName.trim();teamSelect.append(option)}}
- const quick=$('#hub-match-team-quick');if(quick){quick.replaceChildren();const choices=[{label:'Tutti',value:''},...match.split(/\s+-\s+|\s+vs\.?\s+/i).map(team=>({label:team.trim().split(' ').slice(-1)[0],value:team.trim()}))];choices.forEach(choice=>{const button=document.createElement('button');button.type='button';button.textContent=choice.label;button.dataset.team=choice.value;button.setAttribute('aria-pressed',String(!choice.value));button.classList.toggle('active',!choice.value);button.addEventListener('click',()=>{const select=$('#hub-match-team-filter');if(select)select.value=choice.value;syncMatchQuickTeams();renderMatchPlayers()});quick.append(button)})}
+ matchTeamFilter='';
+ const quick=$('#hub-match-team-quick');if(quick){quick.replaceChildren();const choices=[{label:'Tutti',value:''},...match.split(/\s+-\s+|\s+vs\.?\s+/i).map(team=>({label:team.trim().split(' ').slice(-1)[0],value:team.trim()}))];choices.forEach(choice=>{const button=document.createElement('button');button.type='button';button.textContent=choice.label;button.dataset.team=choice.value;button.setAttribute('aria-pressed',String(!choice.value));button.classList.toggle('active',!choice.value);button.addEventListener('click',()=>{matchTeamFilter=choice.value;syncMatchQuickTeams();renderMatchPlayers()});quick.append(button)})}
  const filterPanel=$('#hub-match-filter-panel');if(filterPanel)filterPanel.hidden=true;const filterToggle=$('#hub-match-filter-toggle');if(filterToggle)filterToggle.setAttribute('aria-expanded','false');
  const meta=$('#hub-match-fixture-meta');if(meta){const selected=$('#date')?.value;meta.textContent=selected?selected.split('-').reverse().join('/'):'Partita NBA'}
- const oddMin=$('#hub-match-odd-min'),oddMax=$('#hub-match-odd-max');if(oddMin)oddMin.value='1.20';if(oddMax)oddMax.value='2.20';if($('#hub-match-sort'))$('#hub-match-sort').value='team';
+ const oddMin=$('#hub-match-odd-min'),oddMax=$('#hub-match-odd-max');if(oddMin)oddMin.value='1.20';if(oddMax)oddMax.value='2.20';
  syncMatchQuickTeams();syncMatchOddsRange();
  matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.market==='PTS'));$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
@@ -245,7 +245,7 @@ function setMatchTab(tab){
 const finderCount=$('#finder-count');
 if(finderCount)new MutationObserver(()=>{if(activeMatch&&document.body.classList.contains('hub-match-open')){renderMatchPlayers();renderMatchMarketStats()}}).observe(finderCount,{childList:true,characterData:true,subtree:true});
 function syncMatchQuickTeams(){
- const selected=$('#hub-match-team-filter')?.value||'';
+ const selected=matchTeamFilter;
  document.querySelectorAll('#hub-match-team-quick button').forEach(button=>{const active=button.dataset.team===selected;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
 function syncMatchOddsRange(){
@@ -258,8 +258,8 @@ function renderMatchPlayers(){
  const rows=typeof window.BasketLabMatchRows==='function'?window.BasketLabMatchRows(activeMatch):[];
  const q=($('#hub-match-search')?.value||'').toLowerCase().trim();
  const groups=new Map();
- const teamFilter=$('#hub-match-team-filter')?.value||'';
- const sortBy=$('#hub-match-sort')?.value||'team';
+ const teamFilter=matchTeamFilter;
+ const sortBy='team';
  const oddMin=Number(($('#hub-match-odd-min')?.value||'1.20').replace(',','.'));
  const oddMax=Number(($('#hub-match-odd-max')?.value||'2.20').replace(',','.'));
  const rangeValid=Number.isFinite(oddMin)&&Number.isFinite(oddMax)&&oddMin>=1.01&&oddMax>=oddMin;
@@ -281,7 +281,7 @@ function renderMatchPlayers(){
   const header=document.createElement('div');header.className='hub-match-player-identity';
   const info=document.createElement('div');if(/^\d+$/.test(String(group.espnId||''))){const photo=document.createElement('img');photo.className='hub-match-player-photo';photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+group.espnId+'.png';photo.alt='';photo.loading='lazy';photo.onerror=()=>{photo.hidden=true};header.append(photo)}const name=document.createElement('strong');name.textContent=group.name;
   const team=document.createElement('small');team.textContent=group.team||'';info.append(name,team);header.append(info);
-  const stats=document.createElement('button');stats.type='button';stats.textContent='Statistiche ›';stats.onclick=()=>window.BasketLabMatchPlayerStats?.(group.rows[0]);header.append(stats);card.append(header);
+  const stats=document.createElement('button');stats.type='button';stats.className='hub-match-player-stats-link';stats.textContent='Statistiche ↗';stats.onclick=()=>window.BasketLabMatchPlayerStats?.(group.rows[0]);header.append(stats);card.append(header);
   const markets=document.createElement('div');markets.className='hub-match-player-markets compact';
   for(const market of ['PTS','REB','AST']){
    const subset=group.rows.filter(row=>row.Mercato===market);
@@ -306,7 +306,7 @@ function renderMatchPlayers(){
 }
 document.querySelectorAll('[data-match-tab]').forEach(button=>button.addEventListener('click',()=>setMatchTab(button.dataset.matchTab)));
 $('#hub-match-search')?.addEventListener('input',renderMatchPlayers);
- for(const id of ['hub-match-team-filter','hub-match-sort','hub-match-odd-min','hub-match-odd-max'])$('#'+id)?.addEventListener('change',()=>{syncMatchQuickTeams();syncMatchOddsRange();renderMatchPlayers()});
+ for(const id of ['hub-match-odd-min','hub-match-odd-max'])$('#'+id)?.addEventListener('change',()=>{syncMatchQuickTeams();syncMatchOddsRange();renderMatchPlayers()});
  $('#hub-match-filter-toggle')?.addEventListener('click',()=>{const panel=$('#hub-match-filter-panel'),button=$('#hub-match-filter-toggle');if(!panel||!button)return;panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));const arrow=$('#hub-match-filter-chevron');if(arrow)arrow.textContent=panel.hidden?'▾':'▴'});
 
 document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b===button));renderMatchPlayers()}));
