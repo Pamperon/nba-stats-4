@@ -361,3 +361,17 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
  .hub-match-row{padding:10px 8px}
  .hub-featured-card{padding:11px}
 }
+
+
+.hub-performance,.hub-method-link{border:1px solid #355777;border-radius:16px;background:linear-gradient(145deg,#102941,#0a192b);margin:16px 0;padding:17px}
+.hub-performance .hub-featured-heading h2{font-size:20px}
+.hub-performance-body{display:flex;align-items:center;gap:17px;padding:16px 8px 4px}
+.hub-performance-symbol{flex:0 0 90px;width:90px;height:90px;display:grid;place-items:center;border-radius:50%;border:10px solid #315f66;border-top-color:#ff9638;border-right-color:#ff9638;font-size:36px;color:#ff9e43}
+.hub-performance-body strong,.hub-method-link strong{color:#f5f8fc;font-size:15px}
+.hub-performance-body p,.hub-method-link p{font-size:12px;color:#b8cee2;line-height:1.55;margin:7px 0}
+.hub-performance-body button{background:#ef852d;color:#081625;border:0;border-radius:8px;padding:9px 12px;font-weight:750;cursor:pointer}
+.hub-method-link{display:flex;align-items:center;gap:13px}
+.hub-method-link>span{font-size:30px;color:#6bbaff}
+.hub-method-link>div{flex:1}
+.hub-method-link>button{background:none;border:0;color:#f5f8fc;font-size:30px;cursor:pointer}
+@media(max-width:760px){.hub-performance,.hub-method-link{padding:12px;margin:13px 0}.hub-performance-body{gap:12px;padding:9px 2px 2px}.hub-performance-symbol{width:68px;height:68px;flex-basis:68px;border-width:7px;font-size:28px}.hub-performance .hub-featured-heading h2{font-size:17px}}
