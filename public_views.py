@@ -163,12 +163,29 @@ def history(day):
             ORDER BY s.created_at ASC, s.job_id ASC
         """, (day,)).fetchall()
     versions = [{'saved_at': at.isoformat(), 'groups': ticket_groups(saved, (report or {}).get('groups')) if 'groups' in saved else {},
-                 'lines': saved_lines(saved, report)}
+                 'lines': saved_lines(saved, report), 'is_daily': isinstance(saved.get('lines'), list)}
                 for at, saved, report in rows if isinstance(saved, dict)]
     groups = daily_groups([v for v in versions if v['groups']])
     lines = daily_lines(versions)
     tickets = [ticket for group in groups.values() for ticket in group]
-    return {'date': day, 'groups': groups, 'lines': lines, 'line_summary': {state: sum(line['status'] == state for line in lines) for state in ('won', 'lost', 'unresolved')},
+    # Freeze the first published new-model Top 5 for each day. Later scans
+    # supply settlement evidence only; they cannot silently replace picks.
+    first_daily = next((v for v in versions if v['is_daily']), None)
+    official = []
+    if first_daily is not None:
+        by_identity = {leg_identity(row): row for row in lines}
+        for selected in first_daily['lines'][:5]:
+            row = by_identity.get(leg_identity(selected))
+            if row is not None:
+                official.append(row)
+    official_ids = {leg_identity(row) for row in official}
+    other = [row for row in lines if leg_identity(row) not in official_ids]
+    return {'date': day, 'groups': groups, 'lines': lines,
+            'official_lines': official, 'other_lines': other,
+            'has_daily_model': first_daily is not None,
+            'official_saved_at': first_daily['saved_at'] if first_daily else None,
+            'official_summary': {state: sum(line['status'] == state for line in official) for state in ('won', 'lost', 'unresolved')},
+            'line_summary': {state: sum(line['status'] == state for line in lines) for state in ('won', 'lost', 'unresolved')},
             'summary': {state: sum(ticket['status'] == state for ticket in tickets)
                         for state in ('won', 'lost', 'unresolved')},
             'odds_api_calls': 0}
