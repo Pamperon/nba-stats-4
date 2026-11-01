@@ -197,6 +197,17 @@ def settle_snapshots(day):
         snapshot = {**payload, 'job_id': job_id, 'saved_at': created_at.isoformat()}
         verified, _ = settle_espn.settle_archive(snapshot, day, evidence=evidence)
         report = evaluate(saved, verified)
+        # Settle the independently frozen daily single using the same ESPN
+        # evidence already collected for this snapshot (no extra paid calls).
+        with storage.connection() as conn:
+            single_row = conn.execute("""
+                SELECT selection FROM nba_official_daily_singles
+                WHERE scan_date=%s AND snapshot_job_id=%s
+            """, (day, job_id)).fetchone()
+        if single_row and single_row[0]:
+            single_report = evaluate({'lines': [single_row[0]],
+                                      'policy': 'single-1800-v1'}, verified)
+            report['daily_single'] = single_report['lines'][0]
         if payload.get('model_shadow'):
             import shadow_study
             report['model_shadow'] = shadow_study.evaluate(payload['model_shadow'], verified)
