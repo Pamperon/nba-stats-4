@@ -100,7 +100,7 @@ function openMatchQuotes(match){
  const fixture=$('#finder-fixture');
  if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
  const teamSelect=$('#hub-match-team-filter');if(teamSelect){teamSelect.replaceChildren();const both=document.createElement('option');both.value='';both.textContent='Entrambe le squadre';teamSelect.append(both);for(const teamName of match.split(/\s+-\s+|\s+vs\.?\s+/i)){const option=document.createElement('option');option.value=teamName.trim();option.textContent=teamName.trim();teamSelect.append(option)}}
- const meta=$('#hub-match-fixture-meta');if(meta){const selected=$('#date')?.value;meta.textContent=selected?'Partita del '+selected.split('-').reverse().join('/')+' · Quote da dati salvati':'Partita NBA · Quote da dati salvati'}
+ const meta=$('#hub-match-fixture-meta');if(meta){const selected=$('#date')?.value;meta.textContent=selected?selected.split('-').reverse().join('/'):'Partita NBA'}
  const oddMin=$('#hub-match-odd-min'),oddMax=$('#hub-match-odd-max');if(oddMin)oddMin.value='1.20';if(oddMax)oddMax.value='2.20';if($('#hub-match-sort'))$('#hub-match-sort').value='team';
  matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.market==='PTS'));$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
@@ -114,14 +114,14 @@ function renderMatchCharts(teams,a,b,windowDays,matchOdds){
  const win=document.createElement('div');win.className='hub-match-compare-column';
  const winTitle=document.createElement('strong');winTitle.className='hub-match-compare-title';winTitle.textContent='Probabilità di vittoria';win.append(winTitle);
  const validOdds=Array.isArray(matchOdds)&&matchOdds.length===2&&matchOdds.every(x=>Number.isFinite(Number(x))&&Number(x)>1);
- if(validOdds){const implied=matchOdds.map(x=>1/Number(x));const total=implied[0]+implied[1];teams.forEach((team,i)=>{const pct=implied[i]/total*100;const row=document.createElement('div');row.className='hub-match-win-row';const heading=document.createElement('div');heading.className='hub-match-win-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';heading.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill';fill.style.width=pct+'%';fill.style.background=colors[i];track.append(fill);row.append(heading,track);win.append(row)});const info=document.createElement('small');info.textContent='Probabilità implicite Bet365 (non stime del modello) · Quote: '+matchOdds.map((x,i)=>teams[i]+' @'+Number(x).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})).join(' · ')+' · Margine rimosso';win.append(info)}
+ if(validOdds){const implied=matchOdds.map(x=>1/Number(x));const total=implied[0]+implied[1];teams.forEach((team,i)=>{const pct=implied[i]/total*100;const row=document.createElement('div');row.className='hub-match-win-row';const heading=document.createElement('div');heading.className='hub-match-win-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';heading.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill';fill.style.width=pct+'%';fill.style.background=colors[i];track.append(fill);row.append(heading,track);win.append(row)})}
  else{const unavailable=document.createElement('p');unavailable.className='hub-match-win-unavailable';unavailable.textContent='Quote vincente partita non disponibili';win.append(unavailable);}
  const points=document.createElement('div');points.className='hub-match-compare-column';
  const ptsTitle=document.createElement('strong');ptsTitle.className='hub-match-compare-title';ptsTitle.textContent='Media punti segnati';points.append(ptsTitle);
  teams.forEach((team,i)=>{const row=document.createElement('div');row.className='hub-match-points-row';const name=document.createElement('span');name.textContent=team;const value=document.createElement('b');value.textContent=[a,b][i].avg_points==null?'—':displayNum([a,b][i].avg_points);row.append(name,value);points.append(row)});
  card.append(win,points);area.append(card);
  const form=document.createElement('div');form.className='hub-match-quick-tile';const label=document.createElement('strong');label.textContent='Forma (ultime 5)';const value=document.createElement('span');value.textContent=teams.map((team,i)=>team.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ');form.append(label,value);area.append(form);
- const streak=document.createElement('div');streak.className='hub-match-form-streak';teams.forEach((team,i)=>{const group=document.createElement('div');const name=document.createElement('small');name.textContent=team;group.append(name);const dots=document.createElement('div');dots.className='hub-match-form-dots';for(const game of [a,b][i].results||[]){const dot=document.createElement('span');dot.className=game.scored>game.allowed?'won':'lost';dot.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;dot.setAttribute('aria-label',game.scored>game.allowed?'Vittoria':'Sconfitta');dots.append(dot)}group.append(dots);streak.append(group)});const legend=document.createElement('small');legend.className='hub-match-form-legend';legend.textContent='Verde: vittoria · Rosso: sconfitta · Dal più recente al meno recente';streak.append(legend);area.append(streak);
+ const streak=document.createElement('div');streak.className='hub-match-form-streak';teams.forEach((team,i)=>{const group=document.createElement('div');const name=document.createElement('small');name.textContent=team;group.append(name);const dots=document.createElement('div');dots.className='hub-match-form-dots';for(const game of [a,b][i].results||[]){const dot=document.createElement('span');dot.className=game.scored>game.allowed?'won':'lost';dot.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;dot.setAttribute('aria-label',game.scored>game.allowed?'Vittoria':'Sconfitta');dots.append(dot)}group.append(dots);streak.append(group)});area.append(streak);
  const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni. Medie osservate, non punti attesi.';area.append(note);
 }
 async function loadMatchForm(match){
@@ -145,11 +145,8 @@ async function loadMatchForm(match){
   if(fixtureMeta){
    const dateLabel=date.split('-').reverse().join('/');
    const time=data.fixture_time?new Date(data.fixture_time):null;
-   const cached=Number(data.odds_cached_at);
-   const updated=Number.isFinite(cached)&&cached>0?new Date(cached*1000):null;
    const clock=time&&!Number.isNaN(time.getTime())?time.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}):null;
-   const updateClock=updated&&!Number.isNaN(updated.getTime())?updated.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}):null;
-   fixtureMeta.textContent='Partita '+dateLabel+(clock?' · Ore '+clock:'')+(updateClock?' · Feed quote '+updateClock:' · Orario aggiornamento quote non disponibile');
+   fixtureMeta.textContent=dateLabel+(clock?' · ore '+clock:'');
   }
   const [a,b]=data.teams||[];
   if(!a||!b)throw new Error('Dati incompleti');
@@ -183,13 +180,13 @@ function renderMatchMarketStats(){
  if(!statsPanel){statsPanel=document.createElement('div');statsPanel.id='hub-match-market-distribution';statsPanel.className='hub-match-market-distribution';analysis.append(statsPanel)}
  statsPanel.replaceChildren();
  const heading=document.createElement('strong');heading.textContent='Statistiche delle linee disponibili';statsPanel.append(heading);
- const overview=document.createElement('p');overview.textContent=rows.length+' linee analizzate · '+new Set(rows.map(r=>r['ESPN ID']||r.Giocatore)).size+' giocatori · '+markets.filter(m=>m.count).length+' mercati su 3';statsPanel.append(overview);
+ const overview=document.createElement('p');overview.textContent=rows.length+' linee analizzate · '+markets.filter(m=>m.count).length+' mercati su 3';statsPanel.append(overview);
  const track=document.createElement('div');track.className='hub-match-market-track';
  for(const m of markets){if(!m.count)continue;const seg=document.createElement('span');seg.className='market-'+m.market.toLowerCase();seg.style.width=(m.count/rows.length*100)+'%';seg.title=m.market+': '+m.count;track.append(seg)}
  statsPanel.append(track);
  const legend=document.createElement('div');legend.className='hub-match-market-legend';
- markets.forEach(m=>{const item=document.createElement('span');const prices=rows.filter(r=>r.Mercato===m.market).map(r=>Number(r.Quota)).filter(p=>Number.isFinite(p)&&p>1);item.textContent=m.market+' · '+m.count+(prices.length?' · quota media '+(prices.reduce((a,b)=>a+b,0)/prices.length).toLocaleString('it-IT',{maximumFractionDigits:2}):'');legend.append(item)});statsPanel.append(legend);
- const hint=document.createElement('p');hint.textContent='Distribuzione delle linee giocatore salvate per questa partita.';statsPanel.append(hint);
+ markets.forEach(m=>{const item=document.createElement('span');item.textContent=m.market+' · '+m.count;legend.append(item)});statsPanel.append(legend);
+
 }
 function setMatchTab(tab){
  if(tab!=='players')tab='analysis';
