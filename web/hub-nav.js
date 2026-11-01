@@ -483,7 +483,9 @@ function refreshShowcase(){
   fetchNbaFixtures(day,true).then(fixtures=>{
    if(homeToken!==homeFixturesRequest)return;
    games.replaceChildren();
-   if(!fixtures.length){games.textContent='Nessuna partita NBA nella sessione serale/notturna.';return}
+   const now=Date.now();
+   fixtures=fixtures.filter(game=>game.upcoming===true && game.start_at && new Date(game.start_at).getTime()>now);
+   if(!fixtures.length){games.textContent='Nessun’altra partita da iniziare in questa sessione. Consulta il calendario NBA per gli incontri in corso e conclusi.';return}
    const quoted=new Set([...($('#finder-fixture')?.options||[])].map(el=>fixtureKey(el.value)));
    for(const game of fixtures){
     const match=fixtureName(game),hasOdds=quoted.has(match);
@@ -496,13 +498,18 @@ function refreshShowcase(){
      if(code){const logo=document.createElement('img');logo.alt='';logo.loading='lazy';logo.width=32;logo.height=32;logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';side.append(logo)}
      const name=document.createElement('strong');name.textContent=team||'NBA';side.append(name);pair.append(side)
     });
-    const detail=document.createElement('span');detail.className='hub-match-count';detail.textContent=fixtureTime(game)+' · '+(hasOdds?'Quote e linee ›':'Quote non disponibili');
+    const detail=document.createElement('span');detail.className='hub-match-count';
+    const time=document.createElement('span');time.className='hub-upcoming-time';time.textContent='◷ '+fixtureTime(game);
+    const odds=document.createElement('span');odds.className='hub-upcoming-odds';odds.textContent=hasOdds?'Analisi disponibili ›':'Vedi partita ›';
+    detail.append(time,odds);
     row.append(pair,detail);
     row.addEventListener('click',()=>openFixtureDetails(match));
     games.append(row)
    }
   }).catch(()=>{ /* Keep existing saved-odds fallback if ESPN is unreachable. */ });
   games.replaceChildren();
+  games.textContent='Caricamento delle prossime partite NBA…';
+  return;
   if(!matches.length){games.textContent='Le partite della giornata compariranno con le analisi disponibili.';return}
   const teamCodes={'Atlanta Hawks':'atl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Indiana Pacers':'ind','Los Angeles Clippers':'lac','LA Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Orlando Magic':'orl','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
   for(const match of matches.slice(0,6)){
