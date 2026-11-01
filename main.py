@@ -945,7 +945,8 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         import daily_single_archive
         result['single_archive'] = daily_single_archive.read(date)
         single_record = result['single_archive']
-        if single_record.get('published') and single_record.get('selection'):
+        if (single_record.get('published') and single_record.get('selection')
+                and not single_record.get('outcome')):
             saved_single = single_record['selection']
             identity = public_views.leg_identity(saved_single)
             matched = next((row for row in result.get('lines', [])
