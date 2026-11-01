@@ -388,7 +388,10 @@ function renderCalendar(){
      if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';side.append(img)}
      const label=document.createElement('span');label.textContent=team||'NBA';side.append(label);row.append(side)
     });
-    const info=document.createElement('span');info.className='hub-calendar-match-arrow';info.textContent=fixtureTime(game)+' · '+(game.status|| (hasOdds?'Quote disponibili':'Quote non disponibili'))+(game.status?' · '+(hasOdds?'Quote disponibili':'Quote non disponibili'):'');row.append(info);
+    const info=document.createElement('div');info.className='hub-calendar-match-arrow';
+    const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);
+    const state=document.createElement('span');state.className='hub-calendar-state';state.textContent=game.upcoming?'Da giocare':(game.status||'In corso / conclusa');
+    info.append(time,state);row.append(info);
     row.addEventListener('click',()=>openFixtureDetails(match));row.setAttribute('aria-label',match+' · Apri dettagli partita');
     games.append(row)
    }
@@ -500,7 +503,7 @@ function refreshShowcase(){
     });
     const detail=document.createElement('span');detail.className='hub-match-count';
     const time=document.createElement('span');time.className='hub-upcoming-time';time.textContent='◷ '+fixtureTime(game);
-    const odds=document.createElement('span');odds.className='hub-upcoming-odds';odds.textContent=hasOdds?'Analisi disponibili ›':'Vedi partita ›';
+    const odds=document.createElement('span');odds.className='hub-upcoming-odds';odds.textContent=hasOdds?'Analisi disponibili →':'Dettagli →';
     detail.append(time,odds);
     row.append(pair,detail);
     row.addEventListener('click',()=>openFixtureDetails(match));
