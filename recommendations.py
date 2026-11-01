@@ -199,11 +199,15 @@ def settle_snapshots(day):
         report = evaluate(saved, verified)
         # Settle the independently frozen daily single using the same ESPN
         # evidence already collected for this snapshot (no extra paid calls).
-        with storage.connection() as conn:
-            single_row = conn.execute("""
+        from datetime import date as _date
+        if _date.fromisoformat(str(day)) >= _date(2026, 11, 2):
+            with storage.connection() as conn:
+                single_row = conn.execute("""
                 SELECT selection FROM nba_official_daily_singles
                 WHERE scan_date=%s AND snapshot_job_id=%s
             """, (day, job_id)).fetchone()
+        else:
+            single_row = None
         if single_row and single_row[0]:
             single_report = evaluate({'lines': [single_row[0]],
                                       'policy': 'single-1800-v1'}, verified)
