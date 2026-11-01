@@ -79,34 +79,92 @@ function updateInsights(){
  const counts=new Map();for(const market of markets){const type=market.toUpperCase().startsWith('UNDER')?'Under':'Over';counts.set(type,(counts.get(type)||0)+1)}
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
+const matchTeamCodes={'Orlando Magic':'orl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Indiana Pacers':'ind','Atlanta Hawks':'atl','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Los Angeles Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
+let activeMatch='',matchMarket='ALL';
+const cleanName=name=>String(name||'').split(',').reverse().map(x=>x.trim()).filter(Boolean).join(' ')||String(name||'');
+const displayNum=value=>{const n=Number(String(value??'').replace(',','.'));return Number.isFinite(n)?n.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'};
 function openMatchQuotes(match){
- calendar=false;
- const panel=$('#hub-match-detail');if(panel)panel.hidden=false;
- const title=$('#hub-match-title');if(title){title.replaceChildren();const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i);teams.forEach((team,i)=>{if(i){const vs=document.createElement('b');vs.textContent='VS';title.append(vs)}const name=document.createElement('strong');name.textContent=team;title.append(name)})}
- document.body.classList.add('hub-match-open');setMatchTab('analysis');
- // Reuse the original complete odds explorer and its saved dataset.
+ activeMatch=match;calendar=false;
  go.finder();select('finder');document.body.classList.add('hub-match-open');
+ const panel=$('#hub-match-detail');if(panel)panel.hidden=false;
+ const title=$('#hub-match-title');
+ if(title){title.replaceChildren();const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i);
+  teams.forEach((team,i)=>{
+   if(i){const vs=document.createElement('b');vs.textContent='VS';title.append(vs)}
+   const wrap=document.createElement('div');wrap.className='hub-match-team';
+   const code=matchTeamCodes[team.trim()];
+   if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';img.onerror=()=>{img.hidden=true};wrap.append(img)}
+   const name=document.createElement('strong');name.textContent=team;wrap.append(name);title.append(wrap);
+  });
+ }
  const fixture=$('#finder-fixture');
- if(!fixture)return;
- const available=[...fixture.options].map(option=>option.value);
- const normalized=value=>String(value||'').toLocaleLowerCase('it-IT').replace(/[^a-z0-9]/g,'');
- const exact=available.find(value=>value===match);
- const resolved=exact||available.find(value=>normalized(value)===normalized(match));
- fixture.value=resolved||'';
- fixture.dispatchEvent(new Event('change',{bubbles:true}));
- const heading=$('.finder-heading h2');
- if(heading)heading.textContent=resolved?'Quote e linee · '+resolved:'Quote e linee NBA';
- const finder=$('#finder');
- finder?.scrollIntoView({block:'start',behavior:'smooth'});
+ if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
+ matchMarket='ALL';$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
+ panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
 function setMatchTab(tab){
- document.querySelectorAll('[data-match-tab]').forEach(button=>button.classList.toggle('active',button.dataset.matchTab===tab));
- const analysis=$('#hub-match-analysis');if(analysis)analysis.hidden=tab!=='analysis';
- if(tab==='stats'){$('#hub-match-analysis').hidden=false;const title=$('#hub-match-analysis h3');if(title)title.textContent='Statistiche partita';}
- else{const title=$('#hub-match-analysis h3');if(title)title.textContent='Analisi partita'}
- if(tab==='players')$('#finder-player-search')?.focus();
+ document.querySelectorAll('[data-match-tab]').forEach(button=>{button.classList.toggle('active',button.dataset.matchTab===tab);button.setAttribute('aria-selected',String(button.dataset.matchTab===tab))});
+ const analysis=$('#hub-match-analysis'),players=$('#hub-match-player-section');
+ if(analysis)analysis.hidden=tab==='players';
+ if(players)players.hidden=tab==='stats';
+ if(analysis){
+  const title=analysis.querySelector('h3');
+  if(tab==='stats'){
+   title.textContent='Statistiche delle linee disponibili';
+   const rows=window.BasketLabMatchRows?.()||[];
+   const markets=['PTS','REB','AST'].map(m=>({market:m,count:rows.filter(row=>row.Mercato===m).length}));
+   const boxes=analysis.querySelectorAll('.hub-match-data-block');
+   if(boxes[0]){boxes[0].querySelector('small').textContent='Linee analizzate';boxes[0].querySelector('strong').textContent=String(rows.length);boxes[0].querySelector('p').textContent='Linee player props salvate per questa partita.'}
+   if(boxes[1]){boxes[1].querySelector('small').textContent='Mercati disponibili';boxes[1].querySelector('strong').textContent=markets.filter(m=>m.count).length+' su 3';boxes[1].querySelector('p').textContent=markets.map(m=>m.market+': '+m.count).join(' · ')}
+  }else{
+   title.innerHTML='<span class="hub-accent-icon">▥</span> Analisi partita';
+   const boxes=analysis.querySelectorAll('.hub-match-data-block');
+   if(boxes[0]){boxes[0].querySelector('small').textContent='Probabilità di vittoria';boxes[0].querySelector('strong').textContent='Non disponibile';boxes[0].querySelector('p').textContent='Non viene calcolata dal modello player props.'}
+   if(boxes[1]){boxes[1].querySelector('small').textContent='Punti attesi';boxes[1].querySelector('strong').textContent='Non disponibili';boxes[1].querySelector('p').textContent='Serve un modello dedicato ai punteggi di squadra.'}
+  }
+ }
+ if(tab==='players')players?.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function renderMatchPlayers(){
+ if(!document.body.classList.contains('hub-match-open'))return;
+ const list=$('#hub-match-player-list'),count=$('#hub-match-player-count');if(!list)return;
+ const rows=typeof window.BasketLabMatchRows==='function'?window.BasketLabMatchRows():[];
+ const q=($('#hub-match-search')?.value||'').toLowerCase().trim();
+ const groups=new Map();
+ for(const row of rows){
+  if(q&&!cleanName(row.Giocatore).toLowerCase().includes(q)&&!String(row.Giocatore).toLowerCase().includes(q))continue;
+  if(matchMarket!=='ALL'&&row.Mercato!==matchMarket)continue;
+  const key=JSON.stringify([row.Squadra,row['ESPN ID']||row.Giocatore]);
+  if(!groups.has(key))groups.set(key,{name:cleanName(row.Giocatore),team:row.Squadra,espnId:row['ESPN ID'],rows:[]});
+  groups.get(key).rows.push(row);
+ }
+ list.replaceChildren();if(count)count.textContent=groups.size+' giocatori · '+rows.length+' linee';
+ if(!groups.size){list.textContent='Nessuna linea disponibile con questi filtri.';return}
+ for(const group of groups.values()){
+  const card=document.createElement('article');card.className='hub-match-player-card';
+  const header=document.createElement('div');header.className='hub-match-player-identity';
+  const info=document.createElement('div');if(/^\d+$/.test(String(group.espnId||''))){const photo=document.createElement('img');photo.className='hub-match-player-photo';photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+group.espnId+'.png';photo.alt='';photo.loading='lazy';photo.onerror=()=>{photo.hidden=true};header.append(photo)}const name=document.createElement('strong');name.textContent=group.name;
+  const team=document.createElement('small');team.textContent=group.team||'';info.append(name,team);header.append(info);
+  const stats=document.createElement('button');stats.type='button';stats.textContent='Statistiche ›';stats.onclick=()=>window.BasketLabMatchPlayerStats?.(group.rows[0]);header.append(stats);card.append(header);
+  const markets=document.createElement('div');markets.className='hub-match-player-markets';
+  for(const market of ['PTS','REB','AST']){
+   const subset=group.rows.filter(row=>row.Mercato===market);
+   if(!subset.length)continue;
+   const block=document.createElement('div');block.className='hub-match-player-market';
+   const label=document.createElement('small');label.textContent=({PTS:'PUNTI',REB:'RIMBALZI',AST:'ASSIST'})[market];block.append(label);
+   const featured=subset.find(row=>String(row.Scelta||'').toUpperCase()==='OVER')||subset[0];
+   const line=document.createElement('strong');line.textContent=displayNum(featured.Linea);block.append(line);
+   const quote=document.createElement('span');quote.textContent=String(featured.Scelta||'OVER').toUpperCase()+' '+displayNum(featured.Quota);block.append(quote);
+   const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent=subset.length+' linee · Mostra tutte';details.append(summary);
+   for(const row of subset){const entry=document.createElement('div');entry.className='hub-match-quote-line';entry.textContent=String(row.Scelta||'OVER').toUpperCase()+' '+displayNum(row.Linea)+' · quota '+displayNum(row.Quota)+' · stima '+displayNum(row['Prob. stimata %'])+'%';details.append(entry)}
+   block.append(details);markets.append(block);
+  }
+  card.append(markets);list.append(card);
+ }
 }
 document.querySelectorAll('[data-match-tab]').forEach(button=>button.addEventListener('click',()=>setMatchTab(button.dataset.matchTab)));
+$('#hub-match-search')?.addEventListener('input',renderMatchPlayers);
+document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b===button));renderMatchPlayers()}));
 $('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;go.home();select('home')});
 function renderCalendar(){
  const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games');if(!dates||!games)return;
