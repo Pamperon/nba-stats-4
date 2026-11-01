@@ -292,6 +292,7 @@ function renderMatchPlayers(){
    const head=document.createElement('div');head.className='hub-match-odds-head';['Linea','Scelta','Quota','Stima'].forEach(text=>{const el=document.createElement('span');el.textContent=text;head.append(el)});details.append(head);
    const sorted=subset.sort((a,b)=>Number(a.Quota)-Number(b.Quota)||Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)));
    const visible=sorted.filter(row=>rangeValid&&Number(row.Quota)>=oddMin&&Number(row.Quota)<=oddMax);
+   sorted.sort((a,b)=>(visible.includes(b)?1:0)-(visible.includes(a)?1:0)||Number(a.Quota)-Number(b.Quota)||Number(a.Linea)-Number(b.Linea));
    for(const row of sorted){
     const entry=document.createElement('div');entry.className='hub-match-odds-row';if(rangeValid&& !visible.includes(row))entry.classList.add('hub-match-odds-extra');
     const values=[displayNum(row.Linea),String(row.Scelta||'—').toUpperCase(),displayNum(row.Quota),row['Prob. stimata %']==null||row['Prob. stimata %']===''?'—':displayNum(row['Prob. stimata %'])+'%'];
