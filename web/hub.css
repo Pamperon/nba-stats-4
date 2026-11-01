@@ -780,3 +780,19 @@ body.hub-match-open #hub-match-analysis>h3{display:none!important}
 body.hub-match-open #hub-match-analysis .hub-match-chart-note{display:none!important}
 body.hub-match-open #hub-match-analysis .hub-match-facts{display:none!important}
 body.hub-match-open #hub-match-analysis .hub-match-summary p{font-size:13px;line-height:1.55;color:#d6e2eb}
+
+/* Compact mobile player odds */
+body.hub-match-open .hub-match-player-section .hub-match-section-heading{justify-content:flex-end;margin-bottom:9px}
+body.hub-match-open .hub-match-player-section .hub-match-section-heading h3{display:none}
+body.hub-match-open .hub-match-team-quick{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 4px}
+body.hub-match-open .hub-match-team-quick button{border:1px solid #436884;background:#102c42;color:#d6e5f0;border-radius:30px;padding:8px 14px;font-size:13px;cursor:pointer}
+body.hub-match-open .hub-match-team-quick button.active{background:#f99331;color:#102438;border-color:#f99331;font-weight:700}
+body.hub-match-open .hub-match-filter-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 13px;color:#a9c5d9;font-size:12px}
+body.hub-match-open .hub-match-filter-top button{border:1px solid #466b87;border-radius:20px;background:#12344e;color:#f8a454;padding:8px 14px;font-weight:600;cursor:pointer}
+body.hub-match-open #hub-match-filter-panel[hidden]{display:none!important}
+body.hub-match-open #hub-match-filter-panel .hub-match-extra-filters{margin:0 0 14px}
+body.hub-match-open .hub-match-player-card{padding:11px 12px;gap:8px}
+body.hub-match-open .hub-match-player-identity{margin-bottom:7px}
+body.hub-match-open .hub-match-player-market summary{cursor:pointer;min-height:42px;display:flex;align-items:center;gap:8px;padding:10px 12px}
+body.hub-match-open .hub-match-odds-dropdown[open]>summary{background:rgba(78,132,165,.16)}
+body.hub-match-open .hub-match-all-lines{cursor:pointer}
