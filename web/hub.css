@@ -608,3 +608,5 @@ body.hub-match-open .hub-match-player-identity{margin-bottom:10px}
 body.hub-match-open .hub-match-market-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 body.hub-match-open .hub-match-market-buttons button{font-size:13px;padding:11px 6px}
 @media(max-width:760px){.hub-match-charts{grid-template-columns:1fr;gap:9px}.hub-match-chart-card{padding:15px}.hub-match-chart-note{grid-column:1}.hub-match-odds-head,.hub-match-odds-row{gap:4px;padding:11px 7px;font-size:12px}.hub-match-odds-head{font-size:10px}}
+
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-analysis-grid,body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts{display:none}
