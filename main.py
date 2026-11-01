@@ -301,8 +301,9 @@ def session_picks():
     import recommendations
     now = datetime.now(ZoneInfo('Europe/Rome'))
     today = now.date()
-    # Before 18:00, the previous evening's session is still the current one.
-    day = (today if now.hour >= 18 else today - timedelta(days=1)).isoformat()
+    # Preview today's upcoming evening session before the official 18:00 cutoff.
+    # After midnight, retain the prior evening's session until noon Rome time.
+    day = (today - timedelta(days=1) if now.hour < 12 else today).isoformat()
     manifest = nba_publication_session(day)
     official = nba_session_picks.read(day) if nba_session_picks.eligible(day) else None
     # Publish on demand only when due; no paid API calls.
@@ -828,7 +829,7 @@ def saved_dates():
                 logger.warning('Cannot check ESPN calendar for %s; retaining archived dates', day)
         return {'dates': [{'date': day} for day in sorted(dates)],
                 'default_date': min(upcoming_dates) if upcoming_dates else None,
-                'odds_api_calls': 0, 'session_picks_enabled': datetime.now(ZoneInfo('Europe/Rome')) >= __import__('nba_session_picks').cutoff_for('2026-11-02')}
+                'odds_api_calls': 0, 'session_picks_enabled': True}
     except Exception:
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
