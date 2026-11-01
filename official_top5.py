@@ -96,7 +96,7 @@ def publish(day, games, now=None):
             if row is None:
                 return None
             job_id, payload, created = row
-            recommendations = payload.get('recommendations') or {}
+            saved_recommendations = payload.get('recommendations') or {}
             valid_rows = []
             for candidate in payload.get('results', []):
                 parts = str(candidate.get('Partita') or '').split(' - ')
@@ -110,7 +110,7 @@ def publish(day, games, now=None):
             single_id = str((single or {}).get('ESPN ID') or (single or {}).get('Giocatore') or '').strip().casefold()
             selections = []
             used = {single_id} if single_id else set()
-            for pick in recommendations.get('lines', []):
+            for pick in saved_recommendations.get('lines', []):
                 parts = str(pick.get('Partita') or '').split(' - ')
                 if len(parts) != 2:
                     continue
