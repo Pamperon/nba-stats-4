@@ -219,7 +219,7 @@ def schedule(date: str):
                 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
                 params={'dates': us_day, 'limit': 100}, timeout=12)
             response.raise_for_status()
-            for event in events:
+            for event in response.json().get('events', []):
                 start = datetime.fromisoformat(event['date'].replace('Z', '+00:00'))
                 rome = start.astimezone(ZoneInfo('Europe/Rome'))
                 if rome.strftime('%Y-%m-%d') != date:
