@@ -828,7 +828,7 @@ def saved_dates():
                 logger.warning('Cannot check ESPN calendar for %s; retaining archived dates', day)
         return {'dates': [{'date': day} for day in sorted(dates)],
                 'default_date': min(upcoming_dates) if upcoming_dates else None,
-                'odds_api_calls': 0, 'session_picks_enabled': True}
+                'odds_api_calls': 0, 'session_picks_enabled': datetime.now(ZoneInfo('Europe/Rome')) >= __import__('nba_session_picks').cutoff_for('2026-11-03')}
     except Exception:
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
