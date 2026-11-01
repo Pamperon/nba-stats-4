@@ -988,3 +988,28 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
  .hub-shell{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
  .hub-shell .back-to-top{bottom:calc(105px + env(safe-area-inset-bottom,0px))}
 }
+
+/* Ultra-slim upcoming games: keep the premium team-gradient identity. */
+.hub-games-section .hub-games-showcase{gap:8px}
+.hub-games-section .hub-premium-fixture{min-height:58px;border-radius:13px!important}
+.hub-games-section .hub-premium-fixture .hub-premium-matchup{grid-template-columns:32px minmax(0,1fr) 32px 10px;min-height:58px;padding:7px 11px;gap:7px}
+.hub-games-section .hub-premium-fixture .hub-premium-logo img{width:32px;height:32px}
+.hub-games-section .hub-premium-fixture .hub-premium-center{gap:2px}
+.hub-games-section .hub-premium-fixture .hub-premium-names{font-size:12px;line-height:1.2}
+.hub-games-section .hub-premium-fixture .hub-premium-timing{font-size:11px;line-height:1.2}
+.hub-games-section .hub-premium-fixture .hub-premium-arrow{font-size:20px}
+@media(min-width:860px){.hub-games-section .hub-premium-fixture .hub-premium-matchup{min-height:64px}}
+@media(max-width:370px){.hub-games-section .hub-premium-fixture .hub-premium-matchup{grid-template-columns:28px minmax(0,1fr) 28px 8px;min-height:56px;padding:6px 8px;gap:5px}.hub-games-section .hub-premium-fixture .hub-premium-logo img{width:28px;height:28px}.hub-games-section .hub-premium-fixture .hub-premium-names{font-size:11px}}
+/* Premium gradients for both upcoming and already played calendar matches. */
+.hub-calendar-games .hub-calendar-gradient{background:linear-gradient(112deg,#143e74 0%,#0b213d 52%,#4b371c 100%);border-color:#496a8c;box-shadow:inset 0 1px #ffffff18,0 4px 16px #020b1838}
+.hub-calendar-games .hub-calendar-gradient[data-theme="1"]{background:linear-gradient(112deg,#302049 0%,#171e3d 52%,#51216c 100%);border-color:#685084}
+.hub-calendar-games .hub-calendar-gradient[data-theme="2"]{background:linear-gradient(112deg,#093d60 0%,#0a1c31 52%,#1c4b75 100%);border-color:#386887}
+.hub-calendar-games .hub-calendar-gradient[data-theme="3"]{background:linear-gradient(112deg,#37283f 0%,#101e36 52%,#52341e 100%);border-color:#715a6a}
+.hub-calendar-games .hub-calendar-gradient:focus-visible{outline:3px solid #ff9d43;outline-offset:3px}
+/* Floating look, flush to the bottom edge without a detached gap. */
+@media(max-width:760px){
+ .hub-mobile-bar{bottom:0;left:0;right:0;width:100%;max-width:none;margin:0;padding:7px 10px calc(7px + env(safe-area-inset-bottom,0px));border-radius:20px 20px 0 0;border-left:0;border-right:0;border-bottom:0}
+ .hub-mobile-bar button{min-height:49px;padding:6px 2px 4px;gap:4px}
+ .hub-mobile-bar button span{font-size:21px}
+ .hub-shell{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+}
