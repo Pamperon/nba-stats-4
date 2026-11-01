@@ -899,3 +899,14 @@ body.hub-match-open .hub-match-player-card .hub-match-all-lines{background:#173b
 body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .wheel-panel{display:none}
 body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .date-control{width:100%}
 body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summary{margin-top:0}
+
+/* NBA fixtures: keep full matchup and Italian tipoff inside narrow mobile cards. */
+.hub-games-showcase,.hub-match-row,.hub-match-teams{min-width:0;max-width:100%;box-sizing:border-box}
+.hub-match-row{flex-wrap:wrap;overflow:hidden}
+.hub-match-row .hub-match-teams{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+.hub-match-row .hub-team{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.hub-match-row .hub-team strong{white-space:normal;overflow-wrap:anywhere}
+.hub-match-row .hub-match-count{flex:1 1 100%;max-width:100%;white-space:normal;font-size:12px;line-height:1.4;text-align:left}
+.hub-calendar-match:disabled,.hub-match-row:disabled{opacity:1;cursor:default}
+.hub-calendar-match .hub-calendar-match-arrow::before{content:none}
+.hub-calendar-match .hub-calendar-match-arrow{white-space:normal;text-align:right;max-width:95%;line-height:1.3}
