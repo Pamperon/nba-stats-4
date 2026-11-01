@@ -281,18 +281,17 @@ function renderMatchPlayers(){
   const header=document.createElement('div');header.className='hub-match-player-identity';
   const info=document.createElement('div');if(/^\d+$/.test(String(group.espnId||''))){const photo=document.createElement('img');photo.className='hub-match-player-photo';photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+group.espnId+'.png';photo.alt='';photo.loading='lazy';photo.onerror=()=>{photo.hidden=true};header.append(photo)}const name=document.createElement('strong');name.textContent=group.name;
   const team=document.createElement('small');team.textContent=group.team||'';info.append(name,team);header.append(info);
-  const stats=document.createElement('button');stats.type='button';stats.className='hub-match-player-stats-link';stats.textContent='Statistiche ↗';stats.onclick=()=>window.BasketLabMatchPlayerStats?.(group.rows[0]);header.append(stats);card.append(header);
+  const stats=document.createElement('button');stats.type='button';stats.className='hub-match-player-stats-link';stats.textContent='Statistiche ›';stats.onclick=()=>window.BasketLabMatchPlayerStats?.(group.rows[0]);header.append(stats);card.append(header);
   const markets=document.createElement('div');markets.className='hub-match-player-markets compact';
   for(const market of ['PTS','REB','AST']){
    const subset=group.rows.filter(row=>row.Mercato===market);
    if(!subset.length)continue;
    const block=document.createElement('div');block.className='hub-match-player-market compact';
    const details=document.createElement('details');details.className='hub-match-odds-dropdown';
-   const summary=document.createElement('summary');const label=document.createElement('span');label.textContent=({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'})[market]+' · '+subset.length+' linee';const chevron=document.createElement('span');chevron.textContent='Apri quote ▾';details.addEventListener('toggle',()=>{chevron.textContent=details.open?'Chiudi quote ▴':'Apri quote ▾'});summary.append(label,chevron);details.append(summary);
+   const summary=document.createElement('summary');const label=document.createElement('span');label.textContent=({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'})[market]+' · '+subset.length+' linee';const chevron=document.createElement('span');chevron.className='hub-match-quote-toggle-label';chevron.textContent='Vedi linee ▾';details.addEventListener('toggle',()=>{chevron.textContent=details.open?'Chiudi ▴':'Vedi linee ▾'});summary.append(label,chevron);details.append(summary);
    const head=document.createElement('div');head.className='hub-match-odds-head';['Linea','Scelta','Quota','Stima'].forEach(text=>{const el=document.createElement('span');el.textContent=text;head.append(el)});details.append(head);
-   const sorted=subset.sort((a,b)=>Number(a.Quota)-Number(b.Quota)||Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)));
+   const sorted=[...subset].sort((a,b)=>Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta))||Number(a.Quota)-Number(b.Quota));
    const visible=sorted.filter(row=>rangeValid&&Number(row.Quota)>=oddMin&&Number(row.Quota)<=oddMax);
-   sorted.sort((a,b)=>(visible.includes(b)?1:0)-(visible.includes(a)?1:0)||Number(a.Quota)-Number(b.Quota)||Number(a.Linea)-Number(b.Linea));
    for(const row of sorted){
     const entry=document.createElement('div');entry.className='hub-match-odds-row';if(rangeValid&& !visible.includes(row))entry.classList.add('hub-match-odds-extra');
     const values=[displayNum(row.Linea),String(row.Scelta||'—').toUpperCase(),displayNum(row.Quota),row['Prob. stimata %']==null||row['Prob. stimata %']===''?'—':displayNum(row['Prob. stimata %'])+'%'];
