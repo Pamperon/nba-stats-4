@@ -106,6 +106,8 @@ def _official_publication_loop():
             day = (now.date() + timedelta(days=offset)).isoformat()
             if not official_top5.eligible_day(day):
                 continue
+            if nba_session_picks.eligible(day):
+                continue
             try:
                 if official_top5.get(day) is not None:
                     continue
