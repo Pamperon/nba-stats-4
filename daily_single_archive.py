@@ -23,17 +23,6 @@ def read(day):
         return {'published': False, 'selection': None, 'outcome': None,
                 'status': 'not_published'}
     selection, outcome, published_at, job_id = record
-    if selection:
-        with storage.connection() as conn:
-            settled = conn.execute(
-                "SELECT report->'daily_single' FROM nba_recommendation_results WHERE snapshot_job_id=%s",
-                (job_id,)
-            ).fetchone()
-        if settled and settled[0]:
-            leg = settled[0]
-            win = leg.get('win')
-            outcome = {'status': 'unresolved' if win is None else 'won' if win else 'lost',
-                       'actual': leg.get('actual')}
     return {'published': selection is not None, 'selection': selection, 'outcome': outcome,
             'published_at': published_at.isoformat(),
             'status': (outcome or {}).get('status', 'unresolved')}
