@@ -1031,11 +1031,12 @@ async function refreshSessionPicks(){
   if(!response.ok)throw new Error('Session picks unavailable');
   const payload=await response.json();
   if(request!==sessionPicksRequest)return;
+  if(!payload||!Array.isArray(payload.recommendations?.lines)||!payload.publication_date)throw new Error('Invalid session payload');
   sessionPicksData=payload;
   if(data)render();
  }catch(error){
   // Preserve the legacy calendar-date view if the new session service fails.
-  if(request===sessionPicksRequest)sessionPicksData=null;
+  if(request===sessionPicksRequest){sessionPicksData=null;if(data)render();}
  }
 }
 refreshSessionPicks();
