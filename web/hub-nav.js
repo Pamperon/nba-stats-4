@@ -310,31 +310,65 @@ $('#hub-match-search')?.addEventListener('input',renderMatchPlayers);
 
 document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b===button));renderMatchPlayers()}));
 $('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;go.home();select('home')});
+let calendarRefreshTimer=null;
+function scheduleCalendarRefresh(){
+ if(!calendar)return;
+ clearTimeout(calendarRefreshTimer);
+ calendarRefreshTimer=setTimeout(()=>{if(calendar)renderCalendar()},100);
+}
 function renderCalendar(){
  const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games'),summary=$('#hub-calendar-day-summary');
  if(!dates||!games)return;
- dates.replaceChildren();games.replaceChildren();
- const source=$('#date-strip');
+ const source=$('#date-strip'),nativeDate=$('#date'),fixture=$('#finder-fixture');
  const dayButtons=[...(source?.querySelectorAll('button')||[])];
- const fixture=$('#finder-fixture');
+ const selectedValue=nativeDate?.value||'';
+ const options=[...(nativeDate?.options||[])].filter(o=>o.value);
+ let index=options.findIndex(o=>o.value===selectedValue);
+ if(index<0||index>=dayButtons.length){
+  index=dayButtons.findIndex(b=>b.getAttribute('aria-selected')==='true'||b.getAttribute('aria-pressed')==='true'||b.classList.contains('active')||b.classList.contains('selected'));
+ }
+ if(index<0)index=0;
  const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
- const current=dayButtons.findIndex(b=>b.classList.contains('active')||b.classList.contains('selected')||b.getAttribute('aria-selected')==='true'||b.getAttribute('aria-pressed')==='true');
- const selectedIndex=current>=0?current:dayButtons.findIndex(b=>b.className.includes('current'));
- const index=selectedIndex>=0?selectedIndex:0;
+ dates.replaceChildren();games.replaceChildren();
  dayButtons.forEach((day,i)=>{
   const button=document.createElement('button');button.type='button';
   const raw=day.textContent.trim();
-  const parsed=raw.match(/(\d{1,2})\s*([a-zà]+)\s*[/·-]?\s*([a-zà]+)/i);
-  if(parsed){const top=document.createElement('strong');top.textContent=parsed[1]+' '+parsed[2];button.append(top);const bottom=document.createElement('small');bottom.textContent=parsed[3];button.append(bottom)}
-  else button.textContent=raw;
+  const dateValue=options[i]?.value||'';
+  if(dateValue&&/^\d{4}-\d{2}-\d{2}$/.test(dateValue)){
+   const parts=dateValue.split('-');
+   const dayNumber=Number(parts[2]);
+   const month=new Intl.DateTimeFormat('it-IT',{month:'short',timeZone:'UTC'}).format(new Date(Date.UTC(Number(parts[0]),Number(parts[1])-1,dayNumber))).replace('.','').toUpperCase();
+   const weekday=new Intl.DateTimeFormat('it-IT',{weekday:'short',timeZone:'UTC'}).format(new Date(Date.UTC(Number(parts[0]),Number(parts[1])-1,dayNumber))).replace('.','').toUpperCase();
+   const top=document.createElement('strong');top.textContent=dayNumber+' '+month;button.append(top);
+   const bottom=document.createElement('small');bottom.textContent=weekday;button.append(bottom);
+  }else button.textContent=raw.replace(/([0-9])([A-ZÀ-Ú])/g,'$1 $2');
   button.className='hub-calendar-date'+(i===index?' active':'');
   button.setAttribute('aria-pressed',String(i===index));
-  button.addEventListener('click',()=>{day.click();setTimeout(renderCalendar,180)});
+  button.addEventListener('click',()=>{
+   if(nativeDate&&dateValue&&nativeDate.value!==dateValue){
+    nativeDate.value=dateValue;nativeDate.dispatchEvent(new Event('change',{bubbles:true}));
+   }else day.click();
+   renderCalendar();
+   setTimeout(scheduleCalendarRefresh,350);
+   setTimeout(scheduleCalendarRefresh,1100);
+  });
   dates.append(button);
  });
- const active=dates.children[index];if(active)active.scrollIntoView({block:'nearest',inline:'nearest'});
- if(summary){const label=dayButtons[index]?.textContent.trim()||'Giornata selezionata';summary.replaceChildren();const title=document.createElement('strong');title.textContent=label;const count=document.createElement('span');count.textContent=matches.length+' '+(matches.length===1?'partita':'partite');summary.append(title,count)}
- if(!matches.length){const empty=document.createElement('div');empty.className='hub-calendar-empty';empty.textContent='Nessuna partita con quote disponibili per questa giornata.';games.append(empty);return}
+ const active=dates.children[index];if(active&&active.getBoundingClientRect().width)active.scrollIntoView({block:'nearest',inline:'nearest'});
+ const loading=$('#date-loading')?.hidden===false||fixture?.disabled;
+ if(summary){
+  const label=options[index]?.textContent.trim()||dayButtons[index]?.textContent.trim()||'Giornata selezionata';
+  summary.replaceChildren();
+  const title=document.createElement('strong');title.textContent=label;
+  const count=document.createElement('span');count.textContent=loading?'Caricamento…':matches.length+' '+(matches.length===1?'partita':'partite');
+  summary.append(title,count)
+ }
+ if(loading){
+  const empty=document.createElement('div');empty.className='hub-calendar-empty';empty.textContent='Caricamento delle partite in corso…';games.append(empty);return
+ }
+ if(!matches.length){
+  const empty=document.createElement('div');empty.className='hub-calendar-empty';empty.textContent='Nessuna partita con quote disponibili per questa giornata.';games.append(empty);return
+ }
  for(const match of matches){
   const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';
   const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
@@ -352,6 +386,11 @@ function renderCalendar(){
   row.addEventListener('click',()=>openMatchQuotes(match));games.append(row)
  }
 }
+$('#date')?.addEventListener('change',()=>{scheduleCalendarRefresh();setTimeout(scheduleCalendarRefresh,500);setTimeout(scheduleCalendarRefresh,1600)});
+const fixtureObserverTarget=$('#finder-fixture');
+if(fixtureObserverTarget)new MutationObserver(scheduleCalendarRefresh).observe(fixtureObserverTarget,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','value','selected']});
+const dayStripTarget=$('#date-strip');
+if(dayStripTarget)new MutationObserver(scheduleCalendarRefresh).observe(dayStripTarget,{childList:true,subtree:true,attributes:true,attributeFilter:['class','aria-selected','aria-pressed']});
 $('#hub-calendar-prev')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:-220,behavior:'smooth'}));
 $('#hub-calendar-next')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:220,behavior:'smooth'}));
 function refreshShowcase(){
