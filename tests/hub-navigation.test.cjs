@@ -59,7 +59,8 @@ test('homepage cards and metrics hide on other destinations',()=>{
 });
 test('category shortcuts target actual pick groups',()=>{
  const {window,doc}=setup();
- assert.equal(doc.querySelectorAll('[data-pick-group]').length,3);
+ assert.equal(doc.querySelectorAll('.hub-sidebar [data-pick-group]').length,3);
+ assert.equal(doc.querySelectorAll('.hub-menu-drawer [data-pick-group]').length,3);
  doc.querySelector('[data-pick-group="doppia"]').click();
  assert.equal(doc.querySelector('.hub-landing').hidden,true);
  window.close();
