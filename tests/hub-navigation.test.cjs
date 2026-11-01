@@ -120,3 +120,13 @@ test('featured cards display separate odds and probability values',async()=>{
  assert.equal(values[1].querySelector('strong').textContent,'67.5%');
  window.close();
 });
+
+test('mobile navigation drawer opens, navigates and closes',()=>{
+ const {window,doc}=setup();
+ const toggle=doc.querySelector('.hub-menu-toggle'),drawer=doc.querySelector('#hub-menu-drawer');
+ assert.ok(toggle);assert.ok(drawer);assert.equal(drawer.hidden,true);
+ toggle.click();assert.equal(drawer.hidden,false);assert.equal(toggle.getAttribute('aria-expanded'),'true');
+ drawer.querySelector('[data-hub="picks"]').click();assert.equal(drawer.hidden,true);assert.equal(doc.body.dataset.hubView,'picks');
+ toggle.click();doc.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(drawer.hidden,true);
+ window.close();
+});
