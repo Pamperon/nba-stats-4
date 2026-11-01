@@ -497,28 +497,24 @@ function refreshShowcase(){
     row.className='hub-match-row hub-premium-fixture';
     row.dataset.theme=String(index%4);
     row.setAttribute('aria-label',match+' · '+fixtureTime(game)+' · Apri dettagli');
-    const matchup=document.createElement('div');
-    matchup.className='hub-premium-matchup';
-    for(const [i,team] of [game.away,game.home].entries()){
-     if(i){const versus=document.createElement('span');versus.className='hub-premium-vs';versus.textContent='VS';matchup.append(versus)}
-     const side=document.createElement('span');side.className='hub-premium-team';
-     const code=matchTeamCodes[team];
-     if(code){
-      const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';
-      logo.alt='';logo.loading='lazy';logo.width=60;logo.height=60;
-      logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)
-     }
-     const name=document.createElement('strong');name.textContent=team||'NBA';side.append(name);
-     matchup.append(side)
+    const matchup=document.createElement('div');matchup.className='hub-premium-matchup';
+    const away=document.createElement('span');away.className='hub-premium-logo';
+    const home=document.createElement('span');home.className='hub-premium-logo';
+    for(const [node,team] of [[away,game.away],[home,game.home]]){
+      const code=matchTeamCodes[team];
+      if(code){const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';logo.alt=team||'';logo.loading='lazy';logo.width=44;logo.height=44;node.append(logo)}
     }
-    const footer=document.createElement('div');footer.className='hub-premium-footer';
-    const timing=document.createElement('span');timing.className='hub-premium-timing';
+    const center=document.createElement('span');center.className='hub-premium-center';
+    const names=document.createElement('strong');names.className='hub-premium-names';
+    const shortName=t=>String(t||'NBA').replace(/^Los Angeles /,'LA ').replace(/^Golden State /,'Golden State ');
+    names.textContent=shortName(game.away)+'  vs  '+shortName(game.home);
     const stamp=new Date(game.start_at);
-    const date=document.createElement('span');date.textContent=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'short'}).format(stamp);
-    const hour=document.createElement('span');hour.textContent=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',hour:'2-digit',minute:'2-digit'}).format(stamp);
-    timing.append(date,hour);
-    const action=document.createElement('span');action.className='hub-premium-action';action.textContent=hasOdds?'Analisi →':'Dettagli →';
-    footer.append(timing,action);row.append(matchup,footer);
+    const dateTime=document.createElement('span');dateTime.className='hub-premium-timing';
+    dateTime.textContent=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(stamp);
+    center.append(names,dateTime);
+    const arrow=document.createElement('span');arrow.className='hub-premium-arrow';arrow.textContent='›';arrow.setAttribute('aria-hidden','true');
+    matchup.append(away,center,home,arrow);
+    row.append(matchup);
     row.addEventListener('click',()=>openFixtureDetails(match));
     games.append(row)
    }
