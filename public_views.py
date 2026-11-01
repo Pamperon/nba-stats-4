@@ -153,6 +153,25 @@ def daily_lines(versions):
     return output
 
 
+def scan_comparison(versions):
+    """Read-only audit of daily Top 5 changes; never changes official picks."""
+    daily = [v for v in versions if v['is_daily']]
+    previous = set()
+    output = []
+    for version in daily:
+        current = [leg_identity(row) for row in version['lines'][:5]]
+        identities = set(current)
+        output.append({
+            'saved_at': version['saved_at'],
+            'count': len(current),
+            'added': len(identities - previous),
+            'removed': len(previous - identities),
+            'changed': bool(previous and identities != previous),
+        })
+        previous = identities
+    return output
+
+
 def history(day):
     with storage.connection() as conn:
         rows = conn.execute("""
@@ -182,6 +201,7 @@ def history(day):
     other = [row for row in lines if leg_identity(row) not in official_ids]
     return {'date': day, 'groups': groups, 'lines': lines,
             'official_lines': official, 'other_lines': other,
+            'scan_comparison': scan_comparison(versions),
             'has_daily_model': first_daily is not None,
             'official_saved_at': first_daily['saved_at'] if first_daily else None,
             'official_summary': {state: sum(line['status'] == state for line in official) for state in ('won', 'lost', 'unresolved')},
