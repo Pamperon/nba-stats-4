@@ -160,6 +160,7 @@ function setMatchTab(tab){
  const analysis=$('#hub-match-analysis'),players=$('#hub-match-player-section');
  if(analysis)analysis.hidden=tab==='players';
  const charts=$('#hub-match-charts');if(charts)charts.hidden=tab==='stats';
+ analysis?.classList.toggle('hub-match-chart-mode',tab==='analysis');
  if(players)players.hidden=tab==='stats';
  if(analysis){
   const title=analysis.querySelector('h3');
