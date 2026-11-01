@@ -241,6 +241,68 @@ def schedule(date: str):
         logger.exception('ESPN schedule unavailable for %s', date)
         raise HTTPException(502, 'Calendario ESPN temporaneamente non disponibile')
 
+_match_form_cache = TTLCache(maxsize=40, ttl=1800)
+
+@app.get('/api/match/form', dependencies=[Depends(auth)])
+def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
+               team_a: str = Query(min_length=2, max_length=80),
+               team_b: str = Query(min_length=2, max_length=80)):
+    """Verified final ESPN scores only; never infers a win probability."""
+    try:
+        target = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        raise HTTPException(400, 'Data non valida')
+    if team_a.casefold() == team_b.casefold():
+        raise HTTPException(400, 'Le squadre devono essere diverse')
+    key = (date, team_a.casefold(), team_b.casefold())
+    if key in _match_form_cache:
+        return _match_form_cache[key]
+    try:
+        # ESPN scoreboard accepts an inclusive dates interval. Keep the sample bounded
+        # to the 21 calendar days preceding the selected matchup, excluding future games.
+        start = (target - timedelta(days=21)).strftime('%Y%m%d')
+        end = (target - timedelta(days=1)).strftime('%Y%m%d')
+        response = requests.get(
+            'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+            params={'dates': start + '-' + end, 'limit': 500}, timeout=15)
+        response.raise_for_status()
+        games = []
+        for event in response.json().get('events', []):
+            if event.get('status', {}).get('type', {}).get('state') != 'post':
+                continue
+            competitors = (event.get('competitions') or [{}])[0].get('competitors') or []
+            if len(competitors) != 2:
+                continue
+            try:
+                score_a, score_b = [int(c.get('score')) for c in competitors]
+                event_date = datetime.fromisoformat(event['date'].replace('Z', '+00:00')).date()
+            except (ValueError, TypeError, KeyError):
+                continue
+            if event_date >= target:
+                continue
+            names = [c.get('team', {}).get('displayName', '') for c in competitors]
+            games.append({'date': event_date.isoformat(), 'teams': names, 'scores': [score_a, score_b], 'id': str(event.get('id', ''))})
+        games.sort(key=lambda g: (g['date'], g['id']), reverse=True)
+        def team_stats(name):
+            sample = [g for g in games if name in g['teams']][:5]
+            wins = sum(g['scores'][g['teams'].index(name)] > g['scores'][1-g['teams'].index(name)] for g in sample)
+            points = [g['scores'][g['teams'].index(name)] for g in sample]
+            return {'team': name, 'games': len(sample), 'wins': wins,
+                    'losses': len(sample)-wins,
+                    'avg_points': round(sum(points)/len(points), 1) if points else None,
+                    'results': [{'date': g['date'], 'opponent': g['teams'][1-g['teams'].index(name)],
+                                 'scored': g['scores'][g['teams'].index(name)],
+                                 'allowed': g['scores'][1-g['teams'].index(name)]} for g in sample]}
+        h2h = [g for g in games if set(g['teams']) == {team_a, team_b}][:5]
+        result = {'source': 'ESPN', 'window_days': 21, 'odds_api_calls': 0,
+                  'teams': [team_stats(team_a), team_stats(team_b)],
+                  'h2h': [{'date': g['date'], 'teams': g['teams'], 'scores': g['scores']} for g in h2h]}
+        _match_form_cache[key] = result
+        return result
+    except requests.RequestException:
+        logger.warning('ESPN historical scoreboard temporarily unavailable', exc_info=True)
+        raise HTTPException(503, 'Risultati storici ESPN temporaneamente non disponibili')
+
 @app.get('/api/fixtures', dependencies=[Depends(auth)])
 def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     try:
