@@ -289,7 +289,7 @@ def nba_publication_session(day: str):
 
 
 @app.get('/api/nba/fixtures')
-def public_nba_fixtures(date: str = Query(..., pattern=r'^\\d{4}-\\d{2}-\\d{2}
+def public_nba_fixtures(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}
 def publication_session(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
     """Read-only session fixture manifest; not yet an official picks endpoint."""
     return nba_publication_session(date)
