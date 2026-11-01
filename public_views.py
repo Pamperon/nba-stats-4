@@ -172,45 +172,56 @@ def scan_comparison(versions):
     return output
 
 
-def progressive_preview(versions, starts, margin_minutes=15):
-    """Research-only candidate ledger; never changes official historical results.
+def progressive_preview(versions, starts, margin_minutes=15, as_of=None):
+    """Read-only deadline-based replay of saved pregame snapshots.
 
-    Only confirms a selection when a scan precedes its ESPN start by the
-    safety margin and the next scan would be too late. Missing starts fail
-    closed. A daily maximum of five distinct athlete/game pairs applies.
+    Select the newest available snapshot before each game's cutoff, never
+    revise a confirmed quote, and do not backfill an unobserved cutoff.
+    Games with unknown starts or deadlines in the future remain unconfirmed.
+    This is research-only and never changes the official archive.
     """
-    from datetime import datetime, timedelta
-    confirmed, seen = [], set()
-    # An absent later scan is not proof that no future scan will arrive.
-    daily = [v for v in versions if v['is_daily']]
-    for index, version in enumerate(daily):
-        at = datetime.fromisoformat(version['saved_at'])
-        next_at = (datetime.fromisoformat(daily[index + 1]['saved_at'])
-                   if index + 1 < len(daily) else None)
-        # Only compare snapshots with a known following scan; the last snapshot
-        # remains provisional until the deadline is actually reached.
-        if next_at is None:
+    from datetime import datetime, timedelta, timezone
+    if as_of is None:
+        as_of = datetime.now(timezone.utc)
+    if as_of.tzinfo is None:
+        raise ValueError("as_of must be timezone-aware")
+    daily = sorted((v for v in versions if v['is_daily']),
+                   key=lambda v: v['saved_at'])
+    candidates = []
+    for fixture, start in starts.items():
+        if isinstance(start, str):
+            start = datetime.fromisoformat(start)
+        if start.tzinfo is None:
             continue
-        for row in version['lines']:
-            if len(confirmed) >= 5:
-                break
-            match = str(row.get('Partita') or '').strip().casefold()
-            start = starts.get(match)
-            if not start:
+        deadline = start - timedelta(minutes=margin_minutes)
+        if deadline > as_of:
+            continue
+        snapshots = [v for v in daily
+                     if datetime.fromisoformat(v['saved_at']).tzinfo is not None
+                     and datetime.fromisoformat(v['saved_at']) < deadline]
+        if not snapshots:
+            continue
+        latest = snapshots[-1]
+        fixture_key = str(fixture).strip().casefold()
+        for row in latest['lines']:
+            if str(row.get('Partita') or '').strip().casefold() != fixture_key:
                 continue
-            if isinstance(start, str):
-                start = datetime.fromisoformat(start)
-            if at.tzinfo is None or start.tzinfo is None:
+            athlete = str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
+            if not athlete:
                 continue
-            deadline = start - timedelta(minutes=margin_minutes)
-            if not at < deadline or next_at < deadline:
-                continue
-            player = str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
-            key = (match, player)
-            if not player or key in seen:
-                continue
-            seen.add(key)
-            confirmed.append({'saved_at': version['saved_at'], 'row': row})
+            candidates.append((deadline, latest['saved_at'], athlete, row))
+    candidates.sort(key=lambda item: (item[0], -float(item[3].get('Prob. stimata %') or 0),
+                                      item[2]))
+    confirmed, seen = [], set()
+    for deadline, saved_at, athlete, row in candidates:
+        key = (str(row.get('Partita') or '').strip().casefold(), athlete)
+        if key in seen:
+            continue
+        seen.add(key)
+        confirmed.append({'saved_at': saved_at, 'confirmed_at': deadline.isoformat(),
+                          'row': row})
+        if len(confirmed) == 5:
+            break
     return confirmed
 
 
