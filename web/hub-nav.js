@@ -15,12 +15,13 @@ const go={
  stats(){ $('#area-stats')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  finder(){ $('#area-quotes')?.click();tab('finder')?.click();$('#quote-tabs')?.scrollIntoView({block:'start',behavior:'smooth'});},
  history(){ $('[data-extra="history"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
- about(){ $('[data-extra="about"]')?.click();window.scrollTo({top:0,behavior:'smooth'});}
+ about(){ $('[data-extra="about"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
+ calendar(){renderCalendar();window.scrollTo({top:0,behavior:'smooth'});}
 };
-let home=true;
+let home=true;let calendar=false;
 function mark(key){document.querySelectorAll('[data-hub]').forEach(el=>{if(el.dataset.hub===key)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')})}
-function display(){const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;if(singleShowcase)singleShowcase.hidden=!home||extra;if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;}
-function select(key){home=key==='home';mark(key);display();document.body.dataset.hubView=key;}
+function display(){const calendarPanel=$('#hub-calendar');if(calendarPanel)calendarPanel.hidden=!calendar;const shell=$('#app');if(shell)shell.hidden=calendar;const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;if(singleShowcase)singleShowcase.hidden=!home||extra;if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;}
+function select(key){calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);display();document.body.dataset.hubView=key;}
 document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
 $('#area-stats')?.addEventListener('click',()=>select('stats'));
@@ -79,6 +80,10 @@ function updateInsights(){
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
 function openMatchQuotes(match){
+ calendar=false;
+ const panel=$('#hub-match-detail');if(panel)panel.hidden=false;
+ const title=$('#hub-match-title');if(title){title.replaceChildren();const teams=match.split(/\\s+-\\s+|\\s+vs\\.?\\s+/i);teams.forEach((team,i)=>{if(i){const vs=document.createElement('b');vs.textContent='VS';title.append(vs)}const name=document.createElement('strong');name.textContent=team;title.append(name)})}
+ document.body.classList.add('hub-match-open');setMatchTab('analysis');
  // Reuse the original complete odds explorer and its saved dataset.
  go.finder();select('finder');
  const fixture=$('#finder-fixture');
@@ -93,6 +98,34 @@ function openMatchQuotes(match){
  if(heading)heading.textContent=resolved?'Quote e linee · '+resolved:'Quote e linee NBA';
  const finder=$('#finder');
  finder?.scrollIntoView({block:'start',behavior:'smooth'});
+}
+function setMatchTab(tab){
+ document.querySelectorAll('[data-match-tab]').forEach(button=>button.classList.toggle('active',button.dataset.matchTab===tab));
+ const analysis=$('#hub-match-analysis');if(analysis)analysis.hidden=tab!=='analysis';
+ if(tab==='stats'){$('#hub-match-analysis').hidden=false;const title=$('#hub-match-analysis h3');if(title)title.textContent='Statistiche partita';}
+ else{const title=$('#hub-match-analysis h3');if(title)title.textContent='Analisi partita'}
+ if(tab==='players')$('#finder-player-search')?.focus();
+}
+document.querySelectorAll('[data-match-tab]').forEach(button=>button.addEventListener('click',()=>setMatchTab(button.dataset.matchTab)));
+$('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;go.home();select('home')});
+function renderCalendar(){
+ const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games');if(!dates||!games)return;
+ dates.replaceChildren();games.replaceChildren();
+ const source=$('#date-strip');
+ const dayButtons=[...(source?.querySelectorAll('button')||[])];
+ for(const day of dayButtons){
+  const button=document.createElement('button');button.type='button';button.textContent=day.textContent.trim();button.className=day.className;
+  button.addEventListener('click',()=>{day.click();setTimeout(renderCalendar,150)});
+  dates.append(button);
+ }
+ const fixture=$('#finder-fixture');
+ const matches=[...(fixture?.options||[])].map(o=>o.value).filter(Boolean);
+ const unique=[...new Set(matches)];
+ if(!unique.length){games.textContent='Nessuna partita con quote disponibili per la giornata selezionata.';return}
+ for(const match of unique){
+  const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';row.textContent=match+' · Analisi e quote ›';
+  row.addEventListener('click',()=>openMatchQuotes(match));games.append(row)
+ }
 }
 function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
