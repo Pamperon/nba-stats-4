@@ -740,3 +740,8 @@ body.hub-match-open .hub-match-form-dots span.lost{background:#d96760}
 body.hub-match-open .hub-match-odds-extra{display:none}
 body.hub-match-open .show-all-lines .hub-match-odds-extra{display:grid}
 body.hub-match-open .hub-match-all-lines{width:100%;padding:11px;background:rgba(45,87,119,.4);border:0;border-top:1px solid rgba(140,180,210,.3);color:#f7b06d;font-size:12px;cursor:pointer}
+
+/* Two-tab matchup layout: analysis includes the former statistics summary */
+body.hub-match-open .hub-match-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.hub-match-open:not(.hub-match-stats-tab) #hub-match-analysis:not([hidden]) #hub-match-market-distribution{display:grid!important}
+body.hub-match-open #hub-match-player-section[hidden],body.hub-match-open #hub-match-analysis[hidden]{display:none!important}
