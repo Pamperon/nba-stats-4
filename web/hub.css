@@ -1013,3 +1013,15 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
  .hub-mobile-bar button span{font-size:21px}
  .hub-shell{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
 }
+
+/* NBA team-specific identity: away left / home right, distinct for every matchup. */
+.hub-calendar-games .hub-calendar-gradient,
+.hub-calendar-games .hub-calendar-gradient[data-theme="1"],
+.hub-calendar-games .hub-calendar-gradient[data-theme="2"],
+.hub-calendar-games .hub-calendar-gradient[data-theme="3"]{
+ background:linear-gradient(108deg,var(--team-away,#183b70) 0%,#10263e 46%,#10263e 54%,var(--team-home,#47315c) 100%)!important;
+ border-color:#4c6885;
+ box-shadow:inset 3px 0 var(--team-away-accent,#6b95bd),inset -3px 0 var(--team-home-accent,#a78abd),0 5px 18px #0004;
+}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-match-arrow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-odds{display:inline-flex;align-items:center;justify-content:center;padding:4px 9px;border-radius:7px;border:1px solid #53bc95;background:#0d4b3cc9;color:#c0ffdf;font-size:11px;font-weight:750;line-height:1.2;white-space:nowrap}
