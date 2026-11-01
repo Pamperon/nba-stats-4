@@ -22,6 +22,23 @@ def row(**overrides):
 
 
 class RiskTests(unittest.TestCase):
+    def test_daily_lines_rank_by_ev_and_deduplicate_athletes(self):
+        lower = row(Giocatore="A", **{"ESPN ID":"1", "Quota":1.8, "Prob. stimata %":75})
+        higher = row(Giocatore="B", **{"ESPN ID":"2", "Quota":2.0, "Prob. stimata %":72})
+        alternate = row(Giocatore="B", **{"ESPN ID":"2", "Quota":1.7, "Prob. stimata %":85})
+        result = recommendations.select_daily([lower, higher, alternate])
+        self.assertEqual(result["policy"], recommendations.DAILY_VERSION)
+        self.assertEqual([item["Giocatore"] for item in result["lines"]], ["B", "A"])
+
+    def test_daily_lines_no_forced_picks_and_settle_exact_line(self):
+        self.assertEqual(recommendations.select_daily([])["lines"], [])
+        original = row()
+        saved = recommendations.select_daily([original])
+        self.assertEqual(len(saved["lines"]), 1)
+        report = recommendations.evaluate(saved, [{**original, "played":True, "actual":11}])
+        self.assertTrue(report["lines"][0]["win"])
+        self.assertEqual(report["lines"][0]["odds"], 1.8)
+
     def test_minutes_filter_excludes_over_without_changing_probability(self):
         risky = row(**{"Minuti ultime 5": 21})  # Passed old 65% threshold.
         self.assertIn("minutaggio in calo", recommendations.rejection_reasons(risky))
