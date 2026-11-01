@@ -316,6 +316,30 @@ function scheduleCalendarRefresh(){
  clearTimeout(calendarRefreshTimer);
  calendarRefreshTimer=setTimeout(()=>{if(calendar)renderCalendar()},100);
 }
+const nbaFixtureCache=new Map();
+async function fetchNbaFixtures(date,session=false){
+ const key=(session?'session:':'date:')+date;
+ if(nbaFixtureCache.has(key))return nbaFixtureCache.get(key);
+ const url=session?'/api/nba/publication-session?date=':'/api/nba/fixtures?date=';
+ const promise=fetch(url+encodeURIComponent(date)).then(r=>{if(!r.ok)throw new Error('ESPN calendar unavailable');return r.json()}).then(d=>d.games||[]).catch(error=>{nbaFixtureCache.delete(key);throw error});
+ nbaFixtureCache.set(key,promise);
+ return promise;
+}
+function italyDay(value){
+ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(value);
+}
+function sessionDay(){
+ const now=new Date(),hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',hour:'2-digit',hourCycle:'h23'}).format(now));
+ if(hour>=12)return italyDay(now);
+ return italyDay(new Date(now.getTime()-12*60*60*1000));
+}
+function fixtureName(game){return String(game.away||'')+' - '+String(game.home||'')}
+function fixtureTime(game){
+ if(!game.start_at)return game.time||'';
+ const start=new Date(game.start_at);
+ return Number.isNaN(start.getTime())?game.time||'':new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(start);
+}
+let calendarRequest=0;
 function renderCalendar(){
  const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games'),summary=$('#hub-calendar-day-summary');
  if(!dates||!games)return;
@@ -329,6 +353,34 @@ function renderCalendar(){
  }
  if(index<0)index=0;
  const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
+ const requestedDate=options[index]?.value||selectedValue;
+ const calendarToken=++calendarRequest;
+ if(requestedDate&&/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDate)){
+  fetchNbaFixtures(requestedDate).then(fixtures=>{
+   if(calendarToken!==calendarRequest||!calendar||($('#date')?.value||'')!==requestedDate)return;
+   const quoted=new Set(matches);
+   games.replaceChildren();
+   if(summary){const count=summary.querySelector('span');if(count)count.textContent=fixtures.length+' '+(fixtures.length===1?'partita':'partite')}
+   if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
+   for(const game of fixtures){
+    const match=fixtureName(game),hasOdds=quoted.has(match);
+    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';
+    const names=[game.away,game.home];
+    names.forEach((team,i)=>{
+     if(i){const vs=document.createElement('span');vs.className='hub-calendar-versus';vs.textContent='VS';row.append(vs)}
+     const side=document.createElement('span');side.className='hub-calendar-team';
+     const code=matchTeamCodes[team];
+     if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';side.append(img)}
+     const label=document.createElement('span');label.textContent=team||'NBA';side.append(label);row.append(side)
+    });
+    const info=document.createElement('span');info.className='hub-calendar-match-arrow';info.textContent=fixtureTime(game)+' · '+(hasOdds?'Quote disponibili':'Quote non disponibili');row.append(info);
+    if(hasOdds){row.addEventListener('click',()=>openMatchQuotes(match));row.setAttribute('aria-label',match+' · Apri quote')}
+    else {row.disabled=true;row.setAttribute('aria-label',match+' · Quote non disponibili')}
+    games.append(row)
+   }
+  }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
+ }
+
  dates.replaceChildren();games.replaceChildren();
  dayButtons.forEach((day,i)=>{
   const button=document.createElement('button');button.type='button';
