@@ -157,3 +157,15 @@ body{background:radial-gradient(ellipse at 75% -10%,#12375b 0%,#0b1220 48%) fixe
 .hub-featured-summary p{margin:0;color:#d4e3f5;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
 .hub-featured-summary p:last-child{font-size:11px;color:#a8dfc2}
 @media(max-width:760px){.hub-featured-summary{grid-template-columns:48px minmax(0,1fr)}.hub-featured-summary img{width:48px;height:60px}}
+
+/* Home is a distinct page; the legacy quote dashboard stays mounted for data loading. */
+body[data-hub-view="home"] .hub-shell #app{display:none!important}
+body[data-hub-view="picks"] .hub-shell #quote-tabs,
+body[data-hub-view="finder"] .hub-shell #quote-tabs,
+body[data-hub-view="stats"] .hub-shell #quote-tabs{display:none!important}
+body[data-hub-view="picks"] .hub-shell #date-area,
+body[data-hub-view="finder"] .hub-shell #date-area{margin-top:15px}
+body[data-hub-view="stats"] .hub-shell #date-area{display:none!important}
+body[data-hub-view="history"] .hub-shell #app,
+body[data-hub-view="about"] .hub-shell #app{display:none!important}
+@media(max-width:760px){body[data-hub-view="home"] .hub-shell #app{display:none!important}}
