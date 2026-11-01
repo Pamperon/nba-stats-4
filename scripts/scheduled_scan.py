@@ -13,9 +13,10 @@ from zoneinfo import ZoneInfo
 BASE = "https://nba-stats-4.onrender.com"
 TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
 ROME = ZoneInfo("Europe/Rome")
-# GitHub and Render recovery checks cover two hours after each Rome-time slot.
+# GitHub and Render recovery checks cover up to two hours after each Rome-time slot.
+# Publication uses only scans completed before 18:00; no scans after publication.
 # Supabase reserves each slot at most once, including after ambiguous failures.
-SLOTS = ((7, 0), (11, 0), (14, 30), (18, 0), (21, 0))
+SLOTS = ((10, 0), (14, 30), (17, 30))
 MAX_DELAY = dt.timedelta(hours=2)
 
 def valid_slot(value):
