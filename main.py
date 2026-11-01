@@ -15,6 +15,7 @@ import scan_tracking
 import audience
 import player_stats
 from cachetools import TTLCache
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 logger = logging.getLogger(__name__)
 
@@ -218,7 +219,7 @@ def schedule(date: str):
                 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
                 params={'dates': us_day, 'limit': 100}, timeout=12)
             response.raise_for_status()
-            for event in response.json().get('events', []):
+            for event in events:
                 start = datetime.fromisoformat(event['date'].replace('Z', '+00:00'))
                 rome = start.astimezone(ZoneInfo('Europe/Rome'))
                 if rome.strftime('%Y-%m-%d') != date:
@@ -242,6 +243,23 @@ def schedule(date: str):
         raise HTTPException(502, 'Calendario ESPN temporaneamente non disponibile')
 
 _match_form_cache = TTLCache(maxsize=40, ttl=1800)
+_match_scoreboard_cache = TTLCache(maxsize=90, ttl=7200)
+_match_scoreboard_lock = threading.RLock()
+
+def _match_daily_events(day):
+    key = day.strftime('%Y%m%d')
+    with _match_scoreboard_lock:
+        if key in _match_scoreboard_cache:
+            return _match_scoreboard_cache[key]
+    response = requests.get(
+        'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+        params={'dates': key}, timeout=9)
+    response.raise_for_status()
+    events = response.json().get('events', [])
+    with _match_scoreboard_lock:
+        _match_scoreboard_cache[key] = events
+    return events
+
 
 @app.get('/api/match/form')
 def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
@@ -258,14 +276,21 @@ def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
     if key in _match_form_cache:
         return _match_form_cache[key]
     try:
-        # ESPN scoreboard accepts an inclusive dates interval. Keep the sample bounded
-        # to the 21 calendar days preceding the selected matchup, excluding future games.
-        start = (target - timedelta(days=21)).strftime('%Y%m%d')
-        end = (target - timedelta(days=1)).strftime('%Y%m%d')
-        response = requests.get(
-            'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-            params={'dates': start + '-' + end, 'limit': 500}, timeout=15)
-        response.raise_for_status()
+        # ESPN rejects a YYYYMMDD-YYYYMMDD range with HTTP 400.
+        # Query supported single-day scoreboards concurrently and cache each day.
+        days = [target - timedelta(days=offset) for offset in range(1, 22)]
+        events = []
+        failed_days = 0
+        with ThreadPoolExecutor(max_workers=7) as pool:
+            futures = {pool.submit(_match_daily_events, day): day for day in days}
+            for future in as_completed(futures):
+                try:
+                    events.extend(future.result())
+                except requests.RequestException:
+                    failed_days += 1
+                    logger.warning('ESPN scoreboard unavailable for %s', futures[future])
+        if failed_days == len(days):
+            raise HTTPException(503, 'Risultati ESPN temporaneamente non disponibili')
         games = []
         for event in response.json().get('events', []):
             if event.get('status', {}).get('type', {}).get('state') != 'post':
