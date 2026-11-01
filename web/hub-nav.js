@@ -124,6 +124,22 @@ function renderMatchCharts(teams,a,b,windowDays,matchOdds){
  const streak=document.createElement('div');streak.className='hub-match-form-streak';teams.forEach((team,i)=>{const group=document.createElement('div');const name=document.createElement('small');name.textContent=team;group.append(name);const dots=document.createElement('div');dots.className='hub-match-form-dots';for(const game of [a,b][i].results||[]){const dot=document.createElement('span');dot.className=game.scored>game.allowed?'won':'lost';dot.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;dot.setAttribute('aria-label',game.scored>game.allowed?'Vittoria':'Sconfitta');dots.append(dot)}group.append(dots);streak.append(group)});area.append(streak);
  const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni. Medie osservate, non punti attesi.';area.append(note);
 }
+function renderMatchH2H(teams,games){
+ const facts=$('#hub-match-analysis .hub-match-facts');
+ if(!facts)return;
+ let widget=$('#hub-match-h2h-chart');
+ if(!widget){widget=document.createElement('div');widget.id='hub-match-h2h-chart';widget.className='hub-match-h2h-chart';facts.insertAdjacentElement('afterend',widget)}
+ widget.replaceChildren();
+ const heading=document.createElement('strong');heading.textContent='Scontri diretti';widget.append(heading);
+ if(!games.length){const empty=document.createElement('p');empty.textContent='Nessuno scontro diretto nel periodo esaminato';widget.append(empty);return}
+ const wins=teams.map(team=>games.filter(game=>{const index=game.teams.indexOf(team);return index>=0&&Number(game.scores[index])>Number(game.scores[1-index])}).length);
+ const names=document.createElement('div');names.className='hub-match-h2h-names';
+ teams.forEach((team,i)=>{const side=document.createElement('span');side.textContent=team+' · '+wins[i];names.append(side)});widget.append(names);
+ const bar=document.createElement('div');bar.className='hub-match-h2h-bar';
+ const colors=teams.map(team=>matchTeamPalette[matchTeamCodes[team]]||'#4388b9');
+ wins.forEach((count,i)=>{const segment=document.createElement('span');segment.style.width=(100*count/games.length)+'%';segment.style.background=colors[i];bar.append(segment)});widget.append(bar);
+ const note=document.createElement('small');note.textContent=games.length+' '+(games.length===1?'partita':'partite')+' negli ultimi 21 giorni';widget.append(note);
+}
 async function loadMatchForm(match){
  const request=++matchFormRequest;
  const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
@@ -159,7 +175,8 @@ async function loadMatchForm(match){
   boxes[1].querySelector('p').textContent='Medie osservate, non previsioni del risultato finale';
   facts[0].querySelector('small').textContent=a.games&&b.games?teams[0]+': '+a.wins+'/'+a.games+' · '+teams[1]+': '+b.wins+'/'+b.games:'Campione storico insufficiente';
   const h2h=data.h2h||[];
-  facts[1].querySelector('small').textContent=h2h.length?h2h.map(g=>g.date+': '+g.teams.map((t,i)=>t+' '+g.scores[i]).join(' – ')+' · Vince '+g.teams[g.scores[0]>g.scores[1]?0:1]).join(' · '):'Nessuno scontro diretto nei '+data.window_days+' giorni esaminati';
+  renderMatchH2H(teams,h2h);
+  facts[1].querySelector('small').textContent=h2h.length?h2h.length+' scontri diretti analizzati':'Nessuno scontro diretto';
   facts[2].querySelector('small').textContent=a.avg_points!=null&&b.avg_points!=null?'Medie segnate: '+a.avg_points+' / '+b.avg_points:'Dati insufficienti';
   if(summary){const delta=a.avg_points!=null&&b.avg_points!=null?Math.abs(Number(a.avg_points)-Number(b.avg_points)).toLocaleString('it-IT',{maximumFractionDigits:1}):null;summary.textContent=(a.wins===b.wins?'Le due squadre hanno lo stesso numero di vittorie recenti.':(a.wins>b.wins?teams[0]:teams[1])+' ha ottenuto più vittorie nelle ultime cinque partite.')+(delta!==null?' '+(Number(a.avg_points)>Number(b.avg_points)?teams[0]:teams[1])+' segna in media '+delta+' punti in più.':'')+' Sono indicatori descrittivi, non una previsione della partita.';}
  }catch(error){
