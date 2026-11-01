@@ -111,13 +111,14 @@ function renderMatchCharts(teams,a,b,windowDays,matchOdds){
  const win=document.createElement('div');win.className='hub-match-compare-column';
  const winTitle=document.createElement('strong');winTitle.className='hub-match-compare-title';winTitle.textContent='Probabilità di vittoria';win.append(winTitle);
  const validOdds=Array.isArray(matchOdds)&&matchOdds.length===2&&matchOdds.every(x=>Number.isFinite(Number(x))&&Number(x)>1);
- if(validOdds){const implied=matchOdds.map(x=>1/Number(x));const total=implied[0]+implied[1];teams.forEach((team,i)=>{const pct=implied[i]/total*100;const row=document.createElement('div');row.className='hub-match-win-row';const heading=document.createElement('div');heading.className='hub-match-win-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';heading.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill';fill.style.width=pct+'%';fill.style.background=colors[i];track.append(fill);row.append(heading,track);win.append(row)});const info=document.createElement('small');info.textContent='Probabilità implicite dalle quote, margine rimosso';win.append(info)}
+ if(validOdds){const implied=matchOdds.map(x=>1/Number(x));const total=implied[0]+implied[1];teams.forEach((team,i)=>{const pct=implied[i]/total*100;const row=document.createElement('div');row.className='hub-match-win-row';const heading=document.createElement('div');heading.className='hub-match-win-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';heading.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill';fill.style.width=pct+'%';fill.style.background=colors[i];track.append(fill);row.append(heading,track);win.append(row)});const info=document.createElement('small');info.textContent='Quote Bet365: '+matchOdds.map((x,i)=>teams[i]+' @'+Number(x).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})).join(' · ')+' · Margine rimosso';win.append(info)}
  else{const unavailable=document.createElement('p');unavailable.className='hub-match-win-unavailable';unavailable.textContent='Quote vincente partita non disponibili';win.append(unavailable);}
  const points=document.createElement('div');points.className='hub-match-compare-column';
  const ptsTitle=document.createElement('strong');ptsTitle.className='hub-match-compare-title';ptsTitle.textContent='Media punti segnati';points.append(ptsTitle);
  teams.forEach((team,i)=>{const row=document.createElement('div');row.className='hub-match-points-row';const name=document.createElement('span');name.textContent=team;const value=document.createElement('b');value.textContent=[a,b][i].avg_points==null?'—':displayNum([a,b][i].avg_points);row.append(name,value);points.append(row)});
  card.append(win,points);area.append(card);
  const form=document.createElement('div');form.className='hub-match-quick-tile';const label=document.createElement('strong');label.textContent='Forma (ultime 5)';const value=document.createElement('span');value.textContent=teams.map((team,i)=>team.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ');form.append(label,value);area.append(form);
+ const streak=document.createElement('div');streak.className='hub-match-form-streak';teams.forEach((team,i)=>{const group=document.createElement('div');const name=document.createElement('small');name.textContent=team;group.append(name);const dots=document.createElement('div');dots.className='hub-match-form-dots';for(const game of [a,b][i].results||[]){const dot=document.createElement('span');dot.className=game.scored>game.allowed?'won':'lost';dot.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;dot.setAttribute('aria-label',game.scored>game.allowed?'Vittoria':'Sconfitta');dots.append(dot)}group.append(dots);streak.append(group)});area.append(streak);
  const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni. Medie osservate, non punti attesi.';area.append(note);
 }
 async function loadMatchForm(match){
@@ -164,6 +165,7 @@ async function loadMatchForm(match){
 function setMatchTab(tab){
  document.querySelectorAll('[data-match-tab]').forEach(button=>{button.classList.toggle('active',button.dataset.matchTab===tab);button.setAttribute('aria-selected',String(button.dataset.matchTab===tab))});
  const analysis=$('#hub-match-analysis'),players=$('#hub-match-player-section');
+ document.body.classList.toggle('hub-match-stats-tab',tab==='stats');
  if(analysis)analysis.hidden=tab==='players';
  const charts=$('#hub-match-charts');if(charts)charts.hidden=tab==='stats';
  analysis?.classList.toggle('hub-match-chart-mode',tab==='analysis');
@@ -174,11 +176,22 @@ function setMatchTab(tab){
    title.textContent='Statistiche delle linee disponibili';
    const rows=window.BasketLabMatchRows?.(activeMatch)||[];
    const markets=['PTS','REB','AST'].map(m=>({market:m,count:rows.filter(row=>row.Mercato===m).length}));
+   let statsPanel=$('#hub-match-market-distribution');
+   if(!statsPanel){statsPanel=document.createElement('div');statsPanel.id='hub-match-market-distribution';statsPanel.className='hub-match-market-distribution';analysis.append(statsPanel)}
+   statsPanel.replaceChildren();
+   const heading=document.createElement('strong');heading.textContent='Distribuzione delle linee per mercato';statsPanel.append(heading);
+   const total=rows.length;
+   const track=document.createElement('div');track.className='hub-match-market-track';
+   for(const m of markets){if(!m.count)continue;const seg=document.createElement('span');seg.className='market-'+m.market.toLowerCase();seg.style.width=(m.count/total*100)+'%';seg.title=m.market+': '+m.count;track.append(seg)}
+   statsPanel.append(track);
+   const legend=document.createElement('div');legend.className='hub-match-market-legend';
+   markets.forEach(m=>{const item=document.createElement('span');item.textContent=m.market+' · '+m.count;legend.append(item)});statsPanel.append(legend);
+   const hint=document.createElement('p');hint.textContent='Conteggio delle linee salvate, non probabilità di successo. Per forma e quote vincente consulta Analisi.';statsPanel.append(hint);
    const boxes=analysis.querySelectorAll('.hub-match-data-block');
    if(boxes[0]){boxes[0].querySelector('small').textContent='Linee analizzate';boxes[0].querySelector('strong').textContent=String(rows.length);boxes[0].querySelector('p').textContent='Linee player props salvate per questa partita.'}
    if(boxes[1]){boxes[1].querySelector('small').textContent='Mercati disponibili';boxes[1].querySelector('strong').textContent=markets.filter(m=>m.count).length+' su 3';boxes[1].querySelector('p').textContent=markets.map(m=>m.market+': '+m.count).join(' · ')}
   }else{
-   title.innerHTML='<span class="hub-accent-icon">▥</span> Analisi partita';
+   title.textContent='Analisi partita';
    const boxes=analysis.querySelectorAll('.hub-match-data-block');
    if(boxes[0]){boxes[0].querySelector('small').textContent='Probabilità di vittoria';boxes[0].querySelector('strong').textContent='Non disponibile';boxes[0].querySelector('p').textContent='Non viene calcolata dal modello player props.'}
    if(boxes[1]){boxes[1].querySelector('small').textContent='Punti attesi';boxes[1].querySelector('strong').textContent='Non disponibili';boxes[1].querySelector('p').textContent='Serve un modello dedicato ai punteggi di squadra.'}
@@ -220,11 +233,14 @@ function renderMatchPlayers(){
    const details=document.createElement('details');details.className='hub-match-odds-dropdown';
    const summary=document.createElement('summary');const label=document.createElement('span');label.textContent=({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'})[market]+' · '+subset.length+' linee';const chevron=document.createElement('span');chevron.textContent='Apri quote ⌄';summary.append(label,chevron);details.append(summary);
    const head=document.createElement('div');head.className='hub-match-odds-head';['Linea','Scelta','Quota','Stima'].forEach(text=>{const el=document.createElement('span');el.textContent=text;head.append(el)});details.append(head);
-   for(const row of subset.sort((a,b)=>Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)))){
-    const entry=document.createElement('div');entry.className='hub-match-odds-row';
+   const sorted=subset.sort((a,b)=>Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)));
+   const visible=sorted.filter(row=>Number(row.Quota)>=1.2&&Number(row.Quota)<=2.2);
+   for(const row of sorted){
+    const entry=document.createElement('div');entry.className='hub-match-odds-row';if(visible.length&& !visible.includes(row))entry.classList.add('hub-match-odds-extra');
     const values=[displayNum(row.Linea),String(row.Scelta||'—').toUpperCase(),displayNum(row.Quota),row['Prob. stimata %']==null||row['Prob. stimata %']===''?'—':displayNum(row['Prob. stimata %'])+'%'];
     values.forEach((value,i)=>{const cell=document.createElement('span');cell.textContent=value;if(i===2)cell.className='hub-match-odds-price';if(i===3)cell.className='hub-match-odds-prob';entry.append(cell)});details.append(entry);
    }
+   if(visible.length&&visible.length<sorted.length){const toggle=document.createElement('button');toggle.type='button';toggle.className='hub-match-all-lines';toggle.textContent='Mostra tutte le '+sorted.length+' linee';toggle.onclick=()=>{const expanded=details.classList.toggle('show-all-lines');toggle.textContent=expanded?'Mostra solo quote 1,20–2,20':'Mostra tutte le '+sorted.length+' linee'};details.append(toggle)}
    block.append(details);markets.append(block);
   }
   card.append(markets);list.append(card);
