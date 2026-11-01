@@ -27,8 +27,8 @@ if(location.hash==='#archivio')select('history');else if(location.hash==='#come-
 const metricTarget=$('#metrics'),updated=$('#quote-updated');
 function refresh(){
  const count=$('#hub-total'),prob=$('#hub-prob'),last=$('#hub-update');
- const text=(metricTarget?.textContent||'').replace(/\\s+/g,' ').trim();
- const numbers=text.match(/\\d+(?:[.,]\\d+)?%/g);
+ const text=(metricTarget?.textContent||'').replace(/\s+/g,' ').trim();
+ const numbers=text.match(/\d+(?:[.,]\d+)?%/g);
  if(prob)prob.textContent=numbers?.[0]||'—';
  const picks=$('#picks');
  const cards=picks?.querySelectorAll('article').length||0;
