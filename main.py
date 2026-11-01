@@ -280,7 +280,7 @@ def do_scan(job_id, date):
         finally:
             for row in rows:
                 row.pop('_shadow_probabilities', None)
-        saved_recommendations = recommendations.select(rows)
+        saved_recommendations = recommendations.select_daily(rows)
         serialized_logs = {}
         for name, log in logs.items():
             records=log.copy();records['GAME_DATE']=records['GAME_DATE'].dt.strftime('%Y-%m-%d')
