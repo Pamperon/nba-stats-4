@@ -27,10 +27,9 @@ if(location.hash==='#archivio')select('history');else if(location.hash==='#come-
 const metricTarget=$('#metrics'),updated=$('#quote-updated');
 function refresh(){
  const count=$('#hub-total'),prob=$('#hub-prob'),last=$('#hub-update');
- const text=(metricTarget?.textContent||'').replace(/\s+/g,' ').trim();
- const numbers=text.match(/\d+(?:[.,]\d+)?%/g);
- if(prob)prob.textContent=numbers?.[0]||'—';
  const picks=$('#picks');
+ const percentages=[...(picks?.querySelectorAll('.pick-values')||[])].map(el=>{const m=el.textContent.match(/STIMA DEL MODELLO\s*(\d+(?:[.,]\d+)?)%/);return m?Number(m[1].replace(',','.')):NaN}).filter(Number.isFinite);
+ if(prob)prob.textContent=percentages.length?(percentages.reduce((a,b)=>a+b,0)/percentages.length).toLocaleString('it-IT',{maximumFractionDigits:1})+'%':'—';
  const cards=picks?.querySelectorAll('.pick-selection').length||0;
  if(count)count.textContent=cards?String(cards):'—';
  if(last)last.textContent=(updated?.textContent||'').trim().slice(0,26)||'—';
@@ -46,9 +45,12 @@ function featuredPicks(){
  list.replaceChildren();
  for(const source of sources){
   const card=document.createElement('div');card.className='hub-featured-card';
-  const content=source.cloneNode(true);
-  content.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
-  card.append(content);
+  const content=document.createElement('div');content.className='hub-featured-summary';
+  const name=document.createElement('strong');name.textContent=source.querySelector('.pick-player-link')?.textContent||'Analisi NBA';
+  const market=document.createElement('p');market.textContent=source.querySelector('.pick-market')?.textContent||'';
+  const values=document.createElement('p');values.textContent=(source.querySelector('.pick-values')?.textContent||'').replace(/\s+/g,' ').trim();
+  const avatar=source.querySelector('.pick-avatar img');if(avatar){const img=document.createElement('img');img.src=avatar.src;img.alt='';img.loading='lazy';content.append(img)}
+  content.append(name,market,values);card.append(content);
   const action=document.createElement('button');action.type='button';action.textContent='Apri statistiche →';
   action.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
   card.append(action);list.append(card);
