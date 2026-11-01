@@ -759,3 +759,8 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 .player-game-detail dt{font-size:11px;color:#a8bdd8;margin-bottom:4px}
 .player-game-detail dd{font-size:13px;margin:0;overflow-wrap:anywhere}
 .player-game-result{font-size:13px;color:#e8effa;border-top:1px solid #304866;margin:12px 0 0;padding-top:10px;overflow-wrap:anywhere}
+
+/* Native calendar picker: mobile-friendly and consistent with Basket Lab dark theme. */
+#history-date{color-scheme:dark;min-height:44px;max-width:230px;padding:10px 12px;background:#13243b;color:#f2f6fc;border:1px solid #46617e;border-radius:10px;font:inherit}
+#history-date:focus-visible{outline:2px solid #fa9148;outline-offset:2px}
+#history-date-hint{display:block;margin-top:6px}
