@@ -4,7 +4,7 @@ function setArchiveStatus(message,kind='info'){
  status.hidden=kind==='info';
  status.setAttribute('role',kind==='error'?'alert':'status');
 }
-const $=id=>document.getElementById(id);let data=null;const dbName='nba-stats-4-local-results';
+const $=id=>document.getElementById(id);let data=null;let sessionPicksData=null;const dbName='nba-stats-4-local-results';
 function scanDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window))return reject(new Error('Archivio browser non disponibile'));const r=indexedDB.open(dbName,1);r.onupgradeneeded=()=>r.result.createObjectStore('scans');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
 async function readLocalScan(date){const db=await scanDB();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('scans','readonly');const r=tx.objectStore('scans').get(date);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}finally{db.close()}}
 function updatedStatus(snapshot,local=false){
@@ -49,7 +49,7 @@ function syncArea(tab){
 $('area-quotes').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="'+lastQuoteTab+'"]').click();};
 $('area-stats').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="player"]').click();};
 $('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});if(!restoreQuotePosition(returnOrigin))returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='player')rememberQuotePosition(document.querySelector('nav button.active')?.dataset.tab);document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=b.dataset.tab==='player';if(b.dataset.tab!=='player')restoreQuotePosition(b.dataset.tab);else window.scrollTo({top:0,behavior:'instant'});});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='dashboard')refreshSessionPicks();if(b.dataset.tab==='player')rememberQuotePosition(document.querySelector('nav button.active')?.dataset.tab);document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=b.dataset.tab==='player';if(b.dataset.tab!=='player')restoreQuotePosition(b.dataset.tab);else window.scrollTo({top:0,behavior:'instant'});});
 function visibleDates(){
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  return Array.from($('date').options).map(o=>o.value).filter(d=>d&&d>=today);
@@ -366,7 +366,7 @@ function render(){
  const request=++pickProfileRequest;
  const summary=$('quote-summary');
  summary.hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
- renderDateMetrics(data);
+ renderDateMetrics(sessionPicksData&&document.querySelector('nav button.active')?.dataset.tab==='dashboard'?sessionPicksData:data);
  if(data){
   const saved=data.saved_at?new Date(data.saved_at):null;
   const valid=saved&&!Number.isNaN(saved.getTime());
@@ -380,21 +380,22 @@ function render(){
  }
  const rows=data.results||[];
 
+ const pickSource=sessionPicksData||data;
  const pending=[];
- if(Array.isArray(data.recommendations?.lines)){
-  const chosen=data.recommendations.lines; // Official picks are frozen at publication.
-  const isFixed=data.recommendations.policy==='fixed-1800-v1';
-  const pendingPublication=isFixed && data.official_top5_pending;
-  const targetDay=String(data.date||$('date')?.value||'');
+ if(Array.isArray(pickSource.recommendations?.lines)){
+  const chosen=pickSource.recommendations.lines; // Official picks are frozen at publication.
+  const isFixed=pickSource.recommendations.policy==='fixed-1800-v1';
+  const pendingPublication=isFixed && pickSource.official_top5_pending;
+  const targetDay=String(pickSource.date||$('date')?.value||'');
   const publicationNotice='Le Top 5 ufficiali del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
   const featured=chosen.slice(0,5),remaining=chosen.slice(5);
-  const preliminary=pendingPublication&&Array.isArray(data.preliminary_top5)?data.preliminary_top5.slice(0,5):[];
+  const preliminary=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,5):[];
   const preliminaryHtml=pendingPublication
     ?'<section class="panel pick-group pick-group-daily" aria-label="Analisi preliminari"><div class="pick-group-heading"><h2>Analisi preliminari</h2></div>'+
       '<p>In valutazione · aggiornate all’ultima scansione. Possono cambiare e non sono Top 5 ufficiali.</p>'+
       (preliminary.length?'<div class="pick-group-items">'+preliminary.map(pickCard).join('')+'</div>':'<p>Nessuna analisi preliminare idonea disponibile al momento.</p>')+'</section>'
     :'';
-  const singlePick=pendingPublication?data.preliminary_single:data.official_single;
+  const singlePick=pendingPublication?pickSource.preliminary_single:pickSource.official_single;
   const singleHeading=pendingPublication?'Singola preliminare':'Singola del giorno';
   const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno"><div class="pick-group-heading"><h2>'+singleHeading+'</h2></div>'+
     (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
@@ -1013,6 +1014,9 @@ async function initializeArchive(){
  try {
   const response=await api('/api/saved/dates');
   const payload=await response.json();
+  sessionPicksEnabled=payload.session_picks_enabled===true;
+  document.body.classList.toggle('session-picks-enabled',sessionPicksEnabled);
+  if(sessionPicksEnabled)refreshSessionPicks();
   const dates=(payload.dates||[]).map(item=>item.date);
   $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
   if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();setArchiveStatus('Nessuna analisi archiviata','notice');return;}
@@ -1022,6 +1026,25 @@ async function initializeArchive(){
   $('date').dispatchEvent(new Event('change',{bubbles:true}));
  }catch(error){setArchiveStatus('Archivio temporaneamente non disponibile · riprova più tardi','error');}
 }
+let sessionPicksRequest=0;
+let sessionPicksEnabled=false;
+async function refreshSessionPicks(){
+ if(!sessionPicksEnabled)return;
+ const request=++sessionPicksRequest;
+ try{
+  const response=await api('/api/picks/session');
+  if(!response.ok)throw new Error('Session picks unavailable');
+  const payload=await response.json();
+  if(request!==sessionPicksRequest)return;
+  if(!payload||!Array.isArray(payload.recommendations?.lines)||!payload.publication_date)throw new Error('Invalid session payload');
+  sessionPicksData=payload;
+  if(data)render();
+ }catch(error){
+  // Preserve the legacy calendar-date view if the new session service fails.
+  if(request===sessionPicksRequest){sessionPicksData=null;if(data)render();}
+ }
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSessionPicks()});
 initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
 
