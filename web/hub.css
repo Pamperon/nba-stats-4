@@ -628,3 +628,15 @@ body.hub-match-open .hub-match-chart-note{grid-column:1/-1;font-size:10px;line-h
 body.hub-match-open .hub-match-summary{padding:12px 14px;border-radius:13px}
 body.hub-match-open .hub-match-summary p{font-size:12px;line-height:1.45;margin:5px 0 0}
 @media(max-width:380px){body.hub-match-open .hub-match-analysis.hub-match-chart-mode{padding:11px}body.hub-match-open .hub-match-chart-card{padding:9px}body.hub-match-open .hub-match-chart-label{font-size:10px}body.hub-match-open .hub-match-chart-label b{font-size:12px}}
+
+/* Matchday reference polish: compact verified H2H and summary */
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts{display:grid;grid-template-columns:1fr;margin:0 0 10px;gap:0}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts>div{display:none}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts>div:nth-child(2){display:flex;align-items:center;gap:10px;min-height:0;padding:10px 13px;border:1px solid #345c78;border-radius:12px;background:#102f47}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts>div:nth-child(2)>span{font-size:22px;color:#ff972d}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts>div:nth-child(2)>strong{font-size:12px;white-space:nowrap}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts>div:nth-child(2)>small{font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-summary{display:flex;align-items:flex-start;gap:12px;background:linear-gradient(120deg,#322b2b,#202a35);border:1px solid #e28a30}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-summary>span{font-size:25px;color:#ffad3f}
+body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-summary strong{font-size:16px}
+@media(max-width:420px){body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts>div:nth-child(2){flex-wrap:wrap;gap:5px 9px}body.hub-match-open .hub-match-analysis.hub-match-chart-mode .hub-match-facts>div:nth-child(2)>small{flex-basis:100%}}
