@@ -182,3 +182,6 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
 .hub-game:last-child,.hub-trend:last-child{border-bottom:0}
 .hub-trend strong{color:#83ddb5;font-size:17px}
 @media(max-width:760px){.hub-insights{grid-template-columns:1fr;gap:9px}.hub-insight-panel{padding:12px}.hub-insight-title h2{font-size:15px}}
+
+/* Legacy area switch remains in the DOM for existing navigation logic, but the A+C navigation replaces its visual UI. */
+.primary-nav-wrap{display:none!important}
