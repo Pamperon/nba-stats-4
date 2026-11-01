@@ -185,3 +185,56 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
 
 /* Legacy area switch remains in the DOM for existing navigation logic, but the A+C navigation replaces its visual UI. */
 .primary-nav-wrap{display:none!important}
+
+/* Mobile Home 2.0 — stronger editorial hierarchy and sport-first player cards. */
+.hub-featured-summary{grid-template-columns:76px minmax(0,1fr);column-gap:15px;row-gap:6px;align-items:start}
+.hub-featured-summary img{width:76px;height:102px;grid-row:span 3;object-fit:contain;object-position:bottom;background:radial-gradient(circle at 50% 85%,#345b7d,#0a2035 70%);border-radius:11px}
+.hub-featured-summary>strong{font-size:18px;letter-spacing:-.3px}
+.hub-featured-summary>p{font-size:13px;color:#c9d9ec}
+.hub-featured-values{display:flex;gap:10px;flex-wrap:wrap;margin-top:5px}
+.hub-featured-value{display:flex;flex-direction:column;gap:3px;background:#081c31;border:1px solid #365e7f;border-radius:9px;padding:8px 12px;min-width:90px}
+.hub-featured-value small{font-size:10px;color:#a9c2db;letter-spacing:.3px;text-transform:uppercase}
+.hub-featured-value strong{font-size:19px;color:#fff}
+.hub-featured-value:last-child strong{color:#87e4b5}
+.hub-featured-card>button{background:transparent;color:#ffae69;border:1px solid #8d664b;padding:9px 12px;border-radius:8px;font-size:12px}
+.hub-featured-card{background:linear-gradient(120deg,#183a58,#0a1a2d);border-color:#426b8d}
+@media(max-width:760px){
+ .hub-shell{padding-left:12px;padding-right:12px}
+ .hub-landing{min-height:225px;margin:6px 0 12px;background:radial-gradient(circle at 90% 30%,#285d89aa,transparent 55%),linear-gradient(115deg,#071525,#112e4a)}
+ .hub-landing-inner{padding:19px 17px;max-width:100%}
+ .hub-landing h1{font-size:clamp(25px,6.7vw,32px);max-width:275px;line-height:1.12}
+ .hub-landing p{max-width:225px;line-height:1.45;font-size:12px}
+ .hub-quick{margin-top:13px;gap:8px}
+ .hub-quick button{font-size:12px;min-height:38px;padding:8px 12px}
+ .hub-hero-art{inset:0 0 0 50%;opacity:.8}
+ .hub-ball{width:145px;right:-45px;bottom:-55px}
+ .hub-live-metrics{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px}
+ .hub-live-metrics::-webkit-scrollbar{display:none}
+ .hub-live-metric{flex:1 0 0;min-width:0;min-height:62px;padding:9px 10px;grid-template-columns:22px minmax(0,1fr);border-radius:11px}
+ .hub-live-metric:nth-child(3),.hub-live-metric:nth-child(4){display:none}
+ .hub-live-metric>span{font-size:18px}
+ .hub-live-metric strong{font-size:21px}
+ .hub-live-metric small{font-size:10px}
+ .hub-tiles{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:23px}
+ .hub-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;min-height:78px;padding:8px 3px;border-radius:11px}
+ .hub-tile-icon{font-size:20px;line-height:1;margin:0}
+ .hub-tile strong{font-size:10px;line-height:1.2}
+ .hub-tile small,.hub-tile-arrow{display:none}
+ .hub-featured{margin-top:8px}
+ .hub-featured-heading{margin-bottom:13px}
+ .hub-featured-heading h2{font-size:18px}
+ .hub-featured-heading button{font-size:11px;max-width:115px;text-align:right}
+ .hub-featured-card{padding:14px 13px;border-radius:15px}
+ .hub-featured-summary{grid-template-columns:86px minmax(0,1fr);column-gap:12px;row-gap:7px}
+ .hub-featured-summary img{width:86px;height:125px;grid-row:span 3;align-self:stretch}
+ .hub-featured-summary>strong{font-size:19px}
+ .hub-featured-summary>p{font-size:13px}
+ .hub-featured-values{gap:7px}
+ .hub-featured-value{min-width:75px;padding:7px 9px}
+ .hub-featured-value strong{font-size:18px}
+ .hub-featured-card>button{margin-top:12px;width:100%;min-height:38px}
+ .hub-mobile-bar{padding:4px 8px calc(4px + env(safe-area-inset-bottom,0px))}
+ .hub-mobile-bar button{padding:4px 0;gap:1px}
+ .hub-mobile-bar button span{font-size:19px}
+}
+@media(max-width:390px){.hub-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}.hub-tile strong{font-size:9px}.hub-featured-summary{grid-template-columns:70px minmax(0,1fr)}.hub-featured-summary img{width:70px;height:110px}.hub-featured-value{min-width:65px;padding:6px}}
