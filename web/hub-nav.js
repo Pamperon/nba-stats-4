@@ -122,7 +122,7 @@ function renderMatchCharts(teams,a,b,windowDays,matchOdds){
  card.append(win,points);area.append(card);
  const form=document.createElement('div');form.className='hub-match-quick-tile';const label=document.createElement('strong');label.textContent='Forma (ultime 5)';const value=document.createElement('span');value.textContent=teams.map((team,i)=>team.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ');form.append(label,value);area.append(form);
  const streak=document.createElement('div');streak.className='hub-match-form-streak';teams.forEach((team,i)=>{const group=document.createElement('div');const name=document.createElement('small');name.textContent=team;group.append(name);const dots=document.createElement('div');dots.className='hub-match-form-dots';for(const game of [a,b][i].results||[]){const dot=document.createElement('span');dot.className=game.scored>game.allowed?'won':'lost';dot.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;dot.setAttribute('aria-label',game.scored>game.allowed?'Vittoria':'Sconfitta');dots.append(dot)}group.append(dots);streak.append(group)});area.append(streak);
- const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni. Medie osservate, non punti attesi.';area.append(note);
+
 }
 function renderMatchH2H(teams,games){
  const facts=$('#hub-match-analysis .hub-match-facts');
@@ -178,7 +178,26 @@ async function loadMatchForm(match){
   renderMatchH2H(teams,h2h);
   facts[1].querySelector('small').textContent=h2h.length?h2h.length+' scontri diretti analizzati':'Nessuno scontro diretto';
   facts[2].querySelector('small').textContent=a.avg_points!=null&&b.avg_points!=null?'Medie segnate: '+a.avg_points+' / '+b.avg_points:'Dati insufficienti';
-  if(summary){const delta=a.avg_points!=null&&b.avg_points!=null?Math.abs(Number(a.avg_points)-Number(b.avg_points)).toLocaleString('it-IT',{maximumFractionDigits:1}):null;summary.textContent=(a.wins===b.wins?'Le due squadre hanno lo stesso numero di vittorie recenti.':(a.wins>b.wins?teams[0]:teams[1])+' ha ottenuto più vittorie nelle ultime cinque partite.')+(delta!==null?' '+(Number(a.avg_points)>Number(b.avg_points)?teams[0]:teams[1])+' segna in media '+delta+' punti in più.':'')+' Sono indicatori descrittivi, non una previsione della partita.';}
+  if(summary){
+   const lines=[];
+   const gamesA=Number(a.games)||0,gamesB=Number(b.games)||0;
+   const winsA=Number(a.wins)||0,winsB=Number(b.wins)||0;
+   if(gamesA&&gamesB){
+    if(winsA===winsB)lines.push('Forma recente equilibrata: '+winsA+' vittorie a testa nelle gare disponibili.');
+    else{const leader=winsA>winsB?0:1;lines.push(teams[leader]+' ha un bilancio recente migliore ('+winsA+'-'+(gamesA-winsA)+' contro '+winsB+'-'+(gamesB-winsB)+' in ordine '+teams[0]+' / '+teams[1]+').')}
+   }else lines.push('Forma recente: campione insufficiente per confrontare le squadre.');
+   if(a.avg_points!=null&&b.avg_points!=null){
+    const diff=Math.abs(Number(a.avg_points)-Number(b.avg_points));
+    if(diff<0.05)lines.push('Le medie punti segnati sono sostanzialmente uguali.');
+    else lines.push(teams[Number(a.avg_points)>Number(b.avg_points)?0:1]+' segna in media '+diff.toLocaleString('it-IT',{maximumFractionDigits:1})+' punti in più nelle gare osservate.');
+   }
+   if(h2h.length){
+    const h2hWins=teams.map(team=>h2h.filter(game=>{const index=game.teams.indexOf(team);return index>=0&&Number(game.scores[index])>Number(game.scores[1-index])}).length);
+    if(h2hWins[0]!==h2hWins[1])lines.push('Scontri diretti nel periodo: '+teams[h2hWins[0]>h2hWins[1]?0:1]+' avanti '+Math.max(...h2hWins)+'-'+Math.min(...h2hWins)+'.');
+    else lines.push('Scontri diretti nel periodo: parità '+h2hWins[0]+'-'+h2hWins[1]+'.');
+   }
+   summary.textContent=lines.join(' ')+' Dati descrittivi, non una previsione del risultato.';
+  }
  }catch(error){
   if(request!==matchFormRequest)return;
   $('#hub-match-charts')?.replaceChildren();
@@ -214,7 +233,6 @@ function setMatchTab(tab){
  if(players)players.hidden=tab!=='players';
  const charts=$('#hub-match-charts');if(charts)charts.hidden=false;
  if(tab==='analysis'){
-  const title=analysis?.querySelector('h3');if(title)title.textContent='Analisi partita';
   renderMatchMarketStats();
   if(activeMatch)loadMatchForm(activeMatch);
  }else{renderMatchPlayers();players?.scrollIntoView({block:'nearest',behavior:'smooth'})}
