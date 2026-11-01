@@ -924,6 +924,14 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
                 result['official_lines'] = []
                 result['official_summary'] = {status: 0 for status in ('won','lost','unresolved')}
                 result['has_daily_model'] = False
+        # New category remains separate from existing historical Top 5.
+        # No backfilling: only explicitly published singles count.
+        import daily_single_archive
+        result['single_archive'] = daily_single_archive.read(date)
+        result['top5_archive'] = {
+            'lines': result.get('official_lines', []),
+            'summary': result.get('official_summary', {}),
+        }
         return result
     except Exception:
         logger.exception('Cannot read public recommendation archive')
