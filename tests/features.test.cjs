@@ -68,6 +68,26 @@ test('archive displays all distinct daily tickets without a scan selector or inv
  }finally{dom.window.close();}
 });
 
+test('archive ROI and mean odds exclude unresolved lines and Brier uses saved probabilities',async()=>{
+ const samples=[
+  {...line('A',1.25), 'Prob. stimata %':80},
+  {...line('B',1.8), 'Prob. stimata %':70},
+  {...line('C',1.8,'lost'),actual:10,win:false},
+  {...line('D',9,'unresolved'),'Prob. stimata %':99}
+ ];
+ const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',lines:samples}:base(url)));
+ try{
+  await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
+  const values=Array.from(d.querySelectorAll('#history-summary>div')).map(node=>[node.querySelector('span').textContent,node.querySelector('strong').textContent]);
+  const metric=Object.fromEntries(values);
+  assert.equal(metric['Successo'],'66,7%');
+  assert.equal(metric['ROI teorico'],'-5,0%');
+  assert.equal(metric['Quota media'],'1,62');
+  assert.equal(metric['Brier Score'],'0,230');
+  assert.equal(metric['Da verificare'],'1');
+ }finally{dom.window.close();}
+});
+
 test('missing archive and request errors have retryable empty states',async()=>{
  for(const failed of [false,true]){
   const dom=app(async url=>url==='/api/history/dates'?(failed?{ok:false,status:503}:response({dates:[]})):response(base(url)));
