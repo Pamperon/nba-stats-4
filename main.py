@@ -464,6 +464,13 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
             visible['preliminary_single'] = None
         visible['official_single'] = single.get('selection') if single.get('published') else None
         visible['official_single_pending'] = official is None
+        if official is None and visible.get('preliminary_single'):
+            single_id = str(visible['preliminary_single'].get('ESPN ID') or
+                            visible['preliminary_single'].get('Giocatore') or '').strip().casefold()
+            visible['preliminary_top5'] = [
+                pick for pick in visible['preliminary_top5']
+                if str(pick.get('ESPN ID') or pick.get('Giocatore') or '').strip().casefold() != single_id
+            ][:5]
     return visible
 
 @app.get('/api/saved/archive')
