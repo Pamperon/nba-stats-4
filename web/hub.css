@@ -774,3 +774,9 @@ body.hub-match-open .hub-match-h2h-chart>small,body.hub-match-open .hub-match-h2
 body.hub-match-open .hub-match-market-distribution{gap:10px;padding:14px}
 body.hub-match-open .hub-match-market-distribution>p{font-size:12px}
 body.hub-match-open .hub-match-market-legend{justify-content:space-between;gap:8px}
+
+/* Remove redundant analysis furniture: the active tab and H2H chart carry the labels */
+body.hub-match-open #hub-match-analysis>h3{display:none!important}
+body.hub-match-open #hub-match-analysis .hub-match-chart-note{display:none!important}
+body.hub-match-open #hub-match-analysis .hub-match-facts{display:none!important}
+body.hub-match-open #hub-match-analysis .hub-match-summary p{font-size:13px;line-height:1.55;color:#d6e2eb}
