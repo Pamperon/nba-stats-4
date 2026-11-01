@@ -399,9 +399,9 @@ function renderCalendar(){
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
     const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);
     const state=document.createElement('span');state.className='hub-calendar-state';state.textContent=game.upcoming?'Da giocare':(game.status||'In corso / conclusa');
-    info.append(time,state);
-    if(hasOdds){const odds=document.createElement('span');odds.className='hub-calendar-odds';odds.textContent='Quote disponibili';info.append(odds)}
-    row.append(info);
+    if(hasOdds){const odds=document.createElement('span');odds.className='hub-calendar-odds';odds.textContent='Quote disponibili';row.append(odds)}
+    row.append(state);
+    info.append(time);row.append(info);
     row.addEventListener('click',()=>openFixtureDetails(match));row.setAttribute('aria-label',match+' · Apri dettagli partita');
     games.append(row)
    }
@@ -507,6 +507,7 @@ function refreshShowcase(){
     row.type='button';
     row.className='hub-match-row hub-premium-fixture';
     row.dataset.theme=String(index%4);
+    fixtureTeamGradient(row,game.away,game.home);
     row.setAttribute('aria-label',match+' · '+fixtureTime(game)+' · Apri dettagli');
     const matchup=document.createElement('div');matchup.className='hub-premium-matchup';
     const away=document.createElement('span');away.className='hub-premium-logo';
