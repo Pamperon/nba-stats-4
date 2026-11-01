@@ -514,10 +514,19 @@ function renderFinder({append=false}={}){
 
 // Matchday view consumes the same already-loaded rows as the original quote explorer.
 window.BasketLabMatchRows=(match)=>{
- const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const norm=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
  const fixture=norm(match||$('finder-fixture').value);
  if(!fixture)return [];
- return (data?.results||[]).filter(row=>norm(row.Partita)===fixture && row['Stato analisi']==='Valutabile (stima empirica)' && Number.isFinite(Number(row.Quota)) && Number(row.Quota)>1);
+ const all=(data?.results||[]);
+ // A real stored quote is displayable even when the empirical model cannot evaluate it.
+ // Never apply Value Finder's probability, odds range, market, or analysis-state filters.
+ const matching=all.filter(row=>norm(row.Partita)===fixture);
+ return matching.filter(row=>Number.isFinite(Number(String(row.Quota??'').replace(',','.')))&&Number(String(row.Quota).replace(',','.'))>1);
+};
+window.BasketLabMatchDiagnostics=(match)=>{
+ const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const all=data?.results||[];
+ return {date:data?.date||$('date')?.value||'',total:all.length,fixture:match,matching:all.filter(row=>norm(row.Partita)===norm(match)).length};
 };
 window.BasketLabMatchPlayerStats=row=>{returnOrigin='finder';openPickStats(row)};
 
