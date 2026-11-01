@@ -94,20 +94,81 @@ def daily_groups(versions):
     return output
 
 
+
+def saved_lines(saved, settled):
+    """Individual published selections, including historic completed tickets."""
+    if isinstance(saved.get('lines'), list):
+        source = saved['lines']
+        verified = (settled or {}).get('lines', []) if isinstance(settled, dict) else []
+    else:
+        source = []
+        for name, size in GROUP_SIZES.items():
+            group = saved.get('groups', {}).get(name, {})
+            if group.get('complete') is True and len(group.get('legs', [])) == size:
+                source.extend(group['legs'])
+        verified = []
+        for group in (settled or {}).get('groups', {}).values():
+            verified.extend(group.get('legs', []))
+    output = []
+    for row in source:
+        matches = [item for item in verified if (
+            item.get('player'), item.get('market'), str(item.get('choice', '')).lower(),
+            float(item.get('line', -999)), float(item.get('odds', -999))) == (
+            row.get('Giocatore'), row.get('Mercato'), str(row.get('Scelta', '')).lower(),
+            float(row['Linea']), float(row['Quota']))]
+        actual = matches[0].get('actual') if len(matches) == 1 else None
+        valid = isinstance(actual, (int, float)) and not isinstance(actual, bool) and math.isfinite(actual)
+        win = None if not valid or actual == float(row['Linea']) else (
+            actual > float(row['Linea']) if str(row['Scelta']).lower() == 'over' else actual < float(row['Linea']))
+        output.append({**{key: row.get(key) for key in LEG_FIELDS},
+                       'actual': actual if valid else None, 'win': win})
+    return output
+
+
+def daily_lines(versions):
+    """One saved line per fixture/player/market/choice/threshold per day.
+
+    First published odds and probability are immutable. Conflicting evidence
+    remains unresolved, even when later scans disagree.
+    """
+    from copy import deepcopy
+    first, evidence = {}, {}
+    for version in sorted(versions, key=lambda v: v['saved_at']):
+        for row in version['lines']:
+            identity = leg_identity(row)
+            if identity not in first:
+                first[identity] = {**deepcopy(row), 'first_seen': version['saved_at']}
+            actual = row.get('actual')
+            if isinstance(actual, (int, float)) and not isinstance(actual, bool) and math.isfinite(actual):
+                evidence.setdefault(identity, set()).add(float(actual))
+    output = []
+    for identity, row in first.items():
+        values = evidence.get(identity, set())
+        actual = next(iter(values)) if len(values) == 1 else None
+        row['actual'] = actual
+        row['win'] = None if actual is None or actual == float(row['Linea']) else (
+            actual > float(row['Linea']) if str(row['Scelta']).lower() == 'over' else actual < float(row['Linea']))
+        row['status'] = 'unresolved' if row['win'] is None else 'won' if row['win'] else 'lost'
+        output.append(row)
+    return output
+
+
 def history(day):
     with storage.connection() as conn:
         rows = conn.execute("""
-            SELECT s.created_at, s.payload->'recommendations', r.report->'groups'
+            SELECT s.created_at, s.payload->'recommendations', r.report
             FROM nba_scan_snapshots s
             LEFT JOIN nba_recommendation_results r ON r.snapshot_job_id=s.job_id
             WHERE s.scan_date=%s AND s.payload ? 'recommendations'
             ORDER BY s.created_at ASC, s.job_id ASC
         """, (day,)).fetchall()
-    versions = [{'saved_at': at.isoformat(), 'groups': ticket_groups(saved, report)}
+    versions = [{'saved_at': at.isoformat(), 'groups': ticket_groups(saved, (report or {}).get('groups')) if 'groups' in saved else {},
+                 'lines': saved_lines(saved, report)}
                 for at, saved, report in rows if isinstance(saved, dict)]
-    groups = daily_groups(versions)
+    groups = daily_groups([v for v in versions if v['groups']])
+    lines = daily_lines(versions)
     tickets = [ticket for group in groups.values() for ticket in group]
-    return {'date': day, 'groups': groups,
+    return {'date': day, 'groups': groups, 'lines': lines, 'line_summary': {state: sum(line['status'] == state for line in lines) for state in ('won', 'lost', 'unresolved')},
             'summary': {state: sum(ticket['status'] == state for ticket in tickets)
                         for state in ('won', 'lost', 'unresolved')},
             'odds_api_calls': 0}

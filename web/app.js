@@ -380,8 +380,17 @@ function render(){
  }
  const rows=data.results||[];
 
- const groups=[['Singola',1,1.70,2.00],['Doppia',2,1.40,1.69],['Tripla',3,1.20,1.39]];
  const pending=[];
+ if(Array.isArray(data.recommendations?.lines)){
+  const chosen=data.recommendations.lines; // Saved picks are immutable even if current quote rows change.
+  pending.push(chosen);
+  const featured=chosen.slice(0,5),remaining=chosen.slice(5);
+  $('picks').innerHTML='<section id="pick-giorno" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Top 5 del giorno</h2></div>'+
+   (chosen.length?'<p>Le migliori '+featured.length+' linee secondo la stima del modello, ordinate per probabilità.</p><div class="pick-group-items">'+featured.map(pickCard).join('')+'</div>'+
+   (remaining.length?'<details id="pick-more-lines"><summary>Mostra tutte le altre '+remaining.length+' previsioni idonee</summary><div class="pick-group-items">'+remaining.map(pickCard).join('')+'</div></details>':''):
+   '<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>')+'</section>';
+ }else{
+ const groups=[['Singola',1,1.70,2.00],['Doppia',2,1.40,1.69],['Tripla',3,1.20,1.39]];
  $('picks').innerHTML=groups.map(([title,count,min,max])=>{
   // Keep the exact versioned selections archived at scan time. Never replace
   // a started/removed leg with a different pick under the same saved ticket.
@@ -399,6 +408,7 @@ function render(){
   '<p>'+esc(pickEmptyReason(rows,min,max,count,chosen.length))+'</p>')+
   '</section>';
  }).join('');
+ }
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
   group.querySelectorAll('.pick-selection').forEach((card,j)=>{
    const row=pending[i][j],open=()=>{returnOrigin='dashboard';returnPick=card.querySelector('.pick-stats-button');openPickStats(row);};

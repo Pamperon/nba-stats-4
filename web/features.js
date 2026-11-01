@@ -46,13 +46,22 @@
  }
  const statusNames={won:'Centrato',lost:'Non centrato',unresolved:'Da verificare'};
  function renderHistory(payload){
-  const groups=payload.groups||{},tickets=Object.values(groups).flat();
-  const won=tickets.filter(ticket=>ticket.status==='won').length,lost=tickets.filter(ticket=>ticket.status==='lost').length;
-  el('history-status').textContent=tickets.length?tickets.length+' pronostici distinti del '+day(payload.date)+'.':'Nessun pronostico completo salvato per questa giornata.';
-  el('history-summary').innerHTML=[['Centrati',won],['Non centrati',lost],['Da verificare',tickets.length-won-lost]].map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
-  const labels={Singola:'Singole',Doppia:'Doppie',Tripla:'Triple'};
-  el('history-tickets').innerHTML=Object.entries(groups).filter(([,items])=>items.length).map(([name,items])=>'<section class="daily-group"><h2>'+escape(labels[name]||name)+'</h2><div class="history-grid">'+items.map((ticket,index)=>'<article class="history-ticket"><div class="ticket-heading"><h3>'+escape(name)+' '+(index+1)+'</h3><span class="outcome outcome-'+escape(ticket.status)+'">'+escape(statusNames[ticket.status]||'Da verificare')+'</span></div>'+ticket.legs.map(row=>'<div class="history-leg"><h4>'+escape(row.Giocatore)+'</h4><p>'+escape(row.Partita)+'</p><div class="leg-selection">'+escape(row.Scelta)+' '+escape(row.Linea)+' '+escape(row.Mercato)+' <span>Quota <b>'+odd(row.Quota)+'</b></span></div><p class="leg-result">'+(row.actual==null?'Risultato non ancora verificato':'Risultato finale: <strong>'+escape(row.actual)+'</strong> · '+(row.win===true?'Centrato':row.win===false?'Non centrato':'Da verificare'))+'</p></div>').join('')+(ticket.combined_odds!=null&&ticket.legs.length>1?'<p class="ticket-total">Prodotto delle quote originali <strong>'+odd(ticket.combined_odds)+'</strong></p>':'')+'</article>').join('')+'</div></section>').join('');
+  const lines=payload.lines||[];
+  const won=lines.filter(line=>line.status==='won').length;
+  const lost=lines.filter(line=>line.status==='lost').length;
+  const resolved=won+lost;
+  const rate=resolved?(100*won/resolved).toFixed(1).replace('.',',')+'%':'—';
+  const scored=lines.filter(line=>(line.status==='won'||line.status==='lost')&&line['Prob. stimata %']!=null&&line['Prob. stimata %']!==''&&Number.isFinite(Number(line['Prob. stimata %']))&&Number(line['Prob. stimata %'])>=0&&Number(line['Prob. stimata %'])<=100);
+  const brier=scored.length?(scored.reduce((total,line)=>total+(Number(line['Prob. stimata %'])/100-(line.status==='won'?1:0))**2,0)/scored.length).toFixed(3).replace('.',','):'—';
+  const priced=lines.filter(line=>(line.status==='won'||line.status==='lost')&&Number.isFinite(Number(line.Quota))&&Number(line.Quota)>1);
+  const unitProfit=priced.reduce((total,line)=>total+(line.status==='won'?Number(line.Quota)-1:-1),0);
+  const roi=priced.length?(100*unitProfit/priced.length).toFixed(1).replace('.',',')+'%':'—';
+  const avgOdds=priced.length?(priced.reduce((total,line)=>total+Number(line.Quota),0)/priced.length).toFixed(2).replace('.',','):'—';
+  el('history-status').textContent=lines.length?lines.length+' linee distinte pubblicate il '+day(payload.date)+'.':'Nessuna linea pubblicata per questa giornata.';
+  el('history-summary').innerHTML=[['Vinte',won],['Perse',lost],['Da verificare',lines.length-resolved],['Successo',rate],['Brier Score',brier],['Quota media',avgOdds],['ROI teorico',roi]].map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
+  el('history-tickets').innerHTML=lines.length?'<section class="daily-group"><h2>Selezioni individuali</h2><div class="history-grid">'+lines.map(row=>'<article class="history-ticket"><div class="ticket-heading"><h3>'+escape(row.Giocatore)+'</h3><span class="outcome outcome-'+escape(row.status)+'">'+escape(statusNames[row.status]||'Da verificare')+'</span></div><div class="history-leg"><p>'+escape(row.Partita)+'</p><div class="leg-selection">'+escape(row.Scelta)+' '+escape(row.Linea)+' '+escape(row.Mercato)+' <span>Quota <b>'+odd(row.Quota)+'</b></span></div><p>Probabilità prepartita: '+escape(row['Prob. stimata %'])+'%</p><p class="leg-result">'+(row.actual==null?'Risultato non ancora verificato':'Risultato finale: <strong>'+escape(row.actual)+'</strong>')+'</p></div></article>').join('')+'</div></section>':'';
  }
+
  el('history-date').onchange=()=>loadHistory();el('history-retry').onclick=()=>loadHistory(true);
  el('back-to-top').onclick=()=>window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  window.addEventListener('scroll',()=>{el('back-to-top').hidden=window.scrollY<700;},{passive:true});

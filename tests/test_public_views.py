@@ -8,6 +8,29 @@ ROW = {'Giocatore':'A Player', 'ESPN ID':'123', 'Squadra':'A', 'Partita':'A - B'
 
 
 class PublicViewsTests(unittest.TestCase):
+    def test_new_daily_lines_preserve_first_quote_and_merge_evidence(self):
+        first = public_views.saved_lines({"lines":[ROW]}, None)
+        updated = {**ROW, "Quota":1.90, "Prob. stimata %":85}
+        later = public_views.saved_lines({"lines":[updated]}, {"lines":[{
+            "player":"A Player", "market":"PTS", "choice":"Over",
+            "line":19.5, "odds":1.90, "actual":22}]})
+        result = public_views.daily_lines([
+            {"saved_at":"2026-10-28T07:00:00+00:00", "lines":first},
+            {"saved_at":"2026-10-28T12:00:00+00:00", "lines":later}])
+        self.assertEqual(len(result),1)
+        self.assertEqual(result[0]["Quota"],1.74)
+        self.assertEqual(result[0]["Prob. stimata %"],80)
+        self.assertEqual(result[0]["status"],"won")
+
+    def test_historic_completed_multiple_counts_each_unique_leg(self):
+        other = {**ROW,"Giocatore":"Other","ESPN ID":"456","Partita":"C - D"}
+        saved={"groups":{"Doppia":{"complete":True,"legs":[ROW,other]}}}
+        legs=public_views.saved_lines(saved,None)
+        self.assertEqual(len(legs),2)
+        merged=public_views.daily_lines([{"saved_at":"2026-10-28T07:00:00+00:00","lines":legs},
+             {"saved_at":"2026-10-28T09:00:00+00:00","lines":[legs[0]]}])
+        self.assertEqual(len(merged),2)
+
     def test_missing_final_result_is_unresolved_not_a_loss(self):
         saved={'groups':{'Singola':{'complete':True,'legs':[ROW]}}}
         result=public_views.ticket_groups(saved,None)['Singola']
