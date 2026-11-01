@@ -475,13 +475,13 @@ function renderFinder({append=false}={}){
  const mobile=media?.matches;
  const limit=mobile?finderVisibleLimit:500;
  const all=eligible(),items=all.slice(0,limit);
- const start=append?(mobile===false?$('rows').children.length:$('finder-cards').querySelectorAll('.finder-card').length):0;
+ const start=append?(mobile===false?$('rows').children.length:Number($('finder-cards').dataset.renderedRows||0)):0;
  const added=items.slice(start);
  $('finder-more').hidden=all.length<=limit||limit>=500;
  $('finder-count').textContent=all.length>limit?'Primi '+limit+' di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
  const tableHTML=mobile===true?'':added.map((r,offset)=>{const i=start+offset;return `<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`}).join('');
  const grouped=new Map();
- if(mobile!==false)items.forEach((r,i)=>{
+ if(mobile!==false)added.forEach((r,offset)=>{const i=start+offset;
   const key=JSON.stringify([r.Partita,r.Squadra,r['ESPN ID']||r.Giocatore]);
   if(!grouped.has(key))grouped.set(key,{player:r.Giocatore,team:r.Squadra,rows:[]});
   grouped.get(key).rows.push({row:r,index:i});
@@ -500,8 +500,9 @@ function renderFinder({append=false}={}){
   const first=group.rows[0];
   return '<article class="finder-card finder-player-group"><div class="finder-card-top"><div class="finder-card-identity"><strong>'+esc(group.player)+'</strong><div class="finder-card-subline"><span class="finder-card-team">'+esc(teamAbbrev(group.team))+'</span><span>'+group.rows.length+' quote disponibili</span></div></div><button type="button" class="finder-player" data-index="'+first.index+'">Statistiche →</button></div>'+panels+'</article>';
  }).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
- if(append&&start&&mobile===false){$('rows').insertAdjacentHTML('beforeend',tableHTML);$('finder-cards').insertAdjacentHTML('beforeend',cardsHTML);}
+ if(append&&start){$('rows').insertAdjacentHTML('beforeend',tableHTML);$('finder-cards').insertAdjacentHTML('beforeend',cardsHTML);}
  else{$('rows').innerHTML=tableHTML;$('finder-cards').innerHTML=cardsHTML;}
+ $('finder-cards').dataset.renderedRows=String(items.length);
  for(const button of document.querySelectorAll('#finder .finder-details-toggle')){
   const extra=document.getElementById(button.getAttribute('aria-controls')),key=extra.dataset.selectionKey||button.closest('.finder-card').dataset.selectionKey;
   extra.hidden=!finderExpandedKeys.has(key);button.setAttribute('aria-expanded',String(!extra.hidden));
