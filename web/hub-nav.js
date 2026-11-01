@@ -78,6 +78,22 @@ function updateInsights(){
  const counts=new Map();for(const market of markets){const type=market.toUpperCase().startsWith('UNDER')?'Under':'Over';counts.set(type,(counts.get(type)||0)+1)}
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
+function openMatchQuotes(match){
+ // Reuse the original complete odds explorer and its saved dataset.
+ go.finder();select('finder');
+ const fixture=$('#finder-fixture');
+ if(!fixture)return;
+ const available=[...fixture.options].map(option=>option.value);
+ const normalized=value=>String(value||'').toLocaleLowerCase('it-IT').replace(/[^a-z0-9]/g,'');
+ const exact=available.find(value=>value===match);
+ const resolved=exact||available.find(value=>normalized(value)===normalized(match));
+ fixture.value=resolved||'';
+ fixture.dispatchEvent(new Event('change',{bubbles:true}));
+ const heading=$('.finder-heading h2');
+ if(heading)heading.textContent=resolved?'Quote e linee · '+resolved:'Quote e linee NBA';
+ const finder=$('#finder');
+ finder?.scrollIntoView({block:'start',behavior:'smooth'});
+}
 function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
  if(!picks)return;
@@ -114,7 +130,7 @@ function refreshShowcase(){
     }
    }else{const name=document.createElement('strong');name.textContent=match;pair.append(name)}
    const count=document.createElement('span');count.className='hub-match-count';count.textContent=n+' analisi ›';
-   row.append(pair,count);row.addEventListener('click',()=>{go.picks();select('picks')});games.append(row);
+   row.append(pair,count);row.addEventListener('click',()=>openMatchQuotes(match));games.append(row);
   }
  }
 }
