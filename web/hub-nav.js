@@ -100,7 +100,7 @@ function refreshShowcase(){
   const teamCodes={'Atlanta Hawks':'atl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Indiana Pacers':'ind','Los Angeles Clippers':'lac','LA Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Orlando Magic':'orl','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
   for(const match of matches.slice(0,6)){
    const row=document.createElement('button');row.type='button';row.className='hub-match-row';
-   const teams=match.split(/\\s+-\\s+|\\s+vs\\.?\\s+|\\s+@\\s+/i).map(x=>x.trim());
+   const teams=match.split(/\s+-\s+|\s+vs\.?\s+|\s+@\s+/i).map(x=>x.trim());
    const n=[...picks.querySelectorAll('.pick-fixture')].filter(el=>(el.dataset.match||el.textContent.trim())===match).length;
    const pair=document.createElement('div');pair.className='hub-match-teams';
    if(teams.length===2 && teams.every(t=>teamCodes[t])){
