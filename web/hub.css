@@ -105,3 +105,5 @@ body{background:radial-gradient(ellipse at 75% -10%,#12375b 0%,#0b1220 48%) fixe
  .hub-tile{min-height:70px;padding:9px}
  .hub-mobile-bar{background:#071528f5;border-top:1px solid #577999}
 }
+
+.hub-live-metrics[hidden]{display:none!important}
