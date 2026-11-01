@@ -513,7 +513,12 @@ function renderFinder({append=false}={}){
 }
 
 // Matchday view consumes the same already-loaded rows as the original quote explorer.
-window.BasketLabMatchRows=()=>eligible().slice();
+window.BasketLabMatchRows=(match)=>{
+ const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const fixture=norm(match||$('finder-fixture').value);
+ if(!fixture)return [];
+ return (data?.results||[]).filter(row=>norm(row.Partita)===fixture && row['Stato analisi']==='Valutabile (stima empirica)' && Number.isFinite(Number(row.Quota)) && Number(row.Quota)>1);
+};
 window.BasketLabMatchPlayerStats=row=>{returnOrigin='finder';openPickStats(row)};
 
 // Value Finder filters affect only its own table; dashboard picks are independent.

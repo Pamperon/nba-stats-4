@@ -511,3 +511,68 @@ body.hub-match-open .hub-match-detail{margin:0;padding:0;border:0;background:tra
 
 /* Readable mobile odds details and balanced player market columns */
 @media(max-width:760px){.hub-match-player-markets{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.hub-match-player-market{padding-left:7px;gap:6px}.hub-match-player-market>strong{font-size:17px}.hub-match-player-market>span{font-size:12px;line-height:1.3}.hub-match-player-market details{min-width:0}.hub-match-player-market details summary{font-size:12px;line-height:1.35;overflow-wrap:anywhere;padding:5px 0}.hub-match-quote-line{font-size:12px;line-height:1.5;overflow-wrap:anywhere;padding:9px 0}.hub-match-player-card{padding:13px 11px}}
+
+
+/* Matchday visual refinement: clearer hierarchy, premium scoreboard and readable mobile cards. */
+body.hub-match-open .hub-match-detail{max-width:1050px;margin-inline:auto}
+body.hub-match-open .hub-match-title{padding:24px 20px;border-radius:24px;background:radial-gradient(ellipse at 50% 0%,#204564 0%,#0c283f 58%,#071b2e 100%);border-color:#477494;box-shadow:inset 0 1px #ffffff12,0 12px 30px #0003}
+body.hub-match-open .hub-match-team{flex-direction:column;gap:10px}
+body.hub-match-open .hub-match-team img{width:74px;height:74px;flex-basis:auto;filter:drop-shadow(0 8px 12px #0005)}
+body.hub-match-open .hub-match-team strong{font-size:clamp(15px,2vw,21px);text-align:center}
+body.hub-match-open .hub-match-title>b{font-size:28px;letter-spacing:2px;font-weight:800}
+body.hub-match-open .hub-match-tabs{padding:5px;border-radius:20px;margin:18px 0 22px}
+body.hub-match-open .hub-match-tabs button{border-radius:15px;font-size:14px;line-height:1.35;min-height:55px}
+body.hub-match-open .hub-match-analysis,body.hub-match-open .hub-match-player-section{border-radius:22px;padding:22px;background:linear-gradient(155deg,#0d2b45,#081c2e);box-shadow:0 12px 28px #0002}
+body.hub-match-open .hub-match-analysis-grid{gap:14px}
+body.hub-match-open .hub-match-data-block{background:linear-gradient(155deg,#1a3a56,#123047);border-color:#406784;border-radius:17px;min-height:176px;padding:20px}
+body.hub-match-open .hub-match-data-block small{font-size:14px;line-height:1.45}
+body.hub-match-open .hub-match-data-block strong{font-size:clamp(19px,2.2vw,26px);line-height:1.3;overflow-wrap:anywhere}
+body.hub-match-open .hub-match-data-block p{font-size:13px;line-height:1.6}
+body.hub-match-open .hub-match-facts{gap:12px;margin:16px 0}
+body.hub-match-open .hub-match-facts>div{padding:16px;border-radius:16px;align-content:start}
+body.hub-match-open .hub-match-facts strong{font-size:14px}
+body.hub-match-open .hub-match-facts small{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+body.hub-match-open .hub-match-summary{border-radius:17px;padding:20px;background:linear-gradient(120deg,#302a27,#242527)}
+body.hub-match-open .hub-match-summary p{font-size:14px;line-height:1.65}
+body.hub-match-open .hub-match-player-card{display:block;padding:18px;border-radius:17px;background:linear-gradient(120deg,#153953,#102d45);transition:border-color .15s}
+body.hub-match-open .hub-match-player-card:focus-within{border-color:#f69b47}
+body.hub-match-open .hub-match-player-identity{width:100%;flex:initial;justify-content:flex-start;margin-bottom:17px}
+body.hub-match-open .hub-match-player-identity>div{flex:1}
+body.hub-match-open .hub-match-player-identity strong{font-size:18px}
+body.hub-match-open .hub-match-player-identity button{font-size:13px;padding:8px 0 8px 8px}
+body.hub-match-open .hub-match-player-photo{width:52px;height:56px;flex-basis:52px}
+body.hub-match-open .hub-match-player-markets{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+body.hub-match-open .hub-match-player-market{padding-left:12px;gap:6px}
+body.hub-match-open .hub-match-player-market>small{font-size:12px}
+body.hub-match-open .hub-match-player-market>strong{font-size:23px}
+body.hub-match-open .hub-match-player-market>span{font-size:14px}
+body.hub-match-open .hub-match-player-market details summary{font-size:12px;line-height:1.45;padding:8px 0}
+body.hub-match-open .hub-match-quote-line{font-size:13px;line-height:1.55;padding:10px 0}
+@media(max-width:760px){
+ body.hub-match-open .hub-match-title{padding:18px 8px}
+ body.hub-match-open .hub-match-team img{width:62px;height:62px}
+ body.hub-match-open .hub-match-team strong{font-size:14px}
+ body.hub-match-open .hub-match-tabs button{font-size:12px;min-height:56px;padding:9px 3px}
+ body.hub-match-open .hub-match-analysis,body.hub-match-open .hub-match-player-section{padding:15px;border-radius:19px}
+ body.hub-match-open .hub-match-analysis-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body.hub-match-open .hub-match-data-block{padding:13px;min-height:190px}
+ body.hub-match-open .hub-match-data-block small{font-size:12px}
+ body.hub-match-open .hub-match-data-block strong{font-size:18px}
+ body.hub-match-open .hub-match-data-block p{font-size:12px}
+ body.hub-match-open .hub-match-facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ body.hub-match-open .hub-match-facts>div{padding:9px}
+ body.hub-match-open .hub-match-facts strong{font-size:11px}
+ body.hub-match-open .hub-match-facts small{font-size:10px}
+ body.hub-match-open .hub-match-summary{padding:14px}
+ body.hub-match-open .hub-match-summary p{font-size:13px}
+ body.hub-match-open .hub-match-player-card{padding:14px 11px}
+ body.hub-match-open .hub-match-player-identity strong{font-size:16px}
+ body.hub-match-open .hub-match-player-photo{width:44px;height:48px;flex-basis:44px}
+ body.hub-match-open .hub-match-player-markets{gap:5px}
+ body.hub-match-open .hub-match-player-market{padding-left:7px;gap:5px}
+ body.hub-match-open .hub-match-player-market>small{font-size:10px}
+ body.hub-match-open .hub-match-player-market>strong{font-size:19px}
+ body.hub-match-open .hub-match-player-market>span{font-size:12px}
+ body.hub-match-open .hub-match-player-market details summary{font-size:12px}
+ body.hub-match-open .hub-match-quote-line{font-size:12px}
+}
