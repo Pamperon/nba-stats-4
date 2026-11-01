@@ -440,6 +440,17 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
                 except Exception:
                     logger.exception('Cannot publish immutable daily Top 5')
                     raise HTTPException(503, 'Pubblicazione Top 5 temporaneamente non disponibile')
+        # Provisional picks are distinct from immutable official selections.
+        # Never include future-started games or re-rank official picks.
+        preliminary = snapshot.get('recommendations', {}).get('lines', [])
+        if official is None:
+            import recommendations
+            valid_rows = visible.get('results', [])
+            # Reapply current quality thresholds to older saved snapshots.
+            eligible = recommendations.select_daily(valid_rows).get('lines', [])
+            visible['preliminary_top5'] = eligible[:5]
+        else:
+            visible['preliminary_top5'] = []
         visible['recommendations'] = {'policy': 'fixed-1800-v1',
                                       'lines': official['lines'] if official else []}
         visible['official_top5'] = official
