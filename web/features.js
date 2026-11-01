@@ -51,7 +51,7 @@
   const lost=lines.filter(line=>line.status==='lost').length;
   const resolved=won+lost;
   const rate=resolved?(100*won/resolved).toFixed(1).replace('.',',')+'%':'—';
-  const scored=lines.filter(line=>(line.status==='won'||line.status==='lost')&&Number.isFinite(Number(line['Prob. stimata %']))&&Number(line['Prob. stimata %'])>=0&&Number(line['Prob. stimata %'])<=100);
+  const scored=lines.filter(line=>(line.status==='won'||line.status==='lost')&&line['Prob. stimata %']!=null&&line['Prob. stimata %']!==''&&Number.isFinite(Number(line['Prob. stimata %']))&&Number(line['Prob. stimata %'])>=0&&Number(line['Prob. stimata %'])<=100);
   const brier=scored.length?(scored.reduce((total,line)=>total+(Number(line['Prob. stimata %'])/100-(line.status==='won'?1:0))**2,0)/scored.length).toFixed(3).replace('.',','):'—';
   const priced=lines.filter(line=>(line.status==='won'||line.status==='lost')&&Number.isFinite(Number(line.Quota))&&Number(line.Quota)>1);
   const unitProfit=priced.reduce((total,line)=>total+(line.status==='won'?Number(line.Quota)-1:-1),0);
