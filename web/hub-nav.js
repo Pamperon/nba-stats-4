@@ -445,6 +445,7 @@ const dayStripTarget=$('#date-strip');
 if(dayStripTarget)new MutationObserver(scheduleCalendarRefresh).observe(dayStripTarget,{childList:true,subtree:true,attributes:true,attributeFilter:['class','aria-selected','aria-pressed']});
 $('#hub-calendar-prev')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:-220,behavior:'smooth'}));
 $('#hub-calendar-next')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:220,behavior:'smooth'}));
+let homeFixturesRequest=0;
 function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
  if(!picks)return;
@@ -462,6 +463,30 @@ function refreshShowcase(){
  }
  if(games){
   const matches=[...new Set([...picks.querySelectorAll('.pick-fixture')].map(el=>el.dataset.match||el.textContent.trim()).filter(Boolean))];
+  const day=sessionDay();
+  const homeToken=++homeFixturesRequest;
+  fetchNbaFixtures(day,true).then(fixtures=>{
+   if(homeToken!==homeFixturesRequest)return;
+   games.replaceChildren();
+   if(!fixtures.length){games.textContent='Nessuna partita NBA nella sessione serale/notturna.';return}
+   const quoted=new Set([...picks.querySelectorAll('.pick-fixture')].map(el=>el.dataset.match||el.textContent.trim()));
+   for(const game of fixtures){
+    const match=fixtureName(game),hasOdds=quoted.has(match);
+    const row=document.createElement('button');row.type='button';row.className='hub-match-row';
+    const pair=document.createElement('div');pair.className='hub-match-teams';
+    [game.away,game.home].forEach((team,i)=>{
+     if(i){const versus=document.createElement('small');versus.textContent='VS';pair.append(versus)}
+     const side=document.createElement('span');side.className='hub-team';
+     const code=matchTeamCodes[team];
+     if(code){const logo=document.createElement('img');logo.alt='';logo.loading='lazy';logo.width=32;logo.height=32;logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';side.append(logo)}
+     const name=document.createElement('strong');name.textContent=team||'NBA';side.append(name);pair.append(side)
+    });
+    const detail=document.createElement('span');detail.className='hub-match-count';detail.textContent=fixtureTime(game)+' · '+(hasOdds?'Quote e linee ›':'Quote non disponibili');
+    row.append(pair,detail);
+    if(hasOdds)row.addEventListener('click',()=>openMatchQuotes(match));else row.disabled=true;
+    games.append(row)
+   }
+  }).catch(()=>{ /* Keep existing saved-odds fallback if ESPN is unreachable. */ });
   games.replaceChildren();
   if(!matches.length){games.textContent='Le partite della giornata compariranno con le analisi disponibili.';return}
   const teamCodes={'Atlanta Hawks':'atl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Indiana Pacers':'ind','Los Angeles Clippers':'lac','LA Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Orlando Magic':'orl','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
