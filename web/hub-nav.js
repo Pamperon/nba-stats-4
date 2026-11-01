@@ -135,7 +135,7 @@ function renderMatchPlayers(){
   if(q&&!cleanName(row.Giocatore).toLowerCase().includes(q)&&!String(row.Giocatore).toLowerCase().includes(q))continue;
   if(matchMarket!=='ALL'&&row.Mercato!==matchMarket)continue;
   const key=JSON.stringify([row.Squadra,row['ESPN ID']||row.Giocatore]);
-  if(!groups.has(key))groups.set(key,{name:cleanName(row.Giocatore),team:row.Squadra,rows:[]});
+  if(!groups.has(key))groups.set(key,{name:cleanName(row.Giocatore),team:row.Squadra,espnId:row['ESPN ID'],rows:[]});
   groups.get(key).rows.push(row);
  }
  list.replaceChildren();if(count)count.textContent=groups.size+' giocatori · '+rows.length+' linee';
@@ -143,7 +143,7 @@ function renderMatchPlayers(){
  for(const group of groups.values()){
   const card=document.createElement('article');card.className='hub-match-player-card';
   const header=document.createElement('div');header.className='hub-match-player-identity';
-  const info=document.createElement('div');const name=document.createElement('strong');name.textContent=group.name;
+  const info=document.createElement('div');if(/^\d+$/.test(String(group.espnId||''))){const photo=document.createElement('img');photo.className='hub-match-player-photo';photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+group.espnId+'.png';photo.alt='';photo.loading='lazy';photo.onerror=()=>{photo.hidden=true};header.append(photo)}const name=document.createElement('strong');name.textContent=group.name;
   const team=document.createElement('small');team.textContent=group.team||'';info.append(name,team);header.append(info);
   const stats=document.createElement('button');stats.type='button';stats.textContent='Statistiche ›';stats.onclick=()=>window.BasketLabMatchPlayerStats?.(group.rows[0]);header.append(stats);card.append(header);
   const markets=document.createElement('div');markets.className='hub-match-player-markets';
