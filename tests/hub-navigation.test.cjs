@@ -96,3 +96,16 @@ test('homepage has a separate view state and internal navigation restores dashbo
  assert.equal(doc.body.dataset.hubView,'home');
  window.close();
 });
+
+test('fixture and trend panels reflect saved picks and hide outside home',async()=>{
+ const {window,doc}=setup();
+ doc.querySelector('#picks').innerHTML='<article class="pick-selection"><div class="pick-fixture" data-match="BOS - NYK"></div><div class="pick-market">OVER 12.5 PTS</div></article><article class="pick-selection"><div class="pick-fixture" data-match="BOS - NYK"></div><div class="pick-market">UNDER 5.5 REB</div></article>';
+ await new Promise(resolve=>window.queueMicrotask(resolve));
+ assert.match(doc.querySelector('#hub-games').textContent,/BOS - NYK/);
+ assert.equal(doc.querySelectorAll('.hub-game').length,1);
+ assert.match(doc.querySelector('#hub-trends').textContent,/Over nelle selezioni1/);
+ assert.match(doc.querySelector('#hub-trends').textContent,/Under nelle selezioni1/);
+ doc.querySelector('.hub-sidebar [data-hub="stats"]').click();
+ assert.equal(doc.querySelector('.hub-insights').hidden,true);
+ window.close();
+});
