@@ -382,7 +382,7 @@ function render(){
 
  const pending=[];
  if(Array.isArray(data.recommendations?.lines)){
-  const chosen=data.recommendations.lines.filter(p=>rows.some(r=>r.Giocatore===p.Giocatore&&r.Partita===p.Partita&&r.Mercato===p.Mercato&&r.Linea===p.Linea&&r.Scelta===p.Scelta));
+  const chosen=data.recommendations.lines; // Saved picks are immutable even if current quote rows change.
   pending.push(chosen);
   $('picks').innerHTML='<section id="pick-giorno" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le migliori linee NBA di oggi</h2></div>'+
    (chosen.length?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>':'<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>')+'</section>';
