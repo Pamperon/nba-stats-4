@@ -84,6 +84,8 @@ def publish(day, games, now=None):
     cutoff = publication_cutoff(day, games)
     if now.astimezone(ROME) < cutoff:
         return None
+    # A delayed publish must never include games already started.
+    earliest_allowed_start = max(cutoff, now.astimezone(ROME)) + timedelta(minutes=60)
     starts = {}
     for game in games:
         home, away = str(game.get('home') or '').strip(), str(game.get('away') or '').strip()
@@ -125,7 +127,7 @@ def publish(day, games, now=None):
                 if len(parts) != 2:
                     continue
                 start = starts.get(frozenset(p.strip().casefold() for p in parts))
-                if start is None or start < cutoff + timedelta(minutes=60):
+                if start is None or start < earliest_allowed_start:
                     continue
                 valid_rows.append(candidate)
             single = recommendations.select_single(valid_rows)
