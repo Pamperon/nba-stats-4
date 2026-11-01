@@ -59,6 +59,11 @@ test('archive displays all distinct daily tickets without a scan selector or inv
   assert.equal(d.querySelectorAll('.history-ticket').length,2);
   assert.equal(d.querySelectorAll('#extra-history select').length,1);
   assert.match(d.getElementById('history-status').textContent,/2 linee distinte/);
+  const metrics=d.getElementById('history-summary').textContent;
+  assert.match(metrics,/Brier Score/);
+  assert.match(metrics,/Quota media/);
+  assert.match(metrics,/ROI teorico/);
+  assert.match(metrics,/Successo/);
   assert.ok(calls.every(call=>call.method==='GET'&&!call.url.startsWith('/api/odds/')));
  }finally{dom.window.close();}
 });
