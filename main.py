@@ -49,6 +49,8 @@ def init_storage():
     storage.initialize()
     import official_top5
     official_top5.initialize()
+    import nba_session_picks
+    nba_session_picks.initialize()
     scan_tracking.initialize()
     audience.initialize()
     import calibration
@@ -90,6 +92,14 @@ def _official_publication_loop():
         if attempt == last_attempt:
             continue
         last_attempt = attempt
+        # Freeze one session across tonight and the following morning.
+        try:
+            import nba_session_picks
+            session_day = now.date().isoformat()
+            if nba_session_picks.eligible(session_day) and nba_session_picks.read(session_day) is None:
+                nba_session_picks.publish(session_day, nba_publication_session(session_day)['games'], now=now)
+        except Exception:
+            logger.exception('Combined NBA evening publication attempt failed')
         # Both calendar dates may have an official set due this evening.
         # Tomorrow's overnight fixtures must not wait until tomorrow 18:00.
         for offset in (0, 1):
@@ -280,6 +290,63 @@ def nba_publication_session(day: str):
 def publication_session(date: str = Query(..., pattern=r'^\\d{4}-\\d{2}-\\d{2}$')):
     """Read-only session fixture manifest; not yet an official picks endpoint."""
     return nba_publication_session(date)
+
+
+@app.get('/api/picks/session')
+def session_picks():
+    """One publication date and one immutable official set, regardless of tipoff date."""
+    import nba_session_picks
+    import recommendations
+    now = datetime.now(ZoneInfo('Europe/Rome'))
+    today = now.date()
+    # Before 18:00, the previous evening's session is still the current one.
+    day = (today if now.hour >= 18 else today - timedelta(days=1)).isoformat()
+    manifest = nba_publication_session(day)
+    official = nba_session_picks.read(day) if nba_session_picks.eligible(day) else None
+    # Publish on demand only when due; no paid API calls.
+    if official is None and nba_session_picks.eligible(day) and now >= nba_session_picks.cutoff_for(day):
+        official = nba_session_picks.publish(day, manifest['games'], now=now)
+    allowed = {frozenset((g['home'].casefold().strip(),g['away'].casefold().strip())): g
+               for g in manifest['games']}
+    results, seen = [], set()
+    for calendar_date in (day, (datetime.strptime(day,'%Y-%m-%d')+timedelta(days=1)).strftime('%Y-%m-%d')):
+        snapshot = storage.latest(calendar_date)
+        if not snapshot:
+            continue
+        for row in snapshot.get('results', []):
+            parts = str(row.get('Partita') or '').split(' - ')
+            if len(parts) != 2:
+                continue
+            game = allowed.get(frozenset(x.casefold().strip() for x in parts))
+            if not game or not game.get('upcoming'):
+                continue
+            try:
+                tipoff = datetime.fromisoformat(game['start_at'])
+            except (ValueError, TypeError):
+                continue
+            if tipoff <= now:
+                continue
+            key = (row.get('Partita'),row.get('Giocatore'),row.get('Mercato'),row.get('Linea'),row.get('Scelta'))
+            if key in seen:
+                continue
+            seen.add(key)
+            results.append(row)
+    single = official['single'] if official else recommendations.select_single(results)
+    preliminary = [] if official else recommendations.select_daily(results)['lines']
+    if single:
+        sid = str(single.get('ESPN ID') or single.get('Giocatore') or '').strip().casefold()
+        preliminary = [p for p in preliminary if str(p.get('ESPN ID') or p.get('Giocatore') or '').strip().casefold()!=sid]
+    return {'date':day,'publication_date':day,'session_start_at':manifest['start_at'],
+            'session_end_at':manifest['end_at'],'results':results,
+            'recommendations':{'policy':'fixed-1800-v1','lines':official['lines'] if official else []},
+            'official_top5':official,'official_top5_pending':official is None,
+            'official_single':official['single'] if official else None,
+            'official_single_pending':official is None,
+            'preliminary_top5':preliminary[:5] if official is None else [],
+            'preliminary_single':single if official is None else None,
+            'fixture_count':len(manifest['games']),
+            'player_count':len({r.get('Giocatore') for r in results}),
+            'odds_api_calls':0}
 
 
 _match_form_cache = TTLCache(maxsize=40, ttl=1800)
