@@ -103,14 +103,16 @@ function openMatchQuotes(match){
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
 const matchTeamPalette={atl:'#e03a3e',bos:'#007a33',bkn:'#c5c5c5',cha:'#1d8cab',chi:'#ce1141',cle:'#b58a43',dal:'#0053bc',den:'#fdb927',det:'#c8102e',gs:'#ffc72c',hou:'#ce1141',ind:'#fdbb30',lac:'#c8102e',lal:'#fdb927',mem:'#5d76a9',mia:'#98002e',mil:'#00471b',min:'#236192',no:'#b4975a',ny:'#f58426',okc:'#007ac1',orl:'#0077c0',phi:'#006bb6',phx:'#e56020',por:'#e03a3e',sac:'#5a2d81',sa:'#a5acaf',tor:'#ce1141',utah:'#753bbd',wsh:'#e31837'};
-function renderMatchCharts(teams,a,b,windowDays){
+function renderMatchCharts(teams,a,b,windowDays,matchOdds){
  const area=$('#hub-match-charts');if(!area)return;area.replaceChildren();
  const colors=teams.map(t=>matchTeamPalette[matchTeamCodes[t]]||'#4388b9');
  const panel=$('#hub-match-analysis');if(panel){panel.style.setProperty('--match-team-a',colors[0]);panel.style.setProperty('--match-team-b',colors[1]);}
  const card=document.createElement('div');card.className='hub-match-chart-card hub-match-comparison';
  const win=document.createElement('div');win.className='hub-match-compare-column';
  const winTitle=document.createElement('strong');winTitle.className='hub-match-compare-title';winTitle.textContent='Probabilità di vittoria';win.append(winTitle);
- const unavailable=document.createElement('p');unavailable.className='hub-match-win-unavailable';unavailable.textContent='Quote vincente partita non disponibili';win.append(unavailable);
+ const validOdds=Array.isArray(matchOdds)&&matchOdds.length===2&&matchOdds.every(x=>Number.isFinite(Number(x))&&Number(x)>1);
+ if(validOdds){const implied=matchOdds.map(x=>1/Number(x));const total=implied[0]+implied[1];teams.forEach((team,i)=>{const pct=implied[i]/total*100;const row=document.createElement('div');row.className='hub-match-win-row';const heading=document.createElement('div');heading.className='hub-match-win-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';heading.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill';fill.style.width=pct+'%';fill.style.background=colors[i];track.append(fill);row.append(heading,track);win.append(row)});const info=document.createElement('small');info.textContent='Probabilità implicite dalle quote, margine rimosso';win.append(info)}
+ else{const unavailable=document.createElement('p');unavailable.className='hub-match-win-unavailable';unavailable.textContent='Quote vincente partita non disponibili';win.append(unavailable);}
  const points=document.createElement('div');points.className='hub-match-compare-column';
  const ptsTitle=document.createElement('strong');ptsTitle.className='hub-match-compare-title';ptsTitle.textContent='Media punti segnati';points.append(ptsTitle);
  teams.forEach((team,i)=>{const row=document.createElement('div');row.className='hub-match-points-row';const name=document.createElement('span');name.textContent=team;const value=document.createElement('b');value.textContent=[a,b][i].avg_points==null?'—':displayNum([a,b][i].avg_points);row.append(name,value);points.append(row)});
@@ -137,7 +139,7 @@ async function loadMatchForm(match){
   if(request!==matchFormRequest||activeMatch!==match)return;
   const [a,b]=data.teams||[];
   if(!a||!b)throw new Error('Dati incompleti');
-  renderMatchCharts(teams,a,b,data.window_days);
+  renderMatchCharts(teams,a,b,data.window_days,data.moneyline_odds);
   boxes[0].querySelector('small').textContent='Forma recente · ultime 5 disponibili';
   boxes[0].querySelector('strong').textContent=teams[0]+': '+a.wins+'V / '+a.losses+'P';
   boxes[0].querySelector('p').textContent=teams[1]+': '+b.wins+'V / '+b.losses+'P · Campione: '+a.games+' e '+b.games+' partite negli ultimi '+data.window_days+' giorni';
