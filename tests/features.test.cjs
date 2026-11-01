@@ -121,6 +121,25 @@ test('saved daily picks remain visible even when the current quote rows no longe
  }finally{dom.window.close();}
 });
 
+test('daily picks show top five first and keep remaining saved lines expandable',async()=>{
+ const saved=Array.from({length:8},(_,i)=>({Giocatore:'Pick '+i,'ESPN ID':String(200+i),Squadra:'A',Partita:'A - B',Mercato:'PTS',Scelta:'Over',Linea:9.5,Quota:1.8,'Prob. stimata %':90-i,'Stato analisi':'Valutabile (stima empirica)'}));
+ const dom=app(async url=>response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:[],recommendations:{policy:'daily-lines-v1',lines:saved}}:base(url)));
+ try{
+  await tick();await tick();const d=dom.window.document;
+  const top=d.querySelector('#pick-giorno > .pick-group-items');
+  assert.equal(top.querySelectorAll('.pick-selection').length,5);
+  assert.match(top.textContent,/Pick 0/);
+  assert.doesNotMatch(top.textContent,/Pick 5/);
+  const more=d.getElementById('pick-more-lines');
+  assert.equal(more.open,false);
+  assert.match(more.querySelector('summary').textContent,/3 previsioni/);
+  assert.equal(more.querySelectorAll('.pick-selection').length,3);
+  more.open=true;
+  assert.match(more.textContent,/Pick 7/);
+  assert.equal(d.querySelectorAll('#pick-giorno .pick-selection').length,8);
+ }finally{dom.window.close();}
+});
+
 test('mobile quote pagination and reset remain available after removing favorites',async()=>{
  const rows=Array.from({length:250},(_,i)=>({Giocatore:'Player '+i,'ESPN ID':String(100+i),Squadra:'A',Mercato:'PTS',Linea:9.5,Quota:1.8,'Stato analisi':'Valutabile (stima empirica)','Prob. stimata %':80}));
  const dom=app(async url=>response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:rows}:base(url)),true);
