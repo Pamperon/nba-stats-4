@@ -284,7 +284,7 @@ def _cached_match_moneyline(date, team_a, team_b):
             outcomes = market.get("outcomes") or {}
             prices = []
             for outcome_id in ("111", "112"):
-                item = outcomes.get(outcome_id) or {}
+                item = ((outcomes.get(outcome_id) or {}).get("players") or {}).get("0") or {}
                 price = item.get("price")
                 if isinstance(price, bool) or not isinstance(price, (int, float)) or not 1 < price < 1000:
                     break
