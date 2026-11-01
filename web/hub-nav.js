@@ -102,17 +102,17 @@ function openMatchQuotes(match){
  matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.market==='PTS'));$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
+const matchTeamPalette={atl:'#e03a3e',bos:'#007a33',bkn:'#c5c5c5',cha:'#1d8cab',chi:'#ce1141',cle:'#b58a43',dal:'#0053bc',den:'#fdb927',det:'#c8102e',gs:'#ffc72c',hou:'#ce1141',ind:'#fdbb30',lac:'#c8102e',lal:'#fdb927',mem:'#5d76a9',mia:'#98002e',mil:'#00471b',min:'#236192',no:'#b4975a',ny:'#f58426',okc:'#007ac1',orl:'#0077c0',phi:'#006bb6',phx:'#e56020',por:'#e03a3e',sac:'#5a2d81',sa:'#a5acaf',tor:'#ce1141',utah:'#753bbd',wsh:'#e31837'};
 function renderMatchCharts(teams,a,b,windowDays){
  const area=$('#hub-match-charts');if(!area)return;
  area.replaceChildren();
- const sections=[{title:'Forma · ultime 5',unit:'vittorie',max:5,values:[a.wins,b.wins],suffix:(x,idx)=>x+'/'+[a.games,b.games][idx]},{title:'Media punti',unit:'punti a partita',max:Math.max(130,Number(a.avg_points)||0,Number(b.avg_points)||0),values:[a.avg_points,b.avg_points],suffix:x=>x==null?'—':displayNum(x)}];
- for(const section of sections){
-  const card=document.createElement('div');card.className='hub-match-chart-card';
-  const heading=document.createElement('div');heading.className='hub-match-chart-heading';const title=document.createElement('strong');title.textContent=section.title;const unit=document.createElement('small');unit.textContent=section.unit;heading.append(title,unit);card.append(heading);
-  teams.forEach((team,i)=>{const value=section.values[i];const row=document.createElement('div');row.className='hub-match-chart-row';const label=document.createElement('div');label.className='hub-match-chart-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=section.suffix(value,i);label.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill team-'+i;fill.style.width=(value==null?0:Math.min(100,Math.max(0,Number(value)/section.max*100)))+'%';track.append(fill);row.append(label,track);card.append(row)});
-  area.append(card);
- }
- const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 partite disponibili negli ultimi '+windowDays+' giorni. Dati osservati, non probabilità di vittoria.';area.append(note);
+ const colors=teams.map(t=>matchTeamPalette[matchTeamCodes[t]]||'#4388b9');
+ const panel=$('#hub-match-analysis');if(panel){panel.style.setProperty('--match-team-a',colors[0]);panel.style.setProperty('--match-team-b',colors[1]);}
+ const card=document.createElement('div');card.className='hub-match-chart-card hub-match-comparison';
+ const columns=[{title:'Forma · ultime 5',unit:'Vittorie nelle ultime gare',values:[a.wins,b.wins],max:5,format:(v,i)=>v==null?'—':v+'/'+[a.games,b.games][i]},{title:'Media punti segnati',unit:'Ultime gare disponibili',values:[a.avg_points,b.avg_points],max:Math.max(130,Number(a.avg_points)||0,Number(b.avg_points)||0),format:v=>v==null?'—':displayNum(v)}];
+ for(const section of columns){const column=document.createElement('div');column.className='hub-match-compare-column';const heading=document.createElement('div');heading.className='hub-match-chart-heading';const title=document.createElement('strong');title.textContent=section.title;const unit=document.createElement('small');unit.textContent=section.unit;heading.append(title,unit);column.append(heading);
+ teams.forEach((team,i)=>{const value=section.values[i];const row=document.createElement('div');row.className='hub-match-chart-row';const label=document.createElement('div');label.className='hub-match-chart-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=section.format(value,i);label.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill team-'+i;fill.style.backgroundColor=colors[i];fill.style.backgroundImage='none';fill.style.width=(value==null?0:Math.min(100,Math.max(0,Number(value)/section.max*100)))+'%';track.append(fill);row.append(label,track);column.append(row)});card.append(column)}
+ area.append(card);const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni · Medie osservate, non previsioni.';area.append(note);
 }
 async function loadMatchForm(match){
  const request=++matchFormRequest;
