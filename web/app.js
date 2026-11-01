@@ -390,6 +390,7 @@ function render(){
   pending.push(chosen);
   const featured=chosen.slice(0,5),remaining=chosen.slice(5);
   const preliminary=pendingPublication&&Array.isArray(data.preliminary_top5)?data.preliminary_top5.slice(0,5):[];
+  if(pendingPublication)pending.push(preliminary);
   const preliminaryHtml=pendingPublication
     ?'<section class="panel pick-group pick-group-daily" aria-label="Analisi preliminari"><div class="pick-group-heading"><h2>Analisi preliminari</h2></div>'+
       '<p>In valutazione · aggiornate all’ultima scansione. Possono cambiare e non sono Top 5 ufficiali.</p>'+
