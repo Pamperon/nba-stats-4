@@ -107,8 +107,22 @@ function setMatchTab(tab){
  const analysis=$('#hub-match-analysis'),players=$('#hub-match-player-section');
  if(analysis)analysis.hidden=tab==='players';
  if(players)players.hidden=tab==='stats';
- if(tab==='stats'&&analysis){analysis.querySelector('h3').textContent='Statistiche partita';}
- else if(analysis){analysis.querySelector('h3').innerHTML='<span class="hub-accent-icon">▥</span> Analisi partita';}
+ if(analysis){
+  const title=analysis.querySelector('h3');
+  if(tab==='stats'){
+   title.textContent='Statistiche delle linee disponibili';
+   const rows=window.BasketLabMatchRows?.()||[];
+   const markets=['PTS','REB','AST'].map(m=>({market:m,count:rows.filter(row=>row.Mercato===m).length}));
+   const boxes=analysis.querySelectorAll('.hub-match-data-block');
+   if(boxes[0]){boxes[0].querySelector('small').textContent='Linee analizzate';boxes[0].querySelector('strong').textContent=String(rows.length);boxes[0].querySelector('p').textContent='Linee player props salvate per questa partita.'}
+   if(boxes[1]){boxes[1].querySelector('small').textContent='Mercati disponibili';boxes[1].querySelector('strong').textContent=markets.filter(m=>m.count).length+' su 3';boxes[1].querySelector('p').textContent=markets.map(m=>m.market+': '+m.count).join(' · ')}
+  }else{
+   title.innerHTML='<span class="hub-accent-icon">▥</span> Analisi partita';
+   const boxes=analysis.querySelectorAll('.hub-match-data-block');
+   if(boxes[0]){boxes[0].querySelector('small').textContent='Probabilità di vittoria';boxes[0].querySelector('strong').textContent='Non disponibile';boxes[0].querySelector('p').textContent='Non viene calcolata dal modello player props.'}
+   if(boxes[1]){boxes[1].querySelector('small').textContent='Punti attesi';boxes[1].querySelector('strong').textContent='Non disponibili';boxes[1].querySelector('p').textContent='Serve un modello dedicato ai punteggi di squadra.'}
+  }
+ }
  if(tab==='players')players?.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 function renderMatchPlayers(){
