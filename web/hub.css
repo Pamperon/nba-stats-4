@@ -576,3 +576,35 @@ body.hub-match-open .hub-match-quote-line{font-size:13px;line-height:1.55;paddin
  body.hub-match-open .hub-match-player-market details summary{font-size:12px}
  body.hub-match-open .hub-match-quote-line{font-size:12px}
 }
+
+/* Matchday 3.0: ESPN data visualization and compact per-market quote drawers */
+.hub-match-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:15px}
+.hub-match-chart-card{border:1px solid #426d8b;border-radius:18px;padding:18px;background:linear-gradient(145deg,#153a57,#0d293f)}
+.hub-match-chart-heading{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:20px}
+.hub-match-chart-heading strong{font-size:16px;color:#f7fbff}
+.hub-match-chart-heading small{font-size:11px;color:#9fbacf}
+.hub-match-chart-row{margin:0 0 18px}
+.hub-match-chart-label{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;color:#d6e7f4}
+.hub-match-chart-label b{font-size:17px;color:#fff;font-variant-numeric:tabular-nums}
+.hub-match-chart-track{height:14px;border-radius:20px;background:#061b2c;overflow:hidden;border:1px solid #2a526c}
+.hub-match-chart-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#ff8424,#ffb05c);transition:width .5s ease}
+.hub-match-chart-fill.team-1{background:linear-gradient(90deg,#3a99cb,#70d1e8)}
+.hub-match-chart-note{grid-column:1/-1;margin:0;color:#a6c3d8;font-size:11px;line-height:1.5}
+body.hub-match-open .hub-match-player-markets.compact{display:block}
+body.hub-match-open .hub-match-player-market.compact{border:0;padding:0;display:block}
+.hub-match-odds-dropdown{border:1px solid #3b6785;border-radius:13px;background:#0c283e;overflow:hidden}
+.hub-match-odds-dropdown>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;list-style:none;font-size:14px;font-weight:700;color:#fff}
+.hub-match-odds-dropdown>summary::-webkit-details-marker{display:none}
+.hub-match-odds-dropdown>summary span:last-child{font-size:12px;font-weight:500;color:#ffa24c}
+.hub-match-odds-dropdown[open]>summary{border-bottom:1px solid #385e7c;background:#173a54}
+.hub-match-odds-head,.hub-match-odds-row{display:grid;grid-template-columns:1fr 1fr .9fr 1fr;align-items:center;gap:6px;padding:11px 12px;text-align:center;font-variant-numeric:tabular-nums}
+.hub-match-odds-head{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:#a9c3d6;background:#0b2338}
+.hub-match-odds-row{font-size:13px;color:#eaf5ff;border-top:1px solid #2a4b65}
+.hub-match-odds-row:nth-child(even){background:#14334a}
+.hub-match-odds-price{font-weight:800;color:#ffa04a}
+.hub-match-odds-prob{font-weight:750;color:#80e1b0}
+body.hub-match-open .hub-match-player-card{padding:14px;display:block}
+body.hub-match-open .hub-match-player-identity{margin-bottom:10px}
+body.hub-match-open .hub-match-market-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+body.hub-match-open .hub-match-market-buttons button{font-size:13px;padding:11px 6px}
+@media(max-width:760px){.hub-match-charts{grid-template-columns:1fr;gap:9px}.hub-match-chart-card{padding:15px}.hub-match-chart-note{grid-column:1}.hub-match-odds-head,.hub-match-odds-row{gap:4px;padding:11px 7px;font-size:12px}.hub-match-odds-head{font-size:10px}}
