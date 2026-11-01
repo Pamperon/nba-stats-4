@@ -141,6 +141,16 @@ async function loadMatchForm(match){
   if(!response.ok)throw new Error('ESPN temporaneamente non disponibile');
   const data=await response.json();
   if(request!==matchFormRequest||activeMatch!==match)return;
+  const fixtureMeta=$('#hub-match-fixture-meta');
+  if(fixtureMeta){
+   const dateLabel=date.split('-').reverse().join('/');
+   const time=data.fixture_time?new Date(data.fixture_time):null;
+   const cached=Number(data.odds_cached_at);
+   const updated=Number.isFinite(cached)&&cached>0?new Date(cached*1000):null;
+   const clock=time&&!Number.isNaN(time.getTime())?time.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}):null;
+   const updateClock=updated&&!Number.isNaN(updated.getTime())?updated.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}):null;
+   fixtureMeta.textContent='Partita '+dateLabel+(clock?' · Ore '+clock:'')+(updateClock?' · Feed quote '+updateClock:' · Orario aggiornamento quote non disponibile');
+  }
   const [a,b]=data.teams||[];
   if(!a||!b)throw new Error('Dati incompleti');
   renderMatchCharts(teams,a,b,data.window_days,data.moneyline_odds);
