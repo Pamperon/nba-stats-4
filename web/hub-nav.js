@@ -1,7 +1,7 @@
 /* A+C UI navigation, delegating to original Basket Lab controls. */
 (()=>{'use strict';
 const $=s=>document.querySelector(s);
-const landing=$('.hub-landing'),tiles=$('.hub-tiles'),metrics=$('.hub-live-metrics'),featured=$('.hub-featured'),insights=$('.hub-insights');
+const landing=$('.hub-landing'),tiles=$('.hub-tiles'),metrics=$('.hub-live-metrics'),featured=$('.hub-featured'),insights=$('.hub-insights'),gamesShowcase=$('.hub-games-section'),singleShowcase=$('.hub-single-section'),performance=$('.hub-performance'),methodLink=$('.hub-method-link');
 if(!landing||!tiles)return;
 const menuToggle=$('.hub-menu-toggle'),menuDrawer=$('#hub-menu-drawer');
 function closeMenu(){if(!menuDrawer)return;menuDrawer.hidden=true;menuToggle?.setAttribute('aria-expanded','false');menuToggle?.setAttribute('aria-label','Apri menu di navigazione')}
@@ -19,7 +19,7 @@ const go={
 };
 let home=true;
 function mark(key){document.querySelectorAll('[data-hub]').forEach(el=>{if(el.dataset.hub===key)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')})}
-function display(){const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;}
+function display(){const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;if(singleShowcase)singleShowcase.hidden=!home||extra;if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;}
 function select(key){home=key==='home';mark(key);display();document.body.dataset.hubView=key;}
 document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
@@ -46,7 +46,7 @@ document.querySelectorAll('[data-pick-group]').forEach(b=>b.addEventListener('cl
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');
  if(!list||!picks)return;
- const sources=[...picks.querySelectorAll('.pick-group-daily .pick-group-items > .pick-selection')].slice(0,5);
+ const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,5);
  const visibleSources=sources.length?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
  list.replaceChildren();
  for(const source of visibleSources){
@@ -78,6 +78,34 @@ function updateInsights(){
  const counts=new Map();for(const market of markets){const type=market.toUpperCase().startsWith('UNDER')?'Under':'Over';counts.set(type,(counts.get(type)||0)+1)}
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
-if($('#picks'))new MutationObserver(()=>{featuredPicks();updateInsights()}).observe($('#picks'),{childList:true});
-refresh();featuredPicks();updateInsights();
+function refreshShowcase(){
+ const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
+ if(!picks)return;
+ if(single){
+  const group=picks.querySelector('.pick-group[aria-label="Singola del giorno"]');
+  const pick=group?.querySelector('.pick-selection');
+  single.replaceChildren();
+  if(pick){
+   const clone=pick.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+   clone.querySelectorAll('button,a').forEach(el=>{el.removeAttribute('href');el.setAttribute('tabindex','-1');el.setAttribute('aria-hidden','true')});
+   single.append(clone);
+   const action=document.createElement('button');action.type='button';action.className='hub-single-action';action.textContent='Apri analisi completa →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
+  }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
+  if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
+ }
+ if(games){
+  const matches=[...new Set([...picks.querySelectorAll('.pick-fixture')].map(el=>el.dataset.match||el.textContent.trim()).filter(Boolean))];
+  games.replaceChildren();
+  if(!matches.length){games.textContent='Le partite della giornata compariranno con le analisi disponibili.';return}
+  for(const match of matches.slice(0,6)){
+   const row=document.createElement('button');row.type='button';row.className='hub-match-row';
+   const name=document.createElement('strong');name.textContent=match;
+   const n=[...picks.querySelectorAll('.pick-fixture')].filter(el=>(el.dataset.match||el.textContent.trim())===match).length;
+   const count=document.createElement('span');count.textContent=n+' analisi ›';
+   row.append(name,count);row.addEventListener('click',()=>{go.picks();select('picks')});games.append(row);
+  }
+ }
+}
+if($('#picks'))new MutationObserver(()=>{featuredPicks();updateInsights();refreshShowcase()}).observe($('#picks'),{childList:true});
+refresh();featuredPicks();updateInsights();refreshShowcase();
 })();
