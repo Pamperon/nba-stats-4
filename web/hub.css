@@ -796,3 +796,24 @@ body.hub-match-open .hub-match-player-identity{margin-bottom:7px}
 body.hub-match-open .hub-match-player-market summary{cursor:pointer;min-height:42px;display:flex;align-items:center;gap:8px;padding:10px 12px}
 body.hub-match-open .hub-match-odds-dropdown[open]>summary{background:rgba(78,132,165,.16)}
 body.hub-match-open .hub-match-all-lines{cursor:pointer}
+
+/* Player cards: cleaner visual hierarchy and comfortable tap targets */
+body.hub-match-open .hub-match-player-list{gap:12px}
+body.hub-match-open .hub-match-player-card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(25,62,88,.98),rgba(13,41,63,.98));border:1px solid rgba(115,163,194,.42);border-radius:19px;padding:15px 15px 12px;box-shadow:0 5px 16px rgba(0,9,20,.13)}
+body.hub-match-open .hub-match-player-card:has(details[open]){border-color:rgba(248,157,68,.75);box-shadow:0 5px 20px rgba(0,9,20,.22)}
+body.hub-match-open .hub-match-player-identity{display:flex;align-items:center;gap:12px;margin:0 0 13px}
+body.hub-match-open .hub-match-player-photo{width:60px;height:60px;object-fit:cover;object-position:center top;background:#0b263c;border-radius:13px;flex-shrink:0}
+body.hub-match-open .hub-match-player-identity>div{min-width:0;flex:1;display:grid;gap:4px}
+body.hub-match-open .hub-match-player-identity strong{font-size:18px;line-height:1.2;color:#f1f6fb}
+body.hub-match-open .hub-match-player-identity small{font-size:12px;color:#a7c0d2}
+body.hub-match-open .hub-match-player-stats-link{border:0;background:none;color:#f5ae68;font-size:12px;white-space:nowrap;padding:10px 0 10px 8px;cursor:pointer}
+body.hub-match-open .hub-match-player-markets{margin:0}
+body.hub-match-open .hub-match-player-market{border:1px solid rgba(119,170,200,.43);border-radius:13px;overflow:hidden;background:rgba(4,27,44,.38)}
+body.hub-match-open .hub-match-player-market summary{padding:12px 13px;min-height:48px;box-sizing:border-box}
+body.hub-match-open .hub-match-player-market summary span:first-child{font-size:13px;color:#d9e7f2;font-weight:600}
+body.hub-match-open .hub-match-player-market summary span:last-child{font-size:12px;color:#f7aa62;font-weight:600}
+body.hub-match-open .hub-match-odds-head{font-size:10px;letter-spacing:.045em}
+body.hub-match-open .hub-match-odds-row{min-height:47px}
+body.hub-match-open .hub-match-all-lines{padding:13px 10px;font-size:13px}
+body.hub-match-open #hub-match-filter-panel .hub-match-extra-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:390px){body.hub-match-open .hub-match-player-card{padding:12px 11px}body.hub-match-open .hub-match-player-identity strong{font-size:16px}body.hub-match-open .hub-match-player-photo{width:54px;height:54px}}
