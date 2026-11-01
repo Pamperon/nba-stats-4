@@ -375,3 +375,21 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
 .hub-method-link>div{flex:1}
 .hub-method-link>button{background:none;border:0;color:#f5f8fc;font-size:30px;cursor:pointer}
 @media(max-width:760px){.hub-performance,.hub-method-link{padding:12px;margin:13px 0}.hub-performance-body{gap:12px;padding:9px 2px 2px}.hub-performance-symbol{width:68px;height:68px;flex-basis:68px;border-width:7px;font-size:28px}.hub-performance .hub-featured-heading h2{font-size:17px}}
+
+
+/* Matchday visual polish — NBA arena lighting, team badges and dense editorial cards. */
+.hub-landing{background:radial-gradient(ellipse at 70% -20%,#8db8d452 0%,transparent 38%),radial-gradient(ellipse at 82% 42%,#e878223b 0%,transparent 38%),linear-gradient(110deg,#061424 0%,#0d2a45 70%,#071321 100%)}
+.hub-landing:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.34;background:repeating-linear-gradient(110deg,transparent 0 45px,#a4c9eb13 46px 47px,transparent 48px 95px),radial-gradient(ellipse at 80% 0%,#f1f8ffb5,transparent 8%);mix-blend-mode:screen}
+.hub-landing:after{opacity:.53;right:-22px;top:18px;width:195px;height:195px;box-shadow:inset -20px -24px 35px #2d0d05a3,0 0 45px #ec842536}
+.hub-landing-inner{position:relative;z-index:2}
+.hub-trust-strip{box-shadow:0 6px 24px #0003}
+.hub-games-section,.hub-single-section,.hub-performance{box-shadow:0 8px 28px #0003}
+.hub-match-teams{display:flex;align-items:center;gap:10px;min-width:0}
+.hub-team{display:flex;align-items:center;gap:6px;min-width:0}
+.hub-team img{width:32px;height:32px;object-fit:contain;flex-shrink:0}
+.hub-team strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hub-match-teams>small{color:#ff9c42;font-size:10px;font-weight:800}
+.hub-match-count{font-size:11px;color:#ffab61;white-space:nowrap;border:1px solid #43637e;border-radius:18px;padding:5px 8px}
+.hub-featured-card{transition:border-color .2s ease,transform .2s ease}
+.hub-featured-card:hover{border-color:#e58b3f;transform:translateY(-1px)}
+@media(max-width:760px){.hub-match-teams{gap:5px}.hub-team{gap:3px}.hub-team img{width:25px;height:25px}.hub-team strong{font-size:10px}.hub-match-count{font-size:10px;padding:4px 6px}.hub-landing:after{width:148px;height:148px;right:-34px;top:12px}}
