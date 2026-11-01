@@ -1014,6 +1014,8 @@ async function initializeArchive(){
  try {
   const response=await api('/api/saved/dates');
   const payload=await response.json();
+  sessionPicksEnabled=payload.session_picks_enabled===true;
+  if(sessionPicksEnabled)refreshSessionPicks();
   const dates=(payload.dates||[]).map(item=>item.date);
   $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
   if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();setArchiveStatus('Nessuna analisi archiviata','notice');return;}
@@ -1024,7 +1026,9 @@ async function initializeArchive(){
  }catch(error){setArchiveStatus('Archivio temporaneamente non disponibile · riprova più tardi','error');}
 }
 let sessionPicksRequest=0;
+let sessionPicksEnabled=false;
 async function refreshSessionPicks(){
+ if(!sessionPicksEnabled)return;
  const request=++sessionPicksRequest;
  try{
   const response=await api('/api/picks/session');
@@ -1039,7 +1043,6 @@ async function refreshSessionPicks(){
   if(request===sessionPicksRequest){sessionPicksData=null;if(data)render();}
  }
 }
-refreshSessionPicks();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSessionPicks()});
 initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
