@@ -172,6 +172,43 @@ def scan_comparison(versions):
     return output
 
 
+def progressive_preview(versions, starts, margin_minutes=15):
+    """Research-only candidate ledger; never changes official historical results.
+
+    Only confirms a selection when a scan precedes its ESPN start by the
+    safety margin and the next scan would be too late. Missing starts fail
+    closed. A daily maximum of five distinct athlete/game pairs applies.
+    """
+    from datetime import datetime, timedelta
+    confirmed, seen = [], set()
+    daily = [v for v in versions if v['is_daily']]
+    for index, version in enumerate(daily):
+        at = datetime.fromisoformat(version['saved_at'])
+        next_at = (datetime.fromisoformat(daily[index + 1]['saved_at'])
+                   if index + 1 < len(daily) else None)
+        for row in version['lines']:
+            if len(confirmed) >= 5:
+                break
+            match = str(row.get('Partita') or '').strip().casefold()
+            start = starts.get(match)
+            if not start:
+                continue
+            if isinstance(start, str):
+                start = datetime.fromisoformat(start)
+            if at.tzinfo is None or start.tzinfo is None:
+                continue
+            deadline = start - timedelta(minutes=margin_minutes)
+            if not at < deadline or (next_at is not None and next_at < deadline):
+                continue
+            player = str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
+            key = (match, player)
+            if not player or key in seen:
+                continue
+            seen.add(key)
+            confirmed.append({'saved_at': version['saved_at'], 'row': row})
+    return confirmed
+
+
 def history(day):
     with storage.connection() as conn:
         rows = conn.execute("""
