@@ -764,3 +764,12 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #history-date{color-scheme:dark;min-height:44px;max-width:230px;padding:10px 12px;background:#13243b;color:#f2f6fc;border:1px solid #46617e;border-radius:10px;font:inherit}
 #history-date:focus-visible{outline:2px solid #fa9148;outline-offset:2px}
 #history-date-hint{display:block;margin-top:6px}
+
+/* Archive KPI layout: three metrics per row on narrow mobile screens. */
+#history-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#history-summary>div{min-width:0;box-sizing:border-box;padding:12px 9px}
+#history-summary>div:nth-child(4){grid-column:1}
+#history-summary>div:nth-child(5){grid-column:2}
+#history-summary>div:nth-child(6){grid-column:3}
+#history-summary strong{font-size:clamp(17px,4.4vw,25px);overflow-wrap:anywhere}
+#history-summary span{font-size:12px;overflow-wrap:anywhere}
