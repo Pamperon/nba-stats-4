@@ -324,7 +324,7 @@ function renderCalendar(){
  dayButtons.forEach((day,i)=>{
   const button=document.createElement('button');button.type='button';
   const raw=day.textContent.trim();
-  const parsed=raw.match(/(\\d{1,2})\\s*([a-zà]+)\\s*[/·-]?\\s*([a-zà]+)/i);
+  const parsed=raw.match(/(\d{1,2})\s*([a-zà]+)\s*[/·-]?\s*([a-zà]+)/i);
   if(parsed){const top=document.createElement('strong');top.textContent=parsed[1]+' '+parsed[2];button.append(top);const bottom=document.createElement('small');bottom.textContent=parsed[3];button.append(bottom)}
   else button.textContent=raw;
   button.className='hub-calendar-date'+(i===index?' active':'');
@@ -337,7 +337,7 @@ function renderCalendar(){
  if(!matches.length){const empty=document.createElement('div');empty.className='hub-calendar-empty';empty.textContent='Nessuna partita con quote disponibili per questa giornata.';games.append(empty);return}
  for(const match of matches){
   const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';
-  const teams=match.split(/\\s+-\\s+|\\s+vs\\.?\\s+/i).map(x=>x.trim());
+  const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
   if(teams.length===2){
    teams.forEach((team,i)=>{
     if(i){const center=document.createElement('span');center.className='hub-calendar-versus';center.textContent='VS';row.append(center)}
