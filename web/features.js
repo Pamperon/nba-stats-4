@@ -32,7 +32,7 @@
  async function loadHistory(refreshDates=false){
   const selected=el('history-date').value;
   const request=++historyRequest;
-  el('history-status').textContent='Caricamento dei pronostici del giorno…';el('history-tickets').replaceChildren();el('history-summary').replaceChildren();
+  el('history-status').textContent='Caricamento dei pronostici del giorno…';el('history-tickets').replaceChildren();el('history-summary').replaceChildren();el('history-single-tickets').replaceChildren();el('history-single-summary').replaceChildren();
   try{
    if(refreshDates||!selected){
     const payload=await read('/api/history/dates');if(request!==historyRequest)return;
@@ -52,6 +52,21 @@
  }
  const statusNames={won:'Centrato',lost:'Non centrato',unresolved:'Da verificare'};
  function renderHistory(payload){
+  const single=payload.single_archive||{published:false};
+  const selection=single.selection;
+  const outcome=single.outcome||{};
+  const state=single.published?(outcome.status||'unresolved'):'not_published';
+  const singleWon=state==='won'?1:0;
+  const singleLost=state==='lost'?1:0;
+  const singleSettled=singleWon+singleLost;
+  const singleOdds=selection?Number(selection.Quota):NaN;
+  const singleRoi=singleSettled&&Number.isFinite(singleOdds)&&singleOdds>1
+    ?((singleWon?singleOdds-1:-1)*100).toFixed(1).replace('.',',')+'%':'—';
+  el('history-single-summary').innerHTML=[['Pubblicate',single.published?1:0],['Vinte',singleWon],['Perse',singleLost],['Da verificare',single.published&&!singleSettled?1:0],['Successo',singleSettled?(singleWon*100)+'%':'—'],['ROI teorico',singleRoi]]
+    .map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
+  el('history-single-tickets').innerHTML=selection
+    ?'<section class="daily-group"><div class="history-grid"><article class="history-ticket"><div class="ticket-heading"><h3>'+escape(selection.Giocatore)+'</h3><span class="outcome outcome-'+escape(state)+'">'+escape(statusNames[state]||'Da verificare')+'</span></div><div class="history-leg"><p>'+escape(selection.Partita)+'</p><div class="leg-selection">'+escape(selection.Scelta)+' '+escape(selection.Linea)+' '+escape(selection.Mercato)+' <span>Quota <b>'+odd(selection.Quota)+'</b></span></div><p>Probabilità prepartita: '+escape(selection['Prob. stimata %'])+'%</p><p class="leg-result">'+(outcome.actual==null?'Risultato non ancora verificato':'Risultato finale: <strong>'+escape(outcome.actual)+'</strong>')+'</p></div></article></div></section>'
+    :'<p class="feature-note">Nessuna Singola ufficiale pubblicata per questa giornata.</p>';
   const lines=payload.official_lines||[];
   const legacy=payload.other_lines||[];
   const won=lines.filter(line=>line.status==='won').length;
