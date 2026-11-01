@@ -46,3 +46,21 @@ test('direct archive URL does not display home panels',()=>{
  assert.equal(doc.querySelector('.hub-landing').hidden,true);
  window.close();
 });
+
+test('homepage cards and metrics hide on other destinations',()=>{
+ const {window,doc}=setup();
+ assert.equal(doc.querySelector('.hub-featured').hidden,false);
+ doc.querySelector('.hub-sidebar [data-hub="stats"]').click();
+ assert.equal(doc.querySelector('.hub-featured').hidden,true);
+ assert.equal(doc.querySelector('.hub-live-metrics').hidden,true);
+ doc.querySelector('.hub-mobile-bar [data-hub="home"]').click();
+ assert.equal(doc.querySelector('.hub-featured').hidden,false);
+ window.close();
+});
+test('category shortcuts target actual pick groups',()=>{
+ const {window,doc}=setup();
+ assert.equal(doc.querySelectorAll('[data-pick-group]').length,3);
+ doc.querySelector('[data-pick-group="doppia"]').click();
+ assert.equal(doc.querySelector('.hub-landing').hidden,true);
+ window.close();
+});
