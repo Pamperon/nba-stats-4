@@ -11,7 +11,7 @@ import recommendations
 
 ROME = ZoneInfo("Europe/Rome")
 POLICY = "nba-evening-session-v1"
-START = date(2026, 11, 3)
+START = date(2026, 11, 2)
 
 
 def eligible(day):
