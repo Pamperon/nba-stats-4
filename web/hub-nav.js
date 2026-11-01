@@ -173,12 +173,12 @@ function renderMatchMarketStats(){
  if(!statsPanel){statsPanel=document.createElement('div');statsPanel.id='hub-match-market-distribution';statsPanel.className='hub-match-market-distribution';analysis.append(statsPanel)}
  statsPanel.replaceChildren();
  const heading=document.createElement('strong');heading.textContent='Statistiche delle linee disponibili';statsPanel.append(heading);
- const overview=document.createElement('p');overview.textContent=rows.length+' linee analizzate · '+markets.filter(m=>m.count).length+' mercati su 3';statsPanel.append(overview);
+ const overview=document.createElement('p');overview.textContent=rows.length+' linee analizzate · '+new Set(rows.map(r=>r['ESPN ID']||r.Giocatore)).size+' giocatori · '+markets.filter(m=>m.count).length+' mercati su 3';statsPanel.append(overview);
  const track=document.createElement('div');track.className='hub-match-market-track';
  for(const m of markets){if(!m.count)continue;const seg=document.createElement('span');seg.className='market-'+m.market.toLowerCase();seg.style.width=(m.count/rows.length*100)+'%';seg.title=m.market+': '+m.count;track.append(seg)}
  statsPanel.append(track);
  const legend=document.createElement('div');legend.className='hub-match-market-legend';
- markets.forEach(m=>{const item=document.createElement('span');item.textContent=m.market+' · '+m.count;legend.append(item)});statsPanel.append(legend);
+ markets.forEach(m=>{const item=document.createElement('span');const prices=rows.filter(r=>r.Mercato===m.market).map(r=>Number(r.Quota)).filter(p=>Number.isFinite(p)&&p>1);item.textContent=m.market+' · '+m.count+(prices.length?' · quota media '+(prices.reduce((a,b)=>a+b,0)/prices.length).toLocaleString('it-IT',{maximumFractionDigits:2}):'');legend.append(item)});statsPanel.append(legend);
  const hint=document.createElement('p');hint.textContent='Distribuzione delle linee giocatore salvate per questa partita.';statsPanel.append(hint);
 }
 function setMatchTab(tab){
