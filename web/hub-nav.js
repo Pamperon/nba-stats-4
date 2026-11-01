@@ -100,8 +100,11 @@ function openMatchQuotes(match){
  const fixture=$('#finder-fixture');
  if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
  const teamSelect=$('#hub-match-team-filter');if(teamSelect){teamSelect.replaceChildren();const both=document.createElement('option');both.value='';both.textContent='Entrambe le squadre';teamSelect.append(both);for(const teamName of match.split(/\s+-\s+|\s+vs\.?\s+/i)){const option=document.createElement('option');option.value=teamName.trim();option.textContent=teamName.trim();teamSelect.append(option)}}
+ const quick=$('#hub-match-team-quick');if(quick){quick.replaceChildren();const choices=[{label:'Tutti',value:''},...match.split(/\s+-\s+|\s+vs\.?\s+/i).map(team=>({label:team.trim().split(' ').slice(-1)[0],value:team.trim()}))];choices.forEach(choice=>{const button=document.createElement('button');button.type='button';button.textContent=choice.label;button.dataset.team=choice.value;button.setAttribute('aria-pressed',String(!choice.value));button.classList.toggle('active',!choice.value);button.addEventListener('click',()=>{const select=$('#hub-match-team-filter');if(select)select.value=choice.value;syncMatchQuickTeams();renderMatchPlayers()});quick.append(button)})}
+ const filterPanel=$('#hub-match-filter-panel');if(filterPanel)filterPanel.hidden=true;const filterToggle=$('#hub-match-filter-toggle');if(filterToggle)filterToggle.setAttribute('aria-expanded','false');
  const meta=$('#hub-match-fixture-meta');if(meta){const selected=$('#date')?.value;meta.textContent=selected?selected.split('-').reverse().join('/'):'Partita NBA'}
  const oddMin=$('#hub-match-odd-min'),oddMax=$('#hub-match-odd-max');if(oddMin)oddMin.value='1.20';if(oddMax)oddMax.value='2.20';if($('#hub-match-sort'))$('#hub-match-sort').value='team';
+ syncMatchQuickTeams();syncMatchOddsRange();
  matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.market==='PTS'));$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
@@ -241,6 +244,14 @@ function setMatchTab(tab){
 // Refresh the dedicated match cards when asynchronous saved daily quotes finish loading.
 const finderCount=$('#finder-count');
 if(finderCount)new MutationObserver(()=>{if(activeMatch&&document.body.classList.contains('hub-match-open')){renderMatchPlayers();renderMatchMarketStats()}}).observe(finderCount,{childList:true,characterData:true,subtree:true});
+function syncMatchQuickTeams(){
+ const selected=$('#hub-match-team-filter')?.value||'';
+ document.querySelectorAll('#hub-match-team-quick button').forEach(button=>{const active=button.dataset.team===selected;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
+}
+function syncMatchOddsRange(){
+ const min=$('#hub-match-odd-min')?.value||'1.20',max=$('#hub-match-odd-max')?.value||'2.20';
+ const label=$('#hub-match-range-label');if(label)label.textContent='Quote '+min.replace('.',',')+'–'+max.replace('.',',');
+}
 function renderMatchPlayers(){
  if(!document.body.classList.contains('hub-match-open'))return;
  const list=$('#hub-match-player-list'),count=$('#hub-match-player-count');if(!list)return;
@@ -279,14 +290,15 @@ function renderMatchPlayers(){
    const details=document.createElement('details');details.className='hub-match-odds-dropdown';
    const summary=document.createElement('summary');const label=document.createElement('span');label.textContent=({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'})[market]+' · '+subset.length+' linee';const chevron=document.createElement('span');chevron.textContent='Apri quote ▾';details.addEventListener('toggle',()=>{chevron.textContent=details.open?'Chiudi quote ▴':'Apri quote ▾'});summary.append(label,chevron);details.append(summary);
    const head=document.createElement('div');head.className='hub-match-odds-head';['Linea','Scelta','Quota','Stima'].forEach(text=>{const el=document.createElement('span');el.textContent=text;head.append(el)});details.append(head);
-   const sorted=subset.sort((a,b)=>Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)));
+   const sorted=subset.sort((a,b)=>Number(a.Quota)-Number(b.Quota)||Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)));
    const visible=sorted.filter(row=>rangeValid&&Number(row.Quota)>=oddMin&&Number(row.Quota)<=oddMax);
+   sorted.sort((a,b)=>(visible.includes(b)?1:0)-(visible.includes(a)?1:0)||Number(a.Quota)-Number(b.Quota)||Number(a.Linea)-Number(b.Linea));
    for(const row of sorted){
     const entry=document.createElement('div');entry.className='hub-match-odds-row';if(rangeValid&& !visible.includes(row))entry.classList.add('hub-match-odds-extra');
     const values=[displayNum(row.Linea),String(row.Scelta||'—').toUpperCase(),displayNum(row.Quota),row['Prob. stimata %']==null||row['Prob. stimata %']===''?'—':displayNum(row['Prob. stimata %'])+'%'];
     values.forEach((value,i)=>{const cell=document.createElement('span');cell.textContent=value;if(i===2)cell.className='hub-match-odds-price';if(i===3)cell.className='hub-match-odds-prob';entry.append(cell)});details.append(entry);
    }
-   if(rangeValid&&visible.length<sorted.length){const toggle=document.createElement('button');toggle.type='button';toggle.className='hub-match-all-lines';toggle.textContent='Mostra tutte le '+sorted.length+' linee';toggle.onclick=()=>{const expanded=details.classList.toggle('show-all-lines');toggle.textContent=expanded?'Mostra solo quote nel filtro':'Mostra tutte le '+sorted.length+' linee'};details.append(toggle)}
+   if(rangeValid&&visible.length<sorted.length){const toggle=document.createElement('button');toggle.type='button';toggle.className='hub-match-all-lines';toggle.textContent='Mostra altre '+(sorted.length-visible.length)+' linee';toggle.onclick=()=>{const expanded=details.classList.toggle('show-all-lines');toggle.textContent=expanded?'Mostra solo quote nel filtro':'Mostra altre '+(sorted.length-visible.length)+' linee'};details.append(toggle)}
    block.append(details);markets.append(block);
   }
   card.append(markets);list.append(card);
@@ -294,7 +306,9 @@ function renderMatchPlayers(){
 }
 document.querySelectorAll('[data-match-tab]').forEach(button=>button.addEventListener('click',()=>setMatchTab(button.dataset.matchTab)));
 $('#hub-match-search')?.addEventListener('input',renderMatchPlayers);
- for(const id of ['hub-match-team-filter','hub-match-sort','hub-match-odd-min','hub-match-odd-max'])$('#'+id)?.addEventListener('change',renderMatchPlayers);
+ for(const id of ['hub-match-team-filter','hub-match-sort','hub-match-odd-min','hub-match-odd-max'])$('#'+id)?.addEventListener('change',()=>{syncMatchQuickTeams();syncMatchOddsRange();renderMatchPlayers()});
+ $('#hub-match-filter-toggle')?.addEventListener('click',()=>{const panel=$('#hub-match-filter-panel'),button=$('#hub-match-filter-toggle');if(!panel||!button)return;panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));const arrow=$('#hub-match-filter-chevron');if(arrow)arrow.textContent=panel.hidden?'▾':'▴'});
+
 document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b===button));renderMatchPlayers()}));
 $('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;go.home();select('home')});
 function renderCalendar(){
