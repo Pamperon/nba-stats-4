@@ -172,7 +172,7 @@ def scan_comparison(versions):
     return output
 
 
-def progressive_preview(versions, starts, margin_minutes=15, as_of=None):
+def progressive_preview(versions, starts, margin_minutes=15, as_of=None, max_age_hours=3):
     """Read-only deadline-based replay of saved pregame snapshots.
 
     Select the newest available snapshot before each game's cutoff, never
@@ -215,6 +215,9 @@ def progressive_preview(versions, starts, margin_minutes=15, as_of=None):
         if observed is None:
             continue
         latest, fixture_lines = observed
+        # Never promote a stale quote from an earlier partial scan.
+        if deadline - datetime.fromisoformat(latest['saved_at']) > timedelta(hours=max_age_hours):
+            continue
         for row in fixture_lines:
             athlete = str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
             if not athlete:
