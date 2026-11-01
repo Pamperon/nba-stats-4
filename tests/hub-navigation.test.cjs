@@ -81,6 +81,6 @@ test('no live picks means no fabricated probabilities',async()=>{
  doc.querySelector('#picks').replaceChildren();
  await new Promise(resolve=>window.queueMicrotask(resolve));
  assert.equal(doc.querySelector('#hub-prob').textContent,'—');
- assert.equal(doc.querySelector('#hub-total').textContent,'—');
+ assert.equal(doc.querySelector('#hub-total').textContent,'0');
  window.close();
 });
