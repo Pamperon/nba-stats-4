@@ -388,25 +388,27 @@ function render(){
   const pendingPublication=isFixed && pickSource.official_top5_pending;
   const targetDay=String(pickSource.date||$('date')?.value||'');
   const publicationNotice='Le Top 5 ufficiali del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
-  const featured=chosen.slice(0,5),remaining=chosen.slice(5);
-  const preliminary=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,5):[];
-  const preliminaryHtml=pendingPublication
-    ?'<section class="panel pick-group pick-group-daily" aria-label="Analisi preliminari"><div class="pick-group-heading"><h2>Analisi preliminari</h2></div>'+
-      '<p>In valutazione · aggiornate all’ultima scansione. Possono cambiare e non sono Top 5 ufficiali.</p>'+
-      (preliminary.length?'<div class="pick-group-items">'+preliminary.map(pickCard).join('')+'</div>':'<p>Nessuna analisi preliminare idonea disponibile al momento.</p>')+'</section>'
-    :'';
+  // Show the current publication session's provisional Top 5 in the primary card.
+  // Once published, render only frozen official selections from the session API.
+  const provisional=pendingPublication&&Array.isArray(pickSource.preliminary_top5);
+  const visibleTop5=provisional?pickSource.preliminary_top5.slice(0,5):chosen.slice(0,5);
+  const remaining=provisional?[]:chosen.slice(5);
   const singlePick=pendingPublication?pickSource.preliminary_single:pickSource.official_single;
-  const singleHeading=pendingPublication?'Singola preliminare':'Singola del giorno';
+  const singleHeading=pendingPublication?'Singola provvisoria':'Singola del giorno';
+  const topHeading=pendingPublication?'Top 5 provvisoria':'Top 5 ufficiali del giorno';
+  const stateMessage=pendingPublication
+   ?'In aggiornamento · le selezioni possono cambiare con le nuove scansioni fino alla pubblicazione delle 18:00.'
+   :'Selezioni ufficiali confermate · bloccate dalla pubblicazione delle 18:00.';
   const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno"><div class="pick-group-heading"><h2>'+singleHeading+'</h2></div>'+
-    (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
-    (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna Singola idonea disponibile per questa giornata.</p>')+'</section>';
+   '<p>'+stateMessage+'</p>'+
+   (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna Singola idonea disponibile al momento.</p>')+'</section>';
   pending.push(singlePick?[singlePick]:[]);
-  pending.push(chosen);
-  if(pendingPublication)pending.push(preliminary);
-  $('picks').innerHTML=singleSection+'<section id="pick-giorno" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Top 5 ufficiali del giorno</h2></div>'+
-   (chosen.length?'<p>Le '+featured.length+' selezioni ufficiali sono bloccate e non cambiano dopo la pubblicazione.</p><div class="pick-group-items">'+featured.map(pickCard).join('')+'</div>'+
-   (remaining.length?'<details id="pick-more-lines"><summary>Mostra tutte le altre '+remaining.length+' previsioni idonee</summary><div class="pick-group-items">'+remaining.map(pickCard).join('')+'</div></details>':''):
-   (pendingPublication?'<p>'+publicationNotice+' Le analisi restano consultabili nella sezione Statistiche.</p>':'<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>'))+'</section>'+preliminaryHtml;
+  pending.push(visibleTop5);
+  $('picks').innerHTML=singleSection+'<section id="pick-giorno" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>'+topHeading+'</h2></div>'+
+   '<p>'+stateMessage+'</p>'+
+   (visibleTop5.length?'<div class="pick-group-items">'+visibleTop5.map(pickCard).join('')+'</div>'+
+    (remaining.length?'<details id="pick-more-lines"><summary>Mostra tutte le altre '+remaining.length+' previsioni idonee</summary><div class="pick-group-items">'+remaining.map(pickCard).join('')+'</div></details>':''):
+    (pendingPublication?'<p>'+publicationNotice+' Nessuna analisi preliminare idonea disponibile al momento.</p>':'<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>'))+'</section>';
  }else{
  const groups=[['Singola',1,1.70,2.00],['Doppia',2,1.40,1.69],['Tripla',3,1.20,1.39]];
  $('picks').innerHTML=groups.map(([title,count,min,max])=>{
