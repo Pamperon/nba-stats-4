@@ -132,7 +132,7 @@ class SchedulerTests(unittest.TestCase):
         self.assertTrue(scheduler.valid_slot("2026-10-28T14:30"))
         self.assertFalse(scheduler.valid_slot("2026-10-28T14:00"))
         self.assertFalse(scheduler.valid_slot("2026-10-28T12:00"))
-        self.assertIsNone(scheduler.due_slot(target + dt.timedelta(hours=2)))  # 18:00 publication cutoff
+        self.assertEqual(scheduler.due_slot(target + dt.timedelta(hours=2)), target)  # 16:30, before cutoff
         self.assertIsNone(scheduler.due_slot(target + dt.timedelta(hours=2, seconds=1)))
         self.assertEqual(scheduler.due_slot(target.astimezone(dt.timezone.utc)), target)
         calls = []
