@@ -278,6 +278,39 @@ def history(day, starts=None):
             if row is not None:
                 official.append(row)
     preview = progressive_preview(versions, starts) if starts else []
+    # Match simulated picks against settled lines without changing their
+    # original pregame odds or estimated probability.
+    by_identity = {leg_identity(row): row for row in lines}
+    evaluated_preview = []
+    for item in preview:
+        saved_row = item['row']
+        settled = by_identity.get(leg_identity(saved_row), {})
+        actual = settled.get('actual')
+        valid = isinstance(actual, (int, float)) and not isinstance(actual, bool) and math.isfinite(actual)
+        line = float(saved_row['Linea'])
+        win = None if not valid or actual == line else (
+            actual > line if str(saved_row['Scelta']).lower() == 'over' else actual < line)
+        evaluated_preview.append({
+            **item, 'actual': actual if valid else None,
+            'win': win, 'status': 'unresolved' if win is None else 'won' if win else 'lost'
+        })
+    preview = evaluated_preview
+    def performance(rows, unpack):
+        evaluated = [unpack(row) for row in rows]
+        settled = [row for row in evaluated if row['win'] is not None]
+        wins = sum(row['win'] is True for row in settled)
+        profit = sum((float(row['Quota']) - 1) if row['win'] else -1 for row in settled)
+        return {'total': len(evaluated), 'settled': len(settled),
+                'wins': wins, 'losses': len(settled) - wins,
+                'success_pct': round(100 * wins / len(settled), 1) if settled else None,
+                'roi_pct': round(100 * profit / len(settled), 1) if settled else None}
+    comparison = {
+        'official': performance(official, lambda row: row),
+        'progressive': performance(preview, lambda item: {**item['row'], 'win': item['win']}),
+        'overlap': len({leg_identity(row) for row in official} &
+                       {leg_identity(item['row']) for item in preview}),
+        'research_only': True,
+    }
     official_ids = {leg_identity(row) for row in official}
     other = [row for row in lines if leg_identity(row) not in official_ids]
     return {'date': day, 'groups': groups, 'lines': lines,
@@ -285,6 +318,7 @@ def history(day, starts=None):
             'scan_comparison': scan_comparison(versions),
             'progressive_preview': preview,
             'progressive_preview_count': len(preview),
+            'progressive_comparison': comparison,
             'has_daily_model': first_daily is not None,
             'official_saved_at': first_daily['saved_at'] if first_daily else None,
             'official_summary': {state: sum(line['status'] == state for line in official) for state in ('won', 'lost', 'unresolved')},
