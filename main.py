@@ -261,6 +261,43 @@ def _match_daily_events(day):
     return events
 
 
+def _cached_match_moneyline(date, team_a, team_b):
+    """Read only the existing saved OddsPapi feed; never trigger a paid call."""
+    if not storage.configured():
+        return None
+    try:
+        envelope = storage.cache_read("odds:nba:bet365.it:v1", max_age_hours=12)
+        if not isinstance(envelope, dict):
+            return None
+        for fixture in (envelope.get("data") or {}).values():
+            if {str(fixture.get("participant1Name", "")).casefold(), str(fixture.get("participant2Name", "")).casefold()} != {team_a.casefold(), team_b.casefold()}:
+                continue
+            start = engine.fixture_start_rome(fixture)
+            if start is None or start.date().isoformat() != date:
+                continue
+            book = (fixture.get("bookmakerOdds") or {}).get("bet365.it") or {}
+            if book.get("bookmakerIsActive") is not True or book.get("suspended"):
+                continue
+            market = (book.get("markets") or {}).get("111") or {}
+            if market.get("marketActive") is not True:
+                continue
+            outcomes = market.get("outcomes") or {}
+            prices = []
+            for outcome_id in ("111", "112"):
+                item = outcomes.get(outcome_id) or {}
+                price = item.get("price")
+                if isinstance(price, bool) or not isinstance(price, (int, float)) or not 1 < price < 1000:
+                    break
+                if item.get("active") is False:
+                    break
+                prices.append(float(price))
+            if len(prices) == 2:
+                return prices if str(fixture.get("participant1Name", "")).casefold() == team_a.casefold() else prices[::-1]
+    except Exception:
+        logger.exception("Cannot read saved match winner odds")
+    return None
+
+
 @app.get('/api/match/form')
 def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
                team_a: str = Query(min_length=2, max_length=80),
@@ -274,7 +311,7 @@ def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
         raise HTTPException(400, 'Le squadre devono essere diverse')
     key = (date, team_a.casefold(), team_b.casefold())
     if key in _match_form_cache:
-        return _match_form_cache[key]
+        return {**_match_form_cache[key], 'moneyline_odds': _cached_match_moneyline(date, team_a, team_b)}
     try:
         # ESPN rejects a YYYYMMDD-YYYYMMDD range with HTTP 400.
         # Query supported single-day scoreboards concurrently and cache each day.
@@ -323,7 +360,7 @@ def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
                   'teams': [team_stats(team_a), team_stats(team_b)],
                   'h2h': [{'date': g['date'], 'teams': g['teams'], 'scores': g['scores']} for g in h2h]}
         _match_form_cache[key] = result
-        return result
+        return {**result, 'moneyline_odds': _cached_match_moneyline(date, team_a, team_b)}
     except requests.RequestException:
         logger.warning('ESPN historical scoreboard temporarily unavailable', exc_info=True)
         raise HTTPException(503, 'Risultati storici ESPN temporaneamente non disponibili')
