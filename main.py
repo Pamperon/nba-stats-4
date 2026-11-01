@@ -455,6 +455,15 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
                                       'lines': official['lines'] if official else []}
         visible['official_top5'] = official
         visible['official_top5_pending'] = official is None
+        import recommendations
+        import daily_single_archive
+        single = daily_single_archive.read(visible['date'])
+        if official is None:
+            visible['preliminary_single'] = recommendations.select_single(visible.get('results', []))
+        else:
+            visible['preliminary_single'] = None
+        visible['official_single'] = single.get('selection') if single.get('published') else None
+        visible['official_single_pending'] = official is None
     return visible
 
 @app.get('/api/saved/archive')
