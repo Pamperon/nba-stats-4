@@ -71,7 +71,7 @@ class AppRuntimeTests(unittest.TestCase):
             self.assertEqual(self.client.get('/api/history?date=2099-01-01').status_code,400)
             self.assertEqual(self.client.get('/api/odds/dates').status_code,404)
             self.assertEqual(self.client.get('/api/odds/changes?date=2026-10-29').status_code,404)
-            history.assert_called_once_with('2026-10-23')
+            history.assert_called_once_with('2026-10-23', starts=None)
             dates.assert_called_once()
 
     def test_archive_includes_exact_saved_history_only_when_requested(self):
