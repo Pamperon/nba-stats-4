@@ -85,7 +85,7 @@ function openMatchQuotes(match){
  const title=$('#hub-match-title');if(title){title.replaceChildren();const teams=match.split(/\\s+-\\s+|\\s+vs\\.?\\s+/i);teams.forEach((team,i)=>{if(i){const vs=document.createElement('b');vs.textContent='VS';title.append(vs)}const name=document.createElement('strong');name.textContent=team;title.append(name)})}
  document.body.classList.add('hub-match-open');setMatchTab('analysis');
  // Reuse the original complete odds explorer and its saved dataset.
- go.finder();select('finder');
+ go.finder();select('finder');document.body.classList.add('hub-match-open');
  const fixture=$('#finder-fixture');
  if(!fixture)return;
  const available=[...fixture.options].map(option=>option.value);
