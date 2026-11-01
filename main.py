@@ -842,7 +842,13 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
     if day > datetime.now(ZoneInfo('Europe/Rome')).date():
         raise HTTPException(400, 'La giornata non è ancora archiviabile')
     try:
-        return public_views.history(date)
+        # ESPN fixture times are used only for shadow evaluation; archive stays immutable.
+        starts = None
+        try:
+            starts = public_views.fixture_start_map(schedule(date)['games'])
+        except Exception:
+            logger.warning('ESPN start times unavailable for progressive preview: %s', date)
+        return public_views.history(date, starts=starts)
     except Exception:
         logger.exception('Cannot read public recommendation archive')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
