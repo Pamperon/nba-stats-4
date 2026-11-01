@@ -19,13 +19,17 @@
   <div class="hub-match-summary"><span>✦</span><div><strong>In sintesi</strong><p>Esplora le linee disponibili dei giocatori per confrontare quote e probabilità stimate. Le analisi di squadra verranno mostrate quando supportate da dati verificati.</p></div></div>
  </section>
  <section id="hub-match-player-section" class="hub-match-player-section">
-  <div class="hub-match-section-heading"><h3>♙ Giocatori e quote</h3><span id="hub-match-player-count"></span></div>
+  <div class="hub-match-section-heading"><span id="hub-match-player-count"></span></div>
   <div class="hub-match-player-toolbar"><input id="hub-match-search" type="search" placeholder="⌕ Cerca un giocatore..." aria-label="Cerca giocatore"><div id="hub-match-market-buttons" class="hub-match-market-buttons"><button type="button" data-market="PTS" class="active">Punti</button><button type="button" data-market="REB">Rimbalzi</button><button type="button" data-market="AST">Assist</button></div></div>
+  <div class="hub-match-team-quick" id="hub-match-team-quick" role="group" aria-label="Filtra per squadra"></div>
+  <div class="hub-match-filter-top"><span id="hub-match-range-label">Quote 1,20–2,20</span><button id="hub-match-filter-toggle" type="button" aria-expanded="false" aria-controls="hub-match-filter-panel">☷ Filtri <span id="hub-match-filter-chevron">▾</span></button></div>
+  <div id="hub-match-filter-panel" hidden>
   <div class="hub-match-extra-filters">
    <label>Squadra<select id="hub-match-team-filter"><option value="">Entrambe le squadre</option></select></label>
    <label>Ordina<select id="hub-match-sort"><option value="team">Per squadra</option><option value="name">Nome A–Z</option><option value="lines">Più linee</option></select></label>
    <label>Quota minima<input id="hub-match-odd-min" type="number" inputmode="decimal" min="1.01" max="100" step="0.05" value="1.20"></label>
    <label>Quota massima<input id="hub-match-odd-max" type="number" inputmode="decimal" min="1.01" max="100" step="0.05" value="2.20"></label>
+  </div>
   </div>
   <div id="hub-match-player-list" class="hub-match-player-list" aria-live="polite"></div>
   <p class="hub-match-data-note">Sono mostrate esclusivamente linee e quote presenti nei dati salvati. Quote Under e statistiche mancanti non vengono ricostruite.</p>
