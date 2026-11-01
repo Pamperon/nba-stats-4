@@ -489,23 +489,36 @@ function refreshShowcase(){
    const now=Date.now();
    fixtures=fixtures.filter(game=>game.upcoming===true && game.start_at && new Date(game.start_at).getTime()>now);
    if(!fixtures.length){games.textContent='Nessun’altra partita da iniziare in questa sessione. Consulta il calendario NBA per gli incontri in corso e conclusi.';return}
-   const quoted=new Set([...($('#finder-fixture')?.options||[])].map(el=>fixtureKey(el.value)));
-   for(const game of fixtures){
-    const match=fixtureName(game),hasOdds=quoted.has(match);
-    const row=document.createElement('button');row.type='button';row.className='hub-match-row';
-    const pair=document.createElement('div');pair.className='hub-match-teams';
-    [game.away,game.home].forEach((team,i)=>{
-     if(i){const versus=document.createElement('small');versus.textContent='VS';pair.append(versus)}
-     const side=document.createElement('span');side.className='hub-team';
+   for(const [index,game] of fixtures.entries()){
+    const match=fixtureName(game);
+    const hasOdds=!!matchingFixtureOption(match);
+    const row=document.createElement('button');
+    row.type='button';
+    row.className='hub-match-row hub-premium-fixture';
+    row.dataset.theme=String(index%4);
+    row.setAttribute('aria-label',match+' · '+fixtureTime(game)+' · Apri dettagli');
+    const matchup=document.createElement('div');
+    matchup.className='hub-premium-matchup';
+    for(const [i,team] of [game.away,game.home].entries()){
+     if(i){const versus=document.createElement('span');versus.className='hub-premium-vs';versus.textContent='VS';matchup.append(versus)}
+     const side=document.createElement('span');side.className='hub-premium-team';
      const code=matchTeamCodes[team];
-     if(code){const logo=document.createElement('img');logo.alt='';logo.loading='lazy';logo.width=32;logo.height=32;logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';side.append(logo)}
-     const name=document.createElement('strong');name.textContent=team||'NBA';side.append(name);pair.append(side)
-    });
-    const detail=document.createElement('span');detail.className='hub-match-count';
-    const time=document.createElement('span');time.className='hub-upcoming-time';time.textContent='◷ '+fixtureTime(game);
-    const odds=document.createElement('span');odds.className='hub-upcoming-odds';odds.textContent=hasOdds?'Analisi disponibili →':'Dettagli →';
-    detail.append(time,odds);
-    row.append(pair,detail);
+     if(code){
+      const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';
+      logo.alt='';logo.loading='lazy';logo.width=60;logo.height=60;
+      logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)
+     }
+     const name=document.createElement('strong');name.textContent=team||'NBA';side.append(name);
+     matchup.append(side)
+    }
+    const footer=document.createElement('div');footer.className='hub-premium-footer';
+    const timing=document.createElement('span');timing.className='hub-premium-timing';
+    const stamp=new Date(game.start_at);
+    const date=document.createElement('span');date.textContent=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'short'}).format(stamp);
+    const hour=document.createElement('span');hour.textContent=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',hour:'2-digit',minute:'2-digit'}).format(stamp);
+    timing.append(date,hour);
+    const action=document.createElement('span');action.className='hub-premium-action';action.textContent=hasOdds?'Analisi →':'Dettagli →';
+    footer.append(timing,action);row.append(matchup,footer);
     row.addEventListener('click',()=>openFixtureDetails(match));
     games.append(row)
    }
