@@ -21,7 +21,7 @@ with patch.dict(os.environ, {'NBA_STATS_ACCESS_TOKEN': 'offline-token', 'ODDSPAP
 
 class SchedulerTimingTests(unittest.TestCase):
     def test_check_just_before_slot_waits_for_slot_instead_of_ten_minutes(self):
-        now = dt.datetime(2026, 10, 25, 20, 59, 41, tzinfo=scheduled_scan.ROME)
+        now = dt.datetime(2026, 10, 25, 17, 29, 41, tzinfo=scheduled_scan.ROME)
         self.assertEqual(scheduled_scan.seconds_until_check(now), 19)
         self.assertEqual(scheduled_scan.seconds_until_check(now, maximum=35), 19)
 
