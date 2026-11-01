@@ -169,3 +169,16 @@ body[data-hub-view="stats"] .hub-shell #date-area{display:none!important}
 body[data-hub-view="history"] .hub-shell #app,
 body[data-hub-view="about"] .hub-shell #app{display:none!important}
 @media(max-width:760px){body[data-hub-view="home"] .hub-shell #app{display:none!important}}
+
+.hub-insights{display:grid;grid-template-columns:1.3fr 1fr;gap:13px;margin:10px 0 24px}
+.hub-insights[hidden]{display:none!important}
+.hub-insight-panel{min-width:0;background:linear-gradient(145deg,#112e4b,#081b2f);border:1px solid #4b7295;border-radius:13px;padding:16px}
+.hub-insight-title{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #2e506f;padding-bottom:11px;margin-bottom:10px}
+.hub-insight-title h2{font-size:17px;color:#fff;margin:0}
+.hub-insight-title button{background:transparent;color:#dceafd;border:0;font-size:11px;cursor:pointer}
+.hub-insight-content{color:#d6e6f8;font-size:13px}
+.hub-game,.hub-trend{display:flex;justify-content:space-between;gap:8px;padding:11px 9px;border-bottom:1px solid #294765;background:#0d243a}
+.hub-game:nth-child(even),.hub-trend:nth-child(even){background:#0b1d30}
+.hub-game:last-child,.hub-trend:last-child{border-bottom:0}
+.hub-trend strong{color:#83ddb5;font-size:17px}
+@media(max-width:760px){.hub-insights{grid-template-columns:1fr;gap:9px}.hub-insight-panel{padding:12px}.hub-insight-title h2{font-size:15px}}
