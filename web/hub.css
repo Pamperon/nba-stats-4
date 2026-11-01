@@ -896,6 +896,6 @@ body.hub-match-open .hub-match-player-card .hub-match-all-lines{background:#173b
 @media(max-width:420px){.hub-calendar-view{padding:14px}.hub-calendar-heading h2{font-size:20px}.hub-calendar-heading p{font-size:12px}.hub-calendar-games .hub-calendar-match{padding:16px 11px 27px;min-height:132px;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)}.hub-calendar-match .hub-calendar-team img{width:53px;height:53px}.hub-calendar-match .hub-calendar-team{font-size:12px}}
 
 /* Pronostici use one evening NBA session; calendar navigation remains in quote explorer. */
-body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .wheel-panel{display:none}
-body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .date-control{width:100%}
-body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summary{margin-top:0}
+body.session-picks-enabled:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .wheel-panel{display:none}
+body.session-picks-enabled:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .date-control{width:100%}
+body.session-picks-enabled:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summary{margin-top:0}
