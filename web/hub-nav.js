@@ -80,6 +80,14 @@ function updateInsights(){
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
 const matchTeamCodes={'Orlando Magic':'orl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Indiana Pacers':'ind','Atlanta Hawks':'atl','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Los Angeles Clippers':'lac','LA Clippers':'lac','L.A. Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
+const nbaTeamPalette={
+ 'atl':['#e03a3e','#c1d32f'],'bos':['#007a33','#ba9653'],'bkn':['#343b45','#111111'],'cha':['#00788c','#a1a1a4'],'chi':['#ce1141','#111111'],'cle':['#860038','#fdbb30'],'dal':['#00538c','#b8c4ca'],'den':['#0e2240','#fec524'],'det':['#c8102e','#1d42ba'],'gs':['#1d428a','#ffc72c'],'hou':['#ce1141','#25282a'],'ind':['#002d62','#fdbb30'],'lac':['#c8102e','#1d428a'],'lal':['#552583','#fdb927'],'mem':['#5d76a9','#5d76a9'],'mia':['#98002e','#f9a01b'],'mil':['#00471b','#eee1c6'],'min':['#0c2340','#78be20'],'no':['#0c2340','#c8102e'],'ny':['#006bb6','#f58426'],'okc':['#007ac1','#ef3b24'],'orl':['#0077c0','#c4ced4'],'phi':['#006bb6','#ed174c'],'phx':['#1d1160','#e56020'],'por':['#e03a3e','#171717'],'sac':['#5a2d81','#63727a'],'sa':['#626e7b','#c4ced4'],'tor':['#ce1141','#111111'],'utah':['#2b5134','#f9a01b'],'wsh':['#002b5c','#e31837']};
+function fixtureTeamGradient(row,away,home){
+ const a=nbaTeamPalette[matchTeamCodes[away]]||['#173e72','#3565a1'];
+ const b=nbaTeamPalette[matchTeamCodes[home]]||['#4a315a','#704f8c'];
+ row.style.setProperty('--team-away',a[0]);row.style.setProperty('--team-away-accent',a[1]);
+ row.style.setProperty('--team-home',b[0]);row.style.setProperty('--team-home-accent',b[1]);
+}
 let activeMatch='',matchMarket='PTS',matchFormRequest=0,matchTeamFilter='';
 const cleanName=name=>String(name||'').split(',').reverse().map(x=>x.trim()).filter(Boolean).join(' ')||String(name||'');
 const displayNum=value=>{const n=Number(String(value??'').replace(',','.'));return Number.isFinite(n)?n.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'};
@@ -379,7 +387,7 @@ function renderCalendar(){
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
    for(const [gameIndex,game] of fixtures.entries()){
     const match=fixtureName(game),hasOdds=!!matchingFixtureOption(match);
-    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(gameIndex%4);
+    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(gameIndex%4);fixtureTeamGradient(row,game.away,game.home);
     const names=[game.away,game.home];
     names.forEach((team,i)=>{
      if(i){const vs=document.createElement('span');vs.className='hub-calendar-versus';vs.textContent='VS';row.append(vs)}
@@ -391,7 +399,9 @@ function renderCalendar(){
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
     const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);
     const state=document.createElement('span');state.className='hub-calendar-state';state.textContent=game.upcoming?'Da giocare':(game.status||'In corso / conclusa');
-    info.append(time,state);row.append(info);
+    info.append(time,state);
+    if(hasOdds){const odds=document.createElement('span');odds.className='hub-calendar-odds';odds.textContent='Quote disponibili';info.append(odds)}
+    row.append(info);
     row.addEventListener('click',()=>openFixtureDetails(match));row.setAttribute('aria-label',match+' · Apri dettagli partita');
     games.append(row)
    }
@@ -443,6 +453,7 @@ function renderCalendar(){
   const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(matchIndex%4);
   const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
   if(teams.length===2){
+   fixtureTeamGradient(row,teams[0],teams[1]);
    teams.forEach((team,i)=>{
     if(i){const center=document.createElement('span');center.className='hub-calendar-versus';center.textContent='VS';row.append(center)}
     const side=document.createElement('span');side.className='hub-calendar-team';
