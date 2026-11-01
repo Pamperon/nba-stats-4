@@ -201,11 +201,21 @@ def progressive_preview(versions, starts, margin_minutes=15, as_of=None):
                      and datetime.fromisoformat(v['saved_at']) < deadline]
         if not snapshots:
             continue
-        latest = snapshots[-1]
         fixture_key = str(fixture).strip().casefold()
-        for row in latest['lines']:
-            if str(row.get('Partita') or '').strip().casefold() != fixture_key:
-                continue
+        # The newest scan may have incomplete provider coverage for this
+        # particular fixture. Use the latest snapshot where this fixture was
+        # actually observed, rather than silently dropping valid earlier odds.
+        observed = next((
+            (v, [row for row in v['lines']
+                 if str(row.get('Partita') or '').strip().casefold() == fixture_key])
+            for v in reversed(snapshots)
+            if any(str(row.get('Partita') or '').strip().casefold() == fixture_key
+                   for row in v['lines'])
+        ), None)
+        if observed is None:
+            continue
+        latest, fixture_lines = observed
+        for row in fixture_lines:
             athlete = str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
             if not athlete:
                 continue
