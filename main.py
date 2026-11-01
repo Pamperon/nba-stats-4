@@ -301,6 +301,28 @@ def _cached_match_moneyline(date, team_a, team_b):
     return None
 
 
+def _cached_match_fixture_meta(date, team_a, team_b):
+    """Fixture time and cached odds timestamp without additional provider requests."""
+    try:
+        envelope = storage.cache_read("odds:nba:bet365.it:v1", max_age_hours=12)
+        if not isinstance(envelope, dict):
+            return {}
+        def canonical(name):
+            name = str(name or "").casefold().strip()
+            return "los angeles clippers" if name == "la clippers" else name
+        requested = {canonical(team_a), canonical(team_b)}
+        for fixture in (envelope.get("data") or {}).values():
+            if {canonical(fixture.get("participant1Name")), canonical(fixture.get("participant2Name"))} != requested:
+                continue
+            start = engine.fixture_start_rome(fixture)
+            if start and start.date().isoformat() == date:
+                return {"fixture_time": start.isoformat(),
+                        "odds_cached_at": envelope.get("fetched_at")}
+    except Exception:
+        logger.exception("Could not load cached fixture metadata")
+    return {}
+
+
 @app.get('/api/match/form')
 def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
                team_a: str = Query(min_length=2, max_length=80),
@@ -314,7 +336,7 @@ def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
         raise HTTPException(400, 'Le squadre devono essere diverse')
     key = (date, team_a.casefold(), team_b.casefold())
     if key in _match_form_cache:
-        return {**_match_form_cache[key], 'moneyline_odds': _cached_match_moneyline(date, team_a, team_b)}
+        return {**_match_form_cache[key], 'moneyline_odds': _cached_match_moneyline(date, team_a, team_b), **_cached_match_fixture_meta(date, team_a, team_b)}
     try:
         # ESPN rejects a YYYYMMDD-YYYYMMDD range with HTTP 400.
         # Query supported single-day scoreboards concurrently and cache each day.
