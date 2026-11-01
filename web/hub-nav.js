@@ -150,7 +150,7 @@ function setMatchTab(tab){
   const title=analysis.querySelector('h3');
   if(tab==='stats'){
    title.textContent='Statistiche delle linee disponibili';
-   const rows=window.BasketLabMatchRows?.()||[];
+   const rows=window.BasketLabMatchRows?.(activeMatch)||[];
    const markets=['PTS','REB','AST'].map(m=>({market:m,count:rows.filter(row=>row.Mercato===m).length}));
    const boxes=analysis.querySelectorAll('.hub-match-data-block');
    if(boxes[0]){boxes[0].querySelector('small').textContent='Linee analizzate';boxes[0].querySelector('strong').textContent=String(rows.length);boxes[0].querySelector('p').textContent='Linee player props salvate per questa partita.'}
@@ -165,10 +165,14 @@ function setMatchTab(tab){
  }
  if(tab==='players')players?.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
+
+// Refresh the dedicated match cards when asynchronous saved daily quotes finish loading.
+const finderCount=$('#finder-count');
+if(finderCount)new MutationObserver(()=>{if(activeMatch&&document.body.classList.contains('hub-match-open'))renderMatchPlayers()}).observe(finderCount,{childList:true,characterData:true,subtree:true});
 function renderMatchPlayers(){
  if(!document.body.classList.contains('hub-match-open'))return;
  const list=$('#hub-match-player-list'),count=$('#hub-match-player-count');if(!list)return;
- const rows=typeof window.BasketLabMatchRows==='function'?window.BasketLabMatchRows():[];
+ const rows=typeof window.BasketLabMatchRows==='function'?window.BasketLabMatchRows(activeMatch):[];
  const q=($('#hub-match-search')?.value||'').toLowerCase().trim();
  const groups=new Map();
  for(const row of rows){
@@ -178,8 +182,8 @@ function renderMatchPlayers(){
   if(!groups.has(key))groups.set(key,{name:cleanName(row.Giocatore),team:row.Squadra,espnId:row['ESPN ID'],rows:[]});
   groups.get(key).rows.push(row);
  }
- list.replaceChildren();if(count)count.textContent=groups.size+' giocatori · '+rows.length+' linee';
- if(!groups.size){list.textContent='Nessuna linea disponibile con questi filtri.';return}
+ list.replaceChildren();if(count)count.textContent=groups.size+' giocatori · '+rows.filter(row=>matchMarket==='ALL'||row.Mercato===matchMarket).length+' linee';
+ if(!groups.size){list.textContent=rows.length?'Nessun giocatore corrisponde al mercato o alla ricerca.':'Nessuna quota salvata per questa partita nella giornata selezionata.';return}
  for(const group of groups.values()){
   const card=document.createElement('article');card.className='hub-match-player-card';
   const header=document.createElement('div');header.className='hub-match-player-identity';
