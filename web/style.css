@@ -773,3 +773,29 @@ body.statistics-area #date-loading,body.statistics-area #status{display:none!imp
 #history-summary>div:nth-child(6){grid-column:3}
 #history-summary strong{font-size:clamp(17px,4.4vw,25px);overflow-wrap:anywhere}
 #history-summary span{font-size:12px;overflow-wrap:anywhere}
+
+
+/* Quote Explorer 2.0: compact grouped player markets, mobile-first */
+@media(max-width:760px){
+ #finder .finder-cards{display:grid;gap:13px}
+ #finder .finder-player-group{padding:13px;border:1px solid #3b5f7e;border-radius:15px;background:linear-gradient(145deg,#142e46,#0c1e30)}
+ #finder .finder-player-group .finder-card-top{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:12px}
+ #finder .finder-player-group .finder-card-identity{min-width:0}
+ #finder .finder-player-group .finder-card-identity>strong{font-size:16px}
+ #finder .finder-player-group .finder-card-subline{display:flex;gap:9px;color:#9fb8ce;font-size:11px}
+ #finder .finder-player-group .finder-player{padding:8px 10px;font-size:11px;white-space:nowrap}
+ #finder .finder-market-group{padding-top:9px;margin-top:9px;border-top:1px solid #34516b}
+ #finder .finder-market-group h4{display:flex;align-items:center;justify-content:space-between;margin:0 0 9px;color:#ffac65;font-size:13px}
+ #finder .finder-market-group h4 small{font-weight:400;color:#a5bfd3}
+ #finder .finder-lines-head,#finder .finder-line-main{display:grid;grid-template-columns:.8fr 1fr .95fr 1fr .9fr;gap:5px;align-items:center}
+ #finder .finder-lines-head{padding:5px 3px 7px;font-size:9px;color:#9db4c9;letter-spacing:.025em}
+ #finder .finder-line{border-top:1px solid #29455e}
+ #finder .finder-line-main{padding:10px 3px;color:#eaf3fc;font-size:12px;font-variant-numeric:tabular-nums}
+ #finder .finder-line-main b{font-size:13px}
+ #finder .finder-line-main strong{color:#ffae68}
+ #finder .finder-line-main .finder-positive{color:#79dfae;font-weight:700}
+ #finder .finder-line-actions{display:flex;flex-direction:column;align-items:flex-end}
+ #finder .finder-line-actions .finder-details-toggle{padding:3px 2px 8px;font-size:10px;background:transparent;border:0;color:#b7cce0}
+ #finder .finder-line-actions .finder-extra{width:100%;padding:9px;background:#0a1b2b;border-radius:8px;margin-bottom:8px}
+ #finder .finder-primary-filters{gap:9px}
+}
