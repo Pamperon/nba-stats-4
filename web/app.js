@@ -398,7 +398,7 @@ function render(){
   const topHeading=pendingPublication?'Top 5 provvisoria':'Top 5 ufficiali del giorno';
   const stateMessage=pendingPublication
    ?'In aggiornamento · le selezioni possono cambiare con le nuove scansioni fino alla pubblicazione delle 18:00.'
-   :'Selezioni ufficiali confermate · bloccate dalla pubblicazione delle 18:00.';
+    :'Le '+visibleTop5.length+' selezioni ufficiali sono bloccate e non cambiano dopo la pubblicazione delle 18:00.';
   const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno"><div class="pick-group-heading"><h2>'+singleHeading+'</h2></div>'+
    '<p>'+stateMessage+'</p>'+
    (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna Singola idonea disponibile al momento.</p>')+'</section>';
