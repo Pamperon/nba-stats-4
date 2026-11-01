@@ -52,7 +52,7 @@ function featuredPicks(){
   const blocks=[...source.querySelectorAll('.pick-values > div')];
   for(const block of blocks){const item=document.createElement('div');item.className='hub-featured-value';const label=document.createElement('small');label.textContent=block.querySelector('small')?.textContent||'';const number=document.createElement('strong');number.textContent=block.querySelector('strong')?.textContent||'';item.append(label,number);values.append(item)}
   if(!blocks.length){const fallback=document.createElement('span');fallback.textContent=(source.querySelector('.pick-values')?.textContent||'').replace(/\s+/g,' ').trim();values.append(fallback)}
-  const avatar=source.querySelector('.pick-avatar img, .pick-profile img');if(avatar){const img=document.createElement('img');img.src=avatar.src;img.alt='';img.loading='lazy';content.append(img)}
+  const avatar=source.querySelector('.pick-avatar');if(avatar){const clone=avatar.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));clone.classList.add('hub-featured-avatar');content.append(clone)}
   content.append(name,market,values);card.append(content);
   const action=document.createElement('button');action.type='button';action.textContent='Statistiche giocatore →';
   action.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
