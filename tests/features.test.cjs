@@ -149,7 +149,7 @@ test('daily picks handle zero, fewer than five and exactly five without inventin
    assert.equal(d.querySelectorAll('#pick-giorno .pick-selection').length,count);
    assert.equal(d.getElementById('pick-more-lines'),null);
    if(count===0)assert.match(d.getElementById('pick-giorno').textContent,/Nessuna linea supera/);
-   else assert.match(d.getElementById('pick-giorno').textContent,new RegExp('Le migliori '+count+' linee'));
+   else assert.match(d.getElementById('pick-giorno').textContent,new RegExp('Le '+count+' selezioni ufficiali'));
   }finally{dom.window.close();}
  }
 });
@@ -370,7 +370,7 @@ test('archive reload discovers new dates, retains the selected day and allows op
  try{
   await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
   dates=['2026-10-29','2026-10-28'];d.getElementById('history-retry').click();await tick();await tick();
-  const select=d.getElementById('history-date');assert.equal(dateCalls,2);assert.equal(select.options.length,2);assert.equal(select.value,'2026-10-28');
+  const select=d.getElementById('history-date');assert.equal(dateCalls,2);assert.equal(select.querySelectorAll('option').length,2);assert.equal(select.value,'2026-10-28');
   select.value='2026-10-29';select.dispatchEvent(new dom.window.Event('change'));await tick();await tick();
   assert.equal(requested.at(-1),'2026-10-29');assert.equal(dateCalls,2);assert.match(d.getElementById('history-tickets').textContent,/2026-10-29/);
   assert.equal(d.getElementById('history-tickets').classList.contains('history-grid'),false);
