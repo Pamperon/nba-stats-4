@@ -48,7 +48,7 @@ test('archive displays all distinct daily tickets without a scan selector or inv
  const dom=app(async(url,options={})=>{
   calls.push({url,method:options.method||'GET'});
   if(url==='/api/history/dates')return response({dates:[{date:'2026-10-27'}]});
-  if(url.startsWith('/api/history?'))return response({date:'2026-10-27',lines:[line('Original Player'),line('Other Player',1.8,'unresolved')]});
+  if(url.startsWith('/api/history?'))return response({date:'2026-10-27',official_lines:[line('Original Player'),line('Other Player',1.8,'unresolved')]});
   return response(base(url));
  });
  try{
@@ -58,7 +58,7 @@ test('archive displays all distinct daily tickets without a scan selector or inv
   assert.match(d.getElementById('history-tickets').textContent,/1,74/);
   assert.equal(d.querySelectorAll('.history-ticket').length,2);
   assert.equal(d.querySelectorAll('#extra-history select').length,1);
-  assert.match(d.getElementById('history-status').textContent,/2 linee distinte/);
+  assert.match(d.getElementById('history-status').textContent,/Nessuna Top 5|selezioni ufficiali/);
   const metrics=d.getElementById('history-summary').textContent;
   assert.match(metrics,/Brier Score/);
   assert.match(metrics,/Quota media/);
@@ -76,7 +76,7 @@ test('archive ROI and mean odds exclude unresolved lines and Brier uses saved pr
   {...line('D',9,'unresolved'),'Prob. stimata %':99},
   {...line('E',1.4),'Prob. stimata %':null}
  ];
- const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',lines:samples}:base(url)));
+ const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',official_lines:samples}:base(url)));
  try{
   await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
   const values=Array.from(d.querySelectorAll('#history-summary>div')).map(node=>[node.querySelector('span').textContent,node.querySelector('strong').textContent]);
@@ -101,7 +101,7 @@ test('missing archive and request errors have retryable empty states',async()=>{
 });
 
 test('archive names are escaped and a direct footer-page URL opens the correct page',async()=>{
- const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',lines:[line('<img src=x onerror=alert(1)>')]}:base(url)),false,'#archivio');
+ const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',official_lines:[line('<img src=x onerror=alert(1)>')]}:base(url)),false,'#archivio');
  try{
   await tick();await tick();const d=dom.window.document;
   assert.equal(d.getElementById('extra-history').hidden,false);
@@ -364,7 +364,7 @@ test('archive reload discovers new dates, retains the selected day and allows op
  let dates=['2026-10-28'],dateCalls=0;const requested=[];
  const dom=app(async url=>{
   if(url==='/api/history/dates'){dateCalls++;return response({dates:dates.map(date=>({date}))});}
-  if(url.startsWith('/api/history?')){const date=url.split('=')[1];requested.push(date);return response({date,lines:[line(date)]});}
+  if(url.startsWith('/api/history?')){const date=url.split('=')[1];requested.push(date);return response({date,official_lines:[line(date)]});}
   return response(base(url));
  });
  try{
