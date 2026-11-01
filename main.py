@@ -46,6 +46,8 @@ def init_storage():
     if not storage.configured():
         raise RuntimeError('Database required for durable scan/API tracking')
     storage.initialize()
+    import official_top5
+    official_top5.initialize()
     scan_tracking.initialize()
     audience.initialize()
     import calibration
@@ -399,7 +401,26 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
         raise HTTPException(503, 'Archivio cloud temporaneamente non disponibile')
     if not snapshot:
         raise HTTPException(404, 'Nessuna analisi salvata')
-    return visible_snapshot(snapshot)
+    visible = visible_snapshot(snapshot)
+    import official_top5
+    if official_top5.eligible_day(visible['date']):
+        now = datetime.now(ZoneInfo('Europe/Rome'))
+        cutoff = now.replace(hour=18, minute=0, second=0, microsecond=0)
+        if visible['date'] == now.date().isoformat() and now < cutoff:
+            official = None
+        else:
+            official = official_top5.get(visible['date'])
+            if official is None and visible['date'] == now.date().isoformat():
+                try:
+                    official = official_top5.publish(visible['date'], schedule(visible['date'])['games'], now=now)
+                except Exception:
+                    logger.exception('Cannot publish immutable daily Top 5')
+                    raise HTTPException(503, 'Pubblicazione Top 5 temporaneamente non disponibile')
+        visible['recommendations'] = {'policy': 'fixed-1800-v1',
+                                      'lines': official['lines'] if official else []}
+        visible['official_top5'] = official
+        visible['official_top5_pending'] = official is None
+    return visible
 
 @app.get('/api/saved/archive')
 def saved_archive(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$'),
@@ -848,7 +869,27 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
             starts = public_views.fixture_start_map(schedule(date)['games'])
         except Exception:
             logger.warning('ESPN start times unavailable for progressive preview: %s', date)
-        return public_views.history(date, starts=starts)
+        result = public_views.history(date, starts=starts)
+        import official_top5
+        if official_top5.eligible_day(date):
+            official = official_top5.get(date)
+            if official:
+                result['official_lines'] = []
+                identities = {public_views.leg_identity(row) for row in official['lines']}
+                by_identity = {public_views.leg_identity(row): row for row in result['lines']}
+                for row in official['lines']:
+                    result['official_lines'].append(by_identity.get(public_views.leg_identity(row), row))
+                result['other_lines'] = [row for row in result['lines'] if public_views.leg_identity(row) not in identities]
+                result['official_saved_at'] = official['published_at']
+                result['has_daily_model'] = True
+                result['official_summary'] = {status: sum(row.get('status') == status for row in result['official_lines'])
+                                              for status in ('won','lost','unresolved')}
+                result['official_policy'] = official['policy']
+            else:
+                result['official_lines'] = []
+                result['official_summary'] = {status: 0 for status in ('won','lost','unresolved')}
+                result['has_daily_model'] = False
+        return result
     except Exception:
         logger.exception('Cannot read public recommendation archive')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
