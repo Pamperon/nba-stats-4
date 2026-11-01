@@ -393,3 +393,13 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
 .hub-featured-card{transition:border-color .2s ease,transform .2s ease}
 .hub-featured-card:hover{border-color:#e58b3f;transform:translateY(-1px)}
 @media(max-width:760px){.hub-match-teams{gap:5px}.hub-team{gap:3px}.hub-team img{width:25px;height:25px}.hub-team strong{font-size:10px}.hub-match-count{font-size:10px;padding:4px 6px}.hub-landing:after{width:148px;height:148px;right:-34px;top:12px}}
+
+
+/* Home-only modules must respect hidden even when styled as grid or flex. */
+.hub-trust-strip[hidden],.hub-games-section[hidden],.hub-single-section[hidden],.hub-performance[hidden],.hub-method-link[hidden]{display:none!important}
+/* Explicit SVG sizing prevents intrinsic 300x150 rendering from overflowing the brand. */
+.app-header .brand-icon{width:48px!important;height:48px!important;flex:0 0 48px!important;display:grid!important;place-items:center!important;overflow:hidden;background:transparent!important;border-radius:0!important}
+.app-header .brand-icon svg{display:block;width:100%!important;height:100%!important;max-width:100%;max-height:100%;object-fit:contain}
+.app-header .brand{display:flex;align-items:center;gap:10px;min-width:0}
+.app-header .brand-copy{min-width:0}
+@media(max-width:760px){.app-header .brand-icon{width:46px!important;height:46px!important;flex-basis:46px!important}.app-header .brand-copy b{font-size:clamp(19px,5.4vw,25px)!important}.app-header .brand-copy small{font-size:8px!important;letter-spacing:.45px!important}}
