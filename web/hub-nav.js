@@ -334,7 +334,7 @@ function renderCalendar(){
   const button=document.createElement('button');button.type='button';
   const raw=day.textContent.trim();
   const dateValue=options[i]?.value||'';
-  if(dateValue&&/^\\d{4}-\\d{2}-\\d{2}$/.test(dateValue)){
+  if(dateValue&&/^\d{4}-\d{2}-\d{2}$/.test(dateValue)){
    const parts=dateValue.split('-');
    const dayNumber=Number(parts[2]);
    const month=new Intl.DateTimeFormat('it-IT',{month:'short',timeZone:'UTC'}).format(new Date(Date.UTC(Number(parts[0]),Number(parts[1])-1,dayNumber))).replace('.','').toUpperCase();
