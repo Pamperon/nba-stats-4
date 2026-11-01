@@ -109,3 +109,14 @@ test('fixture and trend panels reflect saved picks and hide outside home',async(
  assert.equal(doc.querySelector('.hub-insights').hidden,true);
  window.close();
 });
+
+test('featured cards display separate odds and probability values',async()=>{
+ const {window,doc}=setup();
+ doc.querySelector('#picks').innerHTML='<article class="pick-selection"><div class="pick-profile"><button class="pick-player-link">Player</button></div><div class="pick-market">OVER 4.5 REB</div><div class="pick-values"><div><small>QUOTA</small><strong>1,86</strong></div><div><small>STIMA DEL MODELLO</small><strong>67.5%</strong></div></div></article>';
+ await new Promise(resolve=>window.queueMicrotask(resolve));
+ const values=doc.querySelectorAll('.hub-featured-value');
+ assert.equal(values.length,2);
+ assert.equal(values[0].querySelector('strong').textContent,'1,86');
+ assert.equal(values[1].querySelector('strong').textContent,'67.5%');
+ window.close();
+});
