@@ -130,3 +130,23 @@ test('mobile navigation drawer opens, navigates and closes',()=>{
  toggle.click();doc.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(drawer.hidden,true);
  window.close();
 });
+
+test('calendar day navigation does not alter the prediction date or dashboard picks',async()=>{
+ const {window,doc}=setup();
+ const native=doc.querySelector('#date');
+ native.innerHTML='<option value="2026-11-02">2 novembre 2026</option><option value="2026-11-03">3 novembre 2026</option>';
+ native.value='2026-11-02';
+ const strip=doc.querySelector('#date-strip');
+ strip.innerHTML='<button type="button">2 NOV</button><button type="button">3 NOV</button>';
+ let dateChanges=0;
+ native.addEventListener('change',()=>dateChanges++);
+ window.fetch=async()=>({ok:true,json:async()=>({games:[]})});
+ doc.querySelector('.hub-mobile-bar [data-hub="calendar"]').click();
+ const buttons=doc.querySelectorAll('#hub-calendar-dates button');
+ assert.equal(buttons.length,2);
+ buttons[1].click();
+ assert.equal(native.value,'2026-11-02','calendar must not change the shared predictions date');
+ assert.equal(dateChanges,0,'calendar must not trigger predictions reload');
+ assert.equal(doc.querySelector('#hub-calendar-day-summary strong').textContent,'3 novembre 2026');
+ window.close();
+});

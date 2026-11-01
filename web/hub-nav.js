@@ -362,12 +362,13 @@ function fixtureTime(game){
  return Number.isNaN(start.getTime())?game.time||'':new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(start);
 }
 let calendarRequest=0;
+let calendarSelectedDate='';
 function renderCalendar(){
  const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games'),summary=$('#hub-calendar-day-summary');
  if(!dates||!games)return;
  const source=$('#date-strip'),nativeDate=$('#date'),fixture=$('#finder-fixture');
  const dayButtons=[...(source?.querySelectorAll('button')||[])];
- const selectedValue=nativeDate?.value||'';
+ const selectedValue=calendarSelectedDate||nativeDate?.value||'';
  const options=[...(nativeDate?.options||[])].filter(o=>o.value);
  let index=options.findIndex(o=>o.value===selectedValue);
  if(index<0||index>=dayButtons.length){
@@ -376,17 +377,18 @@ function renderCalendar(){
  if(index<0)index=0;
  const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
  const requestedDate=options[index]?.value||selectedValue;
+ if(requestedDate)calendarSelectedDate=requestedDate;
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
  if(isEspnCalendar){
   fetchNbaFixtures(requestedDate).then(fixtures=>{
-   if(calendarToken!==calendarRequest||!calendar||($('#date')?.value||'')!==requestedDate)return;
+   if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
    const quoted=new Set(matches);
    games.replaceChildren();
    if(summary){const count=summary.querySelector('span');if(count)count.textContent=fixtures.length+' '+(fixtures.length===1?'partita':'partite')}
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
    for(const [gameIndex,game] of fixtures.entries()){
-    const match=fixtureName(game),hasOdds=!!matchingFixtureOption(match);
+    const match=fixtureName(game),hasOdds=requestedDate===(nativeDate?.value||'')&&!!matchingFixtureOption(match);
     const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(gameIndex%4);fixtureTeamGradient(row,game.away,game.home);
     const names=[game.away,game.home];
     names.forEach((team,i)=>{
@@ -424,12 +426,9 @@ function renderCalendar(){
   button.className='hub-calendar-date'+(i===index?' active':'');
   button.setAttribute('aria-pressed',String(i===index));
   button.addEventListener('click',()=>{
-   if(nativeDate&&dateValue&&nativeDate.value!==dateValue){
-    nativeDate.value=dateValue;nativeDate.dispatchEvent(new Event('change',{bubbles:true}));
-   }else day.click();
+   // Calendar browsing is independent: never change the prediction engine's date.
+   if(dateValue)calendarSelectedDate=dateValue;
    renderCalendar();
-   setTimeout(scheduleCalendarRefresh,350);
-   setTimeout(scheduleCalendarRefresh,1100);
   });
   dates.append(button);
  });
