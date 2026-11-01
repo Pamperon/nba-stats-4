@@ -67,7 +67,7 @@ DAILY_MAX_ODDS = 2.20
 def select_daily(rows, screen_risks=True):
     """Prospective, variable-size selections: one line per athlete and game.
 
-    Rank by estimated expected value, then estimated probability. No forced
+    Rank by estimated hit probability, then estimated expected value. No forced
     picks and no hindsight outcomes. Keep the risk screen unchanged.
     """
     eligible = []
@@ -78,7 +78,7 @@ def select_daily(rows, screen_risks=True):
         probability = float(row["Prob. stimata %"]) / 100
         if not DAILY_MIN_ODDS <= price <= DAILY_MAX_ODDS:
             continue
-        eligible.append((probability * price - 1, probability, row))
+        eligible.append((probability, probability * price - 1, row))
     eligible.sort(key=lambda item: (-item[0], -item[1],
                                     str(item[2].get("Giocatore") or ""),
                                     str(item[2].get("Mercato") or ""),
