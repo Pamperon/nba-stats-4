@@ -62,6 +62,8 @@ def select(rows, screen_risks=True):
 DAILY_VERSION = "daily-lines-v1"
 DAILY_MIN_ODDS = 1.20
 DAILY_MAX_ODDS = 2.20
+# Conservative provisional reliability floor; validate against settled history.
+DAILY_MIN_PROBABILITY = 0.60
 
 
 def select_daily(rows, screen_risks=True):
@@ -77,6 +79,8 @@ def select_daily(rows, screen_risks=True):
         price = float(row["Quota"])
         probability = float(row["Prob. stimata %"]) / 100
         if not DAILY_MIN_ODDS <= price <= DAILY_MAX_ODDS:
+            continue
+        if probability < DAILY_MIN_PROBABILITY:
             continue
         eligible.append((probability, probability * price - 1, row))
     eligible.sort(key=lambda item: (-item[0], -item[1],
