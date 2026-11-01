@@ -512,6 +512,10 @@ function renderFinder({append=false}={}){
  syncFinderScrollWidth();
 }
 
+// Matchday view consumes the same already-loaded rows as the original quote explorer.
+window.BasketLabMatchRows=()=>eligible().slice();
+window.BasketLabMatchPlayerStats=row=>{returnOrigin='finder';openPickStats(row)};
+
 // Value Finder filters affect only its own table; dashboard picks are independent.
 function syncFinderScrollWidth(){
  const bottom=$('finder-scroll'),top=$('finder-top-scroll'),content=$('finder-top-scroll-content');
