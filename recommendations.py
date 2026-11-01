@@ -63,7 +63,7 @@ DAILY_VERSION = "daily-lines-v1"
 DAILY_MIN_ODDS = 1.20
 DAILY_MAX_ODDS = 2.20
 # Conservative provisional reliability floor; validate against settled history.
-DAILY_MIN_PROBABILITY = 0.60
+DAILY_MIN_PROBABILITY = 0.70
 
 
 def select_daily(rows, screen_risks=True):
