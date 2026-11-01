@@ -311,24 +311,49 @@ $('#hub-match-search')?.addEventListener('input',renderMatchPlayers);
 document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b===button));renderMatchPlayers()}));
 $('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;go.home();select('home')});
 function renderCalendar(){
- const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games');if(!dates||!games)return;
+ const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games'),summary=$('#hub-calendar-day-summary');
+ if(!dates||!games)return;
  dates.replaceChildren();games.replaceChildren();
  const source=$('#date-strip');
  const dayButtons=[...(source?.querySelectorAll('button')||[])];
- for(const day of dayButtons){
-  const button=document.createElement('button');button.type='button';button.textContent=day.textContent.trim();button.className=day.className;
-  button.addEventListener('click',()=>{day.click();setTimeout(renderCalendar,150)});
-  dates.append(button);
- }
  const fixture=$('#finder-fixture');
- const matches=[...(fixture?.options||[])].map(o=>o.value).filter(Boolean);
- const unique=[...new Set(matches)];
- if(!unique.length){games.textContent='Nessuna partita con quote disponibili per la giornata selezionata.';return}
- for(const match of unique){
-  const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';row.textContent=match+' · Analisi e quote ›';
+ const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
+ const current=dayButtons.findIndex(b=>b.classList.contains('active')||b.classList.contains('selected')||b.getAttribute('aria-selected')==='true'||b.getAttribute('aria-pressed')==='true');
+ const selectedIndex=current>=0?current:dayButtons.findIndex(b=>b.className.includes('current'));
+ const index=selectedIndex>=0?selectedIndex:0;
+ dayButtons.forEach((day,i)=>{
+  const button=document.createElement('button');button.type='button';
+  const raw=day.textContent.trim();
+  const parsed=raw.match(/(\d{1,2})\s*([a-zà]+)\s*[/·-]?\s*([a-zà]+)/i);
+  if(parsed){const top=document.createElement('strong');top.textContent=parsed[1]+' '+parsed[2];button.append(top);const bottom=document.createElement('small');bottom.textContent=parsed[3];button.append(bottom)}
+  else button.textContent=raw;
+  button.className='hub-calendar-date'+(i===index?' active':'');
+  button.setAttribute('aria-pressed',String(i===index));
+  button.addEventListener('click',()=>{day.click();setTimeout(renderCalendar,180)});
+  dates.append(button);
+ });
+ const active=dates.children[index];if(active)active.scrollIntoView({block:'nearest',inline:'nearest'});
+ if(summary){const label=dayButtons[index]?.textContent.trim()||'Giornata selezionata';summary.replaceChildren();const title=document.createElement('strong');title.textContent=label;const count=document.createElement('span');count.textContent=matches.length+' '+(matches.length===1?'partita':'partite');summary.append(title,count)}
+ if(!matches.length){const empty=document.createElement('div');empty.className='hub-calendar-empty';empty.textContent='Nessuna partita con quote disponibili per questa giornata.';games.append(empty);return}
+ for(const match of matches){
+  const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';
+  const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
+  if(teams.length===2){
+   teams.forEach((team,i)=>{
+    if(i){const center=document.createElement('span');center.className='hub-calendar-versus';center.textContent='VS';row.append(center)}
+    const side=document.createElement('span');side.className='hub-calendar-team';
+    const code=matchTeamCodes[team];
+    if(code){const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';logo.alt='';logo.loading='lazy';logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)}
+    const label=document.createElement('span');label.textContent=team;side.append(label);row.append(side)
+   });
+  }else{const label=document.createElement('strong');label.textContent=match;row.append(label)}
+  const arrow=document.createElement('span');arrow.className='hub-calendar-match-arrow';arrow.textContent='›';row.append(arrow);
+  row.setAttribute('aria-label',match+' · Apri analisi e quote');
   row.addEventListener('click',()=>openMatchQuotes(match));games.append(row)
  }
 }
+$('#hub-calendar-prev')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:-220,behavior:'smooth'}));
+$('#hub-calendar-next')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:220,behavior:'smooth'}));
 function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
  if(!picks)return;

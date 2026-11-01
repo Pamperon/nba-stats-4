@@ -839,3 +839,30 @@ body.hub-match-open .hub-match-player-card .hub-match-player-market summary .hub
 body.hub-match-open .hub-match-player-card .hub-match-odds-head{background:#082136}
 body.hub-match-open .hub-match-player-card .hub-match-odds-row:nth-of-type(even){background:rgba(60,110,143,.16)}
 body.hub-match-open .hub-match-player-card .hub-match-all-lines{background:#173b56;border-top:1px solid #385e79}
+
+/* NBA calendar: compact horizontal day navigation and matchup cards */
+.hub-calendar-view{background:linear-gradient(155deg,#102c46,#071b30);padding:18px;border-radius:22px}
+.hub-calendar-heading{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:17px}
+.hub-calendar-heading h2{margin:0;color:#f3f7fc;font-size:23px;line-height:1.3}
+.hub-calendar-heading p{margin:7px 0 0;color:#a9c0d3;font-size:13px;line-height:1.5}
+.hub-calendar-status{border:1px solid #dd8d41;border-radius:30px;color:#f9a450;padding:6px 9px;white-space:nowrap;font-size:11px;align-self:start}
+.hub-calendar-nav{display:flex;align-items:stretch;gap:7px;margin-bottom:19px;min-width:0}
+.hub-calendar-nav>button{flex:0 0 30px;border:1px solid #426985;border-radius:13px;background:#0c293f;color:#ff9d3b;font-size:25px;cursor:pointer}
+.hub-calendar-dates{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;flex:1;min-width:0;padding:0}
+.hub-calendar-dates::-webkit-scrollbar{display:none}
+.hub-calendar-dates .hub-calendar-date{flex:0 0 auto;min-width:105px;min-height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;scroll-snap-align:start;border:1px solid #406785;border-radius:15px;background:#133650;color:#e9f3fa;padding:9px 14px;font-size:14px;line-height:1.2}
+.hub-calendar-dates .hub-calendar-date strong{font-size:15px}
+.hub-calendar-dates .hub-calendar-date small{font-size:12px;color:#acc7d8}
+.hub-calendar-dates .hub-calendar-date.active{background:linear-gradient(#ffa84b,#f88b24);border-color:#f7a34a;color:#142638;box-shadow:0 2px 12px #f68c2a30}
+.hub-calendar-dates .hub-calendar-date.active small{color:#23313b}
+.hub-calendar-day-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;color:#e6f1fa}
+.hub-calendar-day-summary strong{font-size:15px}
+.hub-calendar-day-summary span{border:1px solid #e78f3b;border-radius:25px;padding:4px 10px;color:#f4a357;font-size:12px;white-space:nowrap}
+.hub-calendar-games{display:grid;gap:11px}
+.hub-calendar-games .hub-calendar-match{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr) 14px;align-items:center;gap:8px;width:100%;min-height:104px;padding:14px 12px;background:linear-gradient(135deg,#13354e,#0a2439);border:1px solid #416986;border-radius:17px;color:#f3f7fa;text-align:center;cursor:pointer}
+.hub-calendar-match .hub-calendar-team{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;font-size:12px;line-height:1.2;overflow-wrap:anywhere}
+.hub-calendar-match .hub-calendar-team img{width:47px;height:47px;object-fit:contain}
+.hub-calendar-match .hub-calendar-versus{color:#fa9c41;font-weight:800;font-size:14px}
+.hub-calendar-match .hub-calendar-match-arrow{color:#fa9c41;font-size:29px}
+.hub-calendar-empty{padding:22px 14px;background:#0c293f;border:1px solid #3b617c;border-radius:14px;color:#abc1d2;font-size:14px;text-align:center}
+@media(max-width:420px){.hub-calendar-view{padding:13px}.hub-calendar-heading h2{font-size:20px}.hub-calendar-status{font-size:10px;padding:5px 7px}.hub-calendar-nav>button{flex-basis:26px}.hub-calendar-dates .hub-calendar-date{min-width:94px;padding:9px 10px}.hub-calendar-games .hub-calendar-match{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr) 12px;gap:5px}.hub-calendar-match .hub-calendar-team img{width:43px;height:43px}}
