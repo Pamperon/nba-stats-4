@@ -1015,6 +1015,7 @@ async function initializeArchive(){
   const response=await api('/api/saved/dates');
   const payload=await response.json();
   sessionPicksEnabled=payload.session_picks_enabled===true;
+  document.body.classList.toggle('session-picks-enabled',sessionPicksEnabled);
   if(sessionPicksEnabled)refreshSessionPicks();
   const dates=(payload.dates||[]).map(item=>item.date);
   $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
