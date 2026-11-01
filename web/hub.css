@@ -505,3 +505,6 @@ body.hub-match-open .hub-match-detail{margin:0;padding:0;border:0;background:tra
  .hub-match-player-market>strong{font-size:16px}
  .hub-match-player-market>span{font-size:11px}
 }
+
+.hub-match-player-photo{width:44px;height:48px;object-fit:contain;flex:0 0 44px;border-radius:9px;background:#0b2238}
+@media(max-width:760px){.hub-match-player-photo{width:42px;height:45px;flex-basis:42px}}
