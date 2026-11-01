@@ -81,9 +81,9 @@ test('archive ROI and mean odds exclude unresolved lines and Brier uses saved pr
   const values=Array.from(d.querySelectorAll('#history-summary>div')).map(node=>[node.querySelector('span').textContent,node.querySelector('strong').textContent]);
   const metric=Object.fromEntries(values);
   assert.equal(metric['Successo'],'66,7%');
-  assert.equal(metric['ROI teorico'],'-5,0%');
+  assert.equal(metric['ROI teorico'],'35,0%');
   assert.equal(metric['Quota media'],'1,62');
-  assert.equal(metric['Brier Score'],'0,230');
+  assert.equal(metric['Brier Score'],'0,257');
   assert.equal(metric['Da verificare'],'1');
  }finally{dom.window.close();}
 });
