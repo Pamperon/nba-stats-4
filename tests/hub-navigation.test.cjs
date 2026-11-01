@@ -64,3 +64,23 @@ test('category shortcuts target actual pick groups',()=>{
  assert.equal(doc.querySelector('.hub-landing').hidden,true);
  window.close();
 });
+
+test('real pick cards populate featured section without fabricating values',async()=>{
+ const {window,doc}=setup();
+ const picks=doc.querySelector('#picks');
+ picks.innerHTML='<section class="pick-group"><article class="pick-selection"><div class="pick-profile"><div class="pick-avatar"><img src="/static/icon-192.png"></div><button class="pick-player-link">Giocatore Test</button></div><div class="pick-market">OVER 10.5 PTS</div><div class="pick-values">QUOTA 1.80 STIMA DEL MODELLO 75%</div><button class="pick-stats-button">Vedi statistiche</button></article></section>';
+ await new Promise(resolve=>window.queueMicrotask(resolve));
+ assert.equal(doc.querySelector('#hub-total').textContent,'1');
+ assert.equal(doc.querySelector('#hub-prob').textContent,'75%');
+ assert.match(doc.querySelector('#hub-featured-list').textContent,/Giocatore Test/);
+ assert.match(doc.querySelector('#hub-featured-list').textContent,/OVER 10.5 PTS/);
+ window.close();
+});
+test('no live picks means no fabricated probabilities',async()=>{
+ const {window,doc}=setup();
+ doc.querySelector('#picks').replaceChildren();
+ await new Promise(resolve=>window.queueMicrotask(resolve));
+ assert.equal(doc.querySelector('#hub-prob').textContent,'—');
+ assert.equal(doc.querySelector('#hub-total').textContent,'—');
+ window.close();
+});
