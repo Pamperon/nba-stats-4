@@ -278,7 +278,7 @@ test('returning from statistics restores quote position, filters, loaded batches
   assert.equal(w.scrollY,0);d.getElementById('back-to-picks').click();await new Promise(resolve=>setTimeout(resolve,35));
   assert.equal(moves.at(-1),1234);assert.equal(d.getElementById('finder-scroll').scrollLeft,120);
   assert.equal(d.getElementById('finder-fixture').value,match);assert.equal(d.getElementById('finder-search').value,'First');
-  assert.equal(d.querySelectorAll('.finder-card').length,200);assert.equal(first.querySelector('.finder-extra').hidden,false);
+  assert.equal(d.querySelectorAll('.finder-line').length,200);assert.equal(d.querySelectorAll('.finder-card').length,2);assert.equal(first.querySelector('.finder-extra').hidden,false);
   w.scrollY=1600;d.getElementById('area-stats').click();await tick();d.getElementById('area-quotes').click();await new Promise(resolve=>setTimeout(resolve,35));assert.equal(moves.at(-1),1600);
  }finally{dom.window.close();}
 });
@@ -356,7 +356,7 @@ test('a genuinely different day clears fixture, loaded batch and open details',a
   await tick();const w=dom.window,d=w.document,fixture=d.getElementById('finder-fixture');
   fixture.value=match;fixture.dispatchEvent(new w.Event('change'));d.getElementById('finder-more').click();d.querySelector('.finder-details-toggle').click();
   d.getElementById('date').value='2099-01-02';d.getElementById('date').dispatchEvent(new w.Event('change'));await tick();await tick();
-  assert.equal(fixture.value,'');assert.equal(d.querySelectorAll('.finder-card').length,100);assert.equal(d.querySelector('.finder-extra').hidden,true);
+  assert.equal(fixture.value,'');assert.equal(d.querySelectorAll('.finder-line').length,100);assert.equal(d.querySelector('.finder-extra').hidden,true);
  }finally{dom.window.close();}
 });
 
