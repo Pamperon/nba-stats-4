@@ -73,16 +73,17 @@ test('archive ROI and mean odds exclude unresolved lines and Brier uses saved pr
   {...line('A',1.25), 'Prob. stimata %':80},
   {...line('B',1.8), 'Prob. stimata %':70},
   {...line('C',1.8,'lost'),actual:10,win:false},
-  {...line('D',9,'unresolved'),'Prob. stimata %':99}
+  {...line('D',9,'unresolved'),'Prob. stimata %':99},
+  {...line('E',1.4),'Prob. stimata %':null}
  ];
  const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',lines:samples}:base(url)));
  try{
   await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
   const values=Array.from(d.querySelectorAll('#history-summary>div')).map(node=>[node.querySelector('span').textContent,node.querySelector('strong').textContent]);
   const metric=Object.fromEntries(values);
-  assert.equal(metric['Successo'],'66,7%');
-  assert.equal(metric['ROI teorico'],'1,7%');
-  assert.equal(metric['Quota media'],'1,62');
+  assert.equal(metric['Successo'],'75,0%');
+  assert.equal(metric['ROI teorico'],'10,0%');
+  assert.equal(metric['Quota media'],'1,56');
   assert.equal(metric['Brier Score'],'0,257');
   assert.equal(metric['Da verificare'],'1');
  }finally{dom.window.close();}
