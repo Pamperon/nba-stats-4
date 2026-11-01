@@ -109,6 +109,17 @@ test('archive names are escaped and a direct footer-page URL opens the correct p
  }finally{dom.window.close();}
 });
 
+test('saved daily picks remain visible even when the current quote rows no longer include them',async()=>{
+ const saved={Giocatore:'Saved Player','ESPN ID':'123',Squadra:'A',Partita:'A - B',Mercato:'PTS',Scelta:'Over',Linea:9.5,Quota:1.8,'Prob. stimata %':80,'Stato analisi':'Valutabile (stima empirica)'};
+ const dom=app(async url=>response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:[],recommendations:{policy:'daily-lines-v1',lines:[saved]}}:base(url)));
+ try{
+  await tick();await tick();
+  const d=dom.window.document;
+  assert.match(d.getElementById('picks').textContent,/Saved Player/);
+  assert.equal(d.querySelectorAll('#pick-giorno .pick-selection').length,1);
+ }finally{dom.window.close();}
+});
+
 test('mobile quote pagination and reset remain available after removing favorites',async()=>{
  const rows=Array.from({length:250},(_,i)=>({Giocatore:'Player '+i,'ESPN ID':String(100+i),Squadra:'A',Mercato:'PTS',Linea:9.5,Quota:1.8,'Stato analisi':'Valutabile (stima empirica)','Prob. stimata %':80}));
  const dom=app(async url=>response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:rows}:base(url)),true);
