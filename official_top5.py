@@ -12,7 +12,7 @@ import recommendations
 
 ROME = ZoneInfo("Europe/Rome")
 START = date(2026, 11, 2)
-POLICY = "fixed-1800-v1"
+POLICY = "fixed-1800-v2-overnight"
 
 def eligible_day(day):
     return date.fromisoformat(str(day)) >= START
@@ -47,21 +47,45 @@ def get(day):
     return {'published_at': row[0].isoformat(), 'snapshot_job_id': row[1],
             'lines': row[2], 'policy': POLICY} if row else None
 
+def publication_cutoff(day, games):
+    """Publish a Rome calendar date on the preceding evening if it has overnight tips.
+
+    A single immutable official set exists per date, so every game in that date
+    shares the same publication deadline. Existing published rows are untouched.
+    """
+    target = date.fromisoformat(str(day))
+    cutoff = datetime.combine(target, time(18), ROME)
+    for game in games:
+        raw = game.get('start_at')
+        if not raw:
+            continue
+        try:
+            start = datetime.fromisoformat(raw)
+        except (TypeError, ValueError):
+            continue
+        if start.tzinfo is None:
+            continue
+        if start.astimezone(ROME) < cutoff + timedelta(hours=1):
+            return datetime.combine(target - timedelta(days=1), time(18), ROME)
+    return cutoff
+
+
 def publish(day, games, now=None):
     """Publish once, using only completed scans from before 18:00 Rome.
 
-    Requires a recent scan (within 4 hours of 18:00) and confirmed ESPN
-    starts >=19:00. Missing inputs cause no publication, never a guessed list.
+    Requires a recent scan (within 4 hours of the chosen cutoff) and confirmed ESPN
+    starts at least 60 minutes after publication. Missing inputs cause no publication, never a guessed list.
     """
     if not eligible_day(day):
         return None
     now = now or datetime.now(ROME)
     if now.tzinfo is None:
         raise ValueError("Timezone-aware clock required")
-    day_obj = date.fromisoformat(str(day))
-    cutoff = datetime.combine(day_obj, time(18), ROME)
+    cutoff = publication_cutoff(day, games)
     if now.astimezone(ROME) < cutoff:
         return None
+    # A delayed publish must never include games already started.
+    earliest_allowed_start = max(cutoff, now.astimezone(ROME)) + timedelta(minutes=60)
     starts = {}
     for game in games:
         home, away = str(game.get('home') or '').strip(), str(game.get('away') or '').strip()
@@ -103,7 +127,7 @@ def publish(day, games, now=None):
                 if len(parts) != 2:
                     continue
                 start = starts.get(frozenset(p.strip().casefold() for p in parts))
-                if start is None or start < cutoff + timedelta(minutes=60):
+                if start is None or start < earliest_allowed_start:
                     continue
                 valid_rows.append(candidate)
             single = recommendations.select_single(valid_rows)

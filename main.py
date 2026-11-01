@@ -84,21 +84,26 @@ def _official_publication_loop():
     last_attempt = None
     while not shutdown_event.wait(20):
         now = datetime.now(ZoneInfo('Europe/Rome'))
-        if not official_top5.eligible_day(now.date().isoformat()):
-            continue
         if now.hour != 18 or now.minute > 20:
             continue
-        attempt = now.strftime('%Y-%m-%dT%H:%M')[:15]
-        # One attempt per minute; a final scan may finish slightly late.
+        attempt = now.strftime('%Y-%m-%dT%H:%M')[:16]
         if attempt == last_attempt:
             continue
         last_attempt = attempt
-        try:
-            day = now.date().isoformat()
-            if official_top5.get(day) is None:
-                official_top5.publish(day, schedule(day)['games'], now=now)
-        except Exception:
-            logger.exception('Official Top 5 publication attempt failed')
+        # Both calendar dates may have an official set due this evening.
+        # Tomorrow's overnight fixtures must not wait until tomorrow 18:00.
+        for offset in (0, 1):
+            day = (now.date() + timedelta(days=offset)).isoformat()
+            if not official_top5.eligible_day(day):
+                continue
+            try:
+                if official_top5.get(day) is not None:
+                    continue
+                games = schedule(day)['games']
+                if official_top5.publication_cutoff(day, games) <= now:
+                    official_top5.publish(day, games, now=now)
+            except Exception:
+                logger.exception('Official Top 5 publication attempt failed for %s', day)
 
 
 def _render_scheduler_loop():
@@ -578,17 +583,16 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
     import official_top5
     if official_top5.eligible_day(visible['date']):
         now = datetime.now(ZoneInfo('Europe/Rome'))
-        cutoff = now.replace(hour=18, minute=0, second=0, microsecond=0)
-        if visible['date'] == now.date().isoformat() and now < cutoff:
-            official = None
-        else:
-            official = official_top5.get(visible['date'])
-            if official is None and visible['date'] == now.date().isoformat():
-                try:
-                    official = official_top5.publish(visible['date'], schedule(visible['date'])['games'], now=now)
-                except Exception:
-                    logger.exception('Cannot publish immutable daily Top 5')
-                    raise HTTPException(503, 'Pubblicazione Top 5 temporaneamente non disponibile')
+        official = official_top5.get(visible['date'])
+        if official is None and visible['date'] in {
+                now.date().isoformat(), (now.date() + timedelta(days=1)).isoformat()}:
+            try:
+                games = schedule(visible['date'])['games']
+                if now >= official_top5.publication_cutoff(visible['date'], games):
+                    official = official_top5.publish(visible['date'], games, now=now)
+            except Exception:
+                logger.exception('Cannot publish immutable daily Top 5')
+                raise HTTPException(503, 'Pubblicazione Top 5 temporaneamente non disponibile')
         # Provisional picks are distinct from immutable official selections.
         # Never include future-started games or re-rank official picks.
         preliminary = snapshot.get('recommendations', {}).get('lines', [])
