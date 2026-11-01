@@ -117,7 +117,7 @@ function renderMatchCharts(teams,a,b,windowDays,matchOdds){
  const ptsTitle=document.createElement('strong');ptsTitle.className='hub-match-compare-title';ptsTitle.textContent='Media punti segnati';points.append(ptsTitle);
  teams.forEach((team,i)=>{const row=document.createElement('div');row.className='hub-match-points-row';const name=document.createElement('span');name.textContent=team;const value=document.createElement('b');value.textContent=[a,b][i].avg_points==null?'—':displayNum([a,b][i].avg_points);row.append(name,value);points.append(row)});
  card.append(win,points);area.append(card);
- const form=document.createElement('div');form.className='hub-match-quick-tile';const label=document.createElement('strong');label.textContent='▥ Forma (ultime 5)';const value=document.createElement('span');value.textContent=teams.map((team,i)=>team.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ');form.append(label,value);area.append(form);
+ const form=document.createElement('div');form.className='hub-match-quick-tile';const label=document.createElement('strong');label.textContent='Forma (ultime 5)';const value=document.createElement('span');value.textContent=teams.map((team,i)=>team.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ');form.append(label,value);area.append(form);
  const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 gare disponibili negli ultimi '+windowDays+' giorni. Medie osservate, non punti attesi.';area.append(note);
 }
 async function loadMatchForm(match){
