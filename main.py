@@ -84,21 +84,26 @@ def _official_publication_loop():
     last_attempt = None
     while not shutdown_event.wait(20):
         now = datetime.now(ZoneInfo('Europe/Rome'))
-        if not official_top5.eligible_day(now.date().isoformat()):
-            continue
         if now.hour != 18 or now.minute > 20:
             continue
-        attempt = now.strftime('%Y-%m-%dT%H:%M')[:15]
-        # One attempt per minute; a final scan may finish slightly late.
+        attempt = now.strftime('%Y-%m-%dT%H:%M')[:16]
         if attempt == last_attempt:
             continue
         last_attempt = attempt
-        try:
-            day = now.date().isoformat()
-            if official_top5.get(day) is None:
-                official_top5.publish(day, schedule(day)['games'], now=now)
-        except Exception:
-            logger.exception('Official Top 5 publication attempt failed')
+        # Both calendar dates may have an official set due this evening.
+        # Tomorrow's overnight fixtures must not wait until tomorrow 18:00.
+        for offset in (0, 1):
+            day = (now.date() + timedelta(days=offset)).isoformat()
+            if not official_top5.eligible_day(day):
+                continue
+            try:
+                if official_top5.get(day) is not None:
+                    continue
+                games = schedule(day)['games']
+                if official_top5.publication_cutoff(day, games) <= now:
+                    official_top5.publish(day, games, now=now)
+            except Exception:
+                logger.exception('Official Top 5 publication attempt failed for %s', day)
 
 
 def _render_scheduler_loop():
