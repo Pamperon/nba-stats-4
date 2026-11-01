@@ -129,7 +129,7 @@ function refreshShowcase(){
      if(i===0){const versus=document.createElement('small');versus.textContent='VS';pair.append(versus)}
     }
    }else{const name=document.createElement('strong');name.textContent=match;pair.append(name)}
-   const count=document.createElement('span');count.className='hub-match-count';count.textContent=n+' analisi ›';
+   const count=document.createElement('span');count.className='hub-match-count';count.textContent='Quote e linee ›';
    row.append(pair,count);row.addEventListener('click',()=>openMatchQuotes(match));games.append(row);
   }
  }
