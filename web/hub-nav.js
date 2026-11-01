@@ -355,7 +355,8 @@ function renderCalendar(){
  const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
  const requestedDate=options[index]?.value||selectedValue;
  const calendarToken=++calendarRequest;
- if(requestedDate&&/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDate)){
+ const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
+ if(isEspnCalendar){
   fetchNbaFixtures(requestedDate).then(fixtures=>{
    if(calendarToken!==calendarRequest||!calendar||($('#date')?.value||'')!==requestedDate)return;
    const quoted=new Set(matches);
@@ -373,8 +374,8 @@ function renderCalendar(){
      if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';side.append(img)}
      const label=document.createElement('span');label.textContent=team||'NBA';side.append(label);row.append(side)
     });
-    const info=document.createElement('span');info.className='hub-calendar-match-arrow';info.textContent=fixtureTime(game)+' · '+(hasOdds?'Quote disponibili':'Quote non disponibili');row.append(info);
-    if(hasOdds){row.addEventListener('click',()=>openMatchQuotes(match));row.setAttribute('aria-label',match+' · Apri quote')}
+    const info=document.createElement('span');info.className='hub-calendar-match-arrow';info.textContent=fixtureTime(game)+' · '+(game.status|| (hasOdds?'Quote disponibili':'Quote non disponibili'))+(game.status?' · '+(hasOdds?'Quote disponibili':'Quote non disponibili'):'');row.append(info);
+    if(hasOdds&&game.upcoming){row.addEventListener('click',()=>openMatchQuotes(match));row.setAttribute('aria-label',match+' · Apri quote')}
     else {row.disabled=true;row.setAttribute('aria-label',match+' · Quote non disponibili')}
     games.append(row)
    }
@@ -412,9 +413,10 @@ function renderCalendar(){
   const label=options[index]?.textContent.trim()||dayButtons[index]?.textContent.trim()||'Giornata selezionata';
   summary.replaceChildren();
   const title=document.createElement('strong');title.textContent=label;
-  const count=document.createElement('span');count.textContent=loading?'Caricamento…':matches.length+' '+(matches.length===1?'partita':'partite');
+  const count=document.createElement('span');count.textContent=isEspnCalendar?'Caricamento calendario NBA…':loading?'Caricamento…':matches.length+' '+(matches.length===1?'partita':'partite');
   summary.append(title,count)
  }
+ if(isEspnCalendar){games.textContent='Caricamento calendario NBA…';return}
  if(loading){
   const empty=document.createElement('div');empty.className='hub-calendar-empty';empty.textContent='Caricamento delle partite in corso…';games.append(empty);return
  }
