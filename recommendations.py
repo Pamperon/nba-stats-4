@@ -58,6 +58,42 @@ def select(rows, screen_risks=True):
     return {"policy": VERSION if screen_risks else "reconstructed-legacy-ui", "groups": output}
 
 
+
+DAILY_VERSION = "daily-lines-v1"
+DAILY_MIN_ODDS = 1.20
+DAILY_MAX_ODDS = 2.20
+
+
+def select_daily(rows, screen_risks=True):
+    """Prospective, variable-size selections: one line per athlete and game.
+
+    Rank by estimated expected value, then estimated probability. No forced
+    picks and no hindsight outcomes. Keep the risk screen unchanged.
+    """
+    eligible = []
+    for row in rows:
+        if rejection_reasons(row, screen_risks):
+            continue
+        price = float(row["Quota"])
+        probability = float(row["Prob. stimata %"]) / 100
+        if not DAILY_MIN_ODDS <= price <= DAILY_MAX_ODDS:
+            continue
+        eligible.append((probability * price - 1, probability, row))
+    eligible.sort(key=lambda item: (-item[0], -item[1],
+                                    str(item[2].get("Giocatore") or ""),
+                                    str(item[2].get("Mercato") or ""),
+                                    str(item[2].get("Linea") or "")))
+    chosen, used = [], set()
+    for _, _, row in eligible:
+        athlete = str(row.get("ESPN ID") or row.get("Giocatore") or "").strip().casefold()
+        fixture = str(row.get("Partita") or "").strip().casefold()
+        if not athlete or not fixture or (fixture, athlete) in used:
+            continue
+        used.add((fixture, athlete))
+        chosen.append(dict(row))
+    return {"policy": DAILY_VERSION, "lines": chosen}
+
+
 def evaluate(saved, verified):
     """Evaluate exact saved legs, never substitute a hindsight winning player.
 
@@ -69,6 +105,19 @@ def evaluate(saved, verified):
                 row.get('Mercato'), str(row.get('Scelta', '')).lower(),
                 float(row['Linea']))
     lookup = {key(row): row for row in verified if row.get('played') is True}
+    if "lines" in saved:
+        legs = []
+        for row in saved["lines"]:
+            match = lookup.get(key(row))
+            actual = float(match["actual"]) if match is not None else None
+            line = float(row["Linea"])
+            win = None if actual is None or actual == line else (
+                actual > line if str(row["Scelta"]).lower() == "over" else actual < line)
+            legs.append({"player": row.get("Giocatore"), "market": row["Mercato"],
+                         "choice": row["Scelta"], "line": line, "odds": row["Quota"],
+                         "estimated_probability": row.get("Prob. stimata %"),
+                         "actual": actual, "win": win})
+        return {"policy": saved.get("policy"), "lines": legs}
     groups = {}
     for name, count, _, _ in GROUPS:
         chosen = saved.get('groups', {}).get(name, {}).get('legs', [])
