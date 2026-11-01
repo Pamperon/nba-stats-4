@@ -170,7 +170,7 @@ def history(day):
     tickets = [ticket for group in groups.values() for ticket in group]
     # Freeze the first published new-model Top 5 for each day. Later scans
     # supply settlement evidence only; they cannot silently replace picks.
-    first_daily = next((v for v in versions if v['is_daily']), None)
+    first_daily = next((v for v in versions if v['is_daily'] and v['lines']), None)
     official = []
     if first_daily is not None:
         by_identity = {leg_identity(row): row for row in lines}
