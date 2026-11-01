@@ -181,11 +181,16 @@ def progressive_preview(versions, starts, margin_minutes=15):
     """
     from datetime import datetime, timedelta
     confirmed, seen = [], set()
+    # An absent later scan is not proof that no future scan will arrive.
     daily = [v for v in versions if v['is_daily']]
     for index, version in enumerate(daily):
         at = datetime.fromisoformat(version['saved_at'])
         next_at = (datetime.fromisoformat(daily[index + 1]['saved_at'])
                    if index + 1 < len(daily) else None)
+        # Only compare snapshots with a known following scan; the last snapshot
+        # remains provisional until the deadline is actually reached.
+        if next_at is None:
+            continue
         for row in version['lines']:
             if len(confirmed) >= 5:
                 break
@@ -198,7 +203,7 @@ def progressive_preview(versions, starts, margin_minutes=15):
             if at.tzinfo is None or start.tzinfo is None:
                 continue
             deadline = start - timedelta(minutes=margin_minutes)
-            if not at < deadline or (next_at is not None and next_at < deadline):
+            if not at < deadline or next_at < deadline:
                 continue
             player = str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
             key = (match, player)
