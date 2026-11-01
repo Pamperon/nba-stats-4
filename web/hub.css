@@ -866,3 +866,10 @@ body.hub-match-open .hub-match-player-card .hub-match-all-lines{background:#173b
 .hub-calendar-match .hub-calendar-match-arrow{color:#fa9c41;font-size:29px}
 .hub-calendar-empty{padding:22px 14px;background:#0c293f;border:1px solid #3b617c;border-radius:14px;color:#abc1d2;font-size:14px;text-align:center}
 @media(max-width:420px){.hub-calendar-view{padding:13px}.hub-calendar-heading h2{font-size:20px}.hub-calendar-status{font-size:10px;padding:5px 7px}.hub-calendar-nav>button{flex-basis:26px}.hub-calendar-dates .hub-calendar-date{min-width:94px;padding:9px 10px}.hub-calendar-games .hub-calendar-match{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr) 12px;gap:5px}.hub-calendar-match .hub-calendar-team img{width:43px;height:43px}}
+
+/* Date chips: unambiguous Italian short labels and consistent width */
+.hub-calendar-dates .hub-calendar-date{min-width:91px;max-width:112px;white-space:nowrap;line-height:1.2}
+.hub-calendar-dates .hub-calendar-date strong{font-size:15px;white-space:nowrap}
+.hub-calendar-dates .hub-calendar-date small{font-size:12px;white-space:nowrap}
+.hub-calendar-day-summary strong{font-size:14px}
+@media(max-width:420px){.hub-calendar-dates .hub-calendar-date{min-width:84px;max-width:94px;padding:9px 7px}.hub-calendar-dates .hub-calendar-date strong{font-size:14px}}
