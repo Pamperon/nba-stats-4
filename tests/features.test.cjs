@@ -57,7 +57,7 @@ test('archive displays all distinct daily tickets without a scan selector or inv
   assert.match(d.getElementById('history-tickets').textContent,/Other Player/);
   assert.match(d.getElementById('history-tickets').textContent,/1,74/);
   assert.equal(d.querySelectorAll('.history-ticket').length,2);
-  assert.equal(d.querySelectorAll('#extra-history select').length,1);
+  assert.equal(d.querySelectorAll('#extra-history input[type="date"]').length,1);
   assert.match(d.getElementById('history-status').textContent,/Nessuna Top 5|selezioni ufficiali/);
   const metrics=d.getElementById('history-summary').textContent;
   assert.match(metrics,/Brier Score/);
@@ -370,7 +370,7 @@ test('archive reload discovers new dates, retains the selected day and allows op
  try{
   await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
   dates=['2026-10-29','2026-10-28'];d.getElementById('history-retry').click();await tick();await tick();
-  const select=d.getElementById('history-date');assert.equal(dateCalls,2);assert.equal(select.querySelectorAll('option').length,2);assert.equal(select.value,'2026-10-28');
+  const select=d.getElementById('history-date');assert.equal(dateCalls,2);assert.equal(select.min,'2026-10-28');assert.equal(select.max,'2026-10-29');assert.equal(select.value,'2026-10-28');
   select.value='2026-10-29';select.dispatchEvent(new dom.window.Event('change'));await tick();await tick();
   assert.equal(requested.at(-1),'2026-10-29');assert.equal(dateCalls,2);assert.match(d.getElementById('history-tickets').textContent,/2026-10-29/);
   assert.equal(d.getElementById('history-tickets').classList.contains('history-grid'),false);
