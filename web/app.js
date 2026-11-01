@@ -480,11 +480,30 @@ function renderFinder({append=false}={}){
  $('finder-more').hidden=all.length<=limit||limit>=500;
  $('finder-count').textContent=all.length>limit?'Primi '+limit+' di '+all.length+' risultati':all.length+' risultat'+(all.length===1?'o':'i');
  const tableHTML=mobile===true?'':added.map((r,offset)=>{const i=start+offset;return `<tr><td><button type="button" class="finder-player" data-index="${i}">${esc(r.Giocatore)}</button></td><td>${esc(teamAbbrev(r.Squadra))}</td><td>${esc(r.Mercato)}</td><td>${esc(r.Linea)}</td><td>${esc(fmtOdd(r.Quota))}</td><td class="good">${esc(fmt(r['Prob. stimata %']))}</td><td>${esc(r['Ultime 20'])}</td><td>${esc(fmt(r['Value stimato %']))}</td></tr>`}).join('');
- const cardsHTML=mobile===false?'':added.map((r,offset)=>{const i=start+offset;return `<article class="finder-card" data-selection-key="${esc(finderSelectionKey(r))}"><div class="finder-card-top"><div class="finder-card-identity"><strong>${esc(r.Giocatore)}</strong><div class="finder-card-subline"><span class="finder-card-team">${esc(teamAbbrev(r.Squadra))}</span><span class="finder-card-market">${esc(String(r.Scelta||'Over').toUpperCase())} ${esc(r.Linea)} ${esc(marketNames[r.Mercato]||r.Mercato)}</span></div></div><button type="button" class="finder-player" data-index="${i}">Vedi statistiche</button></div><div class="finder-card-values"><span><small>Quota</small><b>${esc(fmtOdd(r.Quota))}</b></span><span><small>Stima</small><b>${esc(fmt(r['Prob. stimata %']))}%</b></span></div><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-${i}">Altri dati</button><div class="finder-extra" id="finder-extra-${i}" hidden>${finderAdditionalData(r)}</div></article>`}).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
- if(append&&start){$('rows').insertAdjacentHTML('beforeend',tableHTML);$('finder-cards').insertAdjacentHTML('beforeend',cardsHTML);}
+ const grouped=new Map();
+ if(mobile!==false)items.forEach((r,i)=>{
+  const key=JSON.stringify([r.Partita,r.Squadra,r['ESPN ID']||r.Giocatore]);
+  if(!grouped.has(key))grouped.set(key,{player:r.Giocatore,team:r.Squadra,rows:[]});
+  grouped.get(key).rows.push({row:r,index:i});
+ });
+ const cardsHTML=mobile===false?'':[...grouped.values()].map((group,g)=>{
+  const sections=['PTS','REB','AST'].filter(m=>group.rows.some(x=>x.row.Mercato===m));
+  const panels=sections.map(m=>{
+   const lines=group.rows.filter(x=>x.row.Mercato===m);
+   return '<section class="finder-market-group"><h4>'+esc(marketNames[m]||m)+' <small>'+lines.length+' linee</small></h4><div class="finder-lines-head"><span>LINEA</span><span>SCELTA</span><span>QUOTA</span><span>STIMA</span><span>EDGE</span></div>'+lines.map(({row:r,index:i})=>{
+    const edge=Number(String(r['Value stimato %']??'').replace(',','.'));
+    const edgeLabel=Number.isFinite(edge)?fmt(edge)+'%':'—';
+    const positive=Number.isFinite(edge)&&edge>0;
+    return '<div class="finder-line"><div class="finder-line-main"><b>'+esc(r.Linea)+'</b><span>'+esc(String(r.Scelta||'Over').toUpperCase())+'</span><strong>'+esc(fmtOdd(r.Quota))+'</strong><span>'+esc(fmt(r['Prob. stimata %']))+'%</span><span class="'+(positive?'finder-positive':'')+'">'+esc(edgeLabel)+'</span></div><div class="finder-line-actions"><button type="button" class="finder-details-toggle" aria-expanded="false" aria-controls="finder-extra-'+i+'">Dettagli linea ▾</button><div class="finder-extra" id="finder-extra-'+i+'" data-selection-key="'+esc(finderSelectionKey(r))+'" hidden>'+finderAdditionalData(r)+'</div></div></div>';
+   }).join('')+'</section>';
+  }).join('');
+  const first=group.rows[0];
+  return '<article class="finder-card finder-player-group"><div class="finder-card-top"><div class="finder-card-identity"><strong>'+esc(group.player)+'</strong><div class="finder-card-subline"><span class="finder-card-team">'+esc(teamAbbrev(group.team))+'</span><span>'+group.rows.length+' quote disponibili</span></div></div><button type="button" class="finder-player" data-index="'+first.index+'">Statistiche →</button></div>'+panels+'</article>';
+ }).join('')||'<p class="finder-empty">Nessuna quota corrisponde ai filtri selezionati.</p>';
+ if(append&&start&&mobile===false){$('rows').insertAdjacentHTML('beforeend',tableHTML);$('finder-cards').insertAdjacentHTML('beforeend',cardsHTML);}
  else{$('rows').innerHTML=tableHTML;$('finder-cards').innerHTML=cardsHTML;}
  for(const button of document.querySelectorAll('#finder .finder-details-toggle')){
-  const extra=document.getElementById(button.getAttribute('aria-controls')),key=button.closest('.finder-card').dataset.selectionKey;
+  const extra=document.getElementById(button.getAttribute('aria-controls')),key=extra.dataset.selectionKey||button.closest('.finder-card').dataset.selectionKey;
   extra.hidden=!finderExpandedKeys.has(key);button.setAttribute('aria-expanded',String(!extra.hidden));
   button.onclick=()=>{extra.hidden=!extra.hidden;button.setAttribute('aria-expanded',String(!extra.hidden));if(extra.hidden)finderExpandedKeys.delete(key);else finderExpandedKeys.add(key);};
  }
