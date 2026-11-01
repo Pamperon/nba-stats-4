@@ -377,9 +377,9 @@ function renderCalendar(){
    games.replaceChildren();
    if(summary){const count=summary.querySelector('span');if(count)count.textContent=fixtures.length+' '+(fixtures.length===1?'partita':'partite')}
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
-   for(const game of fixtures){
+   for(const [gameIndex,game] of fixtures.entries()){
     const match=fixtureName(game),hasOdds=!!matchingFixtureOption(match);
-    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';
+    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(gameIndex%4);
     const names=[game.away,game.home];
     names.forEach((team,i)=>{
      if(i){const vs=document.createElement('span');vs.className='hub-calendar-versus';vs.textContent='VS';row.append(vs)}
@@ -439,8 +439,8 @@ function renderCalendar(){
  if(!matches.length){
   const empty=document.createElement('div');empty.className='hub-calendar-empty';empty.textContent='Nessuna partita con quote disponibili per questa giornata.';games.append(empty);return
  }
- for(const match of matches){
-  const row=document.createElement('button');row.type='button';row.className='hub-calendar-match';
+ for(const [matchIndex,match] of matches.entries()){
+  const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(matchIndex%4);
   const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
   if(teams.length===2){
    teams.forEach((team,i)=>{
@@ -506,8 +506,8 @@ function refreshShowcase(){
     }
     const center=document.createElement('span');center.className='hub-premium-center';
     const names=document.createElement('strong');names.className='hub-premium-names';
-    const shortName=t=>String(t||'NBA').replace(/^Los Angeles /,'LA ').replace(/^Golden State /,'Golden State ');
-    names.textContent=shortName(game.away)+'  vs  '+shortName(game.home);
+    const shortName=t=>({ 'Golden State Warriors':'Warriors','Los Angeles Lakers':'Lakers','LA Clippers':'Clippers','Los Angeles Clippers':'Clippers','Toronto Raptors':'Raptors' }[t]||String(t||'NBA').replace(/^Los Angeles /,'').replace(/^Golden State /,'').replace(/^Oklahoma City /,'OKC ').replace(/^New Orleans /,'NO ').replace(/^Portland /,''));
+    names.textContent=shortName(game.away)+' vs '+shortName(game.home);
     const stamp=new Date(game.start_at);
     const dateTime=document.createElement('span');dateTime.className='hub-premium-timing';
     dateTime.textContent=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(stamp);
