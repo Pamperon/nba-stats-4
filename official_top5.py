@@ -8,6 +8,7 @@ from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
 from psycopg.types.json import Jsonb
 import storage
+import recommendations
 
 ROME = ZoneInfo("Europe/Rome")
 START = date(2026, 11, 2)
@@ -24,6 +25,16 @@ def initialize():
                 published_at TIMESTAMPTZ NOT NULL,
                 snapshot_job_id TEXT NOT NULL,
                 selections JSONB NOT NULL,
+                policy TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS nba_official_daily_singles (
+                scan_date DATE PRIMARY KEY,
+                published_at TIMESTAMPTZ NOT NULL,
+                snapshot_job_id TEXT NOT NULL,
+                selection JSONB,
+                outcome JSONB,
                 policy TEXT NOT NULL
             )
         """)
@@ -85,10 +96,21 @@ def publish(day, games, now=None):
             if row is None:
                 return None
             job_id, payload, created = row
-            recommendations = payload.get('recommendations') or {}
+            saved_recommendations = payload.get('recommendations') or {}
+            valid_rows = []
+            for candidate in payload.get('results', []):
+                parts = str(candidate.get('Partita') or '').split(' - ')
+                if len(parts) != 2:
+                    continue
+                start = starts.get(frozenset(p.strip().casefold() for p in parts))
+                if start is None or start < cutoff + timedelta(minutes=60):
+                    continue
+                valid_rows.append(candidate)
+            single = recommendations.select_single(valid_rows)
+            single_id = str((single or {}).get('ESPN ID') or (single or {}).get('Giocatore') or '').strip().casefold()
             selections = []
-            used = set()
-            for pick in recommendations.get('lines', []):
+            used = {single_id} if single_id else set()
+            for pick in saved_recommendations.get('lines', []):
                 parts = str(pick.get('Partita') or '').split(' - ')
                 if len(parts) != 2:
                     continue
@@ -108,6 +130,12 @@ def publish(day, games, now=None):
                 selections.append(pick)
                 if len(selections) == 5:
                     break
+            conn.execute("""
+                INSERT INTO nba_official_daily_singles
+                    (scan_date,published_at,snapshot_job_id,selection,outcome,policy)
+                VALUES (%s,%s,%s,%s,NULL,%s)
+                ON CONFLICT(scan_date) DO NOTHING
+            """, (day, now, job_id, Jsonb(single) if single else None, 'single-1800-v1'))
             conn.execute("""
                 INSERT INTO nba_official_daily_top5
                     (scan_date,published_at,snapshot_job_id,selections,policy)

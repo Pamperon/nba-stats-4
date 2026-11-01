@@ -98,6 +98,27 @@ def select_daily(rows, screen_risks=True):
     return {"policy": DAILY_VERSION, "lines": chosen}
 
 
+
+def select_single(rows):
+    """One independent daily candidate, subject to the existing risk screen."""
+    candidates = []
+    for row in rows:
+        if rejection_reasons(row):
+            continue
+        try:
+            price = float(row['Quota'])
+            probability = float(row['Prob. stimata %'])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not (1.70 <= price <= 2.20 and probability >= 60
+                and probability - 100 / price >= 5):
+            continue
+        candidates.append((probability * price / 100 - 1, probability, row))
+    candidates.sort(key=lambda item: (-item[0], -item[1],
+                                      str(item[2].get('Giocatore') or ''),
+                                      str(item[2].get('Mercato') or '')))
+    return dict(candidates[0][2]) if candidates else None
+
 def evaluate(saved, verified):
     """Evaluate exact saved legs, never substitute a hindsight winning player.
 
@@ -184,5 +205,23 @@ def settle_snapshots(day):
                 INSERT INTO nba_recommendation_results(snapshot_job_id,scan_date,report)
                 VALUES (%s,%s,%s) ON CONFLICT(snapshot_job_id) DO NOTHING
             """, (job_id, day, Jsonb(report)))
+        # The existing recommendation insert remains the first database write.
+        # Independently settle the single only after the archived report is saved.
+        from datetime import date as _date
+        if _date.fromisoformat(str(day)) >= _date(2026, 11, 2):
+            with storage.connection() as conn:
+                single_row = conn.execute("""
+                    SELECT selection FROM nba_official_daily_singles
+                    WHERE scan_date=%s AND snapshot_job_id=%s
+                """, (day, job_id)).fetchone()
+                if single_row and single_row[0]:
+                    leg = evaluate({'lines': [single_row[0]], 'policy': 'single-1800-v1'},
+                                   verified)['lines'][0]
+                    status = ('unresolved' if leg['win'] is None else
+                              'won' if leg['win'] else 'lost')
+                    conn.execute("""
+                        UPDATE nba_official_daily_singles SET outcome=%s
+                        WHERE scan_date=%s AND snapshot_job_id=%s AND outcome IS NULL
+                    """, (Jsonb({'status': status, 'actual': leg['actual']}), day, job_id))
         count += 1
     return count

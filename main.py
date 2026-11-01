@@ -455,6 +455,22 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
                                       'lines': official['lines'] if official else []}
         visible['official_top5'] = official
         visible['official_top5_pending'] = official is None
+        import recommendations
+        import daily_single_archive
+        single = daily_single_archive.read(visible['date'])
+        if official is None:
+            visible['preliminary_single'] = recommendations.select_single(visible.get('results', []))
+        else:
+            visible['preliminary_single'] = None
+        visible['official_single'] = single.get('selection') if single.get('published') else None
+        visible['official_single_pending'] = official is None
+        if official is None and visible.get('preliminary_single'):
+            single_id = str(visible['preliminary_single'].get('ESPN ID') or
+                            visible['preliminary_single'].get('Giocatore') or '').strip().casefold()
+            visible['preliminary_top5'] = [
+                pick for pick in visible['preliminary_top5']
+                if str(pick.get('ESPN ID') or pick.get('Giocatore') or '').strip().casefold() != single_id
+            ][:5]
     return visible
 
 @app.get('/api/saved/archive')
@@ -924,6 +940,29 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
                 result['official_lines'] = []
                 result['official_summary'] = {status: 0 for status in ('won','lost','unresolved')}
                 result['has_daily_model'] = False
+        # New category remains separate from existing historical Top 5.
+        # No backfilling: only explicitly published singles count.
+        import daily_single_archive
+        result['single_archive'] = (daily_single_archive.read(date) if official_top5.eligible_day(date)
+                                    else {'published': False, 'selection': None, 'outcome': None})
+        single_record = result['single_archive']
+        if (single_record.get('published') and single_record.get('selection')
+                and not single_record.get('outcome')):
+            saved_single = single_record['selection']
+            identity = public_views.leg_identity(saved_single)
+            matched = next((row for row in result.get('lines', [])
+                            if public_views.leg_identity(row) == identity), None)
+            if matched:
+                single_record['outcome'] = {'status': matched.get('status', 'unresolved'),
+                                            'actual': matched.get('actual')}
+                single_record['status'] = matched.get('status', 'unresolved')
+            else:
+                single_record['outcome'] = {'status': 'unresolved', 'actual': None}
+                single_record['status'] = 'unresolved'
+        result['top5_archive'] = {
+            'lines': result.get('official_lines', []),
+            'summary': result.get('official_summary', {}),
+        }
         return result
     except Exception:
         logger.exception('Cannot read public recommendation archive')
