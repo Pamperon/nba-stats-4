@@ -140,6 +140,20 @@ test('daily picks show top five first and keep remaining saved lines expandable'
  }finally{dom.window.close();}
 });
 
+test('daily picks handle zero, fewer than five and exactly five without inventing lines',async()=>{
+ for(const count of [0,3,5]){
+  const saved=Array.from({length:count},(_,i)=>({Giocatore:'Short '+i,'ESPN ID':String(i+1),Squadra:'A',Partita:'A - B',Mercato:'PTS',Scelta:'Over',Linea:9.5,Quota:1.8,'Prob. stimata %':80-i}));
+  const dom=app(async url=>response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:[],recommendations:{policy:'daily-lines-v1',lines:saved}}:base(url)));
+  try{
+   await tick();await tick();const d=dom.window.document;
+   assert.equal(d.querySelectorAll('#pick-giorno .pick-selection').length,count);
+   assert.equal(d.getElementById('pick-more-lines'),null);
+   if(count===0)assert.match(d.getElementById('pick-giorno').textContent,/Nessuna linea supera/);
+   else assert.match(d.getElementById('pick-giorno').textContent,new RegExp('Le migliori '+count+' linee'));
+  }finally{dom.window.close();}
+ }
+});
+
 test('mobile quote pagination and reset remain available after removing favorites',async()=>{
  const rows=Array.from({length:250},(_,i)=>({Giocatore:'Player '+i,'ESPN ID':String(100+i),Squadra:'A',Mercato:'PTS',Linea:9.5,Quota:1.8,'Stato analisi':'Valutabile (stima empirica)','Prob. stimata %':80}));
  const dom=app(async url=>response(url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:rows}:base(url)),true);
