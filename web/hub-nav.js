@@ -80,7 +80,7 @@ function updateInsights(){
  for(const [type,count] of counts){const el=document.createElement('div');el.className='hub-trend';const label=document.createElement('span');label.textContent=type+' nelle selezioni';const value=document.createElement('strong');value.textContent=String(count);el.append(label,value);trends.append(el)}
 }
 const matchTeamCodes={'Orlando Magic':'orl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Indiana Pacers':'ind','Atlanta Hawks':'atl','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Los Angeles Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
-let activeMatch='',matchMarket='ALL',matchFormRequest=0;
+let activeMatch='',matchMarket='PTS',matchFormRequest=0;
 const cleanName=name=>String(name||'').split(',').reverse().map(x=>x.trim()).filter(Boolean).join(' ')||String(name||'');
 const displayNum=value=>{const n=Number(String(value??'').replace(',','.'));return Number.isFinite(n)?n.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'};
 function openMatchQuotes(match){
@@ -99,8 +99,20 @@ function openMatchQuotes(match){
  }
  const fixture=$('#finder-fixture');
  if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
- matchMarket='ALL';$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
+ matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.market==='PTS'));$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
+}
+function renderMatchCharts(teams,a,b,windowDays){
+ const area=$('#hub-match-charts');if(!area)return;
+ area.replaceChildren();
+ const sections=[{title:'Forma nelle ultime 5',unit:'vittorie',max:5,values:[a.wins,b.wins],suffix:(x,idx)=>x+'/'+[a.games,b.games][idx]},{title:'Media punti segnati',unit:'punti a partita',max:Math.max(130,Number(a.avg_points)||0,Number(b.avg_points)||0),values:[a.avg_points,b.avg_points],suffix:x=>x==null?'—':displayNum(x)}];
+ for(const section of sections){
+  const card=document.createElement('div');card.className='hub-match-chart-card';
+  const heading=document.createElement('div');heading.className='hub-match-chart-heading';const title=document.createElement('strong');title.textContent=section.title;const unit=document.createElement('small');unit.textContent=section.unit;heading.append(title,unit);card.append(heading);
+  teams.forEach((team,i)=>{const value=section.values[i];const row=document.createElement('div');row.className='hub-match-chart-row';const label=document.createElement('div');label.className='hub-match-chart-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=section.suffix(value,i);label.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill team-'+i;fill.style.width=(value==null?0:Math.min(100,Math.max(0,Number(value)/section.max*100)))+'%';track.append(fill);row.append(label,track);card.append(row)});
+  area.append(card);
+ }
+ const note=document.createElement('p');note.className='hub-match-chart-note';note.textContent='Fonte ESPN · Ultime 5 partite disponibili negli ultimi '+windowDays+' giorni. Dati osservati, non probabilità di vittoria.';area.append(note);
 }
 async function loadMatchForm(match){
  const request=++matchFormRequest;
@@ -121,6 +133,7 @@ async function loadMatchForm(match){
   if(request!==matchFormRequest||activeMatch!==match)return;
   const [a,b]=data.teams||[];
   if(!a||!b)throw new Error('Dati incompleti');
+  renderMatchCharts(teams,a,b,data.window_days);
   boxes[0].querySelector('small').textContent='Forma recente · ultime 5 disponibili';
   boxes[0].querySelector('strong').textContent=teams[0]+': '+a.wins+'V / '+a.losses+'P';
   boxes[0].querySelector('p').textContent=teams[1]+': '+b.wins+'V / '+b.losses+'P · Campione: '+a.games+' e '+b.games+' partite negli ultimi '+data.window_days+' giorni';
@@ -131,9 +144,10 @@ async function loadMatchForm(match){
   const h2h=data.h2h||[];
   facts[1].querySelector('small').textContent=h2h.length?h2h.map(g=>g.date+': '+g.scores.join('–')).join(' · '):'Nessuno scontro diretto nei '+data.window_days+' giorni esaminati';
   facts[2].querySelector('small').textContent=a.avg_points!=null&&b.avg_points!=null?'Medie segnate: '+a.avg_points+' / '+b.avg_points:'Dati insufficienti';
-  if(summary)summary.textContent='Dati ESPN: '+a.games+' partite recenti per '+teams[0]+', '+b.games+' per '+teams[1]+'. Le medie sono descrittive e non indicano probabilità di vittoria. Consulta le quote dei giocatori qui sotto.';
+  if(summary){const delta=a.avg_points!=null&&b.avg_points!=null?Math.abs(Number(a.avg_points)-Number(b.avg_points)).toLocaleString('it-IT',{maximumFractionDigits:1}):null;summary.textContent=(a.wins===b.wins?'Le due squadre hanno lo stesso numero di vittorie recenti.':(a.wins>b.wins?teams[0]:teams[1])+' ha ottenuto più vittorie nelle ultime cinque partite.')+(delta!==null?' '+(Number(a.avg_points)>Number(b.avg_points)?teams[0]:teams[1])+' segna in media '+delta+' punti in più.':'')+' Sono indicatori descrittivi, non una previsione della partita.';}
  }catch(error){
   if(request!==matchFormRequest)return;
+  $('#hub-match-charts')?.replaceChildren();
   boxes[0].querySelector('strong').textContent='Dati non disponibili';
   boxes[0].querySelector('p').textContent='Risultati ESPN non accessibili in questo momento';
   boxes[1].querySelector('strong').textContent='—';
@@ -190,17 +204,19 @@ function renderMatchPlayers(){
   const info=document.createElement('div');if(/^\d+$/.test(String(group.espnId||''))){const photo=document.createElement('img');photo.className='hub-match-player-photo';photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+group.espnId+'.png';photo.alt='';photo.loading='lazy';photo.onerror=()=>{photo.hidden=true};header.append(photo)}const name=document.createElement('strong');name.textContent=group.name;
   const team=document.createElement('small');team.textContent=group.team||'';info.append(name,team);header.append(info);
   const stats=document.createElement('button');stats.type='button';stats.textContent='Statistiche ›';stats.onclick=()=>window.BasketLabMatchPlayerStats?.(group.rows[0]);header.append(stats);card.append(header);
-  const markets=document.createElement('div');markets.className='hub-match-player-markets';
+  const markets=document.createElement('div');markets.className='hub-match-player-markets compact';
   for(const market of ['PTS','REB','AST']){
    const subset=group.rows.filter(row=>row.Mercato===market);
    if(!subset.length)continue;
-   const block=document.createElement('div');block.className='hub-match-player-market';
-   const label=document.createElement('small');label.textContent=({PTS:'PUNTI',REB:'RIMBALZI',AST:'ASSIST'})[market];block.append(label);
-   const featured=subset.find(row=>String(row.Scelta||'').toUpperCase()==='OVER')||subset[0];
-   const line=document.createElement('strong');line.textContent=displayNum(featured.Linea);block.append(line);
-   const quote=document.createElement('span');quote.textContent=String(featured.Scelta||'OVER').toUpperCase()+' '+displayNum(featured.Quota);block.append(quote);
-   const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent=subset.length+' linee · Mostra tutte';details.append(summary);
-   for(const row of subset){const entry=document.createElement('div');entry.className='hub-match-quote-line';entry.textContent=String(row.Scelta||'OVER').toUpperCase()+' '+displayNum(row.Linea)+' · quota '+displayNum(row.Quota)+' · stima '+displayNum(row['Prob. stimata %'])+'%';details.append(entry)}
+   const block=document.createElement('div');block.className='hub-match-player-market compact';
+   const details=document.createElement('details');details.className='hub-match-odds-dropdown';
+   const summary=document.createElement('summary');const label=document.createElement('span');label.textContent=({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'})[market]+' · '+subset.length+' linee';const chevron=document.createElement('span');chevron.textContent='Apri quote ⌄';summary.append(label,chevron);details.append(summary);
+   const head=document.createElement('div');head.className='hub-match-odds-head';['Linea','Scelta','Quota','Stima'].forEach(text=>{const el=document.createElement('span');el.textContent=text;head.append(el)});details.append(head);
+   for(const row of subset.sort((a,b)=>Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)))){
+    const entry=document.createElement('div');entry.className='hub-match-odds-row';
+    const values=[displayNum(row.Linea),String(row.Scelta||'—').toUpperCase(),displayNum(row.Quota),row['Prob. stimata %']==null||row['Prob. stimata %']===''?'—':displayNum(row['Prob. stimata %'])+'%'];
+    values.forEach((value,i)=>{const cell=document.createElement('span');cell.textContent=value;if(i===2)cell.className='hub-match-odds-price';if(i===3)cell.className='hub-match-odds-prob';entry.append(cell)});details.append(entry);
+   }
    block.append(details);markets.append(block);
   }
   card.append(markets);list.append(card);
