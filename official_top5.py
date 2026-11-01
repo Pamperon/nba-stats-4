@@ -39,7 +39,7 @@ def get(day):
 def publish(day, games, now=None):
     """Publish once, using only completed scans from before 18:00 Rome.
 
-    Requires a recent scan (within 90 minutes of 18:00) and confirmed ESPN
+    Requires a recent scan (within 4 hours of 18:00) and confirmed ESPN
     starts >=19:00. Missing inputs cause no publication, never a guessed list.
     """
     if not eligible_day(day):
@@ -81,7 +81,7 @@ def publish(day, games, now=None):
                   AND created_at >= %s
                   AND payload->'recommendations' ? 'lines'
                 ORDER BY created_at DESC LIMIT 1
-            """, (day, cutoff, cutoff - timedelta(minutes=90))).fetchone()
+            """, (day, cutoff, cutoff - timedelta(hours=4))).fetchone()
             if row is None:
                 return None
             job_id, payload, created = row
