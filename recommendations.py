@@ -98,6 +98,27 @@ def select_daily(rows, screen_risks=True):
     return {"policy": DAILY_VERSION, "lines": chosen}
 
 
+
+def select_single(rows):
+    """One independent daily candidate, subject to the existing risk screen."""
+    candidates = []
+    for row in rows:
+        if rejection_reasons(row):
+            continue
+        try:
+            price = float(row['Quota'])
+            probability = float(row['Prob. stimata %'])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not (1.70 <= price <= 2.20 and probability >= 60
+                and probability - 100 / price >= 5):
+            continue
+        candidates.append((probability * price / 100 - 1, probability, row))
+    candidates.sort(key=lambda item: (-item[0], -item[1],
+                                      str(item[2].get('Giocatore') or ''),
+                                      str(item[2].get('Mercato') or '')))
+    return dict(candidates[0][2]) if candidates else None
+
 def evaluate(saved, verified):
     """Evaluate exact saved legs, never substitute a hindsight winning player.
 
