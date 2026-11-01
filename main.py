@@ -937,6 +937,19 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         # No backfilling: only explicitly published singles count.
         import daily_single_archive
         result['single_archive'] = daily_single_archive.read(date)
+        single_record = result['single_archive']
+        if single_record.get('published') and single_record.get('selection'):
+            saved_single = single_record['selection']
+            identity = public_views.leg_identity(saved_single)
+            matched = next((row for row in result.get('lines', [])
+                            if public_views.leg_identity(row) == identity), None)
+            if matched:
+                single_record['outcome'] = {'status': matched.get('status', 'unresolved'),
+                                            'actual': matched.get('actual')}
+                single_record['status'] = matched.get('status', 'unresolved')
+            else:
+                single_record['outcome'] = {'status': 'unresolved', 'actual': None}
+                single_record['status'] = 'unresolved'
         result['top5_archive'] = {
             'lines': result.get('official_lines', []),
             'summary': result.get('official_summary', {}),
