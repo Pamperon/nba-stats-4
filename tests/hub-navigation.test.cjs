@@ -19,7 +19,7 @@ function setup(hash=''){
 }
 test('desktop and mobile navigation are present',()=>{
  const {window,doc}=setup();
- for(const key of ['home','picks','stats','history'])assert.ok(doc.querySelector('.hub-mobile-bar [data-hub="'+key+'"]'));
+ for(const key of ['home','calendar','picks','stats'])assert.ok(doc.querySelector('.hub-mobile-bar [data-hub="'+key+'"]'));
  for(const key of ['home','picks','stats','finder','history','about'])assert.ok(doc.querySelector('.hub-sidebar [data-hub="'+key+'"]'));
  assert.equal(doc.querySelector('.hub-landing').hidden,false);
  window.close();
@@ -36,9 +36,9 @@ test('picks and finder hide home panels and activate existing tabs',()=>{
 });
 test('archive navigation hides landing and marks current destination',()=>{
  const {window,doc}=setup();
- doc.querySelector('.hub-mobile-bar [data-hub="history"]').click();
+ doc.querySelector('.hub-menu-drawer [data-hub="history"]').click();
  assert.equal(doc.querySelector('.hub-landing').hidden,true);
- assert.equal(doc.querySelector('.hub-mobile-bar [data-hub="history"]').getAttribute('aria-current'),'page');
+ assert.equal(doc.querySelector('.hub-menu-drawer [data-hub="history"]').getAttribute('aria-current'),'page');
  window.close();
 });
 test('direct archive URL does not display home panels',()=>{

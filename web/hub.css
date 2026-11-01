@@ -966,3 +966,25 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
 .hub-games-section .hub-premium-fixture:focus-visible{outline:3px solid #ffa345;outline-offset:3px}
 @media(min-width:860px){.hub-games-section .hub-games-showcase{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-games-section .hub-premium-fixture .hub-premium-matchup{padding:24px 14px 20px;min-height:170px}}
 @media(max-width:370px){.hub-games-section .hub-premium-fixture .hub-premium-matchup{padding:16px 8px;gap:3px;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)}.hub-games-section .hub-premium-fixture .hub-premium-team img{width:53px;height:53px}.hub-games-section .hub-premium-fixture .hub-premium-team strong{font-size:12px}.hub-games-section .hub-premium-fixture .hub-premium-footer{padding:11px 10px}.hub-games-section .hub-premium-fixture .hub-premium-timing{gap:7px;font-size:12px}.hub-games-section .hub-premium-fixture .hub-premium-action{min-width:79px;padding:9px;font-size:12px}}
+
+/* Basket Lab: compact premium fixture rows + equal-weight floating navigation. */
+.hub-games-section .hub-games-showcase{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.hub-games-section .hub-premium-fixture{min-height:80px;gap:0;padding:0!important;border-radius:15px!important}
+.hub-games-section .hub-premium-fixture .hub-premium-matchup{display:grid;grid-template-columns:42px minmax(0,1fr) 42px 12px;align-items:center;gap:9px;width:100%;min-height:80px;padding:13px 13px}
+.hub-games-section .hub-premium-fixture .hub-premium-logo{display:flex;align-items:center;justify-content:center;min-width:0}
+.hub-games-section .hub-premium-fixture .hub-premium-logo img{width:42px;height:42px;max-width:100%;object-fit:contain;filter:drop-shadow(0 3px 5px #0008)}
+.hub-games-section .hub-premium-fixture .hub-premium-center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;text-align:center}
+.hub-games-section .hub-premium-fixture .hub-premium-names{display:block;width:100%;font-size:13px;line-height:1.25;font-weight:750;color:#fff;overflow-wrap:break-word;white-space:normal}
+.hub-games-section .hub-premium-fixture .hub-premium-timing{display:block;font-size:12px;line-height:1.3;font-weight:550;color:#cbddef}
+.hub-games-section .hub-premium-fixture .hub-premium-arrow{font-size:25px;line-height:1;color:#ffad65}
+@media(min-width:860px){.hub-games-section .hub-games-showcase{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-games-section .hub-premium-fixture .hub-premium-matchup{min-height:86px}}
+@media(max-width:370px){.hub-games-section .hub-premium-fixture .hub-premium-matchup{grid-template-columns:33px minmax(0,1fr) 33px 9px;gap:6px;padding:10px 9px;min-height:72px}.hub-games-section .hub-premium-fixture .hub-premium-logo img{width:33px;height:33px}.hub-games-section .hub-premium-fixture .hub-premium-names{font-size:12px}}
+@media(max-width:760px){
+ .hub-mobile-bar{position:fixed;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto;max-width:520px;margin-inline:auto;z-index:100;padding:7px;background:#142a43f5;border:1px solid #365473;border-radius:20px;box-shadow:0 10px 32px #000a, inset 0 1px #ffffff16;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+ .hub-mobile-bar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:54px;padding:8px 2px 5px;border:0;border-radius:13px;background:transparent;color:#aec2d7;font-size:11px;font-weight:500;line-height:1.1;white-space:nowrap;transition:background .18s,color .18s}
+ .hub-mobile-bar button span{font-size:23px;line-height:1.1;font-weight:400}
+ .hub-mobile-bar button[aria-current=page]{background:#243e58;color:#ff9d43;font-weight:650}
+ .hub-mobile-bar button[aria-current=page]::after{content:"";display:block;width:19px;height:3px;background:#ff9d43;border-radius:3px;margin-top:1px}
+ .hub-shell{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+ .hub-shell .back-to-top{bottom:calc(105px + env(safe-area-inset-bottom,0px))}
+}
