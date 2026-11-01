@@ -58,6 +58,7 @@ def init_storage():
     tracking_ready = True
     threading.Thread(target=_release_guard_when_public, daemon=True, name='nba-deploy-release').start()
     threading.Thread(target=_render_scheduler_loop, daemon=True, name='nba-render-scheduler').start()
+    threading.Thread(target=_official_publication_loop, daemon=True, name='nba-official-publisher').start()
 
 
 def _release_guard_when_public():
@@ -74,6 +75,29 @@ def _release_guard_when_public():
     # Guard expires automatically. This instance may still process new work;
     # only older instances are fenced by the guard's runtime ID.
     logger.warning('Deploy guard retained until automatic expiry')
+
+
+def _official_publication_loop():
+    """Publish independently of visitors, with no paid odds-provider calls."""
+    import official_top5
+    last_attempt = None
+    while not shutdown_event.wait(20):
+        now = datetime.now(ZoneInfo('Europe/Rome'))
+        if not official_top5.eligible_day(now.date().isoformat()):
+            continue
+        if now.hour != 18 or now.minute > 20:
+            continue
+        attempt = now.strftime('%Y-%m-%dT%H:%M')[:15]
+        # One attempt per minute; a final scan may finish slightly late.
+        if attempt == last_attempt:
+            continue
+        last_attempt = attempt
+        try:
+            day = now.date().isoformat()
+            if official_top5.get(day) is None:
+                official_top5.publish(day, schedule(day)['games'], now=now)
+        except Exception:
+            logger.exception('Official Top 5 publication attempt failed')
 
 
 def _render_scheduler_loop():
