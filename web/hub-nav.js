@@ -1,7 +1,7 @@
 /* A+C UI navigation, delegating to original Basket Lab controls. */
 (()=>{'use strict';
 const $=s=>document.querySelector(s);
-const landing=$('.hub-landing'),tiles=$('.hub-tiles'),metrics=$('.hub-live-metrics'),featured=$('.hub-featured'),insights=$('.hub-insights'),gamesShowcase=$('.hub-games-section'),singleShowcase=$('.hub-single-section'),performance=$('.hub-performance'),methodLink=$('.hub-method-link');
+const landing=$('.hub-landing'),tiles=$('.hub-tiles'),metrics=$('.hub-live-metrics'),trust=$('.hub-trust-strip'),featured=$('.hub-featured'),insights=$('.hub-insights'),gamesShowcase=$('.hub-games-section'),singleShowcase=$('.hub-single-section'),performance=$('.hub-performance'),methodLink=$('.hub-method-link');
 if(!landing||!tiles)return;
 const menuToggle=$('.hub-menu-toggle'),menuDrawer=$('#hub-menu-drawer');
 function closeMenu(){if(!menuDrawer)return;menuDrawer.hidden=true;menuToggle?.setAttribute('aria-expanded','false');menuToggle?.setAttribute('aria-label','Apri menu di navigazione')}
@@ -19,7 +19,7 @@ const go={
 };
 let home=true;
 function mark(key){document.querySelectorAll('[data-hub]').forEach(el=>{if(el.dataset.hub===key)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')})}
-function display(){const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;if(singleShowcase)singleShowcase.hidden=!home||extra;if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;}
+function display(){const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;if(singleShowcase)singleShowcase.hidden=!home||extra;if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;}
 function select(key){home=key==='home';mark(key);display();document.body.dataset.hubView=key;}
 document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
