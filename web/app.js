@@ -380,8 +380,14 @@ function render(){
  }
  const rows=data.results||[];
 
- const groups=[['Singola',1,1.70,2.00],['Doppia',2,1.40,1.69],['Tripla',3,1.20,1.39]];
  const pending=[];
+ if(Array.isArray(data.recommendations?.lines)){
+  const chosen=data.recommendations.lines.filter(p=>rows.some(r=>r.Giocatore===p.Giocatore&&r.Partita===p.Partita&&r.Mercato===p.Mercato&&r.Linea===p.Linea&&r.Scelta===p.Scelta));
+  pending.push(chosen);
+  $('picks').innerHTML='<section id="pick-giorno" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le migliori linee NBA di oggi</h2></div>'+
+   (chosen.length?'<div class="pick-group-items">'+chosen.map(pickCard).join('')+'</div>':'<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>')+'</section>';
+ }else{
+ const groups=[['Singola',1,1.70,2.00],['Doppia',2,1.40,1.69],['Tripla',3,1.20,1.39]];
  $('picks').innerHTML=groups.map(([title,count,min,max])=>{
   // Keep the exact versioned selections archived at scan time. Never replace
   // a started/removed leg with a different pick under the same saved ticket.
@@ -399,6 +405,7 @@ function render(){
   '<p>'+esc(pickEmptyReason(rows,min,max,count,chosen.length))+'</p>')+
   '</section>';
  }).join('');
+ }
  $('picks').querySelectorAll('.pick-group').forEach((group,i)=>{
   group.querySelectorAll('.pick-selection').forEach((card,j)=>{
    const row=pending[i][j],open=()=>{returnOrigin='dashboard';returnPick=card.querySelector('.pick-stats-button');openPickStats(row);};
