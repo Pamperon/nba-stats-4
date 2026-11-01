@@ -46,9 +46,10 @@ document.querySelectorAll('[data-pick-group]').forEach(b=>b.addEventListener('cl
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');
  if(!list||!picks)return;
- const sources=[...picks.querySelectorAll('.pick-selection')].slice(0,3);
+ const sources=[...picks.querySelectorAll('.pick-group-daily .pick-group-items > .pick-selection')].slice(0,5);
+ const visibleSources=sources.length?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
  list.replaceChildren();
- for(const source of sources){
+ for(const source of visibleSources){
   const card=document.createElement('div');card.className='hub-featured-card';
   const content=document.createElement('div');content.className='hub-featured-summary';
   const name=document.createElement('strong');name.textContent=source.querySelector('.pick-player-link')?.textContent||'Analisi NBA';
@@ -63,7 +64,7 @@ function featuredPicks(){
   action.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
   card.append(action);list.append(card);
  }
- if(!sources.length)list.textContent='Nessuna selezione disponibile per la giornata.';
+ if(!visibleSources.length)list.textContent='Nessuna selezione disponibile per la giornata.';
 }
 function updateInsights(){
  const picks=$('#picks'),games=$('#hub-games'),trends=$('#hub-trends');if(!picks||!games||!trends)return;
