@@ -47,7 +47,7 @@ function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');
  if(!list||!picks)return;
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,5);
- const visibleSources=sources.length?sources:[...picks.querySelectorAll('.pick-group-daily:not([aria-label="Singola del giorno"]) .pick-selection')].slice(0,5);
+ const visibleSources=sources.length?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
  list.replaceChildren();
  for(const source of visibleSources){
   const card=document.createElement('div');card.className='hub-featured-card';
