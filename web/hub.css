@@ -873,3 +873,24 @@ body.hub-match-open .hub-match-player-card .hub-match-all-lines{background:#173b
 .hub-calendar-dates .hub-calendar-date small{font-size:12px;white-space:nowrap}
 .hub-calendar-day-summary strong{font-size:14px}
 @media(max-width:420px){.hub-calendar-dates .hub-calendar-date{min-width:84px;max-width:94px;padding:9px 7px}.hub-calendar-dates .hub-calendar-date strong{font-size:14px}}
+
+/* Calendar refinement: balanced matchup cards and a clearer visual rhythm */
+.hub-calendar-view{background:linear-gradient(155deg,#102f49 0%,#0a2137 100%);border:1px solid #375b75;border-radius:23px;padding:18px}
+.hub-calendar-heading{align-items:center;margin-bottom:18px}
+.hub-calendar-heading h2{font-size:22px;letter-spacing:-.025em}
+.hub-calendar-heading p{max-width:260px;margin-top:5px;font-size:12px}
+.hub-calendar-status{font-size:10px;color:#efaa6a;border-color:#a56d3d}
+.hub-calendar-nav{gap:8px;margin-bottom:20px}
+.hub-calendar-nav>button{border-radius:12px;background:#0b273e;border-color:#355c79}
+.hub-calendar-dates .hub-calendar-date{border-radius:13px;background:#15364f;border-color:#3e6680;min-height:64px}
+.hub-calendar-day-summary{margin-bottom:13px}
+.hub-calendar-day-summary strong{font-size:16px;font-weight:650}
+.hub-calendar-games{gap:12px}
+.hub-calendar-games .hub-calendar-match{position:relative;grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr);gap:5px;min-height:137px;padding:18px 16px 27px;border-radius:18px;background:linear-gradient(145deg,#153b55,#0b283f);border:1px solid #426b85;box-shadow:0 5px 16px rgba(0,10,24,.12);transition:border-color .15s,background .15s}
+.hub-calendar-games .hub-calendar-match:active{background:#1b425e;border-color:#f7a04d}
+.hub-calendar-match .hub-calendar-team{gap:9px;font-size:13px;line-height:1.25;font-weight:550;overflow-wrap:normal}
+.hub-calendar-match .hub-calendar-team img{width:59px;height:59px;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(0,0,0,.22))}
+.hub-calendar-match .hub-calendar-versus{font-size:13px;letter-spacing:.06em;color:#f7a451}
+.hub-calendar-match .hub-calendar-match-arrow{position:absolute;right:15px;bottom:8px;font-size:13px;font-weight:600;color:#f4a35c}
+.hub-calendar-match .hub-calendar-match-arrow::before{content:'Analisi e quote ';font-size:11px}
+@media(max-width:420px){.hub-calendar-view{padding:14px}.hub-calendar-heading h2{font-size:20px}.hub-calendar-heading p{font-size:12px}.hub-calendar-games .hub-calendar-match{padding:16px 11px 27px;min-height:132px;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)}.hub-calendar-match .hub-calendar-team img{width:53px;height:53px}.hub-calendar-match .hub-calendar-team{font-size:12px}}
