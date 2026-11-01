@@ -757,3 +757,20 @@ body.hub-match-open .hub-match-player-market summary{padding-left:12px;padding-r
 body.hub-match-open .hub-match-player-market summary span:last-child{white-space:nowrap;margin-left:auto}
 body.hub-match-open .hub-match-market-legend{gap:12px;justify-content:flex-start}
 @media(max-width:360px){body.hub-match-open .hub-match-extra-filters{gap:7px}body.hub-match-open .hub-match-extra-filters select,body.hub-match-open .hub-match-extra-filters input{font-size:12px;padding:9px 7px}}
+
+/* Compact matchup header, simple market summary, visual H2H record */
+body.hub-match-open .hub-match-title-wrap{border:1px solid rgba(119,171,207,.5);border-radius:28px;background:linear-gradient(135deg,rgba(13,54,77,.9),rgba(7,29,49,.94));overflow:hidden;margin-bottom:22px}
+body.hub-match-open .hub-match-title-wrap .hub-match-title{margin:0;border:0;background:transparent;border-radius:0}
+body.hub-match-open .hub-match-title-wrap .hub-match-fixture-meta{margin:-2px 0 0;padding:0 12px 15px;color:#f8b16e;font-weight:600;letter-spacing:.03em}
+body.hub-match-open .hub-match-facts>div:nth-child(2){display:none}
+body.hub-match-open .hub-match-h2h-chart{border:1px solid rgba(119,171,207,.42);background:rgba(10,43,66,.72);border-radius:16px;padding:15px 16px;margin:13px 0;display:grid;gap:11px}
+body.hub-match-open .hub-match-h2h-chart>strong{font-size:16px;color:#e7f2f9}
+body.hub-match-open .hub-match-h2h-names{display:flex;align-items:start;justify-content:space-between;gap:14px;font-size:13px;color:#e2eef7}
+body.hub-match-open .hub-match-h2h-names span{max-width:46%;overflow-wrap:anywhere}
+body.hub-match-open .hub-match-h2h-names span:last-child{text-align:right}
+body.hub-match-open .hub-match-h2h-bar{display:flex;height:15px;overflow:hidden;border-radius:12px;background:#24455e}
+body.hub-match-open .hub-match-h2h-bar>span{height:100%;transition:width .2s ease}
+body.hub-match-open .hub-match-h2h-chart>small,body.hub-match-open .hub-match-h2h-chart>p{font-size:12px;color:#a9c0d1;margin:0}
+body.hub-match-open .hub-match-market-distribution{gap:10px;padding:14px}
+body.hub-match-open .hub-match-market-distribution>p{font-size:12px}
+body.hub-match-open .hub-match-market-legend{justify-content:space-between;gap:8px}
