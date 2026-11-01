@@ -403,3 +403,27 @@ body[data-hub-view="about"] .hub-shell #app{display:none!important}
 .app-header .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .app-header .brand-copy{min-width:0}
 @media(max-width:760px){.app-header .brand-icon{width:46px!important;height:46px!important;flex-basis:46px!important}.app-header .brand-copy b{font-size:clamp(19px,5.4vw,25px)!important}.app-header .brand-copy small{font-size:8px!important;letter-spacing:.45px!important}}
+
+
+/* Matchday editorial layout and calendar */
+.hub-calendar-view[hidden],.hub-match-detail[hidden],.hub-match-analysis[hidden],#app[hidden]{display:none!important}
+.hub-calendar-view,.hub-match-detail{border:1px solid #315676;background:linear-gradient(145deg,#102a43,#071a2d);border-radius:20px;padding:18px;margin:12px 0 22px;color:#eef5ff}
+.hub-calendar-view>p,.hub-match-disclaimer{color:#a8c0d7;font-size:13px;line-height:1.5}
+.hub-calendar-dates{display:flex;gap:7px;overflow-x:auto;padding:12px 0}
+.hub-calendar-dates button{flex:0 0 auto;padding:10px 14px;background:#173750;border:1px solid #416783;border-radius:12px;color:#eef5ff;cursor:pointer}
+.hub-calendar-games{display:grid;gap:10px}
+.hub-calendar-match{width:100%;padding:17px;text-align:left;color:#f5f8ff;background:#14324c;border:1px solid #416783;border-radius:12px;cursor:pointer}
+.hub-match-back{background:none;border:0;color:#ffae6a;font-size:14px;padding:6px 0 16px;cursor:pointer}
+.hub-match-title{display:flex;align-items:center;justify-content:center;gap:18px;text-align:center;font-size:clamp(18px,3vw,28px)}
+.hub-match-title strong{flex:1;max-width:230px}.hub-match-title b{color:#ff9b43}
+.hub-match-tabs{display:flex;gap:4px;background:#07192c;border-radius:12px;padding:4px;margin:20px 0}
+.hub-match-tabs button{flex:1;min-width:0;background:transparent;color:#c6d9e8;border:0;border-radius:9px;padding:12px 5px;font-size:12px;cursor:pointer}
+.hub-match-tabs button.active{background:#f48b31;color:#101b2a;font-weight:800}
+.hub-match-analysis h3{margin:0 0 14px;font-size:21px}
+.hub-match-analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hub-match-analysis-grid>div{padding:15px;background:#16344f;border:1px solid #385b78;border-radius:13px}
+.hub-match-analysis-grid small{display:block;color:#b4c9da;margin-bottom:12px}
+.hub-match-analysis-grid strong{display:block;color:#fff;font-size:15px}
+.hub-match-analysis-grid p{font-size:12px;line-height:1.5;color:#b4c9da}
+body.hub-match-open #finder .finder-heading{margin-top:14px}
+@media(max-width:760px){.hub-calendar-view,.hub-match-detail{padding:13px}.hub-match-title{gap:8px;font-size:18px}.hub-match-analysis-grid{grid-template-columns:1fr}.hub-match-tabs button{font-size:11px;padding:11px 3px}}
