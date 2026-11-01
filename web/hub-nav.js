@@ -32,7 +32,7 @@ function refresh(){
  if(prob)prob.textContent=percentages.length?(percentages.reduce((a,b)=>a+b,0)/percentages.length).toLocaleString('it-IT',{maximumFractionDigits:1})+'%':'—';
  const cards=picks?.querySelectorAll('.pick-selection').length||0;
  if(count)count.textContent=cards?String(cards):'0';
- if(last)last.textContent=(updated?.textContent||'').trim().slice(0,26)||'—';
+ if(last){const raw=(updated?.textContent||'').trim();const stamp=raw.match(/(?:\d{1,2}:\d{2})(?::\d{2})?/);last.textContent=stamp?stamp[0]:'—';last.title=raw;}
 }
 if(metricTarget){new MutationObserver(refresh).observe(metricTarget,{childList:true,subtree:true,characterData:true})}
 if(updated){new MutationObserver(refresh).observe(updated,{childList:true,subtree:true,characterData:true})}
@@ -48,10 +48,13 @@ function featuredPicks(){
   const content=document.createElement('div');content.className='hub-featured-summary';
   const name=document.createElement('strong');name.textContent=source.querySelector('.pick-player-link')?.textContent||'Analisi NBA';
   const market=document.createElement('p');market.textContent=source.querySelector('.pick-market')?.textContent||'';
-  const values=document.createElement('p');values.textContent=(source.querySelector('.pick-values')?.textContent||'').replace(/\s+/g,' ').trim();
-  const avatar=source.querySelector('.pick-avatar img');if(avatar){const img=document.createElement('img');img.src=avatar.src;img.alt='';img.loading='lazy';content.append(img)}
+  const values=document.createElement('div');values.className='hub-featured-values';
+  const blocks=[...source.querySelectorAll('.pick-values > div')];
+  for(const block of blocks){const item=document.createElement('div');item.className='hub-featured-value';const label=document.createElement('small');label.textContent=block.querySelector('small')?.textContent||'';const number=document.createElement('strong');number.textContent=block.querySelector('strong')?.textContent||'';item.append(label,number);values.append(item)}
+  if(!blocks.length){const fallback=document.createElement('span');fallback.textContent=(source.querySelector('.pick-values')?.textContent||'').replace(/\s+/g,' ').trim();values.append(fallback)}
+  const avatar=source.querySelector('.pick-avatar');if(avatar){const clone=avatar.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));clone.classList.add('hub-featured-avatar');content.append(clone)}
   content.append(name,market,values);card.append(content);
-  const action=document.createElement('button');action.type='button';action.textContent='Apri statistiche →';
+  const action=document.createElement('button');action.type='button';action.textContent='Statistiche giocatore →';
   action.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
   card.append(action);list.append(card);
  }
