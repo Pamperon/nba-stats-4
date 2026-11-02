@@ -183,6 +183,37 @@ def latest(date=None):
     job_id, payload, created_at = row
     return {"job_id": job_id, "saved_at": created_at.isoformat(), **payload}
 
+def recent_fixture_coverage(date, max_age_hours=6):
+    """Latest observed quote rows per fixture across recent scans.
+
+    A partial scan must not erase fixtures from a previous successful scan.
+    Read-only: never alters official snapshots or historical settlement.
+    """
+    if not configured():
+        return []
+    with connection() as conn:
+        rows = conn.execute("""
+            SELECT payload FROM nba_scan_snapshots
+            WHERE scan_date=%s
+              AND created_at >= NOW() - (%s * INTERVAL '1 hour')
+              AND state IN ('done','partial')
+            ORDER BY created_at DESC
+        """, (date, max_age_hours)).fetchall()
+    fixtures = {}
+    for (payload,) in rows:
+        for item in payload.get('results', []):
+            fixture = str(item.get('Partita') or '').strip().casefold()
+            if fixture and fixture not in fixtures:
+                fixtures[fixture] = []
+            if fixture:
+                # Once the newest scan contains a fixture, retain all its lines,
+                # not just the first line encountered.
+                if not fixtures[fixture]:
+                    fixtures[fixture] = [row for row in payload.get('results', [])
+                                         if str(row.get('Partita') or '').strip().casefold() == fixture]
+    return [row for fixture_rows in fixtures.values() for row in fixture_rows]
+
+
 def earliest_completed(date):
     """Oldest nonempty completed snapshot for a date, for pregame calibration.
 
