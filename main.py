@@ -235,8 +235,8 @@ def health():
     return {'status': 'ok', 'version': '4.0-optimized', 'odds_download_method': 'tournament-v1',
             'live_calibration_enabled': LIVE_CALIBRATION_ENABLED,
             'deployment_commit': os.getenv('RENDER_GIT_COMMIT'),
-            'scheduler_revision': 'rome-three-slots-v1',
-            'scan_slots_italy': ['10:00', '14:30', '17:30'],
+            'scheduler_revision': 'rome-five-prepublication-slots-v1',
+            'scan_slots_italy': ['09:00', '12:00', '14:30', '16:30', '17:30'],
             'runtime_instance': RUNTIME_ID, 'scan_tracking_ready': tracking_ready,
             'active_scans': active}
 
