@@ -688,7 +688,7 @@ function refreshShowcase(){
    const [primary,secondary]=palette[ownCode]||['#19334e','#436483'];
    hero.style.setProperty('--bl-team-primary',primary);hero.style.setProperty('--bl-team-secondary',secondary);
    const ownLogo=own?.querySelector('.team-logo img');
-   if(ownLogo){const watermark=ownLogo.cloneNode(true);watermark.removeAttribute('id');watermark.className='bl-team-watermark';watermark.alt='';watermark.setAttribute('aria-hidden','true');hero.insertBefore(watermark,photo)}
+   if(ownLogo){const watermark=ownLogo.cloneNode(true);watermark.removeAttribute('id');watermark.className='bl-team-watermark';watermark.alt='';watermark.setAttribute('aria-hidden','true');hero.insertBefore(watermark,photo);const emblem=ownLogo.cloneNode(true);emblem.removeAttribute('id');emblem.className='bl-team-emblem';emblem.alt='';emblem.setAttribute('aria-hidden','true');hero.append(emblem)}
    intro.append(player,info);hero.append(intro);
    const market=document.createElement('div');market.className='bl-broadcast-line';
    const label=document.createElement('small');label.textContent='LINEA SELEZIONATA';
@@ -701,7 +701,7 @@ function refreshShowcase(){
    const probabilityValue=hubCardMetric(pick,/stima|probabilit/i);const percentage=Number(probabilityValue.replace('%','').replace(',','.'));
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
-   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='ANALISI COMPLETA →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
+   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='VEDI NEI PRONOSTICI →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
  }
