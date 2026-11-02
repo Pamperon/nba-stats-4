@@ -201,16 +201,13 @@ def recent_fixture_coverage(date, max_age_hours=6):
         """, (date, max_age_hours)).fetchall()
     fixtures = {}
     for (payload,) in rows:
+        groups = {}
         for item in payload.get('results', []):
             fixture = str(item.get('Partita') or '').strip().casefold()
-            if fixture and fixture not in fixtures:
-                fixtures[fixture] = []
             if fixture:
-                # Once the newest scan contains a fixture, retain all its lines,
-                # not just the first line encountered.
-                if not fixtures[fixture]:
-                    fixtures[fixture] = [row for row in payload.get('results', [])
-                                         if str(row.get('Partita') or '').strip().casefold() == fixture]
+                groups.setdefault(fixture, []).append(item)
+        for fixture, items in groups.items():
+            fixtures.setdefault(fixture, items)
     return [row for fixture_rows in fixtures.values() for row in fixture_rows]
 
 
