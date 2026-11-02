@@ -1538,3 +1538,15 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .hub-single-content .bl-broadcast-metric strong{font-size:clamp(20px,5.7vw,25px)!important}
 .hub-single-content .bl-broadcast-action{margin:0 9px 8px!important;width:calc(100% - 18px)!important;min-height:34px!important;font-size:11px!important}
 @media(max-width:390px){.hub-single-content .bl-broadcast-hero{min-height:98px!important;height:98px!important}.hub-single-content .bl-broadcast-hero>.bl-player-photo{height:94px!important}.hub-single-content .bl-game-team span{font-size:9px!important}}
+
+/* Team identity for daily pick: angular orange title + team-tinted hero */
+.hub-single-section{position:relative!important}
+.hub-single-section .hub-single-heading,.hub-single-section .hub-section-heading,.hub-single-section .hub-single-title{position:relative}
+.hub-single-section h2{position:relative;isolation:isolate}
+.hub-single-section h2::before{content:"";position:absolute;z-index:-1;inset:-5px -16px -5px -10px;background:linear-gradient(115deg,#e66d13,#ff9c27 72%,#c85a0c);clip-path:polygon(0 0,91% 0,100% 50%,91% 100%,0 100%);border-radius:5px 0 0 5px}
+.hub-single-section h2{color:#fff!important;text-shadow:0 1px 2px #803000!important}
+.hub-single-content .bl-broadcast-hero{background:linear-gradient(112deg,var(--bl-team-primary,#19334e) 0%,#17283a 57%,#0d1b2b 100%)!important;isolation:isolate}
+.hub-single-content .bl-broadcast-hero::before{background:radial-gradient(ellipse at 20% 50%,var(--bl-team-secondary,#436483) 0%,transparent 60%),linear-gradient(120deg,var(--bl-team-primary,#19334e),#102033)!important;opacity:.38!important}
+.hub-single-content .bl-team-watermark{position:absolute;z-index:-1;left:3%;top:0;width:32%;height:105%;object-fit:contain;opacity:.19;filter:blur(1.1px) saturate(1.15);pointer-events:none}
+.hub-single-content .bl-broadcast-hero>.bl-player-photo{position:relative;z-index:1}
+.hub-single-content .bl-broadcast-intro{position:relative;z-index:2}
