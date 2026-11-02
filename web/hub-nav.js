@@ -440,6 +440,7 @@ function renderCalendar(){
  if(index<0)index=0;
  const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
  const requestedDate=calendarSelectedDate||options[index]?.value||selectedValue;
+ const compactDate=$('#hub-calendar-compact-date');if(compactDate&&requestedDate){const d=new Date(requestedDate+'T12:00:00Z');compactDate.textContent=new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(d)}
  if(requestedDate)calendarSelectedDate=requestedDate;
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
@@ -585,6 +586,12 @@ function shiftCalendarMonth(delta){
  calendarSelectedDate=target.getUTCFullYear()+'-'+String(target.getUTCMonth()+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
  renderCalendar();
 }
+const calendarToggle=$('#hub-calendar-collapse-toggle'),calendarPicker=$('#hub-calendar-picker');
+calendarToggle?.addEventListener('click',()=>{
+ if(!calendarPicker)return;
+ const expanded=calendarToggle.getAttribute('aria-expanded')==='true';
+ calendarPicker.hidden=expanded;calendarToggle.setAttribute('aria-expanded',String(!expanded));
+});
 $('#hub-calendar-month-prev')?.addEventListener('click',()=>shiftCalendarMonth(-1));
 $('#hub-calendar-month-next')?.addEventListener('click',()=>shiftCalendarMonth(1));
 for(const [id,offset] of [['hub-calendar-yesterday',-1],['hub-calendar-today',0],['hub-calendar-tomorrow',1]]){
