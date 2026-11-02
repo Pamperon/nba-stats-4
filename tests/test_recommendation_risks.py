@@ -117,14 +117,14 @@ process.stdout.write(JSON.stringify(out));
         payload = {'date': '2026-10-26', 'recommendations': saved, 'results': [original]}
         db = MagicMock()
         db.return_value.__enter__.return_value.execute.return_value.fetchall.return_value = [
-            ('job', payload, datetime(2026, 10, 25, 16, tzinfo=timezone.utc))]
-        with patch.object(storage, 'connection', db), patch.object(settle_espn, 'settle_archive',
-                return_value=([{**original, 'actual': 10, 'played': True}], 1)) as verify:
+            ('job', payload, datetime(2026, 10, 25, 16, tzinfo=timezone.utc), None)]
+        with patch.object(storage, 'connection', db), patch.object(settle_espn, 'settle_completed_fixtures',
+                return_value=[{**original, 'actual': 10, 'played': True}]) as verify:
             self.assertEqual(recommendations.settle_snapshots('2026-10-26'), 1)
         query = db.return_value.__enter__.return_value.execute
-        self.assertIn('NOT EXISTS', query.call_args_list[0].args[0])
+        self.assertIn('LEFT JOIN nba_recommendation_results', query.call_args_list[0].args[0])
         sql, params = query.call_args_list[1].args
-        self.assertIn('ON CONFLICT(snapshot_job_id) DO NOTHING', sql)
+        self.assertIn('ON CONFLICT(snapshot_job_id) DO UPDATE', sql)
         self.assertEqual(params[0], 'job')
         self.assertEqual(params[2].obj['groups']['Singola']['legs'][0]['player'], 'Player')
         self.assertEqual(params[2].obj['groups']['Singola']['status'], 'won')

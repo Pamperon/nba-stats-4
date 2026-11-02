@@ -90,7 +90,7 @@ dateSwipeArea.addEventListener('pointerdown',event=>{if(event.pointerType!=='tou
 dateSwipeArea.addEventListener('pointerup',event=>{if(!dateSwipe||dateSwipe.id!==event.pointerId)return;const dx=event.clientX-dateSwipe.x,dy=event.clientY-dateSwipe.y;dateSwipe=null;if(Math.abs(dx)>=35&&Math.abs(dx)>Math.abs(dy)*1.2)stepDate(dx<0?1:-1);});
 dateSwipeArea.addEventListener('pointercancel',()=>{dateSwipe=null;});
 function renderDateMetrics(snapshot){
- const values=[['PARTITE',snapshot?.fixture_count],['GIOCATORI',snapshot?.player_count],['QUOTE',snapshot?((snapshot.results||[]).length):null]];
+ const values=[['PARTITE',snapshot?.fixture_count],['GIOCATORI',snapshot?.player_count],['QUOTE',snapshot?(snapshot.quote_count??(snapshot.results||[]).length):null]];
  $('metrics').innerHTML=values.map(([label,value])=>'<div class="metric"><small>'+label+'</small><strong>'+fmt(value)+'</strong></div>').join('');
 }
 
@@ -166,7 +166,7 @@ $('date').addEventListener('change',async()=>{
  $('date').blur();
  setArchiveStatus('Caricamento archivio del '+selected+'…');
  try{
-  const response=await api('/api/saved/latest?date='+encodeURIComponent(selected));
+  const response=await api('/api/saved/latest?date='+encodeURIComponent(selected)+'&compact=true');
   const saved=await response.json();
   if(request!==dateSelectionRequest||$('date').value!==selected)return;
   data=saved;render();
@@ -1033,7 +1033,7 @@ async function refreshSessionPicks(){
  if(!sessionPicksEnabled)return;
  const request=++sessionPicksRequest;
  try{
-  const response=await api('/api/picks/session');
+  const response=await api('/api/picks/session?compact=true');
   if(!response.ok)throw new Error('Session picks unavailable');
   const payload=await response.json();
   if(request!==sessionPicksRequest)return;

@@ -103,6 +103,8 @@ def main():
 
             calibration.initialize()
             calibration.initialize()
+            import official_top5
+            official_top5.initialize()
             from psycopg.types.json import Jsonb
             for _ in range(2):
                 db.query("INSERT INTO nba_recommendation_results(snapshot_job_id,scan_date,report) VALUES (%s,%s,%s) ON CONFLICT(snapshot_job_id) DO NOTHING",
@@ -121,11 +123,15 @@ def main():
             shadow=shadow_study.capture([candidate_row])
             storage.save('sql-ticket', {'date':'2026-10-23', 'state':'done', 'results':[ticket_row],
                                        'recommendations':recommendations.select([ticket_row]),'model_shadow':shadow})
-            with patch.object(settle_espn, 'settle_archive', return_value=([{**ticket_row, 'actual':10, 'played':True}],1)):
+            with patch.object(settle_espn, 'settle_completed_fixtures', return_value=[{**ticket_row, 'actual':10, 'played':True}]):
                 assert recommendations.settle_snapshots('2026-10-23') == 1
-                assert recommendations.settle_snapshots('2026-10-23') == 0
+                assert recommendations.settle_snapshots('2026-10-23') == 1
+                assert db.query("SELECT count(*) FROM nba_recommendation_results WHERE snapshot_job_id='sql-ticket'")[0][0] == 1
             assert db.query("SELECT report->'groups'->'Singola'->>'status' FROM nba_recommendation_results WHERE snapshot_job_id='sql-ticket'")[0][0] == 'won'
             assert db.query("SELECT report->'model_shadow'->'models'->'pooled80_recent20'->>'n' FROM nba_recommendation_results WHERE snapshot_job_id='sql-ticket'")[0][0] == '1'
+            assert storage.recent_fixture_coverage('2026-10-23') == [ticket_row]
+            storage.save('empty-partial', {'date':'2026-10-23','state':'partial','results':[]})
+            assert storage.recent_fixture_coverage('2026-10-23') == [ticket_row]
             storage.initialize()
             tracking.initialize()  # Additive migrations are repeatable.
             storage.save('legacy', {'date':'2026-10-26','state':'done','results':[], 'odds_api_http_requests_scan':6})
@@ -202,6 +208,10 @@ def main():
                     assert response.json()['state'] == 'interrupted'
                     assert response.json()['latest_attempt']['api_requests']['logged'] == 1
                     assert client.get('/api/health').json()['scan_tracking_ready'] is True
+                    monitor = client.get('/api/admin/monitor', headers={'Authorization':'Bearer offline-test-token'})
+                    assert monitor.status_code == 200, monitor.text
+                    assert monitor.json()['odds_api_calls'] == 0
+                    assert monitor.headers['cache-control'] == 'no-store'
                 finally:
                     client.close()
                     tracking.release_deploy_guard(app.RUNTIME_ID)

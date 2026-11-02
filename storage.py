@@ -202,7 +202,8 @@ def recent_fixture_coverage(date, max_age_hours=24):
 def _cached_fixture_coverage(date, max_age_hours, _bucket):
     with connection() as conn:
         rows = conn.execute("""
-            SELECT payload FROM nba_scan_snapshots
+            SELECT jsonb_build_object('results', payload->'results') AS payload
+            FROM nba_scan_snapshots
             WHERE scan_date=%s
               AND created_at >= NOW() - (%s * INTERVAL '1 hour')
               AND state IN ('done','partial')

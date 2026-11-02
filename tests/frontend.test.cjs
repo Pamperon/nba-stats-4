@@ -49,9 +49,9 @@ test('initial archive response cannot overwrite a newly selected day', async () 
     d.getElementById('date').value = '2099-01-02';
     d.getElementById('date').dispatchEvent(new w.Event('change'));
     const snapshot = date => ({date, results: [], fixture_count: 0, player_count: 0, saved_at: date + 'T12:00:00Z'});
-    pending.get('/api/saved/latest?date=2099-01-02')(response(snapshot('2099-01-02')));
+    pending.get('/api/saved/latest?date=2099-01-02&compact=true')(response(snapshot('2099-01-02')));
     await tick();
-    pending.get('/api/saved/latest?date=2099-01-01')(response(snapshot('2099-01-01')));
+    pending.get('/api/saved/latest?date=2099-01-01&compact=true')(response(snapshot('2099-01-01')));
     await tick();
     assert.equal(w.__audit.getData().date, '2099-01-02');
     assert.equal(d.getElementById('date-loading').hidden, true);
