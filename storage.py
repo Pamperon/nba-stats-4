@@ -4,6 +4,8 @@ import math
 import logging
 import os
 import uuid
+import time
+from functools import lru_cache
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
@@ -139,6 +141,7 @@ def save(job_id, snapshot):
             ON CONFLICT(job_id) DO UPDATE SET
                 state=EXCLUDED.state, payload=EXCLUDED.payload
         """, (job_id, snapshot["date"], snapshot["state"], Jsonb(clean)))
+    _cached_fixture_coverage.cache_clear()
     return True
 
 
@@ -183,14 +186,20 @@ def latest(date=None):
     job_id, payload, created_at = row
     return {"job_id": job_id, "saved_at": created_at.isoformat(), **payload}
 
-def recent_fixture_coverage(date, max_age_hours=6):
-    """Latest observed quote rows per fixture across recent scans.
+def recent_fixture_coverage(date, max_age_hours=24):
+    """Return the newest available quote rows for each fixture.
 
-    A partial scan must not erase fixtures from a previous successful scan.
-    Read-only: never alters official snapshots or historical settlement.
+    Cache repeated public reads for at most 45 seconds, invalidated whenever
+    a new snapshot is saved. This avoids repeated large JSONB reads on navigation.
     """
     if not configured():
         return []
+    bucket = int(time.monotonic() // 45)
+    return list(_cached_fixture_coverage(date, max_age_hours, bucket))
+
+
+@lru_cache(maxsize=32)
+def _cached_fixture_coverage(date, max_age_hours, _bucket):
     with connection() as conn:
         rows = conn.execute("""
             SELECT payload FROM nba_scan_snapshots
@@ -208,7 +217,7 @@ def recent_fixture_coverage(date, max_age_hours=6):
                 groups.setdefault(fixture, []).append(item)
         for fixture, items in groups.items():
             fixtures.setdefault(fixture, items)
-    return [row for fixture_rows in fixtures.values() for row in fixture_rows]
+    return tuple(row for fixture_rows in fixtures.values() for row in fixture_rows)
 
 
 def earliest_completed(date):
