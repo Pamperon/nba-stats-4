@@ -110,7 +110,7 @@ def select_single(rows):
             probability = float(row['Prob. stimata %'])
         except (KeyError, TypeError, ValueError):
             continue
-        if not (1.70 <= price <= 2.20 and probability >= 60
+        if not (1.70 <= price <= 1.90 and probability > 70
                 and probability - 100 / price >= 5):
             continue
         candidates.append((probability * price / 100 - 1, probability, row))
