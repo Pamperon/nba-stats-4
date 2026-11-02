@@ -117,11 +117,16 @@ def settle_completed_fixtures(snapshot, scan_date, evidence=None):
         except ValueError:
             continue
         team = engine.normalized_name(row.get('Squadra', ''))
-        if team not in fixture:
-            continue
         athlete_id = str(row.get('ESPN ID') or '').strip()
         player_key = ('id:' + athlete_id) if athlete_id else engine.espn_player_key(row.get('Giocatore', ''))
-        actuals = stats.get((team, player_key)) if not athlete_id or athlete_id.isdigit() else None
+        actuals = stats.get((team, player_key)) if team in fixture and (not athlete_id or athlete_id.isdigit()) else None
+        # Historical rows can contain a wrong team label. A unique ESPN
+        # athlete ID in the exact archived fixture is stronger evidence;
+        # never use a name-only fallback for this correction.
+        if actuals is None and athlete_id.isdigit():
+            matches = [stats[(t, player_key)] for t in fixture if (t, player_key) in stats]
+            if len(matches) == 1:
+                actuals = matches[0]
         if actuals is None or row.get('Mercato') not in actuals:
             continue
         verified.append({**row, 'actual': actuals[row['Mercato']], 'played': True})
