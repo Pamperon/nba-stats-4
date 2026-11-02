@@ -150,3 +150,25 @@ test('calendar day navigation does not alter the prediction date or dashboard pi
  assert.equal(doc.querySelector('#hub-calendar-day-summary strong').textContent,'3 novembre 2026');
  window.close();
 });
+
+test('monthly calendar browses historical and future dates without changing prediction session',async()=>{
+ const {window,doc}=setup();
+ const native=doc.querySelector('#date');
+ native.innerHTML='<option value="2026-11-02">2 novembre 2026</option><option value="2026-11-03">3 novembre 2026</option>';
+ native.value='2026-11-02';
+ doc.querySelector('#date-strip').innerHTML='<button type="button">2 NOV</button><button type="button">3 NOV</button>';
+ let changes=0;native.addEventListener('change',()=>changes++);
+ window.fetch=async()=>({ok:true,json:async()=>({games:[]})});
+ doc.querySelector('.hub-mobile-bar [data-hub="calendar"]').click();
+ assert.match(doc.querySelector('#hub-calendar-month-label').textContent,/Novembre 2026/);
+ doc.querySelector('#hub-calendar-month-prev').click();
+ assert.match(doc.querySelector('#hub-calendar-month-label').textContent,/Ottobre 2026/);
+ const historical=[...doc.querySelectorAll('#hub-calendar-month-grid .hub-month-day')].find(b=>b.textContent==='25');
+ historical.click();
+ assert.match(doc.querySelector('#hub-calendar-day-summary strong').textContent,/25 ottobre 2026/);
+ assert.equal(native.value,'2026-11-02');
+ assert.equal(changes,0);
+ doc.querySelector('#hub-calendar-month-next').click();
+ assert.match(doc.querySelector('#hub-calendar-month-label').textContent,/Novembre 2026/);
+ window.close();
+});
