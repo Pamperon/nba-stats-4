@@ -378,7 +378,18 @@ def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
 
 
 @app.get('/api/nba/quote-coverage')
-def nba_quote_coverage(date: str = Query(..., pattern=r'^\\d{4}-\\d{2}-\\d{2}
+def nba_quote_coverage(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
+    """Recent observed quote coverage by fixture, independent of UI dropdown."""
+    if not storage.configured():
+        return {'date': date, 'fixtures': []}
+    rows = storage.recent_fixture_coverage(date, max_age_hours=8)
+    return {'date': date, 'fixtures': sorted({
+        str(row.get('Partita') or '').strip() for row in rows
+        if str(row.get('Partita') or '').strip()
+    })}
+
+
+@app.get('/api/nba/fixtures')
 def public_nba_fixtures(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
     """Public ESPN fixtures by Italian tipoff date, independent of odds."""
     try:
