@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install minimal test dependency
-        run: python -m pip install 'psycopg[binary]>=3.1'
+        run: python -m pip install 'psycopg[binary]>=3.1' 'psycopg_pool==3.3.3'
       - name: Validate Python source syntax
         run: python -m compileall -q main.py official_top5.py scripts/scheduled_scan.py
       - name: Run progressive selection tests
