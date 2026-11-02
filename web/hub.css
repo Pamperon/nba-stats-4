@@ -1177,3 +1177,6 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
 .hub-boxscore-table th,.hub-boxscore-table td{padding:10px 7px;text-align:center;border-bottom:1px solid #31516b}
 .hub-boxscore-table th:first-child,.hub-boxscore-table td:first-child{text-align:left;min-width:115px;font-weight:650}
 .hub-boxscore-table th{color:#ffbd7f;font-size:11px}
+
+.hub-calendar-games .hub-calendar-gradient:has(.hub-calendar-final-score) .hub-calendar-match-arrow{flex-direction:column;gap:1px;bottom:5px}
+.hub-calendar-games .hub-calendar-gradient:has(.hub-calendar-final-score){padding-bottom:38px}
