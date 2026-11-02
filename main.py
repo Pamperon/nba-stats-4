@@ -1125,9 +1125,11 @@ def calibration_settle():
             if not snapshot or not snapshot.get('results'):
                 processed.append({'date':day,'status':'empty'})
                 continue
-            verified, expected = settle_espn.settle_archive(snapshot, day)
+            # Recommendation archives are independent of the calibration
+            # snapshot. An invalid calibration sample must not block them.
             import recommendations
             ticket_count = recommendations.settle_snapshots(day)
+            verified, expected = settle_espn.settle_archive(snapshot, day)
             result = calibration.settle(day, snapshot['job_id'], verified, expected)
             processed.append({'date':day,'status':'settled', 'recommendation_snapshots': ticket_count, **result})
         except Exception as exc:
