@@ -325,13 +325,43 @@ function scheduleCalendarRefresh(){
  calendarRefreshTimer=setTimeout(()=>{if(calendar)renderCalendar()},100);
 }
 const nbaFixtureCache=new Map();
+const MINUTE=60*1000;
+function fixtureCacheTtl(games){
+ const list=Array.isArray(games)?games:[];
+ const now=Date.now();
+ // Live games need frequent refresh; newly completed games remain short-lived.
+ if(list.some(game=>!game.upcoming&&!/final|terminat|conclus|finished|completed/i.test(String(game.status||''))))return MINUTE;
+ if(list.some(game=>!game.upcoming&&/final|terminat|conclus|finished|completed/i.test(String(game.status||'')))){
+  const recent=list.some(game=>{
+   const started=Date.parse(game.start_at||'');
+   return !Number.isFinite(started)||now-started<7*60*60*1000;
+  });
+  return recent?5*MINUTE:24*60*MINUTE;
+ }
+ const upcoming=list.filter(game=>game.upcoming);
+ if(upcoming.length){
+  const near=upcoming.some(game=>{
+   const start=Date.parse(game.start_at||'');
+   return Number.isFinite(start)&&start-now<60*MINUTE;
+  });
+  return near?MINUTE:15*MINUTE;
+ }
+ // Empty days and old schedules can be cached longer.
+ return 24*60*MINUTE;
+}
 async function fetchNbaFixtures(date,session=false){
  const key=(session?'session:':'date:')+date;
- if(nbaFixtureCache.has(key))return nbaFixtureCache.get(key);
+ const cached=nbaFixtureCache.get(key);
+ if(cached&&cached.expires>Date.now())return cached.promise;
  const url=session?'/api/nba/publication-session?date=':'/api/nba/fixtures?date=';
- const promise=fetch(url+encodeURIComponent(date)).then(r=>{if(!r.ok)throw new Error('ESPN calendar unavailable');return r.json()}).then(d=>d.games||[]).catch(error=>{nbaFixtureCache.delete(key);throw error});
- nbaFixtureCache.set(key,promise);
- return promise;
+ const entry={expires:Date.now()+MINUTE,promise:null};
+ entry.promise=fetch(url+encodeURIComponent(date)).then(r=>{if(!r.ok)throw new Error('ESPN calendar unavailable');return r.json()}).then(d=>{
+  const games=d.games||[];
+  entry.expires=Date.now()+fixtureCacheTtl(games);
+  return games;
+ }).catch(error=>{if(nbaFixtureCache.get(key)===entry)nbaFixtureCache.delete(key);throw error});
+ nbaFixtureCache.set(key,entry);
+ return entry.promise;
 }
 function italyDay(value){
  return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(value);
@@ -497,6 +527,16 @@ function renderCalendar(){
   row.addEventListener('click',()=>openMatchQuotes(match));games.append(row)
  }
 }
+// Refresh the visible calendar without changing the prediction date or OddsPapi data.
+const calendarLiveTimer=setInterval(()=>{
+ if(!calendar||document.hidden||document.body.dataset.hubView!=='calendar')return;
+ const selected=calendarSelectedDate||$('#date')?.value||italyDay(new Date());
+ const cached=nbaFixtureCache.get('date:'+selected);
+ if(!cached||cached.expires<=Date.now())renderCalendar();
+},MINUTE);
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden&&calendar&&document.body.dataset.hubView==='calendar')scheduleCalendarRefresh();
+});
 $('#date')?.addEventListener('change',()=>{scheduleCalendarRefresh();setTimeout(scheduleCalendarRefresh,500);setTimeout(scheduleCalendarRefresh,1600)});
 const fixtureObserverTarget=$('#finder-fixture');
 if(fixtureObserverTarget)new MutationObserver(scheduleCalendarRefresh).observe(fixtureObserverTarget,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','value','selected']});
