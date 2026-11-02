@@ -521,6 +521,12 @@ function renderCalendar(){
     row.addEventListener('click',()=>game.upcoming?openFixtureDetails(match):game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));row.setAttribute('aria-label',match+(!game.upcoming?' · Apri tabellino partita':' · Apri dettagli partita'));
     games.append(row)
    }
+   if(remaining>4){
+    const more=document.createElement('button');more.type='button';more.className='hub-games-more';
+    more.textContent='Vedi altre '+(remaining-4)+' partite ›';
+    more.addEventListener('click',()=>{go.calendar();select('calendar')});
+    games.append(more);
+   }
   }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
  }
 
@@ -664,7 +670,9 @@ function refreshShowcase(){
    if(homeToken!==homeFixturesRequest)return;
    games.replaceChildren();
    const now=Date.now();
-   fixtures=fixtures.filter(game=>game.upcoming===true && game.start_at && new Date(game.start_at).getTime()>now).sort((a,b)=>new Date(a.start_at)-new Date(b.start_at)).slice(0,4);
+   fixtures=fixtures.filter(game=>game.upcoming===true && game.start_at && new Date(game.start_at).getTime()>now).sort((a,b)=>new Date(a.start_at)-new Date(b.start_at));
+   const remaining=fixtures.length;
+   fixtures=fixtures.slice(0,4);
    if(!fixtures.length){games.textContent='Nessun’altra partita da iniziare in questa sessione. Consulta il calendario NBA per gli incontri in corso e conclusi.';return}
    for(const [index,game] of fixtures.entries()){
     const match=fixtureName(game);
