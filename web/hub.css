@@ -1144,3 +1144,36 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
  }
  .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team{font-size:11px}
 }
+
+/* Simplified NBA calendar: compact month selector, no duplicate orange date strip. */
+.hub-calendar-view .hub-calendar-nav{display:none!important}
+.hub-calendar-month-navigation{margin:10px 0 8px}
+.hub-calendar-month-grid{gap:4px!important}
+.hub-calendar-month-grid .hub-month-day{min-height:39px!important;border-radius:10px}
+.hub-calendar-quick-days{margin:10px 0 15px}
+.hub-calendar-day-summary{margin-top:8px}
+.hub-calendar-games[hidden],.hub-calendar-boxscore[hidden]{display:none!important}
+/* Make final score the visual focus of completed fixtures. */
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-match-arrow{
+ bottom:8px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-final-score{
+ font-size:24px;line-height:1.15;font-weight:900;color:#fff;letter-spacing:.035em;
+ font-variant-numeric:tabular-nums;
+}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-time{font-size:10px;opacity:.8}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-state.live{
+ color:#d4ffe7;border-color:#3cbd7b;background:#0c5638;
+}
+/* Historical ESPN player boxscore, legible on small mobile screens. */
+.hub-calendar-boxscore{padding:6px 0 18px;color:#edf5ff}
+.hub-boxscore-back{border:1px solid #52708a;border-radius:10px;background:#18364f;color:#ffb26d;padding:10px 14px;font-weight:700;margin-bottom:15px}
+.hub-calendar-boxscore h3{font-size:18px;text-align:center;margin:6px 0 8px}
+.hub-boxscore-headline{text-align:center;font-size:35px;font-weight:900;font-variant-numeric:tabular-nums;margin-bottom:20px;color:#fff}
+.hub-boxscore-team{margin:16px 0 22px;background:#102b43;border:1px solid #345772;border-radius:15px;overflow:hidden}
+.hub-boxscore-team h4{font-size:16px;padding:14px;margin:0;background:#193c57}
+.hub-boxscore-scroll{width:100%;overflow-x:auto}
+.hub-boxscore-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.hub-boxscore-table th,.hub-boxscore-table td{padding:10px 7px;text-align:center;border-bottom:1px solid #31516b}
+.hub-boxscore-table th:first-child,.hub-boxscore-table td:first-child{text-align:left;min-width:115px;font-weight:650}
+.hub-boxscore-table th{color:#ffbd7f;font-size:11px}
