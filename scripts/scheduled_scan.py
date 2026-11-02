@@ -16,7 +16,7 @@ ROME = ZoneInfo("Europe/Rome")
 # GitHub and Render recovery checks cover up to two hours after each Rome-time slot.
 # Publication uses only scans completed before 18:00; no scans after publication.
 # Supabase reserves each slot at most once, including after ambiguous failures.
-SLOTS = ((10, 0), (14, 30), (17, 30))
+SLOTS = ((9, 0), (12, 0), (14, 30), (16, 30), (17, 30))
 MAX_DELAY = dt.timedelta(hours=2)
 
 def valid_slot(value):
@@ -85,7 +85,7 @@ def run(source=None):
         # Do not consume a slot against an old deployment with incompatible
         # slot validation or retry policy. A later automatic check can recover.
         health = call("/api/health")
-        if health.get("scheduler_revision") != "rome-three-slots-v1":
+        if health.get("scheduler_revision") != "rome-five-prepublication-slots-v1":
             raise RuntimeError("Render scheduler update is not deployed yet; slot not claimed")
     # Verify both free ESPN calendars before consuming the durable reservation.
     # If either is unavailable, the next heartbeat may retry without paid calls.
