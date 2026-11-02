@@ -1512,3 +1512,29 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .hub-single-content .bl-game-vs{text-align:center;font-size:10px;color:#f5aa63;font-weight:900}
 .hub-single-content .bl-game-when{font-size:10px;color:#b9d0e5;text-align:center}
 @media(max-width:390px){.hub-single-content .bl-game-team span{font-size:10px}.hub-single-content .bl-game-team img{width:27px!important;height:27px!important}}
+
+/* NBA Classic ultra compact: no fake stadium lights, photo at natural small scale */
+.hub-single-content .bl-broadcast{background:#0c1827!important}
+.hub-single-content .bl-broadcast-hero{min-height:103px!important;height:103px!important;grid-template-columns:31% minmax(0,69%)!important;padding:5px 10px 0!important;background:linear-gradient(115deg,#192f45 0%,#14263b 48%,#0b1a2b 100%)!important;overflow:hidden!important}
+.hub-single-content .bl-broadcast-hero::before{background:radial-gradient(ellipse at 8% 90%,#344d70 0%,transparent 50%),linear-gradient(130deg,#1b344c,#101e32)!important;opacity:1!important}
+.hub-single-content .bl-broadcast-hero::after{display:none!important}
+.hub-single-content .bl-broadcast-hero>.bl-player-photo{height:99px!important;width:100%!important;align-self:end!important;overflow:hidden!important}
+.hub-single-content .bl-broadcast-hero>.bl-player-photo img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center bottom!important;filter:none!important}
+.hub-single-content .bl-broadcast-intro{padding:0 0 8px 5px!important;gap:3px!important}
+.hub-single-content .bl-broadcast-name{font-size:clamp(16px,4.8vw,21px)!important}
+.hub-single-content .bl-broadcast-info{font-size:10px!important}
+.hub-single-content .bl-game-strip{margin:0 9px 6px!important;padding:6px 10px!important;gap:3px!important;border-radius:8px!important}
+.hub-single-content .bl-game-strip-title{display:none!important}
+.hub-single-content .bl-game-teams{grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr)!important;gap:4px!important}
+.hub-single-content .bl-game-team{flex-direction:row!important;gap:5px!important}
+.hub-single-content .bl-game-team img{width:19px!important;height:19px!important;flex-shrink:0}
+.hub-single-content .bl-game-team span{font-size:10px!important;line-height:1.1!important}
+.hub-single-content .bl-game-vs{font-size:9px!important}
+.hub-single-content .bl-game-when{font-size:9px!important}
+.hub-single-content .bl-broadcast-line{margin:0 9px 6px!important;padding:6px!important}
+.hub-single-content .bl-broadcast-line strong{font-size:clamp(17px,5vw,21px)!important}
+.hub-single-content .bl-broadcast-metrics{margin:0 9px 6px!important}
+.hub-single-content .bl-broadcast-metric{padding:6px 4px!important;gap:2px!important}
+.hub-single-content .bl-broadcast-metric strong{font-size:clamp(20px,5.7vw,25px)!important}
+.hub-single-content .bl-broadcast-action{margin:0 9px 8px!important;width:calc(100% - 18px)!important;min-height:34px!important;font-size:11px!important}
+@media(max-width:390px){.hub-single-content .bl-broadcast-hero{min-height:98px!important;height:98px!important}.hub-single-content .bl-broadcast-hero>.bl-player-photo{height:94px!important}.hub-single-content .bl-game-team span{font-size:9px!important}}
