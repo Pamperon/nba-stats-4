@@ -655,7 +655,17 @@ function refreshShowcase(){
    clone.querySelectorAll('button,a').forEach(el=>{el.removeAttribute('href');el.setAttribute('tabindex','-1');el.setAttribute('aria-hidden','true')});
    const playerLink=clone.querySelector('.pick-player-link');if(playerLink)playerLink.textContent=playerLink.textContent.replace(/^([^,]+),\s*(.+)$/,'$2 $1');
    const fixture=clone.querySelector('.pick-fixture');if(fixture){fixture.querySelectorAll('.fixture-team').forEach(team=>{const label=team.querySelector('.fixture-team-name');if(label){let txt=label.textContent.trim();txt=txt.replace(/(CLE|OKC|BOS|MIL|PHI|NYK|LAL|LAC|GSW|SAC|DEN|MIN|DAL|HOU|SAS|MIA|ORL|ATL|CHI|DET|IND|CHA|WAS|BKN|TOR|MEM|NOP|UTA|POR|PHX)$/,'').trim();label.textContent=txt}})}
-   single.append(clone);
+   const profile=clone.querySelector('.pick-profile');const fixture=clone.querySelector('.pick-fixture');const market=clone.querySelector('.pick-market');const values=clone.querySelector('.pick-values');
+   const broadcast=document.createElement('div');broadcast.className='hub-broadcast-v2';
+   const top=document.createElement('div');top.className='hub-broadcast-v2-top';
+   if(profile)top.append(profile);
+   const teams=document.createElement('div');teams.className='hub-broadcast-v2-teams';
+   if(fixture){for(const team of fixture.querySelectorAll('.fixture-team')){const el=document.createElement('span');el.className='hub-broadcast-v2-team';const img=team.querySelector('.team-logo img');if(img){const logo=img.cloneNode(true);el.append(logo)}const text=document.createElement('span');text.textContent=(team.querySelector('.fixture-team-name')?.textContent||'').trim();el.append(text);teams.append(el);if(teams.children.length===1){const vs=document.createElement('span');vs.textContent='VS';vs.className='hub-broadcast-v2-vs';teams.append(vs)}}}
+   if(teams.children.length)top.append(teams);
+   broadcast.append(top);
+   if(market){const line=document.createElement('div');line.className='hub-broadcast-v2-line';const label=document.createElement('small');label.textContent='LINEA SELEZIONATA';line.append(label,market);broadcast.append(line)}
+   if(values)broadcast.append(values);
+   single.append(broadcast);
    const action=document.createElement('button');action.type='button';action.className='hub-single-action';action.textContent='Apri analisi completa →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
