@@ -1310,3 +1310,44 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .hub-single-content .pick-values{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .hub-single-content .pick-values>div{min-width:0}
 .hub-single-action{min-height:44px;border-radius:11px;background:linear-gradient(120deg,#173b57,#132d45);border-color:#d18c50;font-size:14px}
+
+/* Basket Lab A+B: NBA Broadcast hero and Data Lab horizontal analysis rows. */
+.hub-single-section{background:linear-gradient(145deg,#142c43,#081b30);border-color:#da893d;box-shadow:0 0 0 1px #e48a2a30,0 9px 30px #0004}
+.hub-single-section .hub-featured-heading h2{color:#ffb366;font-weight:850}
+.hub-single-content>.pick-selection{background:linear-gradient(130deg,#192f48,#0a1e33)!important;border:1px solid #345672!important;border-radius:15px!important}
+.hub-single-content .pick-profile{display:flex!important;align-items:center;gap:14px!important}
+.hub-single-content .pick-avatar{width:100px!important;height:114px!important;flex:0 0 100px!important;border:0!important;border-radius:13px!important;background:radial-gradient(ellipse at 50% 90%,#426080,#10243c 72%)!important}
+.hub-single-content .pick-avatar img{object-fit:contain!important;object-position:center bottom!important}
+.hub-single-content .pick-avatar:has(img) span{display:none!important}
+.hub-single-content .pick-profile-info h3{font-size:22px!important;line-height:1.15}
+.hub-single-content .pick-fixture{display:flex!important;flex-direction:row;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px!important;margin:12px 0!important;padding:9px;background:#0c2135;border-radius:11px}
+.hub-single-content .fixture-team{width:auto!important;flex:0 1 auto!important;max-width:44%;display:flex!important;align-items:center;justify-content:center;gap:5px}
+.hub-single-content .fixture-team-name{font-size:11px!important;max-width:100%;line-height:1.25}
+.hub-single-content .fixture-vs{font-size:11px!important;letter-spacing:1px;color:#b5c9df}
+.hub-single-content .pick-market{display:block!important;text-align:center;background:#2a251f!important;border:1px solid #d28c43!important;border-radius:12px!important;padding:12px!important;color:#ffad5e!important;font-size:clamp(19px,5vw,26px)!important;font-weight:850!important}
+.hub-single-content .pick-values{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px!important}
+.hub-single-content .pick-values>div{min-width:0;padding:11px!important;background:#132c45!important;border:1px solid #3d5e7d!important;border-radius:12px!important}
+.hub-single-content .pick-values strong{font-size:clamp(23px,6vw,30px)!important}
+.hub-single-content .pick-values>div:last-child strong{color:#60d5a3!important}
+.hub-single-content .pick-stats-button,.hub-single-content .pick-details,.hub-single-content details,.hub-single-content .pick-stats{display:none!important}
+.hub-single-action{background:linear-gradient(90deg,#ed8a2d,#cf681b)!important;color:white!important;border:1px solid #ffb96b!important;min-height:46px!important;font-size:15px!important;font-weight:800!important}
+
+/* Data Lab: each top-five item is a compact scan-friendly row. */
+.hub-featured-list{display:flex!important;flex-direction:column!important;gap:9px!important}
+.hub-featured-card.hub-datalab-card{position:relative;display:flex!important;align-items:center;gap:9px;min-height:116px;max-width:none!important;padding:11px!important;border-radius:15px!important;background:linear-gradient(110deg,#173852,#0b2034)!important;border:1px solid #365d7e!important;cursor:pointer}
+.hub-datalab-rank{flex:0 0 20px;font-size:19px;font-weight:900;color:#ff9e45;text-align:center}
+.hub-datalab-card .hub-featured-summary{display:grid!important;flex:1;grid-template-columns:66px minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;gap:4px 10px!important;min-height:0!important}
+.hub-datalab-card .hub-featured-avatar{grid-column:1!important;grid-row:1/4!important;width:66px!important;height:87px!important;max-width:66px!important;border-radius:10px!important}
+.hub-datalab-card .hub-featured-avatar img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center bottom!important}
+.hub-datalab-card .hub-featured-avatar:has(img) span{display:none!important}
+.hub-datalab-card .hub-featured-summary>strong{grid-column:2!important;grid-row:1!important;font-size:15px!important;line-height:1.2}
+.hub-datalab-card .hub-featured-summary>p{grid-column:2!important;grid-row:2!important;font-size:11px!important;color:#ffac6a!important;font-weight:750}
+.hub-datalab-card .hub-featured-values{grid-column:2!important;grid-row:3!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important;margin:0!important}
+.hub-datalab-card .hub-featured-value{padding:6px!important;min-width:0!important;background:#0a2137!important}
+.hub-datalab-card .hub-featured-value small{font-size:8px!important;letter-spacing:0!important}
+.hub-datalab-card .hub-featured-value strong{font-size:16px!important}
+.hub-datalab-card .hub-featured-value:last-child strong{color:#62d5a4!important}
+.hub-datalab-card>button{display:none!important}
+.hub-datalab-card:hover,.hub-datalab-card:focus-visible{border-color:#ec963f!important;outline:none}
+@media(min-width:850px){.hub-datalab-card .hub-featured-summary{grid-template-columns:80px minmax(0,1fr)!important}.hub-datalab-card .hub-featured-avatar{width:80px!important;max-width:80px!important;height:100px!important}}
+@media(max-width:380px){.hub-datalab-card{gap:6px!important;padding:8px!important}.hub-datalab-rank{flex-basis:15px;font-size:16px}.hub-datalab-card .hub-featured-summary{grid-template-columns:54px minmax(0,1fr)!important;gap:4px 7px!important}.hub-datalab-card .hub-featured-avatar{width:54px!important;max-width:54px!important;height:77px!important}.hub-datalab-card .hub-featured-value strong{font-size:14px!important}.hub-single-content .pick-avatar{width:82px!important;height:104px!important;flex-basis:82px!important}}
