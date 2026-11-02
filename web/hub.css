@@ -1280,3 +1280,33 @@ body.hub-boxscore-open .hub-calendar-nav{display:none!important}
 /* Pronostici always use the automatic NBA publication session; date navigation belongs to Partite. */
 body[data-hub-view="picks"] .hub-shell #date-area{display:none!important}
 body[data-hub-view="picks"] .hub-shell #date-loading{display:none!important}
+
+/* Homepage cleanup: retain hidden data containers for live insights calculations. */
+body[data-hub-view="home"] .hub-insights{display:none!important}
+
+/* Featured cards: dedicated portrait column, no text or metric overlap. */
+.hub-featured-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:13px}
+.hub-featured-card{min-width:0;overflow:hidden;border-radius:17px;padding:15px;background:linear-gradient(135deg,#173650,#0b2035 72%);border:1px solid #456a89}
+.hub-featured-summary{display:grid!important;grid-template-columns:96px minmax(0,1fr)!important;grid-template-rows:auto auto 1fr;column-gap:14px!important;row-gap:8px!important;align-items:start!important;min-width:0}
+.hub-featured-summary>.hub-featured-avatar{grid-column:1!important;grid-row:1 / 4!important;width:96px!important;height:136px!important;max-width:96px;align-self:start!important;border-radius:13px!important;overflow:hidden;display:flex!important;align-items:end!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 75%,#355a78,#0b2339 75%)}
+.hub-featured-summary>.hub-featured-avatar img{position:static!important;display:block!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;object-position:center bottom!important;grid-row:auto!important;border:0!important;background:transparent!important}
+.hub-featured-summary>strong{grid-column:2!important;grid-row:1!important;min-width:0;overflow-wrap:anywhere;font-size:17px!important;line-height:1.25}
+.hub-featured-summary>p{grid-column:2!important;grid-row:2!important;min-width:0;font-size:12px!important;line-height:1.35}
+.hub-featured-summary>.hub-featured-values{grid-column:2!important;grid-row:3!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px!important;width:100%;min-width:0;margin:0}
+.hub-featured-summary .hub-featured-value{min-width:0!important;width:auto!important;overflow:hidden;padding:9px 7px!important;border-radius:10px}
+.hub-featured-summary .hub-featured-value small{font-size:9px!important;line-height:1.25;overflow-wrap:anywhere}
+.hub-featured-summary .hub-featured-value strong{font-size:17px!important;line-height:1.2;white-space:nowrap}
+.hub-featured-card>button{width:100%;min-height:42px;margin-top:13px!important;border-radius:11px!important;background:#17334d!important;border:1px solid #a8774e!important;color:#ffbc83!important;font-weight:700}
+@media(max-width:390px){.hub-featured-summary{grid-template-columns:76px minmax(0,1fr)!important;column-gap:10px!important}.hub-featured-summary>.hub-featured-avatar{width:76px!important;max-width:76px;height:120px!important}.hub-featured-summary .hub-featured-value strong{font-size:15px!important}}
+
+/* Single of the day: readable matchup and compact, balanced information. */
+.hub-single-section{overflow:hidden;border-radius:18px}
+.hub-single-content>.pick-selection{padding:15px!important;border-radius:14px!important}
+.hub-single-content .pick-fixture{display:grid!important;grid-template-columns:minmax(0,1fr);gap:8px!important;align-items:stretch}
+.hub-single-content .fixture-team{display:flex!important;align-items:center;gap:8px;min-width:0;width:100%;overflow:hidden}
+.hub-single-content .fixture-team-name{min-width:0;overflow-wrap:anywhere;white-space:normal!important;font-size:12px!important;line-height:1.3}
+.hub-single-content .pick-fixture .fixture-vs{justify-self:center;font-size:11px!important;letter-spacing:2px;color:#a9bdd1}
+.hub-single-content .pick-fixture .team-logo{flex-shrink:0}
+.hub-single-content .pick-values{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.hub-single-content .pick-values>div{min-width:0}
+.hub-single-action{min-height:44px;border-radius:11px;background:linear-gradient(120deg,#173b57,#132d45);border-color:#d18c50;font-size:14px}
