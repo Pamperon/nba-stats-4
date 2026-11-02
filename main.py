@@ -418,10 +418,9 @@ def session_picks():
                for g in manifest['games']}
     results, seen = [], set()
     for calendar_date in (day, (datetime.strptime(day,'%Y-%m-%d')+timedelta(days=1)).strftime('%Y-%m-%d')):
-        snapshot = storage.latest(calendar_date)
-        if not snapshot:
-            continue
-        for row in snapshot.get('results', []):
+        # Merge recent scans by fixture: partial updates must not hide games
+        # that had valid odds in an earlier scan. Official picks stay immutable.
+        for row in storage.recent_fixture_coverage(calendar_date):
             parts = str(row.get('Partita') or '').split(' - ')
             if len(parts) != 2:
                 continue
