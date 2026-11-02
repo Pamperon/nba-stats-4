@@ -43,3 +43,6 @@
 #extra-history .leg-result{font-size:11px!important;color:#8faac0!important}
 #extra-history .history-mode-panel .feature-note{font-size:12px}
 @media(min-width:700px){#extra-history .panel{max-width:880px;margin:auto;padding:28px}.history-day strong{font-size:20px}#extra-history .history-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+#extra-history .leg-result{display:none!important}
+#extra-history .history-native-date{min-width:0}
