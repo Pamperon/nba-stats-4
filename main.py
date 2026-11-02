@@ -1231,6 +1231,44 @@ def saved_status(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         raise HTTPException(503, 'Stato aggiornamento temporaneamente non disponibile')
 
 
+@app.get('/api/history/performance')
+def public_history_performance():
+    """Read-only results of published daily Top 5, never all simulated lines."""
+    import public_views
+    import official_top5
+    today = datetime.now(ZoneInfo('Europe/Rome')).date()
+    dates = public_views.history_dates(today)['dates'][:30]
+    won = lost = pending = published = 0
+    days = 0
+    for entry in dates:
+        day = entry['date']
+        if not official_top5.eligible_day(day):
+            continue
+        official = official_top5.get(day)
+        if not official or not official.get('lines'):
+            continue
+        try:
+            archive = public_views.history(day)
+            matched = {public_views.leg_identity(row): row for row in archive['lines']}
+            days += 1
+            for selected in official['lines']:
+                published += 1
+                state = matched.get(public_views.leg_identity(selected), {}).get('status', 'unresolved')
+                if state == 'won':
+                    won += 1
+                elif state == 'lost':
+                    lost += 1
+                else:
+                    pending += 1
+        except Exception:
+            logger.exception('Performance read failed for %s', day)
+            continue
+    return {'published': published, 'verified': won + lost,
+            'won': won, 'lost': lost, 'pending': pending, 'days': days,
+            'success_pct': round(won * 100 / (won + lost), 1) if won + lost else None,
+            'odds_api_calls': 0}
+
+
 @app.get('/api/history/dates')
 def public_history_dates():
     import public_views
