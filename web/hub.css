@@ -1096,3 +1096,15 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
 @media(max-width:420px){.hub-calendar-games .hub-calendar-gradient{min-height:124px;padding:32px 8px 25px;gap:4px}.hub-calendar-games .hub-calendar-gradient .hub-calendar-team img{width:36px;height:36px}.hub-calendar-games .hub-calendar-gradient .hub-calendar-team{font-size:11px}}
 
 .hub-calendar-games .hub-calendar-final-score{font-size:16px;color:#fff;font-weight:850;letter-spacing:.03em}
+
+/* Full-season NBA date picker, independent from prediction dates. */
+.hub-calendar-month-navigation{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 9px}
+.hub-calendar-month-navigation strong{font-size:16px;color:#f5f8ff;text-transform:capitalize}
+.hub-calendar-month-navigation button{width:35px;height:35px;border:1px solid #456985;border-radius:10px;background:#102d45;color:#ffad62;font-size:25px;cursor:pointer}
+.hub-calendar-month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:12px}
+.hub-calendar-month-grid .hub-month-weekday{font-size:11px;color:#8faac0;text-align:center;padding:6px 0}
+.hub-calendar-month-grid .hub-month-day{min-width:0;min-height:35px;padding:5px 0;border:1px solid transparent;border-radius:9px;background:#14334c;color:#d9e7f3;font-size:12px;cursor:pointer}
+.hub-calendar-month-grid .hub-month-day.today{border-color:#7590a8}
+.hub-calendar-month-grid .hub-month-day.active{background:#fa9835;border-color:#ffb36a;color:#11253b;font-weight:800}
+.hub-calendar-quick-days{display:flex;gap:8px;margin-bottom:14px}
+.hub-calendar-quick-days button{flex:1;padding:8px 6px;border-radius:9px;border:1px solid #41647f;background:#102d45;color:#d9e8f6;font-size:12px;font-weight:650;cursor:pointer}
