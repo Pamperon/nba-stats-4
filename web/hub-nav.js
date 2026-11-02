@@ -681,6 +681,14 @@ function refreshShowcase(){
    matchup.append(matchupTeams);
    const fixtureDate=pick.querySelector('.pick-fixture time, .pick-game-time, .fixture-time, [data-game-time]');
    if(fixtureDate){const when=document.createElement('span');when.className='bl-game-when';when.textContent=fixtureDate.textContent?.trim()||'';if(when.textContent)matchup.append(when)}
+   const palette={ATL:['#c8102e','#fdb927'],BOS:['#007a33','#ba9653'],BKN:['#202020','#777'],CHA:['#1d1160','#00788c'],CHI:['#ce1141','#101820'],CLE:['#6f263d','#ffb81c'],DAL:['#00538c','#002b5e'],DEN:['#0e2240','#fec524'],DET:['#c8102e','#1d42ba'],GSW:['#1d428a','#ffc72c'],HOU:['#ce1141','#222'],IND:['#002d62','#fdbb30'],LAC:['#c8102e','#1d428a'],LAL:['#552583','#fdb927'],MEM:['#5d76a9','#12173f'],MIA:['#98002e','#f9a01b'],MIL:['#00471b','#eee1c6'],MIN:['#0c2340','#236192'],NOP:['#0c2340','#c8102e'],NYK:['#006bb6','#f58426'],OKC:['#007ac1','#ef3b24'],ORL:['#0077c0','#151f36'],PHI:['#006bb6','#ed174c'],PHX:['#1d1160','#e56020'],POR:['#e03a3e','#111'],SAC:['#5a2d81','#63727a'],SAS:['#5a5f66','#151719'],TOR:['#ce1141','#171717'],UTA:['#4a2784','#6cace4'],WAS:['#002b5c','#e31837']};
+   const own=teams.find(t=>{const label=(t.querySelector('.fixture-team-name')?.textContent||'').toLowerCase();return info.textContent.toLowerCase().split(' ').filter(w=>w.length>3).some(w=>label.includes(w))})||teams[teams.length-1];
+   const ownLabel=(own?.querySelector('.fixture-team-name')?.textContent||'').toUpperCase();
+   const ownCode=abbreviations.find(code=>ownLabel.endsWith(code))||'';
+   const [primary,secondary]=palette[ownCode]||['#19334e','#436483'];
+   hero.style.setProperty('--bl-team-primary',primary);hero.style.setProperty('--bl-team-secondary',secondary);
+   const ownLogo=own?.querySelector('.team-logo img');
+   if(ownLogo){const watermark=ownLogo.cloneNode(true);watermark.removeAttribute('id');watermark.className='bl-team-watermark';watermark.alt='';watermark.setAttribute('aria-hidden','true');hero.insertBefore(watermark,photo)}
    intro.append(player,info);hero.append(intro);
    const market=document.createElement('div');market.className='bl-broadcast-line';
    const label=document.createElement('small');label.textContent='LINEA SELEZIONATA';
