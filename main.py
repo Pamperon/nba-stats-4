@@ -371,9 +371,16 @@ def session_picks():
     import recommendations
     now = datetime.now(ZoneInfo('Europe/Rome'))
     today = now.date()
-    # Preview today's upcoming evening session before the official 18:00 cutoff.
-    # After midnight, retain the prior evening's session until noon Rome time.
-    day = (today - timedelta(days=1) if now.hour < 12 else today).isoformat()
+    # Retain yesterday's overnight session only while one of its games is still upcoming.
+    # Once all its fixtures have tipped off, show today's upcoming session immediately.
+    day = today.isoformat()
+    if now.hour < 12:
+        previous_day = (today - timedelta(days=1)).isoformat()
+        previous_manifest = nba_publication_session(previous_day)
+        if any(g.get('upcoming') and g.get('start_at') and
+               datetime.fromisoformat(g['start_at']) > now
+               for g in previous_manifest['games']):
+            day = previous_day
     manifest = nba_publication_session(day)
     official = nba_session_picks.read(day) if nba_session_picks.eligible(day) else None
     # Publish on demand only when due; no paid API calls.
