@@ -514,7 +514,7 @@ function renderCalendar(){
     .then(r=>r.ok?r.json():{fixtures:[]}).catch(()=>({fixtures:[]}))
   ]).then(([fixtures,coverage])=>{
    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
-   const quoted=new Set([...(coverage.fixtures||[]),...matches].map(fixtureKey));
+   const quoted=new Set((coverage.fixtures||[]).map(fixtureKey));
    games.replaceChildren();
    if(summary){const count=summary.querySelector('span');if(count)count.textContent=fixtures.length+' '+(fixtures.length===1?'partita':'partite')}
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
