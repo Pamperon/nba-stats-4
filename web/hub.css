@@ -1550,3 +1550,9 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .hub-single-content .bl-team-watermark{position:absolute;z-index:-1;left:3%;top:0;width:32%;height:105%;object-fit:contain;opacity:.19;filter:blur(1.1px) saturate(1.15);pointer-events:none}
 .hub-single-content .bl-broadcast-hero>.bl-player-photo{position:relative;z-index:1}
 .hub-single-content .bl-broadcast-intro{position:relative;z-index:2}
+
+/* Crisp team crest on the right of the hero */
+.hub-single-content .bl-broadcast-hero{position:relative}
+.hub-single-content .bl-team-emblem{position:absolute;right:11px;top:50%;transform:translateY(-50%);width:56px;height:56px;object-fit:contain;opacity:.42;filter:drop-shadow(0 2px 6px #0005);z-index:1;pointer-events:none}
+.hub-single-content .bl-broadcast-intro{padding-right:53px!important}
+@media(max-width:390px){.hub-single-content .bl-team-emblem{width:42px;height:42px;right:7px}.hub-single-content .bl-broadcast-intro{padding-right:39px!important}.hub-single-content .bl-broadcast-name{font-size:clamp(14px,4.2vw,18px)!important}}
