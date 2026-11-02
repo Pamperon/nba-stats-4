@@ -5,14 +5,18 @@ import logging
 import os
 import uuid
 import time
+import threading
 from functools import lru_cache
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
 import psycopg
 from psycopg.types.json import Jsonb
+from psycopg_pool import ConnectionPool
 
 log = logging.getLogger(__name__)
+_pool = None
+_pool_lock = threading.Lock()
 
 
 def configured():
@@ -20,7 +24,51 @@ def configured():
 
 
 def connection():
+    # CLI jobs retain short-lived connections. Only the persistent web process
+    # explicitly opens a pool; importing this module never opens a socket.
+    if _pool is not None:
+        return _pool.connection()
     return psycopg.connect(os.environ["DATABASE_URL"], connect_timeout=10, sslmode="require")
+
+
+def open_pool():
+    """Warm a bounded process-local pool before the HTTP server accepts work."""
+    global _pool
+    if os.getenv('NBA_DATABASE_POOL_ENABLED', '1') == '0':
+        return
+    with _pool_lock:
+        if _pool is not None and not _pool.closed:
+            return
+        candidate = ConnectionPool(
+            os.environ['DATABASE_URL'], open=False, min_size=1, max_size=4,
+            timeout=10, max_waiting=16, max_idle=60, max_lifetime=300,
+            reconnect_timeout=30, name='basketlab-db',
+            kwargs={'connect_timeout': 10, 'sslmode': 'require',
+                    'application_name': 'basketlab-web',
+                    # Safe with Supavisor transaction mode as well as direct PG.
+                    'prepare_threshold': None},
+            check=ConnectionPool.check_connection,
+        )
+        try:
+            candidate.open(wait=True, timeout=10)
+        except Exception:
+            candidate.close()
+            raise
+        _pool = candidate
+
+
+def close_pool():
+    # Retain the closed object so late shutdown work cannot open new sockets.
+    with _pool_lock:
+        if _pool is not None:
+            _pool.close(timeout=5)
+
+
+def pool_stats():
+    """Numeric operational counters only; never return the connection string."""
+    if _pool is None:
+        return {'enabled': False}
+    return {'enabled': True, 'closed': _pool.closed, **_pool.get_stats()}
 
 
 def initialize():

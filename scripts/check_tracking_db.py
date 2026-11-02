@@ -91,7 +91,9 @@ def assert_paused(function, *args):
 def main():
     db = Database()
     try:
-        with patch.object(storage, 'configured', return_value=True), patch.object(storage, 'connection', side_effect=db.connection):
+        with patch.object(storage, 'configured', return_value=True), \
+                patch.object(storage, 'connection', side_effect=db.connection), \
+                patch.object(storage, 'open_pool'):
             storage.initialize()
             tracking.initialize()
             audience.initialize()

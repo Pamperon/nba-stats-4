@@ -20,6 +20,31 @@ on:
 permissions:
   contents: read
 jobs:
+  pool-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-test-password
+          POSTGRES_DB: pool_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install -r requirements-dev.txt
+      - run: python scripts/check_connection_pool.py
+        env:
+          POOL_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/pool_test
   production-python:
     runs-on: ubuntu-latest
     timeout-minutes: 10

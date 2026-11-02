@@ -48,6 +48,7 @@ def init_storage():
     global tracking_ready
     if not storage.configured():
         raise RuntimeError('Database required for durable scan/API tracking')
+    storage.open_pool()
     storage.initialize()
     import official_top5
     official_top5.initialize()
@@ -170,6 +171,7 @@ async def drain_scans():
     deadline = time.monotonic() + 20
     for thread in pending:
         await asyncio.to_thread(thread.join, max(0, deadline - time.monotonic()))
+    await asyncio.to_thread(storage.close_pool)
 
 
 def _scan_heartbeat(job_id, stop):

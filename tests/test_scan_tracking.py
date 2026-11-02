@@ -233,8 +233,10 @@ class ScanEndpointTests(unittest.TestCase):
     def test_graceful_shutdown_joins_existing_threads(self):
         thread=Mock()
         thread.is_alive.return_value=True
-        with patch.dict(main.scan_threads,{'test':thread},clear=True):
+        with patch.dict(main.scan_threads,{'test':thread},clear=True), \
+                patch.object(main.storage, 'close_pool') as close_pool:
             asyncio.run(main.drain_scans())
+        close_pool.assert_called_once()
         thread.join.assert_called_once()
         self.assertTrue(main.shutdown_event.is_set())
 

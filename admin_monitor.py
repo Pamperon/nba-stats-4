@@ -36,6 +36,7 @@ def report():
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'read_only': True, 'odds_api_calls': 0,
+        'database_pool': storage.pool_stats(),
         'calibration_note': 'Tutte le linee; osservazioni correlate, non campioni indipendenti. Nessuna promozione automatica del modello.',
         'coverage': [{'date': str(day), 'expected': expected, 'matched': matched,
                       'gap': expected-matched,
