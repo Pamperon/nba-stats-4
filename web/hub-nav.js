@@ -655,7 +655,7 @@ function refreshShowcase(){
    clone.querySelectorAll('button,a').forEach(el=>{el.removeAttribute('href');el.setAttribute('tabindex','-1');el.setAttribute('aria-hidden','true')});
    const playerLink=clone.querySelector('.pick-player-link');if(playerLink)playerLink.textContent=playerLink.textContent.replace(/^([^,]+),\s*(.+)$/,'$2 $1');
    const fixture=clone.querySelector('.pick-fixture');if(fixture){fixture.querySelectorAll('.fixture-team').forEach(team=>{const label=team.querySelector('.fixture-team-name');if(label){let txt=label.textContent.trim();txt=txt.replace(/(CLE|OKC|BOS|MIL|PHI|NYK|LAL|LAC|GSW|SAC|DEN|MIN|DAL|HOU|SAS|MIA|ORL|ATL|CHI|DET|IND|CHA|WAS|BKN|TOR|MEM|NOP|UTA|POR|PHX)$/,'').trim();label.textContent=txt}})}
-   const profile=clone.querySelector('.pick-profile');const fixture=clone.querySelector('.pick-fixture');const market=clone.querySelector('.pick-market');const values=clone.querySelector('.pick-values');
+   const profile=clone.querySelector('.pick-profile');const market=clone.querySelector('.pick-market');const values=clone.querySelector('.pick-values');
    const broadcast=document.createElement('div');broadcast.className='hub-broadcast-v2';
    const top=document.createElement('div');top.className='hub-broadcast-v2-top';
    if(profile)top.append(profile);
