@@ -89,10 +89,12 @@ class AppRuntimeTests(unittest.TestCase):
         self.assertEqual(expanded['scan_finished_at'], snapshot['scan_finished_at'])
 
     def test_parallel_research_is_not_sent_in_public_snapshot(self):
-        snapshot={'date':'2026-10-27','results':[], 'model_shadow':{'probability_panel':['large research data']}}
+        snapshot={'date':'2026-10-27','results':[], 'model_shadow':{'probability_panel':['large research data']},
+                  'minutes_research': {'panel': ['private frozen research']}}
         with patch.object(main,'schedule',return_value={'games':[]}):
             result=main.visible_snapshot(snapshot)
         self.assertNotIn('model_shadow',result)
+        self.assertNotIn('minutes_research',result)
         self.assertIn('model_shadow',snapshot)
 
     def test_saved_time_reports_actual_http_requests_including_zero(self):
@@ -203,6 +205,7 @@ class AppRuntimeTests(unittest.TestCase):
     def test_shadow_failure_cannot_change_or_block_live_predictions(self):
         import availability
         import shadow_study
+        import minutes_research
         main.jobs['shadow-test']={'state':'queued','scan_source':'test'}
         row={'Giocatore':'Player','ESPN ID':'123','Squadra':'A','Partita':'A - B',
              'Mercato':'PTS','Scelta':'Over','Linea':9.5,'Quota':1.8,
@@ -212,13 +215,33 @@ class AppRuntimeTests(unittest.TestCase):
              '_shadow_probabilities':{'candidate':.1}}
         connection=MagicMock()
         connection.return_value.__enter__.return_value.execute.return_value.fetchall.return_value=[]
-        with patch.object(main.engine,'get_fixtures',return_value=[{}]), patch.object(main.engine,'fixture_is_upcoming',return_value=True), patch.object(main.engine,'get_markets',return_value={}), patch.object(main.engine,'finder_scan',return_value=([row],[],0,1,[],[],{},[{'stato':'ok'}])), patch.object(main.storage,'configured',return_value=True), patch.object(main.storage,'connection',connection), patch.object(main.storage,'save') as save, patch.object(availability,'check',side_effect=lambda rows:(rows,{})), patch.object(shadow_study,'capture',side_effect=RuntimeError('Optional research unavailable')), self.assertLogs(main.logger,'ERROR'), contextlib.redirect_stdout(io.StringIO()):
+        with patch.object(main.engine,'get_fixtures',return_value=[{}]), patch.object(main.engine,'fixture_is_upcoming',return_value=True), patch.object(main.engine,'get_markets',return_value={}), patch.object(main.engine,'finder_scan',return_value=([row],[],0,1,[],[],{},[{'stato':'ok'}])), patch.object(main.storage,'configured',return_value=True), patch.object(main.storage,'connection',connection), patch.object(main.storage,'save') as save, patch.object(availability,'check',side_effect=lambda rows:(rows,{})), patch.object(shadow_study,'capture',side_effect=RuntimeError('Optional research unavailable')), patch.object(minutes_research,'capture',side_effect=RuntimeError('Minutes research unavailable')), self.assertLogs(main.logger,'ERROR'), contextlib.redirect_stdout(io.StringIO()):
             main.do_scan('shadow-test','2026-10-27')
         saved=save.call_args.args[1]
         self.assertEqual(saved['state'],'done')
         self.assertEqual(saved['results'][0]['Prob. stimata %'],80)
         self.assertNotIn('_shadow_probabilities',saved['results'][0])
         self.assertIsNone(saved['model_shadow'])
+        self.assertIsNone(saved['minutes_research'])
+
+    def test_scan_persists_frozen_minutes_panel_without_changing_public_probability(self):
+        import availability
+        import shadow_study
+        import pandas as pd
+        from test_minutes_research import row, logs
+        source=row(**{'Partite':30,'Stagione %':80,'Minuti medi':30,'Minuti ultime 5':30,
+                      'Stato analisi':'Valutabile (stima empirica)'})
+        frame=pd.DataFrame(logs())
+        frame['GAME_DATE']=pd.to_datetime(frame['GAME_DATE'],utc=True)
+        main.jobs['minutes-test']={'state':'queued','scan_source':'test'}
+        with patch.object(main.engine,'get_fixtures',return_value=[{}]), patch.object(main.engine,'fixture_is_upcoming',return_value=True), patch.object(main.engine,'get_markets',return_value={}), patch.object(main.engine,'finder_scan',return_value=([source],[],0,1,[],[],{'A':frame},[{'stato':'ok'}])), patch.object(main.storage,'configured',return_value=True), patch.object(main.storage,'save') as save, patch.object(availability,'check',side_effect=lambda rows:(rows,{})), patch.object(shadow_study,'capture',return_value=None), contextlib.redirect_stdout(io.StringIO()):
+            main.do_scan('minutes-test','2026-11-03')
+        saved=save.call_args.args[1]
+        self.assertEqual(saved['state'],'done')
+        self.assertEqual(saved['results'][0]['Prob. stimata %'],80)
+        self.assertEqual(saved['minutes_research']['version'],'minutes-v1')
+        self.assertEqual(len(saved['minutes_research']['panel']),1)
+        self.assertIs(saved['minutes_research']['promotion_allowed'],False)
 
     def test_failed_scan_records_requests_and_error_without_saving(self):
         main.jobs['offline'] = {'date': '2026-10-25', 'state': 'queued'}
