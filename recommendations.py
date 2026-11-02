@@ -172,69 +172,72 @@ def evaluate(saved, verified):
 
 
 def settle_snapshots(day):
-    """Retain every versioned pregame ticket after raw snapshot cleanup.
-
-    Idempotent per job, independent of the snapshot chosen for calibration.
-    Current injuries and newly computed selections are never consulted here.
-    """
+    """Incrementally verify published singles and Top 5, preserving prior evidence."""
     import storage
     import settle_espn
     from psycopg.types.json import Jsonb
     with storage.connection() as conn:
         snapshots = conn.execute("""
-            SELECT job_id,payload,created_at FROM nba_scan_snapshots
-            WHERE scan_date=%s AND payload ? 'recommendations'
-              AND NOT EXISTS (SELECT 1 FROM nba_recommendation_results r
-                              WHERE r.snapshot_job_id=nba_scan_snapshots.job_id)
-            ORDER BY created_at
+            SELECT s.job_id,s.payload,s.created_at,r.report
+            FROM nba_scan_snapshots s
+            LEFT JOIN nba_recommendation_results r ON r.snapshot_job_id=s.job_id
+            WHERE s.scan_date=%s AND s.payload ? 'recommendations'
+            ORDER BY s.created_at
         """, (day,)).fetchall()
-    count = 0
-    evidence = {}
-    for job_id, payload, created_at in snapshots:
+    count, evidence = 0, {}
+    for job_id, payload, created_at, prior in snapshots:
         saved = payload.get('recommendations')
-        if not isinstance(saved, dict):
+        if not isinstance(saved, dict) or not payload.get('results'):
             continue
         snapshot = {**payload, 'job_id': job_id, 'saved_at': created_at.isoformat()}
-        # A scan may have stored recommendations but no player predictions.
-        # Do not let it abort settlement of other, verifiable snapshots.
-        if not snapshot.get('results'):
-            continue
         try:
-            verified, _ = settle_espn.settle_archive(snapshot, day, evidence=evidence)
-        except ValueError as exc:
-            # ESPN may still have unfinished games, missing box scores or
-            # inconsistent fixtures. Preserve this snapshot for a later retry.
+            verified = settle_espn.settle_completed_fixtures(snapshot, day, evidence=evidence)
+        except (ValueError, KeyError) as exc:
             import logging
-            logging.getLogger(__name__).warning(
-                'Recommendation snapshot %s on %s pending verification: %s',
-                job_id, day, exc)
+            logging.getLogger(__name__).warning('ESPN settlement pending %s %s: %s', day, job_id, exc)
+            continue
+        if not verified:
             continue
         report = evaluate(saved, verified)
+        # Never discard a previously confirmed outcome on later partial retries.
+        if isinstance(prior, dict):
+            def merge_legs(old, new):
+                for old_leg, new_leg in zip(old, new):
+                    if old_leg.get('actual') is not None:
+                        new_leg['actual'] = old_leg['actual']
+                        new_leg['win'] = old_leg['win']
+            if 'lines' in report:
+                merge_legs(prior.get('lines', []), report['lines'])
+            else:
+                for group_name, group in report.get('groups', {}).items():
+                    old_group = prior.get('groups', {}).get(group_name, {})
+                    merge_legs(old_group.get('legs', []), group.get('legs', []))
+                    wins = [leg.get('win') for leg in group.get('legs', [])]
+                    if group.get('status') != 'incomplete':
+                        group['status'] = ('lost' if False in wins else
+                                           'unresolved' if None in wins else 'won')
         if payload.get('model_shadow'):
             import shadow_study
             report['model_shadow'] = shadow_study.evaluate(payload['model_shadow'], verified)
         with storage.connection() as conn:
             conn.execute("""
                 INSERT INTO nba_recommendation_results(snapshot_job_id,scan_date,report)
-                VALUES (%s,%s,%s) ON CONFLICT(snapshot_job_id) DO NOTHING
+                VALUES (%s,%s,%s)
+                ON CONFLICT(snapshot_job_id) DO UPDATE SET report=EXCLUDED.report
             """, (job_id, day, Jsonb(report)))
-        # The existing recommendation insert remains the first database write.
-        # Independently settle the single only after the archived report is saved.
-        from datetime import date as _date
-        if _date.fromisoformat(str(day)) >= _date(2026, 11, 2):
-            with storage.connection() as conn:
-                single_row = conn.execute("""
-                    SELECT selection FROM nba_official_daily_singles
-                    WHERE scan_date=%s AND snapshot_job_id=%s
-                """, (day, job_id)).fetchone()
-                if single_row and single_row[0]:
-                    leg = evaluate({'lines': [single_row[0]], 'policy': 'single-1800-v1'},
-                                   verified)['lines'][0]
-                    status = ('unresolved' if leg['win'] is None else
-                              'won' if leg['win'] else 'lost')
+            single_row = conn.execute("""
+                SELECT selection,outcome FROM nba_official_daily_singles
+                WHERE scan_date=%s AND snapshot_job_id=%s
+            """, (day, job_id)).fetchone()
+            if single_row and single_row[0] and (
+                    not single_row[1] or single_row[1].get('status') == 'unresolved'):
+                leg = evaluate({'lines': [single_row[0]]}, verified)['lines'][0]
+                if leg['win'] is not None:
                     conn.execute("""
                         UPDATE nba_official_daily_singles SET outcome=%s
-                        WHERE scan_date=%s AND snapshot_job_id=%s AND outcome IS NULL
-                    """, (Jsonb({'status': status, 'actual': leg['actual']}), day, job_id))
+                        WHERE scan_date=%s AND snapshot_job_id=%s
+                          AND (outcome IS NULL OR outcome->>'status'='unresolved')
+                    """, (Jsonb({'status': 'won' if leg['win'] else 'lost',
+                                 'actual': leg['actual']}), day, job_id))
         count += 1
     return count
