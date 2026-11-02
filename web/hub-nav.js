@@ -404,8 +404,18 @@ async function openCalendarBoxscore(game,refresh=false){
  const back=document.createElement('button');back.type='button';back.className='hub-boxscore-back';back.textContent='‹ Torna alle partite';
  back.onclick=()=>{activeCalendarBoxscore=null;calendarBoxscoreRequest++;document.body.classList.remove('hub-boxscore-open');panel.hidden=true;games.hidden=false;panel.replaceChildren();renderCalendar()};
  panel.append(back);
- const heading=document.createElement('h3');heading.textContent=game.away+' – '+game.home;panel.append(heading);
- const score=document.createElement('div');score.className='hub-boxscore-headline';score.textContent=String(game.away_score??'')+' – '+String(game.home_score??'');panel.append(score);
+ const header=document.createElement('div');header.className='hub-boxscore-match-header';
+ const matchup=document.createElement('div');matchup.className='hub-boxscore-matchup';
+ for(const team of [game.away,game.home]){
+  const side=document.createElement('div');side.className='hub-boxscore-match-team';
+  const code=matchTeamCodes[team]||matchTeamCodes[team.replace(/^LA /,'Los Angeles ')];
+  if(code){const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';logo.alt='Logo '+team;logo.loading='lazy';logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)}
+  const name=document.createElement('span');name.textContent=team;side.append(name);matchup.append(side);
+ }
+ header.append(matchup);
+ const score=document.createElement('div');score.className='hub-boxscore-headline';score.textContent=String(game.away_score??'')+' – '+String(game.home_score??'');header.append(score);
+ const date=document.createElement('div');date.className='hub-boxscore-match-date';date.textContent=fixtureTime(game);header.append(date);
+ panel.append(header);
  const loading=document.createElement('p');loading.textContent='Caricamento tabellino ESPN…';panel.append(loading);
  try{
   const response=await fetch('/api/nba/boxscore?event_id='+encodeURIComponent(game.event_id));
