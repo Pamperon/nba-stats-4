@@ -195,7 +195,20 @@ def settle_snapshots(day):
         if not isinstance(saved, dict):
             continue
         snapshot = {**payload, 'job_id': job_id, 'saved_at': created_at.isoformat()}
-        verified, _ = settle_espn.settle_archive(snapshot, day, evidence=evidence)
+        # A scan may have stored recommendations but no player predictions.
+        # Do not let it abort settlement of other, verifiable snapshots.
+        if not snapshot.get('results'):
+            continue
+        try:
+            verified, _ = settle_espn.settle_archive(snapshot, day, evidence=evidence)
+        except ValueError as exc:
+            # ESPN may still have unfinished games, missing box scores or
+            # inconsistent fixtures. Preserve this snapshot for a later retry.
+            import logging
+            logging.getLogger(__name__).warning(
+                'Recommendation snapshot %s on %s pending verification: %s',
+                job_id, day, exc)
+            continue
         report = evaluate(saved, verified)
         if payload.get('model_shadow'):
             import shadow_study
