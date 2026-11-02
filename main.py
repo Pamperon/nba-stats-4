@@ -246,6 +246,7 @@ def schedule(date: str):
                 away = next((x for x in teams if x.get('homeAway') == 'away'), {})
                 if home and away:
                     events[str(event['id'])] = {
+                        'event_id': str(event['id']),
                         'home': home.get('team', {}).get('displayName', ''),
                         'away': away.get('team', {}).get('displayName', ''),
                         'time': rome.strftime('%H:%M'),
@@ -288,6 +289,45 @@ def nba_publication_session(day: str):
     return {'publication_date': day, 'start_at': start.isoformat(),
             'end_at': end.isoformat(), 'games': games,
             'source': 'ESPN', 'odds_api_calls': 0}
+
+
+@app.get('/api/nba/boxscore')
+def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\\d{5,15}$')):
+    """ESPN final-game player box score, without bookmaker requests."""
+    try:
+        response = requests.get(
+            'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary',
+            params={'event': event_id}, timeout=15)
+        response.raise_for_status()
+        payload = response.json()
+        state = (payload.get('header', {}).get('competitions') or [{}])[0].get('status', {}).get('type', {}).get('state', '')
+        if state != 'post':
+            raise HTTPException(409, 'Tabellino disponibile a partita terminata')
+        teams = []
+        for group in payload.get('boxscore', {}).get('players', []):
+            team = group.get('team', {}).get('displayName', '')
+            players = []
+            for statgroup in group.get('statistics', []):
+                labels = [str(x).upper() for x in statgroup.get('labels', [])]
+                for entry in statgroup.get('athletes', []):
+                    stats = entry.get('stats') or []
+                    def value(*keys):
+                        for key in keys:
+                            if key in labels:
+                                idx = labels.index(key)
+                                return str(stats[idx]) if idx < len(stats) else '—'
+                        return '—'
+                    athlete = entry.get('athlete') or {}
+                    players.append({'name': athlete.get('displayName', ''),
+                                    'minutes': value('MIN'), 'points': value('PTS'),
+                                    'rebounds': value('REB'), 'assists': value('AST')})
+            teams.append({'team': team, 'players': players})
+        return {'event_id': event_id, 'teams': teams, 'source': 'ESPN', 'odds_api_calls': 0}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('ESPN boxscore unavailable for %s', event_id)
+        raise HTTPException(502, 'Tabellino ESPN temporaneamente non disponibile')
 
 
 @app.get('/api/nba/fixtures')
