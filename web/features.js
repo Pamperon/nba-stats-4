@@ -78,11 +78,11 @@
    if(date<'2026-11-01'||!availableHistoryDates.includes(date)){el('history-status').textContent='Nessuna analisi archiviata per il '+day(date)+'. Scegli una giornata disponibile.';return;}
    const payload=await read('/api/history?date='+encodeURIComponent(date));if(request!==historyRequest||date!==el('history-date').value)return;
    renderHistory(payload);
-  }catch{if(request===historyRequest)el('history-status').textContent='Archivio temporaneamente non disponibile. Usa “Ricarica archivio” per riprovare.';}
+  }catch{if(request===historyRequest)el('history-status').textContent='Archivio temporaneamente non disponibile. Riprova tra poco.';}
  }
  const statusNames={won:'Centrato',lost:'Non centrato',unresolved:'Da verificare'};
  function renderHistory(payload){
-  window.__basketHistoryPayload=payload;renderHistoryStrip(payload);
+  window.__basketHistoryPayload=payload;
   const single=payload.single_archive||{published:false};
   const selection=single.selection;
   const outcome=single.outcome||{};
@@ -93,7 +93,7 @@
   const singleOdds=selection?Number(selection.Quota):NaN;
   const singleRoi=singleSettled&&Number.isFinite(singleOdds)&&singleOdds>1
     ?((singleWon?singleOdds-1:-1)*100).toFixed(1).replace('.',',')+'%':'—';
-  el('history-single-summary').innerHTML=[['Pubblicate',single.published?1:0],['Vinte',singleWon],['Perse',singleLost],['Da verificare',single.published&&!singleSettled?1:0],['Successo',singleSettled?(singleWon*100)+'%':'—'],['ROI teorico',singleRoi]]
+  el('history-single-summary').innerHTML=[['Pubblicate',single.published?1:0],['Vinte',singleWon],['Perse',singleLost],['Da verificare',single.published&&!singleSettled?1:0],['Successo',singleSettled?(singleWon*100)+'%':'—']]]
     .map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
   el('history-single-tickets').innerHTML=selection
     ?'<section class="daily-group"><div class="history-grid"><article class="history-ticket"><div class="ticket-heading"><h3>'+escape(selection.Giocatore)+'</h3><span class="outcome outcome-'+escape(state)+'">'+escape(statusNames[state]||'Da verificare')+'</span></div><div class="history-leg"><p>'+escape(selection.Partita)+'</p><div class="leg-selection">'+escape(selection.Scelta)+' '+escape(selection.Linea)+' '+escape(selection.Mercato)+' <span>Quota <b>'+odd(selection.Quota)+'</b></span></div><p>Probabilità prepartita: '+escape(selection['Prob. stimata %'])+'%</p><p class="leg-result">'+(outcome.actual==null?'Risultato non ancora verificato':'Risultato finale: <strong>'+escape(outcome.actual)+'</strong>')+'</p></div></article></div></section>'
@@ -111,7 +111,7 @@
   const roi=priced.length?(100*unitProfit/priced.length).toFixed(1).replace('.',',')+'%':'—';
   const avgOdds=priced.length?(priced.reduce((total,line)=>total+Number(line.Quota),0)/priced.length).toFixed(2).replace('.',','):'—';
   el('history-status').textContent='';
-  el('history-summary').innerHTML=[['Vinte',won],['Perse',lost],['Da verificare',lines.length-resolved],['Successo',rate],['Quota media',avgOdds],['Brier Score',brier],['ROI teorico',roi]].map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
+  el('history-summary').innerHTML=[['Vinte',won],['Perse',lost],['Da verificare',lines.length-resolved],['Successo',rate],['Quota media',avgOdds]]].map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
   el('history-tickets').innerHTML=lines.length?'<section class="daily-group"><h2>Top 5 ufficiale</h2><div class="history-grid">'+lines.map(row=>'<article class="history-ticket"><div class="ticket-heading"><h3>'+escape(row.Giocatore)+'</h3><span class="outcome outcome-'+escape(row.status)+'">'+escape(statusNames[row.status]||'Da verificare')+'</span></div><div class="history-leg"><p>'+escape(row.Partita)+'</p><div class="leg-selection">'+escape(row.Scelta)+' '+escape(row.Linea)+' '+escape(row.Mercato)+' <span>Quota <b>'+odd(row.Quota)+'</b></span></div><p>Probabilità prepartita: '+escape(row['Prob. stimata %'])+'%</p><p class="leg-result">'+(row.actual==null?'Risultato non ancora verificato':'Risultato finale: <strong>'+escape(row.actual)+'</strong>')+'</p></div></article>').join('')+'</div></section>':'';
   if(legacy.length){
    const section=document.createElement('section');section.className='daily-group';
@@ -121,6 +121,25 @@
    grid.innerHTML=legacy.map(row=>'<article class="history-ticket"><div class="ticket-heading"><h3>'+escape(row.Giocatore)+'</h3><span class="outcome outcome-'+escape(row.status)+'">'+escape(statusNames[row.status]||'Da verificare')+'</span></div><div class="history-leg"><p>'+escape(row.Partita)+'</p><div class="leg-selection">'+escape(row.Scelta)+' '+escape(row.Linea)+' '+escape(row.Mercato)+' <span>Quota <b>'+odd(row.Quota)+'</b></span></div><p>Probabilità prepartita: '+escape(row['Prob. stimata %'])+'%</p><p class="leg-result">'+(row.actual==null?'Risultato non ancora verificato':'Risultato finale: <strong>'+escape(row.actual)+'</strong>')+'</p></div></article>').join('');
    details.append(grid);section.append(details);el('history-tickets').append(section);
   }
+
+  // Compact every official and historical ticket without changing archived data.
+  document.querySelectorAll('#extra-history .history-ticket').forEach(ticket=>{
+   const heading=ticket.querySelector('.ticket-heading');
+   const leg=ticket.querySelector('.history-leg');
+   const matchup=leg?.querySelector(':scope > p:not(.leg-result)');
+   const result=leg?.querySelector('.leg-result');
+   const selection=leg?.querySelector('.leg-selection');
+   if(heading&&matchup){
+    matchup.classList.add('history-matchup');
+    heading.querySelector('h3')?.insertAdjacentElement('afterend',matchup);
+   }
+   if(result&&selection){
+    if(result.textContent.includes('Risultato finale:')){
+     result.classList.add('history-inline-result');
+     selection.append(result);
+    }else result.remove();
+   }
+  });
  }
 
  el('history-date').onchange=()=>{historyWeekStart=null;loadHistory();};
