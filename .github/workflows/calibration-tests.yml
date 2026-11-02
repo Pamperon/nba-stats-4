@@ -20,6 +20,16 @@ on:
 permissions:
   contents: read
 jobs:
+  production-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install -r requirements-dev.txt
+      - run: python scripts/run_offline_tests.py
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10

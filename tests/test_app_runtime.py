@@ -35,6 +35,9 @@ class AppRuntimeTests(unittest.TestCase):
         self.addCleanup(self.client.close)
 
     def test_public_search_metadata(self):
+        icon = self.client.get('/favicon.ico')
+        self.assertEqual(icon.status_code, 200)
+        self.assertEqual(icon.content[:4], b'\x00\x00\x01\x00')
         home = self.client.get('/')
         self.assertEqual(home.status_code, 200)
         self.assertIn('<title>Basket Lab | Statistiche e analisi NBA</title>', home.text)
