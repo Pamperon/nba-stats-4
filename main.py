@@ -292,7 +292,7 @@ def nba_publication_session(day: str):
 
 
 @app.get('/api/nba/boxscore')
-def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15})):
+def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
     """ESPN final-game player box score, without bookmaker requests."""
     try:
         response = requests.get(
