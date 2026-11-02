@@ -1108,3 +1108,39 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
 .hub-calendar-month-grid .hub-month-day.active{background:#fa9835;border-color:#ffb36a;color:#11253b;font-weight:800}
 .hub-calendar-quick-days{display:flex;gap:8px;margin-bottom:14px}
 .hub-calendar-quick-days button{flex:1;padding:8px 6px;border-radius:9px;border:1px solid #41647f;background:#102d45;color:#d9e8f6;font-size:12px;font-weight:650;cursor:pointer}
+
+/* All calendar match tiles share the same compact height regardless of final status or long team names. */
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient{
+ box-sizing:border-box;
+ height:148px;
+ min-height:148px;
+ max-height:148px;
+ grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);
+ align-items:center;
+ padding:29px 10px 26px;
+ gap:6px;
+ overflow:hidden;
+}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team{
+ min-width:0;
+ gap:4px;
+ font-size:12px;
+ line-height:1.2;
+}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team img{
+ width:39px;height:39px;flex:0 0 39px;object-fit:contain;
+}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team span{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+ overflow:hidden;min-height:2.4em;max-height:2.4em;
+}
+@media(max-width:420px){
+ .hub-calendar-games .hub-calendar-match.hub-calendar-gradient{
+  height:140px;min-height:140px;max-height:140px;
+  padding:27px 8px 25px;gap:4px;
+ }
+ .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team img{
+  width:36px;height:36px;flex-basis:36px;
+ }
+ .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team{font-size:11px}
+}
