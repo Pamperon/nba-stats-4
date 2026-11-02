@@ -1562,3 +1562,12 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .hub-single-content .bl-team-emblem{right:-16px!important;top:50%!important;transform:translateY(-50%)!important;width:145px!important;height:145px!important;max-width:none!important;object-fit:contain!important;opacity:.32!important;filter:drop-shadow(0 3px 8px #0004)!important;z-index:1!important}
 .hub-single-content .bl-broadcast-intro{padding-right:54px!important}
 @media(max-width:390px){.hub-single-content .bl-team-emblem{width:125px!important;height:125px!important;right:-14px!important}.hub-single-content .bl-broadcast-intro{padding-right:48px!important}}
+
+/* Verified official results: compact, responsive performance overview */
+.hub-performance-body .bl-perf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
+.hub-performance-body:has(.bl-perf-grid){display:block}
+.bl-perf-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 5px;background:#14273a;border:1px solid #2b455d;border-radius:10px;text-align:center}
+.bl-perf-item strong{font-size:clamp(17px,4.8vw,25px);line-height:1.1;color:#f3f8ff}
+.bl-perf-item span{font-size:10px;color:#b5c6d8}
+.bl-perf-item:last-child strong{color:#56db9e}
+@media(max-width:370px){.hub-performance-body .bl-perf-grid{gap:5px}.bl-perf-item{padding:9px 3px}.bl-perf-item span{font-size:9px}}
