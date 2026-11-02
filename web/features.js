@@ -136,7 +136,7 @@
    if(result&&selection){
     if(result.textContent.includes('Risultato finale:')){
      result.classList.add('history-inline-result');
-     selection.append(result);
+     (selection.querySelector('span')||selection).append(result);
     }else result.remove();
    }
   });
