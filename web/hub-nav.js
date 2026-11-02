@@ -651,6 +651,7 @@ function refreshShowcase(){
   if(pick){
    const clone=pick.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
    clone.querySelectorAll('button,a').forEach(el=>{el.removeAttribute('href');el.setAttribute('tabindex','-1');el.setAttribute('aria-hidden','true')});
+   const playerLink=clone.querySelector('.pick-player-link');if(playerLink)playerLink.textContent=playerLink.textContent.replace(/^([^,]+),\s*(.+)$/,'$2 $1');
    single.append(clone);
    const action=document.createElement('button');action.type='button';action.className='hub-single-action';action.textContent='Apri analisi completa →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
