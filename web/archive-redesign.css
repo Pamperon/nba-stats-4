@@ -72,3 +72,11 @@
 #history-single-summary>div:nth-child(4),#history-summary>div:nth-child(3){background:#46391e!important;border-color:#97752c!important}
 #history-single-summary>div:nth-child(4) strong,#history-summary>div:nth-child(3) strong{color:#ffcd71!important}
 @media(max-width:420px){#extra-history .ticket-heading .history-matchup{flex-basis:105px;font-size:9px!important}#extra-history .ticket-heading h3{font-size:13px!important}#extra-history .ticket-heading .outcome{font-size:9px!important}#extra-history .leg-selection{font-size:12px!important}}
+
+/* Outcome-driven ticket accent and inline score next to price */
+#extra-history .history-ticket:has(.outcome-won){border-left-color:#29bd79!important}
+#extra-history .history-ticket:has(.outcome-lost){border-left-color:#f04e61!important}
+#extra-history .history-ticket:has(.outcome-unresolved){border-left-color:#e7af36!important}
+#extra-history .leg-selection>span{display:inline-flex!important;align-items:baseline;gap:3px;white-space:nowrap!important}
+#extra-history .leg-selection .history-inline-result{display:inline!important;margin-left:2px!important;font-size:11px!important;color:#b6d0e6!important}
+#extra-history .leg-selection .history-inline-result strong{font-size:12px!important;color:#fff!important}
