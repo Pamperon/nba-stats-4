@@ -1190,3 +1190,20 @@ body.hub-boxscore-open .hub-calendar-nav,
 body.hub-boxscore-open .hub-calendar-day-summary{display:none!important}
 body.hub-boxscore-open .hub-calendar-view{padding-top:18px}
 .hub-boxscore-table td:nth-child(n+2){font-variant-numeric:tabular-nums}
+
+/* A compact, accessible date accordion shared by fixtures and boxscore views. */
+.hub-calendar-picker[hidden]{display:none!important}
+.hub-calendar-collapse-toggle{
+ display:flex;width:100%;align-items:center;justify-content:space-between;
+ gap:12px;padding:12px 15px;margin:12px 0 10px;
+ border:1px solid #426582;border-radius:13px;
+ background:#173751;color:#f1f7ff;font-size:15px;font-weight:700;
+ text-align:left;cursor:pointer;
+}
+.hub-calendar-collapse-toggle small{display:block;font-size:12px;font-weight:500;color:#a9c0d2;margin-top:3px;text-transform:capitalize}
+.hub-calendar-chevron{font-size:25px;color:#ffac66;line-height:1;transition:transform .2s ease}
+.hub-calendar-collapse-toggle[aria-expanded="true"] .hub-calendar-chevron{transform:rotate(180deg)}
+body.hub-boxscore-open .hub-calendar-collapse-toggle{display:flex!important;margin-top:0}
+body.hub-boxscore-open .hub-calendar-picker:not([hidden]) .hub-calendar-month-navigation{display:flex!important}
+body.hub-boxscore-open .hub-calendar-picker:not([hidden]) .hub-calendar-month-grid{display:grid!important}
+body.hub-boxscore-open .hub-calendar-picker:not([hidden]){display:block!important}
