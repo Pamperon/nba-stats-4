@@ -67,6 +67,8 @@ function featuredPicks(){
   for(const block of blocks){const item=document.createElement('div');item.className='hub-featured-value';const label=document.createElement('small');label.textContent=block.querySelector('small')?.textContent||'';const number=document.createElement('strong');number.textContent=block.querySelector('strong')?.textContent||'';item.append(label,number);values.append(item)}
   if(!blocks.length){const fallback=document.createElement('span');fallback.textContent=(source.querySelector('.pick-values')?.textContent||'').replace(/\s+/g,' ').trim();values.append(fallback)}
   const avatar=source.querySelector('.pick-avatar');if(avatar){const clone=avatar.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));clone.classList.add('hub-featured-avatar');content.append(clone)}
+  const probability=[...values.querySelectorAll('.hub-featured-value')].find(el=>/stima|probabilit/i.test(el.querySelector('small')?.textContent||''));
+  if(probability){const raw=probability.querySelector('strong')?.textContent||'';const percent=Number(raw.replace('%','').replace(',','.'));if(Number.isFinite(percent)){const track=document.createElement('div');track.className='hub-datalab-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percent))+'%';track.append(fill);probability.append(track)}}
   content.append(name,market,values);card.append(content);
   const action=document.createElement('button');action.type='button';action.textContent='Statistiche giocatore →';
   action.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
@@ -652,6 +654,7 @@ function refreshShowcase(){
    const clone=pick.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
    clone.querySelectorAll('button,a').forEach(el=>{el.removeAttribute('href');el.setAttribute('tabindex','-1');el.setAttribute('aria-hidden','true')});
    const playerLink=clone.querySelector('.pick-player-link');if(playerLink)playerLink.textContent=playerLink.textContent.replace(/^([^,]+),\s*(.+)$/,'$2 $1');
+   const fixture=clone.querySelector('.pick-fixture');if(fixture){fixture.querySelectorAll('.fixture-team').forEach(team=>{const label=team.querySelector('.fixture-team-name');if(label){let txt=label.textContent.trim();txt=txt.replace(/(CLE|OKC|BOS|MIL|PHI|NYK|LAL|LAC|GSW|SAC|DEN|MIN|DAL|HOU|SAS|MIA|ORL|ATL|CHI|DET|IND|CHA|WAS|BKN|TOR|MEM|NOP|UTA|POR|PHX)$/,'').trim();label.textContent=txt}})}
    single.append(clone);
    const action=document.createElement('button');action.type='button';action.className='hub-single-action';action.textContent='Apri analisi completa →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
