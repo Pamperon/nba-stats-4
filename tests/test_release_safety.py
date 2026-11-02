@@ -6,6 +6,10 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 class ReleaseSafetyTests(unittest.TestCase):
+    def test_minutes_experiment_does_not_enter_live_probability_or_pick_policy(self):
+        for name in ('engine.py','recommendations.py'):
+            self.assertNotIn('minutes_research', (ROOT/name).read_text())
+
     def test_live_calibration_requires_explicit_release_even_when_evidence_qualifies(self):
         tree = ast.parse((ROOT / 'main.py').read_text(encoding='utf-8'))
         flag = next(node for node in tree.body if isinstance(node, ast.Assign)

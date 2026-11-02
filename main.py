@@ -691,6 +691,13 @@ def do_scan(job_id, date):
         for name, log in logs.items():
             records=log.copy();records['GAME_DATE']=records['GAME_DATE'].dt.strftime('%Y-%m-%d')
             serialized_logs[name]=records.where(pd.notna(records),None).to_dict('records')
+        minutes_experiment = None
+        try:
+            import minutes_research
+            minutes_experiment = minutes_research.capture(
+                rows, serialized_logs, datetime.now(ZoneInfo('UTC')).isoformat())
+        except Exception:
+            logger.exception('Minutes experiment unavailable; live predictions unchanged')
         final_state = 'partial' if any(r['stato'] != 'ok' for r in fixture_reports) else 'done'
         final_stage = 'Parziale' if final_state == 'partial' else 'Completata'
         import minutes_shadow
@@ -700,6 +707,7 @@ def do_scan(job_id, date):
             'recommendations': saved_recommendations,
             'availability': availability_status,
             'minutes_audit': minutes_audit,
+            'minutes_research': minutes_experiment,
             'scan_source': jobs[job_id].get('scan_source', 'unknown'),
             'date': date, 'state': final_state, 'progress': 100, 'stage': final_stage,
             'results': rows, 'issues': issues, 'fixture_reports': fixture_reports,
@@ -774,6 +782,7 @@ def visible_snapshot(snapshot):
         return len(parts) == 2 and frozenset(p.casefold().strip() for p in parts) in upcoming
     result = dict(snapshot)
     result.pop('model_shadow', None)  # Parallel research must not slow public navigation.
+    result.pop('minutes_research', None)
     result['results'] = [row for row in snapshot.get('results', []) if is_upcoming(row)]
     players = {row.get('Giocatore') for row in result['results']}
     result['player_logs'] = {name: log for name, log in snapshot.get('player_logs', {}).items() if name in players}
