@@ -1180,3 +1180,13 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
 
 .hub-calendar-games .hub-calendar-gradient:has(.hub-calendar-final-score) .hub-calendar-match-arrow{flex-direction:column;gap:1px;bottom:5px}
 .hub-calendar-games .hub-calendar-gradient:has(.hub-calendar-final-score){padding-bottom:38px}
+
+/* The boxscore is a dedicated match screen: hide the large month picker while viewing it. */
+body.hub-boxscore-open .hub-calendar-heading,
+body.hub-boxscore-open .hub-calendar-month-navigation,
+body.hub-boxscore-open .hub-calendar-month-grid,
+body.hub-boxscore-open .hub-calendar-quick-days,
+body.hub-boxscore-open .hub-calendar-nav,
+body.hub-boxscore-open .hub-calendar-day-summary{display:none!important}
+body.hub-boxscore-open .hub-calendar-view{padding-top:18px}
+.hub-boxscore-table td:nth-child(n+2){font-variant-numeric:tabular-nums}
