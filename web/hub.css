@@ -1271,3 +1271,8 @@ body.hub-boxscore-open .hub-calendar-nav{display:none!important}
  .hub-single-content .team-logo{width:26px;height:26px;min-width:26px;flex-basis:26px}
  .hub-single-content .team-logo img{width:24px!important;height:24px!important;max-width:24px!important;max-height:24px!important}
 }
+
+/* Upcoming NBA homepage list continuation */
+.hub-games-more-note{margin:8px 0 0;text-align:center;color:#a9c1d9;font-size:12px}
+.hub-games-more{width:100%;min-height:42px;padding:10px 14px;border:1px solid #487497;border-radius:11px;background:#15314b;color:#e7f4ff;font-weight:750;font-size:13px;cursor:pointer}
+.hub-games-more:hover{background:#1d4364;border-color:#6a9cbe}
