@@ -172,3 +172,45 @@ test('monthly calendar browses historical and future dates without changing pred
  assert.match(doc.querySelector('#hub-calendar-month-label').textContent,/Novembre 2026/);
  window.close();
 });
+
+test('Pronostici share Home cards and retain analysis actions across navigation',async()=>{
+ const {window,doc}=setup();
+ const singlePanel=doc.querySelector('.hub-single-section'),topPanel=doc.querySelector('.hub-featured');
+ const homeParent=singlePanel.parentElement;
+ const source=(name)=>'<article class="pick-selection"><div class="pick-profile"><div class="pick-avatar"><span>NBA</span></div><button class="pick-player-link">'+name+'</button></div><div class="pick-market">OVER 4.5 REB</div><div class="pick-values"><div><small>QUOTA</small><strong>1,80</strong></div><div><small>STIMA DEL MODELLO</small><strong>75%</strong></div></div><button class="pick-stats-button">Statistiche</button></article>';
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Singola del giorno"><h2>Singola del giorno</h2><div class="pick-group-items">'+source('Single Player')+'</div></section><section id="pick-giorno"><div class="pick-group-items">'+source('Top Player')+'</div></section>';
+ let singleClicks=0,topClicks=0;
+ const actions=doc.querySelectorAll('#picks .pick-stats-button');
+ actions[0].onclick=()=>singleClicks++;actions[1].onclick=()=>topClicks++;
+ await new Promise(resolve=>setImmediate(resolve));
+ const card=singlePanel.querySelector('.bl-broadcast');
+ doc.querySelector('.hub-sidebar [data-hub="picks"]').click();
+ assert.equal(singlePanel.parentElement.id,'picks-showcase');
+ assert.equal(topPanel.parentElement.id,'picks-showcase');
+ assert.equal(singlePanel.querySelector('.bl-broadcast'),card);
+ assert.equal(doc.querySelector('#picks-showcase').hidden,false);
+ assert.equal(doc.querySelector('#app').hidden,true);
+ assert.equal(singlePanel.hidden,false);assert.equal(topPanel.hidden,false);
+ assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/ANALISI COMPLETA/);
+ singlePanel.querySelector('.bl-broadcast-action').click();
+ topPanel.querySelector('.bl-datalab-card').click();
+ assert.equal(singleClicks,1);assert.equal(topClicks,1);
+ assert.match(topPanel.textContent,/Top Player/);
+ assert.doesNotMatch(topPanel.textContent,/Single Player/);
+ doc.querySelector('.hub-mobile-bar [data-hub="home"]').click();
+ assert.equal(singlePanel.parentElement,homeParent);
+ assert.equal(topPanel.parentElement,homeParent);
+ assert.equal(doc.querySelector('#picks-showcase').hidden,true);
+ assert.equal(doc.querySelectorAll('.hub-single-section').length,1);
+ assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/VEDI NEI PRONOSTICI/);
+ doc.querySelector('.hub-sidebar [data-hub="stats"]').click();
+ assert.equal(singlePanel.hidden,true);assert.equal(topPanel.hidden,true);
+});
+
+test('an empty Top 5 does not repeat the Single as a ranked analysis',async()=>{
+ const {doc}=setup();
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Singola del giorno"><article class="pick-selection"><button class="pick-player-link">Only Single</button></article></section><section id="pick-giorno"><div class="pick-group-items"></div></section>';
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(doc.querySelectorAll('#hub-featured-list .bl-datalab-card').length,0);
+ assert.match(doc.querySelector('#hub-featured-list').textContent,/Nessuna analisi/);
+});

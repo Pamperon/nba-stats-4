@@ -3,6 +3,15 @@
 const $=s=>document.querySelector(s);
 const landing=$('.hub-landing'),tiles=$('.hub-tiles'),metrics=$('.hub-live-metrics'),trust=$('.hub-trust-strip'),featured=$('.hub-featured'),insights=$('.hub-insights'),gamesShowcase=$('.hub-games-section'),singleShowcase=$('.hub-single-section'),performance=$('.hub-performance'),methodLink=$('.hub-method-link');
 if(!landing||!tiles)return;
+// Share the actual presentation nodes so Home and Pronostici cannot drift.
+const singleHomeAnchor=document.createComment('home-single');
+const featuredHomeAnchor=document.createComment('home-featured');
+singleShowcase?.before(singleHomeAnchor);featured?.before(featuredHomeAnchor);
+const picksPresentation=document.createElement('section');
+picksPresentation.id='picks-showcase';picksPresentation.hidden=true;
+picksPresentation.setAttribute('aria-label','Pronostici del giorno');
+$('#app')?.before(picksPresentation);
+
 const menuToggle=$('.hub-menu-toggle'),menuDrawer=$('#hub-menu-drawer');
 function closeMenu(){if(!menuDrawer)return;menuDrawer.hidden=true;menuToggle?.setAttribute('aria-expanded','false');menuToggle?.setAttribute('aria-label','Apri menu di navigazione')}
 menuToggle?.addEventListener('click',()=>{const opening=menuDrawer.hidden;menuDrawer.hidden=!opening;menuToggle.setAttribute('aria-expanded',String(opening));menuToggle.setAttribute('aria-label',opening?'Chiudi menu di navigazione':'Apri menu di navigazione')});
@@ -26,8 +35,29 @@ function saveHubState(){
 window.addEventListener('pagehide',saveHubState);
 
 function mark(key){document.querySelectorAll('[data-hub]').forEach(el=>{if(el.dataset.hub===key)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')})}
-function display(){const calendarPanel=$('#hub-calendar');if(calendarPanel)calendarPanel.hidden=!calendar;const shell=$('#app');if(shell)shell.hidden=calendar;const extra=!!$('.extra-panel:not([hidden])');landing.hidden=!home||extra;tiles.hidden=!home||extra;if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;if(featured)featured.hidden=!home||extra;if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;if(singleShowcase)singleShowcase.hidden=!home||extra;if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;}
-function select(key){calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);display();document.body.dataset.hubView=key;saveHubState();}
+function display(){
+ const calendarPanel=$('#hub-calendar');if(calendarPanel)calendarPanel.hidden=!calendar;
+ const extra=!!$('.extra-panel:not([hidden])');
+ const picksView=document.body.dataset.hubView==='picks'&&!extra;
+ picksPresentation.hidden=!picksView;
+ if(picksView){
+  for(const panel of [singleShowcase,featured])if(panel&&panel.parentElement!==picksPresentation)picksPresentation.append(panel);
+ }else{
+  if(singleShowcase&&singleShowcase.previousSibling!==singleHomeAnchor)singleHomeAnchor.after(singleShowcase);
+  if(featured&&featured.previousSibling!==featuredHomeAnchor)featuredHomeAnchor.after(featured);
+ }
+ const shell=$('#app');if(shell)shell.hidden=calendar||picksView;
+ landing.hidden=!home||extra;tiles.hidden=!home||extra;
+ if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
+ if(featured)featured.hidden=!(home||picksView)||extra;
+ if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra;
+ if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;
+ if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;
+ const singleAction=singleShowcase?.querySelector('.bl-broadcast-action');
+ if(singleAction)singleAction.textContent=picksView?'ANALISI COMPLETA →':'VEDI NEI PRONOSTICI →';
+}
+function select(key){calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);document.body.dataset.hubView=key;display();saveHubState();}
+
 document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
 $('#area-stats')?.addEventListener('click',()=>select('stats'));
@@ -71,7 +101,7 @@ function hubCardPhoto(source){const image=source.querySelector('.pick-avatar img
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');if(!list||!picks)return;
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,5);
- const selected=sources.length?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
+ const selected=sources.length||picks.querySelector('#pick-giorno')?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
  list.replaceChildren();
  for(const [index,source] of selected.entries()){
   const card=document.createElement('button');card.type='button';card.className='bl-datalab-card';
@@ -742,7 +772,7 @@ function refreshShowcase(){
    const probabilityValue=hubCardMetric(pick,/stima|probabilit/i);const percentage=Number(probabilityValue.replace('%','').replace(',','.'));
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
-   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='VEDI NEI PRONOSTICI →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
+   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent=document.body.dataset.hubView==='picks'?'ANALISI COMPLETA →':'VEDI NEI PRONOSTICI →';action.addEventListener('click',()=>{if(document.body.dataset.hubView==='picks'){pick.querySelector('.pick-stats-button')?.click();return}go.picks();select('picks');singleShowcase.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
  }
