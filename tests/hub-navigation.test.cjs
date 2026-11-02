@@ -195,6 +195,9 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  singlePanel.querySelector('.bl-broadcast-action').click();
  topPanel.querySelector('.bl-datalab-card').click();
  assert.equal(singleClicks,1);assert.equal(topClicks,1);
+ assert.equal(doc.body.dataset.hubView,'stats');
+ assert.equal(doc.querySelector('#app').hidden,false);
+ assert.equal(doc.querySelector('#picks-showcase').hidden,true);
  assert.match(topPanel.textContent,/Top Player/);
  assert.doesNotMatch(topPanel.textContent,/Single Player/);
  doc.querySelector('.hub-mobile-bar [data-hub="home"]').click();

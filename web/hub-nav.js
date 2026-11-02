@@ -121,7 +121,7 @@ function featuredPicks(){
   stats.append(probBox,oddBox);body.append(name,market,stats);
   const arrow=document.createElement('span');arrow.className='bl-data-arrow';arrow.textContent='›';arrow.setAttribute('aria-hidden','true');
   card.append(rank,photo,body,arrow);
-  card.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
+  card.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click();select('stats')});
   list.append(card);
  }
  if(!selected.length)list.textContent='Nessuna analisi disponibile per questa giornata.';
@@ -772,7 +772,7 @@ function refreshShowcase(){
    const probabilityValue=hubCardMetric(pick,/stima|probabilit/i);const percentage=Number(probabilityValue.replace('%','').replace(',','.'));
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
-   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent=document.body.dataset.hubView==='picks'?'ANALISI COMPLETA →':'VEDI NEI PRONOSTICI →';action.addEventListener('click',()=>{if(document.body.dataset.hubView==='picks'){pick.querySelector('.pick-stats-button')?.click();return}go.picks();select('picks');singleShowcase.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
+   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent=document.body.dataset.hubView==='picks'?'ANALISI COMPLETA →':'VEDI NEI PRONOSTICI →';action.addEventListener('click',()=>{if(document.body.dataset.hubView==='picks'){pick.querySelector('.pick-stats-button')?.click();select('stats');return}go.picks();select('picks');singleShowcase.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
  }
