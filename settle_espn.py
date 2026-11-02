@@ -69,6 +69,65 @@ def player_stats(summary):
                     found[id_key] = nums
     return found
 
+def settle_completed_fixtures(snapshot, scan_date, evidence=None):
+    """Verify finalized fixtures independently; never guess missing results."""
+    evidence = {} if evidence is None else evidence
+    key = ('events', scan_date)
+    if key not in evidence:
+        evidence[key] = final_events(scan_date, require_all_final=False)
+    rows = snapshot.get('results') or []
+    saved_at = snapshot.get('scan_finished_at') or snapshot.get('saved_at')
+    if not saved_at:
+        return []
+    from datetime import timezone
+    timestamp = datetime.fromisoformat(str(saved_at).replace('Z', '+00:00'))
+    if timestamp.tzinfo is None:
+        return []
+    timestamp = timestamp.astimezone(timezone.utc)
+    fixtures, ambiguous = {}, set()
+    for event in evidence[key]:
+        competitors = (event.get('competitions') or [{}])[0].get('competitors', [])
+        teams = frozenset(engine.normalized_name(
+            (item.get('team') or {}).get('displayName', '')) for item in competitors)
+        if len(teams) != 2 or not all(teams):
+            continue
+        if teams in fixtures:
+            ambiguous.add(teams)
+        fixtures[teams] = event
+    verified = []
+    for row in rows:
+        fixture = frozenset(engine.normalized_name(t) for t in
+                            str(row.get('Partita') or '').split(' - '))
+        if len(fixture) != 2 or not all(fixture) or fixture in ambiguous:
+            continue
+        event = fixtures.get(fixture)
+        if not event or event.get('status', {}).get('type', {}).get('completed') is not True:
+            continue
+        start = event.get('date')
+        if not start or timestamp >= datetime.fromisoformat(start.replace('Z', '+00:00')):
+            continue
+        summary_key = ('summary', event['id'])
+        if summary_key not in evidence:
+            try:
+                evidence[summary_key] = fetch(BASE + '/summary', event=event['id'])
+            except (requests.RequestException, ValueError):
+                continue
+        try:
+            stats = player_stats(evidence[summary_key])
+        except ValueError:
+            continue
+        team = engine.normalized_name(row.get('Squadra', ''))
+        if team not in fixture:
+            continue
+        athlete_id = str(row.get('ESPN ID') or '').strip()
+        player_key = ('id:' + athlete_id) if athlete_id else engine.espn_player_key(row.get('Giocatore', ''))
+        actuals = stats.get((team, player_key)) if not athlete_id or athlete_id.isdigit() else None
+        if actuals is None or row.get('Mercato') not in actuals:
+            continue
+        verified.append({**row, 'actual': actuals[row['Mercato']], 'played': True})
+    return verified
+
+
 def settle_archive(snapshot, scan_date, evidence=None):
     """Verify only the archived fixtures, never already-started unrelated games."""
     # Share only read-only evidence within one settlement batch, never across
