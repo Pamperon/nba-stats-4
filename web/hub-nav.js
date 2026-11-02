@@ -401,6 +401,16 @@ function renderCalendar(){
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
     const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);
     const state=document.createElement('span');state.className='hub-calendar-state';state.textContent=game.upcoming?'Da giocare':(game.status||'In corso / conclusa');
+    // Display only actual scores provided by the NBA fixture feed; never infer them.
+    const scorePair=Array.isArray(game.scores)?game.scores:null;
+    const awayScore=game.away_score??game.awayScore??scorePair?.[0];
+    const homeScore=game.home_score??game.homeScore??scorePair?.[1];
+    const hasFinalScore=!game.upcoming&&awayScore!=null&&homeScore!=null&&String(awayScore)!==''&&String(homeScore)!=='';
+    if(hasFinalScore){
+     const score=document.createElement('strong');score.className='hub-calendar-final-score';
+     score.textContent=String(awayScore)+' – '+String(homeScore);
+     info.append(score);
+    }
     if(hasOdds){const odds=document.createElement('span');odds.className='hub-calendar-odds';odds.textContent='Quote disponibili';row.append(odds)}
     row.append(state);
     info.append(time);row.append(info);
