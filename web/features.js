@@ -8,6 +8,35 @@
  const routes={history:'archivio',about:'come-funziona'};
  let historyRequest=0;
  let availableHistoryDates=[];
+ let historyWeekStart=null;
+ function historyWeek(date){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-d.getDay());return d;}
+ function isoDay(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+ function renderHistoryCalendar(){
+  const selected=el('history-date').value;if(!selected)return;
+  if(!historyWeekStart)historyWeekStart=historyWeek(selected);
+  const middle=new Date(historyWeekStart);middle.setDate(middle.getDate()+3);
+  el('history-month-label').textContent=middle.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+  const weekdays=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  el('history-week-days').innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(historyWeekStart);d.setDate(d.getDate()+i);const value=isoDay(d),active=value===selected,available=availableHistoryDates.includes(value);return '<button type="button" class="history-day'+(active?' active':'')+'" data-history-day="'+value+'" '+(!available?'disabled':'')+'><span>'+weekdays[d.getDay()]+'</span><strong>'+d.getDate()+'</strong></button>';}).join('');
+  el('history-week-days').querySelectorAll('[data-history-day]').forEach(btn=>btn.addEventListener('click',()=>{el('history-date').value=btn.dataset.historyDay;loadHistory();}));
+ }
+ function selectHistoryMode(mode){
+  for(const name of ['single','top5']){
+   const tab=document.querySelector('[data-history-mode="'+name+'"]');
+   tab.classList.toggle('active',name===mode);tab.setAttribute('aria-selected',String(name===mode));
+   el('history-'+name+'-panel').hidden=name!==mode;
+  }
+  const payload=window.__basketHistoryPayload;
+  if(payload)renderHistoryStrip(payload);
+ }
+ function renderHistoryStrip(payload){
+  const mode=document.querySelector('[data-history-mode].active')?.dataset.historyMode||'single';
+  const lines=mode==='single'?(payload.single_archive?.published?[{status:payload.single_archive.outcome?.status||'unresolved'}]:[]):payload.official_lines||[];
+  const won=lines.filter(x=>x.status==='won').length,lost=lines.filter(x=>x.status==='lost').length;
+  el('history-day-strip').innerHTML='<span>▣ <b>'+escape(day(payload.date))+'</b></span><span><b>'+lines.length+'</b> selezioni</span><span class="history-won">✓ '+won+' Vinte</span><span class="history-lost">✕ '+lost+' Perse</span><span class="history-pending">⌛ '+(lines.length-won-lost)+' Da verificare</span>';
+ }
+ document.querySelectorAll('[data-history-mode]').forEach(tab=>tab.addEventListener('click',()=>selectHistoryMode(tab.dataset.historyMode)));
+ for(const [id,step] of [['history-prev-week',-7],['history-next-week',7]])el(id).addEventListener('click',()=>{if(!historyWeekStart)return;historyWeekStart.setDate(historyWeekStart.getDate()+step);renderHistoryCalendar();});
  // Remove the retired feature's local data without touching other browser data.
  try{localStorage.removeItem('basketlab:favorites:v1');}catch{}
  function show(section,focus=true){
@@ -44,6 +73,7 @@
     el('history-date-hint').textContent=availableHistoryDates.length?'Giornate disponibili: '+availableHistoryDates.length+'. Seleziona una data nel calendario.':'Nessuna giornata disponibile.';
    }
    const date=el('history-date').value;
+   renderHistoryCalendar();
    if(!date){el('history-status').textContent='Non ci sono ancora pronostici giornalieri archiviati.';return;}
    if(!availableHistoryDates.includes(date)){el('history-status').textContent='Nessuna analisi archiviata per il '+day(date)+'. Scegli una giornata disponibile.';return;}
    const payload=await read('/api/history?date='+encodeURIComponent(date));if(request!==historyRequest||date!==el('history-date').value)return;
@@ -52,6 +82,7 @@
  }
  const statusNames={won:'Centrato',lost:'Non centrato',unresolved:'Da verificare'};
  function renderHistory(payload){
+  window.__basketHistoryPayload=payload;renderHistoryStrip(payload);
   const single=payload.single_archive||{published:false};
   const selection=single.selection;
   const outcome=single.outcome||{};
@@ -92,7 +123,7 @@
   }
  }
 
- el('history-date').onchange=()=>loadHistory();el('history-retry').onclick=()=>loadHistory(true);
+ el('history-date').onchange=()=>{historyWeekStart=null;loadHistory();};el('history-retry').onclick=()=>loadHistory(true);
  el('back-to-top').onclick=()=>window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  window.addEventListener('scroll',()=>{el('back-to-top').hidden=window.scrollY<700;},{passive:true});
  const initial=Object.keys(routes).find(name=>'#'+routes[name]===location.hash);
