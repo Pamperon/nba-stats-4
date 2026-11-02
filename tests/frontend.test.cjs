@@ -13,7 +13,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 function browser(fetch) {
   const dom = new JSDOM(html, {url: 'https://nba.invalid', runScripts: 'outside-only', pretendToBeVisual: true});
   dom.window.fetch = fetch;
-  dom.window.eval(source + '\nwindow.__audit = {getData: () => data, getPlayerInit: () => playerStatsInitialized, setPlayerInit: value => {playerStatsInitialized = value;}, setPlayerGames: value => {playerGames = value;}};');
+  dom.window.eval(source + '\nwindow.__audit = {getData: () => data, getPlayerInit: () => playerStatsInitialized, setPlayerInit: value => {playerStatsInitialized = value;}, setPlayerGames: value => {playerGames = value;}, enableSession: () => {sessionPicksEnabled=true;}, refreshSession: refreshSessionPicks};');
   return dom;
 }
 
@@ -875,5 +875,43 @@ test('unavailable scores preserve statistics and do not invent a result',async()
   assert.match(detail.querySelector('.player-game-result').textContent,/non disponibile/);
   assert.match(d.getElementById('player-summary').textContent,/1\/1/);
   assert.doesNotMatch(detail.querySelector('.player-game-result').textContent,/Vittoria|Sconfitta/);
+ }finally{dom.window.close();}
+});
+
+test('concurrent session refreshes share a request and failures can retry',async()=>{
+ let requests=0,resolve;
+ const dom=browser(url=>{
+  if(url==='/api/saved/dates')return Promise.resolve(response({dates:[]}));
+  if(url==='/api/picks/session?compact=true'){requests++;return new Promise(done=>{resolve=done});}
+  return Promise.resolve(response({}));
+ });
+ try{
+  await tick();const audit=dom.window.__audit;audit.enableSession();
+  const first=audit.refreshSession(),second=audit.refreshSession();
+  assert.equal(requests,1);
+  resolve({ok:false});await Promise.all([first,second]);
+  const retry=audit.refreshSession();assert.equal(requests,2);
+  resolve(response({publication_date:'2026-11-02',recommendations:{lines:[]}}));await retry;
+  const fresh=audit.refreshSession();assert.equal(requests,3);
+  resolve(response({publication_date:'2026-11-02',recommendations:{lines:[]}}));await fresh;
+ }finally{dom.window.close();}
+});
+
+test('a stalled shared session request is aborted and releases the next refresh',async()=>{
+ let requests=0;
+ const dom=browser((url,options={})=>{
+  if(url==='/api/saved/dates')return Promise.resolve(response({dates:[]}));
+  if(url==='/api/picks/session?compact=true'){
+   requests++;return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true}));
+  }
+  return Promise.resolve(response({}));
+ });
+ try{
+  await tick();const w=dom.window,audit=w.__audit;let expire;
+  const timeout=w.setTimeout.bind(w);
+  w.setTimeout=(callback,ms,...args)=>{if(ms===20000)expire=callback;return timeout(callback,ms,...args);};
+  audit.enableSession();const first=audit.refreshSession();assert.equal(requests,1);
+  assert.equal(typeof expire,'function');expire();await first;
+  const second=audit.refreshSession();assert.equal(requests,2);expire();await second;
  }finally{dom.window.close();}
 });

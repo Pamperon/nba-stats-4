@@ -21,10 +21,13 @@
     const controller = new AbortController(); pending = controller;
     const timeout = setTimeout(() => controller.abort(), 15000);
     clear(); el('load').disabled = true; el('status').textContent = 'Caricamento…';
+    const requestedAt = performance.now();
     try {
       const result = await fetch('/api/admin/monitor', {headers:{Authorization:'Bearer ' + el('key').value}, cache:'no-store', credentials:'omit', signal:controller.signal});
       if (!result.ok) throw Error(result.status === 401 ? 'Chiave non valida.' : 'Monitoraggio temporaneamente non disponibile.');
       const data = await result.json(); if (current !== generation) return;
+      const elapsed = Math.round(performance.now() - requestedAt);
+      const server = result.headers?.get('Server-Timing')?.match(/(?:^|,)\s*app;dur=([\d.]+)/);
       const expected = data.coverage.reduce((n,r) => n+r.expected, 0), matched = data.coverage.reduce((n,r) => n+r.matched, 0);
       for (const value of [matched + ' / ' + expected + ' linee abbinate', pct(expected ? 100*matched/expected : null) + ' copertura', Object.values(data.odds_requests_24h).reduce((n,x) => n+x, 0) + ' richieste HTTP / 24h']) {
         const card = document.createElement('div'); card.className = 'card'; card.textContent = value; el('summary').append(card);
@@ -37,7 +40,7 @@
         if (r.issues.length) { const li = document.createElement('li'); li.className = 'warn'; li.textContent = r.date + ' · ' + when(r.saved_at) + ': ' + r.issues.join('; '); el('issues').append(li); }
       }
       for (const r of data.attempts) row('attempts', [r.date,r.state,r.stage,when(r.heartbeat_at)]);
-      el('data').hidden = false; el('status').textContent = 'Aggiornato: ' + when(data.generated_at);
+      el('data').hidden = false; el('status').textContent = 'Aggiornato: ' + when(data.generated_at) + ' · Richiesta e lettura: ' + elapsed + ' ms' + (server ? ' · Server fino agli header: ' + Math.round(Number(server[1])) + ' ms' : '');
     } catch (error) {
       if (current === generation) { clear(); el('status').textContent = error.name === 'AbortError' ? 'Tempo di attesa scaduto. Riprova.' : error.message; }
     } finally { clearTimeout(timeout); if (current === generation) { el('load').disabled = false; pending = null; } }
