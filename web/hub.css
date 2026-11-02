@@ -1207,3 +1207,20 @@ body.hub-boxscore-open .hub-calendar-collapse-toggle{display:flex!important;marg
 body.hub-boxscore-open .hub-calendar-picker:not([hidden]) .hub-calendar-month-navigation{display:flex!important}
 body.hub-boxscore-open .hub-calendar-picker:not([hidden]) .hub-calendar-month-grid{display:grid!important}
 body.hub-boxscore-open .hub-calendar-picker:not([hidden]){display:block!important}
+
+/* Remove introductory calendar heading and keep the compact date selector as the first element. */
+.hub-calendar-view .hub-calendar-heading{display:none!important}
+.hub-calendar-view .hub-calendar-collapse-toggle{margin-top:0}
+body.hub-boxscore-open .hub-calendar-collapse-toggle,
+body.hub-boxscore-open .hub-calendar-picker,
+body.hub-boxscore-open .hub-calendar-quick-days,
+body.hub-boxscore-open .hub-calendar-day-summary{display:none!important}
+body.hub-boxscore-open .hub-calendar-boxscore{padding-top:0}
+.hub-boxscore-match-header{padding:8px 8px 20px;text-align:center}
+.hub-boxscore-matchup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;margin:8px 0 12px}
+.hub-boxscore-match-team{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;font-size:14px;font-weight:650;line-height:1.25}
+.hub-boxscore-match-team img{width:65px;height:65px;object-fit:contain}
+.hub-boxscore-match-team span{overflow-wrap:anywhere}
+.hub-boxscore-match-header .hub-boxscore-headline{font-size:43px;margin:4px 0 6px;line-height:1.15}
+.hub-boxscore-match-date{color:#b9cad8;font-size:13px;font-weight:550}
+@media(max-width:420px){.hub-boxscore-match-team img{width:56px;height:56px}.hub-boxscore-match-header .hub-boxscore-headline{font-size:38px}}
