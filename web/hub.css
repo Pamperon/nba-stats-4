@@ -1085,3 +1085,14 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
  .hub-calendar-games .hub-calendar-gradient .hub-calendar-team{font-size:12px}
  .hub-calendar-games .hub-calendar-gradient .hub-calendar-team img{width:45px;height:45px}
 }
+
+/* Compact mobile calendar tiles: preserve team gradients and status badges. */
+.hub-calendar-games .hub-calendar-gradient{min-height:132px;padding:34px 11px 27px;gap:5px}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-team{gap:4px;font-size:12px;line-height:1.2}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-team img{width:39px;height:39px}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-odds,.hub-calendar-games .hub-calendar-gradient .hub-calendar-state{top:8px;font-size:10px;padding:4px 6px}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-match-arrow{bottom:6px}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-time{font-size:12px}
+@media(max-width:420px){.hub-calendar-games .hub-calendar-gradient{min-height:124px;padding:32px 8px 25px;gap:4px}.hub-calendar-games .hub-calendar-gradient .hub-calendar-team img{width:36px;height:36px}.hub-calendar-games .hub-calendar-gradient .hub-calendar-team{font-size:11px}}
+
+.hub-calendar-games .hub-calendar-final-score{font-size:16px;color:#fff;font-weight:850;letter-spacing:.03em}
