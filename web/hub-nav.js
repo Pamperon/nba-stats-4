@@ -672,7 +672,11 @@ function refreshShowcase(){
     const abbr=label.match(/\b(?:CLE|OKC|BOS|MIL|PHI|NYK|LAL|LAC|GSW|SAC|DEN|MIN|DAL|HOU|SAS|MIA|ORL|ATL|CHI|DET|IND|CHA|WAS|BKN|TOR|MEM|NOP|UTA|POR|PHX)\b/);
     text.textContent=abbr?.[0]||label;badge.append(text);fixture.append(badge);
    }
-   intro.append(player,info);hero.append(intro);fixture.classList.add('bl-classic-matchup');
+   intro.append(player,info);
+   if(teams.length){fixture.classList.add('bl-classic-inline');intro.append(fixture)}
+   const fixtureDate=pick.querySelector('.pick-fixture time, .pick-game-time, .fixture-time, [data-game-time]');
+   if(fixtureDate){const when=document.createElement('span');when.className='bl-classic-time';when.textContent=fixtureDate.textContent?.trim()||'';if(when.textContent)intro.append(when)}
+   hero.append(intro);
    const market=document.createElement('div');market.className='bl-broadcast-line';
    const label=document.createElement('small');label.textContent='LINEA SELEZIONATA';
    const line=document.createElement('strong');line.textContent=pick.querySelector('.pick-market')?.textContent?.trim()||'';
@@ -681,7 +685,9 @@ function refreshShowcase(){
    for(const [title,value,extra] of [['QUOTA',hubCardMetric(pick,/quota/i),''],['PROBABILITÀ STIMATA',hubCardMetric(pick,/stima|probabilit/i),'bl-metric-green']]){
     const box=document.createElement('div');box.className='bl-broadcast-metric '+extra;const small=document.createElement('small');small.textContent=title;const strong=document.createElement('strong');strong.textContent=value||'—';box.append(small,strong);metrics.append(box)
    }
-   broadcast.append(hero);if(teams.length)broadcast.append(fixture);broadcast.append(market,metrics);single.append(broadcast);
+   const probabilityValue=hubCardMetric(pick,/stima|probabilit/i);const percentage=Number(probabilityValue.replace('%','').replace(',','.'));
+   if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
+   broadcast.append(hero,market,metrics);single.append(broadcast);
    const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='ANALISI COMPLETA →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
