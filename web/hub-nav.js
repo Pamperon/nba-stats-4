@@ -409,7 +409,25 @@ function matchingFixtureOption(match){
  const key=fixtureKey(match);
  return opts.find(v=>fixtureKey(v)===key)||'';
 }
+let pendingCalendarFixture=0;
 function openFixtureDetails(match){
+ const date=$('#date');
+ const target=calendarSelectedDate;
+ const current=date?.value||'';
+ const request=++pendingCalendarFixture;
+ if(date&&target&&target!==current){
+  const onLoaded=event=>{
+   if(request!==pendingCalendarFixture||event.detail?.date!==target)return;
+   document.removeEventListener('basketlab:quotes-loaded',onLoaded);
+   const available=matchingFixtureOption(match);
+   openMatchQuotes(available||match);
+   if(!available){const area=$('#hub-match-fixture-meta');if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.'}
+  };
+  document.addEventListener('basketlab:quotes-loaded',onLoaded,{once:true});
+  date.value=target;
+  date.dispatchEvent(new Event('change',{bubbles:true}));
+  return;
+ }
  const available=matchingFixtureOption(match);
  openMatchQuotes(available||match);
  if(!available){const area=$('#hub-match-fixture-meta');if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.'}
