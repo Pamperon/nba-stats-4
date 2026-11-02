@@ -423,7 +423,7 @@ function openFixtureDetails(match){
    openMatchQuotes(available||match);
    if(!available){const area=$('#hub-match-fixture-meta');if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.'}
   };
-  document.addEventListener('basketlab:quotes-loaded',onLoaded,{once:true});
+  document.addEventListener('basketlab:quotes-loaded',onLoaded);
   date.value=target;
   date.dispatchEvent(new Event('change',{bubbles:true}));
   return;
