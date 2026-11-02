@@ -50,31 +50,36 @@ if(metricTarget){new MutationObserver(refresh).observe(metricTarget,{childList:t
 if(updated){new MutationObserver(refresh).observe(updated,{childList:true,subtree:true,characterData:true})}
 if($('#picks'))new MutationObserver(refresh).observe($('#picks'),{childList:true,subtree:true});
 document.querySelectorAll('[data-pick-group]').forEach(b=>b.addEventListener('click',()=>{go.picks();select('picks');$('#pick-'+b.dataset.pickGroup)?.scrollIntoView({block:'start',behavior:'smooth'});closeMenu()}));
+function hubCardName(raw){const s=String(raw||'').trim();return s.replace(/^([^,]+),\s*(.+)$/,'$2 $1')}
+function hubCardMetric(source,term){const blocks=[...source.querySelectorAll('.pick-values > div')];const match=blocks.find(el=>term.test(el.querySelector('small')?.textContent||''));return match?.querySelector('strong')?.textContent?.trim()||''}
+function hubCardPhoto(source){const image=source.querySelector('.pick-avatar img');const frame=document.createElement('div');frame.className='bl-player-photo';if(image){const img=image.cloneNode(true);img.removeAttribute('id');img.loading='lazy';frame.append(img)}else{const fallback=document.createElement('span');fallback.textContent=source.querySelector('.pick-avatar span')?.textContent?.trim()||'NBA';frame.append(fallback)}return frame}
 function featuredPicks(){
- const list=$('#hub-featured-list'),picks=$('#picks');
- if(!list||!picks)return;
+ const list=$('#hub-featured-list'),picks=$('#picks');if(!list||!picks)return;
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,5);
- const visibleSources=sources.length?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
+ const selected=sources.length?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
  list.replaceChildren();
- for(const source of visibleSources){
-  const card=document.createElement('div');card.className='hub-featured-card hub-datalab-card';
-  const rank=document.createElement('span');rank.className='hub-datalab-rank';rank.textContent=String(list.children.length+1);card.append(rank);
-  const content=document.createElement('div');content.className='hub-featured-summary';
-  const name=document.createElement('strong');name.textContent=(source.querySelector('.pick-player-link')?.textContent||'Analisi NBA').replace(/^([^,]+),\s*(.+)$/,'$2 $1');
-  const market=document.createElement('p');market.textContent=source.querySelector('.pick-market')?.textContent||'';
-  const values=document.createElement('div');values.className='hub-featured-values';
-  const blocks=[...source.querySelectorAll('.pick-values > div')];
-  for(const block of blocks){const item=document.createElement('div');item.className='hub-featured-value';const label=document.createElement('small');label.textContent=block.querySelector('small')?.textContent||'';const number=document.createElement('strong');number.textContent=block.querySelector('strong')?.textContent||'';item.append(label,number);values.append(item)}
-  if(!blocks.length){const fallback=document.createElement('span');fallback.textContent=(source.querySelector('.pick-values')?.textContent||'').replace(/\s+/g,' ').trim();values.append(fallback)}
-  const avatar=source.querySelector('.pick-avatar');if(avatar){const clone=avatar.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));clone.classList.add('hub-featured-avatar');content.append(clone)}
-  const probability=[...values.querySelectorAll('.hub-featured-value')].find(el=>/stima|probabilit/i.test(el.querySelector('small')?.textContent||''));
-  if(probability){const raw=probability.querySelector('strong')?.textContent||'';const percent=Number(raw.replace('%','').replace(',','.'));if(Number.isFinite(percent)){const track=document.createElement('div');track.className='hub-datalab-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percent))+'%';track.append(fill);probability.append(track)}}
-  content.append(name,market,values);card.append(content);
-  const action=document.createElement('button');action.type='button';action.textContent='Statistiche giocatore →';
-  action.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
-  card.append(action);card.setAttribute('role','button');card.tabIndex=0;card.addEventListener('click',event=>{if(!event.target.closest('button'))action.click()});card.addEventListener('keydown',event=>{if(event.key==='Enter')action.click()});list.append(card);
+ for(const [index,source] of selected.entries()){
+  const card=document.createElement('button');card.type='button';card.className='bl-datalab-card';
+  const rank=document.createElement('span');rank.className='bl-rank';rank.textContent=String(index+1).padStart(2,'0');
+  const photo=hubCardPhoto(source);
+  const body=document.createElement('div');body.className='bl-data-body';
+  const name=document.createElement('strong');name.className='bl-data-name';name.textContent=hubCardName(source.querySelector('.pick-player-link')?.textContent||'Analisi NBA');
+  const market=document.createElement('span');market.className='bl-data-market';market.textContent=source.querySelector('.pick-market')?.textContent?.trim()||'';
+  const stats=document.createElement('div');stats.className='bl-data-stats';
+  const prob=hubCardMetric(source,/stima|probabilit/i),odd=hubCardMetric(source,/quota/i);
+  const probBox=document.createElement('div');probBox.className='bl-data-prob';
+  const probLabel=document.createElement('small');probLabel.textContent='STIMA MODELLO';
+  const probValue=document.createElement('strong');probValue.textContent=prob||'—';
+  const track=document.createElement('div');track.className='bl-prob-track';
+  const fill=document.createElement('span');const n=Number(prob.replace('%','').replace(',','.'));fill.style.width=Number.isFinite(n)?Math.max(0,Math.min(100,n))+'%':'0%';track.append(fill);probBox.append(probLabel,probValue,track);
+  const oddBox=document.createElement('div');oddBox.className='bl-data-odd';const oddLabel=document.createElement('small');oddLabel.textContent='QUOTA';const oddValue=document.createElement('strong');oddValue.textContent=odd||'—';oddBox.append(oddLabel,oddValue);
+  stats.append(probBox,oddBox);body.append(name,market,stats);
+  const arrow=document.createElement('span');arrow.className='bl-data-arrow';arrow.textContent='›';arrow.setAttribute('aria-hidden','true');
+  card.append(rank,photo,body,arrow);
+  card.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
+  list.append(card);
  }
- if(!visibleSources.length)list.textContent='Nessuna selezione disponibile per la giornata.';
+ if(!selected.length)list.textContent='Nessuna analisi disponibile per questa giornata.';
 }
 function updateInsights(){
  const picks=$('#picks'),games=$('#hub-games'),trends=$('#hub-trends');if(!picks||!games||!trends)return;
@@ -651,22 +656,33 @@ function refreshShowcase(){
   const pick=group?.querySelector('.pick-selection');
   single.replaceChildren();
   if(pick){
-   const clone=pick.cloneNode(true);clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
-   clone.querySelectorAll('button,a').forEach(el=>{el.removeAttribute('href');el.setAttribute('tabindex','-1');el.setAttribute('aria-hidden','true')});
-   const playerLink=clone.querySelector('.pick-player-link');if(playerLink)playerLink.textContent=playerLink.textContent.replace(/^([^,]+),\s*(.+)$/,'$2 $1');
-   const fixture=clone.querySelector('.pick-fixture');if(fixture){fixture.querySelectorAll('.fixture-team').forEach(team=>{const label=team.querySelector('.fixture-team-name');if(label){let txt=label.textContent.trim();txt=txt.replace(/(CLE|OKC|BOS|MIL|PHI|NYK|LAL|LAC|GSW|SAC|DEN|MIN|DAL|HOU|SAS|MIA|ORL|ATL|CHI|DET|IND|CHA|WAS|BKN|TOR|MEM|NOP|UTA|POR|PHX)$/,'').trim();label.textContent=txt}})}
-   const profile=clone.querySelector('.pick-profile');const market=clone.querySelector('.pick-market');const values=clone.querySelector('.pick-values');
-   const broadcast=document.createElement('div');broadcast.className='hub-broadcast-v2';
-   const top=document.createElement('div');top.className='hub-broadcast-v2-top';
-   if(profile)top.append(profile);
-   const teams=document.createElement('div');teams.className='hub-broadcast-v2-teams';
-   if(fixture){for(const team of fixture.querySelectorAll('.fixture-team')){const el=document.createElement('span');el.className='hub-broadcast-v2-team';const img=team.querySelector('.team-logo img');if(img){const logo=img.cloneNode(true);el.append(logo)}const text=document.createElement('span');text.textContent=(team.querySelector('.fixture-team-name')?.textContent||'').trim();el.append(text);teams.append(el);if(teams.children.length===1){const vs=document.createElement('span');vs.textContent='VS';vs.className='hub-broadcast-v2-vs';teams.append(vs)}}}
-   if(teams.children.length)top.append(teams);
-   broadcast.append(top);
-   if(market){const line=document.createElement('div');line.className='hub-broadcast-v2-line';const label=document.createElement('small');label.textContent='LINEA SELEZIONATA';line.append(label,market);broadcast.append(line)}
-   if(values)broadcast.append(values);
-   single.append(broadcast);
-   const action=document.createElement('button');action.type='button';action.className='hub-single-action';action.textContent='Apri analisi completa →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
+   const broadcast=document.createElement('div');broadcast.className='bl-broadcast';
+   const hero=document.createElement('div');hero.className='bl-broadcast-hero';
+   const photo=hubCardPhoto(pick);hero.append(photo);
+   const intro=document.createElement('div');intro.className='bl-broadcast-intro';
+   const player=document.createElement('strong');player.className='bl-broadcast-name';player.textContent=hubCardName(pick.querySelector('.pick-player-link')?.textContent||'Giocatore NBA');
+   const info=document.createElement('p');info.className='bl-broadcast-info';info.textContent=pick.querySelector('.pick-profile-info p')?.textContent?.trim()||'';
+   const fixture=document.createElement('div');fixture.className='bl-broadcast-fixture';
+   const teams=[...pick.querySelectorAll('.pick-fixture .fixture-team')];
+   for(const [index,team] of teams.entries()){
+    if(index){const vs=document.createElement('span');vs.className='bl-broadcast-vs';vs.textContent='VS';fixture.append(vs)}
+    const badge=document.createElement('span');badge.className='bl-broadcast-team';
+    const logo=team.querySelector('.team-logo img');if(logo){const img=logo.cloneNode(true);img.removeAttribute('id');badge.append(img)}
+    const text=document.createElement('span');let label=team.querySelector('.fixture-team-name')?.textContent?.trim()||'';
+    const abbr=label.match(/\b(?:CLE|OKC|BOS|MIL|PHI|NYK|LAL|LAC|GSW|SAC|DEN|MIN|DAL|HOU|SAS|MIA|ORL|ATL|CHI|DET|IND|CHA|WAS|BKN|TOR|MEM|NOP|UTA|POR|PHX)\b/);
+    text.textContent=abbr?.[0]||label;badge.append(text);fixture.append(badge);
+   }
+   intro.append(player,info,fixture);hero.append(intro);
+   const market=document.createElement('div');market.className='bl-broadcast-line';
+   const label=document.createElement('small');label.textContent='LINEA SELEZIONATA';
+   const line=document.createElement('strong');line.textContent=pick.querySelector('.pick-market')?.textContent?.trim()||'';
+   market.append(label,line);
+   const metrics=document.createElement('div');metrics.className='bl-broadcast-metrics';
+   for(const [title,value,extra] of [['QUOTA',hubCardMetric(pick,/quota/i),''],['PROBABILITÀ STIMATA',hubCardMetric(pick,/stima|probabilit/i),'bl-metric-green']]){
+    const box=document.createElement('div');box.className='bl-broadcast-metric '+extra;const small=document.createElement('small');small.textContent=title;const strong=document.createElement('strong');strong.textContent=value||'—';box.append(small,strong);metrics.append(box)
+   }
+   broadcast.append(hero,market,metrics);single.append(broadcast);
+   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='ANALISI COMPLETA →';action.addEventListener('click',()=>{go.picks();select('picks');group.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
  }
