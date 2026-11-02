@@ -4,7 +4,8 @@ from PIL import Image
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, HTTPException, Header, Depends, Query, Request
-from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response, JSONResponse
+from psycopg_pool import PoolTimeout, TooManyRequests, PoolClosed
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 import pandas as pd
@@ -23,6 +24,16 @@ app = FastAPI(title='BasketLab', docs_url=None, redoc_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=4)
 from api_timing import ApiTimingMiddleware
 app.add_middleware(ApiTimingMiddleware)
+
+
+@app.exception_handler(PoolTimeout)
+@app.exception_handler(TooManyRequests)
+@app.exception_handler(PoolClosed)
+async def database_pool_unavailable(request: Request, exc: Exception):
+    return JSONResponse(status_code=503,
+                        content={'detail': 'Archivio cloud temporaneamente non disponibile. Riprova.'},
+                        headers={'Retry-After': '3', 'Cache-Control': 'no-store'})
+
 # Explicit release gate: collecting results must not activate live calibration.
 # Change only after a separate review of the accumulated NBA evidence.
 LIVE_CALIBRATION_ENABLED = False

@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 
 import storage
+from psycopg_pool import PoolTimeout, TooManyRequests, PoolClosed
 
 
 class DatabasePoolTests(unittest.TestCase):
@@ -64,3 +65,29 @@ class DatabasePoolTests(unittest.TestCase):
             storage.connection()
             candidate.connection.assert_called_once()
             connect.assert_not_called()
+
+    def test_pool_exhaustion_returns_retryable_response_without_private_details(self):
+        import importlib
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        with patch.dict(os.environ, {'NBA_STATS_ACCESS_TOKEN': 'offline-test-token',
+                                    'ODDSPAPI_API_KEY': 'offline-test-key'}):
+            main = importlib.import_module('main')
+        test_app = FastAPI()
+        for kind in (PoolTimeout, TooManyRequests, PoolClosed):
+            test_app.add_exception_handler(kind, main.database_pool_unavailable)
+
+        @test_app.get('/read')
+        def read():
+            return storage.available_dates()
+
+        client = TestClient(test_app)
+        self.addCleanup(client.close)
+        for kind in (PoolTimeout, TooManyRequests, PoolClosed):
+            with self.subTest(kind=kind.__name__), \
+                    patch.object(storage, 'available_dates', side_effect=kind('private pool detail')):
+                response = client.get('/read')
+                self.assertEqual(response.status_code, 503)
+                self.assertEqual(response.headers.get('retry-after'), '3')
+                self.assertEqual(response.headers.get('cache-control'), 'no-store')
+                self.assertNotIn('private pool detail', response.text)
