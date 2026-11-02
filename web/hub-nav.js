@@ -421,7 +421,7 @@ function renderCalendar(){
  }
 
  const monthGrid=$('#hub-calendar-month-grid'),monthLabel=$('#hub-calendar-month-label');
- if(monthGrid&&/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDate)){
+ if(monthGrid&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)){
   const [year,month]=requestedDate.split('-').map(Number);
   const first=new Date(Date.UTC(year,month-1,1));
   const monthName=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric',timeZone:'UTC'}).format(first);
@@ -504,7 +504,7 @@ const dayStripTarget=$('#date-strip');
 if(dayStripTarget)new MutationObserver(scheduleCalendarRefresh).observe(dayStripTarget,{childList:true,subtree:true,attributes:true,attributeFilter:['class','aria-selected','aria-pressed']});
 function shiftCalendarMonth(delta){
  const selected=calendarSelectedDate||$('#date')?.value||italyDay(new Date());
- if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(selected))return;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(selected))return;
  const [year,month]=selected.split('-').map(Number);
  const target=new Date(Date.UTC(year,month-1+delta,1));
  const day=Math.min(Number(selected.slice(8)),new Date(Date.UTC(target.getUTCFullYear(),target.getUTCMonth()+1,0)).getUTCDate());
