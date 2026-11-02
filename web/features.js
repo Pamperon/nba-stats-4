@@ -26,14 +26,6 @@
    tab.classList.toggle('active',name===mode);tab.setAttribute('aria-selected',String(name===mode));
    el('history-'+name+'-panel').hidden=name!==mode;
   }
-  const payload=window.__basketHistoryPayload;
-  if(payload)renderHistoryStrip(payload);
- }
- function renderHistoryStrip(payload){
-  const mode=document.querySelector('[data-history-mode].active')?.dataset.historyMode||'single';
-  const lines=mode==='single'?(payload.single_archive?.published?[{status:payload.single_archive.outcome?.status||'unresolved'}]:[]):payload.official_lines||[];
-  const won=lines.filter(x=>x.status==='won').length,lost=lines.filter(x=>x.status==='lost').length;
-  el('history-day-strip').innerHTML='<span>▣ <b>'+escape(day(payload.date))+'</b></span><span><b>'+lines.length+'</b> selezioni</span><span class="history-won">✓ '+won+' Vinte</span><span class="history-lost">✕ '+lost+' Perse</span><span class="history-pending">⌛ '+(lines.length-won-lost)+' Da verificare</span>';
  }
  document.querySelectorAll('[data-history-mode]').forEach(tab=>tab.addEventListener('click',()=>selectHistoryMode(tab.dataset.historyMode)));
  for(const [id,step] of [['history-prev-week',-7],['history-next-week',7]])el(id).addEventListener('click',()=>{if(!historyWeekStart)return;historyWeekStart.setDate(historyWeekStart.getDate()+step);renderHistoryCalendar();});
@@ -82,7 +74,6 @@
  }
  const statusNames={won:'Centrato',lost:'Non centrato',unresolved:'Da verificare'};
  function renderHistory(payload){
-  window.__basketHistoryPayload=payload;
   const single=payload.single_archive||{published:false};
   const selection=single.selection;
   const outcome=single.outcome||{};
@@ -90,9 +81,6 @@
   const singleWon=state==='won'?1:0;
   const singleLost=state==='lost'?1:0;
   const singleSettled=singleWon+singleLost;
-  const singleOdds=selection?Number(selection.Quota):NaN;
-  const singleRoi=singleSettled&&Number.isFinite(singleOdds)&&singleOdds>1
-    ?((singleWon?singleOdds-1:-1)*100).toFixed(1).replace('.',',')+'%':'—';
   el('history-single-summary').innerHTML=[['Pubblicate',single.published?1:0],['Vinte',singleWon],['Perse',singleLost],['Da verificare',single.published&&!singleSettled?1:0],['Successo',singleSettled?(singleWon*100)+'%':'—']]
     .map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
   el('history-single-tickets').innerHTML=selection
@@ -104,11 +92,7 @@
   const lost=lines.filter(line=>line.status==='lost').length;
   const resolved=won+lost;
   const rate=resolved?(100*won/resolved).toFixed(1).replace('.',',')+'%':'—';
-  const scored=lines.filter(line=>(line.status==='won'||line.status==='lost')&&line['Prob. stimata %']!=null&&line['Prob. stimata %']!==''&&Number.isFinite(Number(line['Prob. stimata %']))&&Number(line['Prob. stimata %'])>=0&&Number(line['Prob. stimata %'])<=100);
-  const brier=scored.length?(scored.reduce((total,line)=>total+(Number(line['Prob. stimata %'])/100-(line.status==='won'?1:0))**2,0)/scored.length).toFixed(3).replace('.',','):'—';
   const priced=lines.filter(line=>(line.status==='won'||line.status==='lost')&&Number.isFinite(Number(line.Quota))&&Number(line.Quota)>1);
-  const unitProfit=priced.reduce((total,line)=>total+(line.status==='won'?Number(line.Quota)-1:-1),0);
-  const roi=priced.length?(100*unitProfit/priced.length).toFixed(1).replace('.',',')+'%':'—';
   const avgOdds=priced.length?(priced.reduce((total,line)=>total+Number(line.Quota),0)/priced.length).toFixed(2).replace('.',','):'—';
   el('history-status').textContent='';
   el('history-summary').innerHTML=[['Vinte',won],['Perse',lost],['Da verificare',lines.length-resolved],['Successo',rate],['Quota media',avgOdds]].map(([label,value])=>'<div><strong>'+escape(value)+'</strong><span>'+escape(label)+'</span></div>').join('');
