@@ -800,6 +800,14 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
         raise HTTPException(503, 'Archivio cloud temporaneamente non disponibile')
     if not snapshot:
         raise HTTPException(404, 'Nessuna analisi salvata')
+    # Live player-quote explorer must preserve fixture coverage across partial
+    # scans. Historical snapshots and immutable official picks remain untouched.
+    rome_today = datetime.now(ZoneInfo('Europe/Rome')).date()
+    snapshot_day = snapshot.get('date')
+    if snapshot_day in (rome_today.isoformat(), (rome_today + timedelta(days=1)).isoformat()):
+        merged_rows = storage.recent_fixture_coverage(snapshot_day, max_age_hours=8)
+        if merged_rows:
+            snapshot = {**snapshot, 'results': merged_rows}
     visible = visible_snapshot(snapshot)
     import official_top5
     if official_top5.eligible_day(visible['date']):
