@@ -1571,3 +1571,8 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .bl-perf-item span{font-size:10px;color:#b5c6d8}
 .bl-perf-item:last-child strong{color:#56db9e}
 @media(max-width:370px){.hub-performance-body .bl-perf-grid{gap:5px}.bl-perf-item{padding:9px 3px}.bl-perf-item span{font-size:9px}}
+
+/* Pronostici reuse the same live Singola and Top analisi panels as Home. */
+#picks-showcase[hidden]{display:none!important}
+#picks-showcase{min-width:0}
+#picks-showcase .hub-featured-heading>button[data-hub="picks"]{display:none}
