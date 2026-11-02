@@ -421,6 +421,22 @@ async function openCalendarBoxscore(game,refresh=false){
   const response=await fetch('/api/nba/boxscore?event_id='+encodeURIComponent(game.event_id));
   if(!response.ok)throw new Error('Tabellino non disponibile');
   const data=await response.json();if(request!==calendarBoxscoreRequest)return;loading.remove();
+  if(Array.isArray(data.quarters)&&data.quarters.length){
+   const periods=document.createElement('section');periods.className='hub-boxscore-periods';
+   const caption=document.createElement('h4');caption.textContent='Risultato per quarto';periods.append(caption);
+   const scroll=document.createElement('div');scroll.className='hub-boxscore-period-scroll';
+   const table=document.createElement('table');table.className='hub-boxscore-period-table';
+   const thead=document.createElement('thead'),headrow=document.createElement('tr');
+   ['Squadra',...data.quarters.map(q=>q.label),'TOT'].forEach(label=>{const th=document.createElement('th');th.textContent=label;headrow.append(th)});
+   thead.append(headrow);table.append(thead);
+   const tbody=document.createElement('tbody');
+   for(const [side,name,total] of [['away',game.away,game.away_score],['home',game.home,game.home_score]]){
+    const tr=document.createElement('tr');
+    [name,...data.quarters.map(q=>q[side]??'—'),total??'—'].forEach(value=>{const td=document.createElement('td');td.textContent=String(value);tr.append(td)});
+    tbody.append(tr);
+   }
+   table.append(tbody);scroll.append(table);periods.append(scroll);panel.append(periods);
+  }
   if(!data.teams?.some(team=>team.players?.length)){const empty=document.createElement('p');empty.textContent='ESPN non ha ancora pubblicato le statistiche dei giocatori.';panel.append(empty);return}
   for(const team of data.teams){
    const section=document.createElement('section');section.className='hub-boxscore-team';
