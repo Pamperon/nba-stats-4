@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title='BasketLab', docs_url=None, redoc_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=4)
+from api_timing import ApiTimingMiddleware
+app.add_middleware(ApiTimingMiddleware)
 # Explicit release gate: collecting results must not activate live calibration.
 # Change only after a separate review of the accumulated NBA evidence.
 LIVE_CALIBRATION_ENABLED = False
@@ -869,12 +871,8 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
                 if str(pick.get('ESPN ID') or pick.get('Giocatore') or '').strip().casefold() != single_id
             ][:5]
     if compact:
-        # Only these columns are used by pickExplanation. Keep every historical
-        # observation and its original date; never replace frozen logs with live data.
-        visible = {**visible, 'player_logs': {
-            name: [{k: game[k] for k in ('GAME_DATE', 'PTS', 'AST', 'REB') if k in game}
-                   for game in games]
-            for name, games in visible.get('player_logs', {}).items()}}
+        import public_payload
+        visible = {**visible, 'player_logs': public_payload.explanation_logs(visible)}
     return visible
 
 @app.get('/api/saved/archive')

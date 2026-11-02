@@ -12,6 +12,28 @@ with patch.dict(os.environ, {'NBA_STATS_ACCESS_TOKEN': 'offline-test-token', 'OD
 
 
 class CompactTransportTests(unittest.TestCase):
+    def test_only_displayed_selections_receive_frozen_explanation_logs(self):
+        import public_payload
+        game={'GAME_DATE':'2026-10-20','PTS':20,'AST':4,'REB':6,'MIN':32}
+        snapshot={'recommendations':{'lines':[{'Giocatore':'official'}]},
+                  'preliminary_top5':[{'Giocatore':'preliminary'}],
+                  'official_single':{'Giocatore':'single'},
+                  'player_logs':{name:[dict(game)] for name in ('official','preliminary','single','unselected')}}
+        before=copy.deepcopy(snapshot)
+        compact=public_payload.explanation_logs(snapshot)
+        self.assertEqual(set(compact),{'official','preliminary','single'})
+        self.assertEqual(compact['official'][0]['PTS'],20)
+        self.assertNotIn('MIN',compact['official'][0])
+        self.assertEqual(snapshot,before)
+
+    def test_legacy_groups_and_empty_official_selection_are_respected(self):
+        import public_payload
+        snapshot={'recommendations':{'groups':{'Singola':{'legs':[{'Giocatore':'A'}]}}},
+                  'player_logs':{'A':[],'B':[]}}
+        self.assertEqual(public_payload.explanation_logs(snapshot),{'A':[]})
+        snapshot['recommendations']={'lines':[]}
+        self.assertEqual(public_payload.explanation_logs(snapshot),{})
+
     def test_saved_logs_keep_exact_scoring_history_without_mutating_archive(self):
         snapshot = {'date': '2026-10-23', 'results': [{'Giocatore': 'A'}],
                     'player_logs': {'A': [{'GAME_DATE': '2026-10-20', 'PTS': 20, 'AST': 4, 'REB': 6,

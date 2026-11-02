@@ -1029,11 +1029,16 @@ async function initializeArchive(){
 }
 let sessionPicksRequest=0;
 let sessionPicksEnabled=false;
+let sessionPicksInFlight=null;
 async function refreshSessionPicks(){
  if(!sessionPicksEnabled)return;
+ if(sessionPicksInFlight)return sessionPicksInFlight;
  const request=++sessionPicksRequest;
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),20000);
+ const pending=(async()=>{
  try{
-  const response=await api('/api/picks/session?compact=true');
+  const response=await api('/api/picks/session?compact=true',{signal:controller.signal});
   if(!response.ok)throw new Error('Session picks unavailable');
   const payload=await response.json();
   if(request!==sessionPicksRequest)return;
@@ -1044,6 +1049,9 @@ async function refreshSessionPicks(){
   // Preserve the legacy calendar-date view if the new session service fails.
   if(request===sessionPicksRequest){sessionPicksData=null;if(data)render();}
  }
+ })();
+ sessionPicksInFlight=pending;
+ try{return await pending;}finally{clearTimeout(timeout);if(sessionPicksInFlight===pending)sessionPicksInFlight=null;}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSessionPicks()});
 initializeArchive();
