@@ -269,7 +269,13 @@ def history(day, starts=None):
     tickets = [ticket for group in groups.values() for ticket in group]
     # Freeze the first published new-model Top 5 for each day. Later scans
     # supply settlement evidence only; they cannot silently replace picks.
-    first_daily = next((v for v in versions if v['is_daily'] and v['lines']), None)
+    # Legacy 1 Nov used rolling daily recommendations, not an immutable
+    # 18:00 Top 5. Display the last published five for that day, rather
+    # than the first provisional five. From 2 Nov onward use official tables.
+    from datetime import date as _date
+    daily_versions = [v for v in versions if v['is_daily'] and v['lines']]
+    first_daily = (daily_versions[-1] if str(day) == '2026-11-01'
+                   else daily_versions[0] if daily_versions else None)
     official = []
     if first_daily is not None:
         by_identity = {leg_identity(row): row for row in lines}
