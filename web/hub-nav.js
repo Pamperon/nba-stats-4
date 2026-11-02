@@ -657,13 +657,14 @@ function refreshShowcase(){
  }
  if(games){
   const matches=[...new Set([...picks.querySelectorAll('.pick-fixture')].map(el=>el.dataset.match||el.textContent.trim()).filter(Boolean))];
-  const day=sessionDay();
+  // Homepage always previews the next NBA session, not yesterday's overnight window.
+  const day=italyDay(new Date());
   const homeToken=++homeFixturesRequest;
   fetchNbaFixtures(day,true).then(fixtures=>{
    if(homeToken!==homeFixturesRequest)return;
    games.replaceChildren();
    const now=Date.now();
-   fixtures=fixtures.filter(game=>game.upcoming===true && game.start_at && new Date(game.start_at).getTime()>now);
+   fixtures=fixtures.filter(game=>game.upcoming===true && game.start_at && new Date(game.start_at).getTime()>now).sort((a,b)=>new Date(a.start_at)-new Date(b.start_at)).slice(0,4);
    if(!fixtures.length){games.textContent='Nessun’altra partita da iniziare in questa sessione. Consulta il calendario NBA per gli incontri in corso e conclusi.';return}
    for(const [index,game] of fixtures.entries()){
     const match=fixtureName(game);
@@ -697,7 +698,7 @@ function refreshShowcase(){
     row.addEventListener('click',()=>openFixtureDetails(match));
     games.append(row)
    }
-  }).catch(()=>{ /* Keep existing saved-odds fallback if ESPN is unreachable. */ });
+  }).catch(()=>{if(homeToken===homeFixturesRequest)games.textContent='Calendario NBA temporaneamente non disponibile. Apri Tutte le partite per riprovare.'});
   games.replaceChildren();
   games.textContent='Caricamento delle prossime partite NBA…';
   return;
