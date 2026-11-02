@@ -508,14 +508,18 @@ function renderCalendar(){
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
  if(isEspnCalendar){
-  fetchNbaFixtures(requestedDate).then(fixtures=>{
+  Promise.all([
+   fetchNbaFixtures(requestedDate),
+   fetch('/api/nba/quote-coverage?date='+encodeURIComponent(requestedDate))
+    .then(r=>r.ok?r.json():{fixtures:[]}).catch(()=>({fixtures:[]}))
+  ]).then(([fixtures,coverage])=>{
    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
-   const quoted=new Set(matches);
+   const quoted=new Set([...(coverage.fixtures||[]),...matches].map(fixtureKey));
    games.replaceChildren();
    if(summary){const count=summary.querySelector('span');if(count)count.textContent=fixtures.length+' '+(fixtures.length===1?'partita':'partite')}
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
    for(const [gameIndex,game] of fixtures.entries()){
-    const match=fixtureName(game),hasOdds=requestedDate===(nativeDate?.value||'')&&!!matchingFixtureOption(match);
+    const match=fixtureName(game),hasOdds=quoted.has(fixtureKey(match));
     const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(gameIndex%4);fixtureTeamGradient(row,game.away,game.home);
     const names=[game.away,game.home];
     names.forEach((team,i)=>{
