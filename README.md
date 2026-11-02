@@ -20,12 +20,12 @@ come sistema multiutente con autenticazione individuale.
 
 ## Aggiornamenti automatici
 
-Render programma le scansioni alle **07:00, 11:00, 14:30, 18:00 e 21:00** nel
+Render programma le scansioni alle **09:00, 12:00, 14:30, 16:30 e 17:30** nel
 fuso `Europe/Rome`, con cambio automatico tra ora solare e legale. GitHub Actions
 esegue controlli secondari di recupero sulle stesse fasce. Il secret
 GitHub `NBA_STATS_ACCESS_TOKEN` deve corrispondere al token del server.
-Sono previsti controlli di recupero ogni dieci minuti, fino a due ore dopo
-ogni fascia. Prima di prenotare una fascia vengono verificati entrambi i calendari
+Sono previsti controlli di recupero periodici, senza avviare scansioni dopo
+le 18:00, orario della pubblicazione ufficiale. Prima di prenotare una fascia vengono verificati entrambi i calendari
 ESPN gratuiti: se non sono disponibili, il controllo successivo può riprovare
 senza aver consumato la prenotazione o richieste OddsPapi. Render esegue anche
 un controllo interno mentre il server è attivo: al massimo ogni dieci minuti,
