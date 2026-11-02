@@ -747,7 +747,6 @@ function refreshShowcase(){
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
  }
  if(games){
-  const matches=[...new Set([...picks.querySelectorAll('.pick-fixture')].map(el=>el.dataset.match||el.textContent.trim()).filter(Boolean))];
   // Homepage always previews the next NBA session, not yesterday's overnight window.
   const day=italyDay(new Date());
   const homeToken=++homeFixturesRequest;
@@ -804,26 +803,6 @@ function refreshShowcase(){
   games.replaceChildren();
   games.textContent='Caricamento delle prossime partite NBA…';
   return;
-  if(!matches.length){games.textContent='Le partite della giornata compariranno con le analisi disponibili.';return}
-  const teamCodes={'Atlanta Hawks':'atl','Boston Celtics':'bos','Brooklyn Nets':'bkn','Charlotte Hornets':'cha','Chicago Bulls':'chi','Cleveland Cavaliers':'cle','Dallas Mavericks':'dal','Denver Nuggets':'den','Detroit Pistons':'det','Golden State Warriors':'gs','Houston Rockets':'hou','Indiana Pacers':'ind','Los Angeles Clippers':'lac','LA Clippers':'lac','Los Angeles Lakers':'lal','Memphis Grizzlies':'mem','Miami Heat':'mia','Milwaukee Bucks':'mil','Minnesota Timberwolves':'min','New Orleans Pelicans':'no','New York Knicks':'ny','Oklahoma City Thunder':'okc','Orlando Magic':'orl','Philadelphia 76ers':'phi','Phoenix Suns':'phx','Portland Trail Blazers':'por','Sacramento Kings':'sac','San Antonio Spurs':'sa','Toronto Raptors':'tor','Utah Jazz':'utah','Washington Wizards':'wsh'};
-  for(const match of matches.slice(0,6)){
-   const row=document.createElement('button');row.type='button';row.className='hub-match-row';
-   const teams=match.split(/\s+-\s+|\s+vs\.?\s+|\s+@\s+/i).map(x=>x.trim());
-   const n=[...picks.querySelectorAll('.pick-fixture')].filter(el=>(el.dataset.match||el.textContent.trim())===match).length;
-   const pair=document.createElement('div');pair.className='hub-match-teams';
-   if(teams.length===2 && teams.every(t=>teamCodes[t])){
-    for(let i=0;i<2;i++){
-     const badge=document.createElement('span');badge.className='hub-team';
-     const logo=document.createElement('img');logo.alt='';logo.loading='lazy';logo.width=32;logo.height=32;logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+teamCodes[teams[i]]+'.png';
-     logo.addEventListener('error',()=>{logo.hidden=true});
-     const label=document.createElement('strong');label.textContent=teams[i].split(' ').slice(-1)[0];
-     badge.append(logo,label);pair.append(badge);
-     if(i===0){const versus=document.createElement('small');versus.textContent='VS';pair.append(versus)}
-    }
-   }else{const name=document.createElement('strong');name.textContent=match;pair.append(name)}
-   const count=document.createElement('span');count.className='hub-match-count';count.textContent='Quote e linee ›';
-   row.append(pair,count);row.addEventListener('click',()=>openMatchQuotes(match));games.append(row);
-  }
  }
 }
 if($('#picks'))new MutationObserver(()=>{featuredPicks();updateInsights();refreshShowcase()}).observe($('#picks'),{childList:true});

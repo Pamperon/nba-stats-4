@@ -14,9 +14,15 @@ class SchedulerTests(unittest.TestCase):
             for hour, minute in scheduler.SLOTS:
                 target = dt.datetime.fromisoformat(f'{date}T{hour:02}:{minute:02}').replace(tzinfo=scheduler.ROME)
                 self.assertEqual(scheduler.due_slot(target), target)
-                self.assertIsNone(scheduler.due_slot(target - dt.timedelta(seconds=1)))
+                before = target - dt.timedelta(seconds=1)
+                earlier = [dt.datetime.combine(target.date(), dt.time(h, m), tzinfo=scheduler.ROME)
+                           for h, m in scheduler.SLOTS if dt.timedelta(0) <= before - dt.datetime.combine(target.date(), dt.time(h, m), tzinfo=scheduler.ROME) <= dt.timedelta(hours=2)]
+                self.assertEqual(scheduler.due_slot(before), max(earlier) if earlier else None)
                 if (target + dt.timedelta(minutes=90)).hour < 18:
-                    self.assertEqual(scheduler.due_slot(target + dt.timedelta(minutes=90)), target)
+                    later = target + dt.timedelta(minutes=90)
+                    candidates = [dt.datetime.combine(target.date(), dt.time(h, m), tzinfo=scheduler.ROME)
+                                  for h, m in scheduler.SLOTS if dt.timedelta(0) <= later - dt.datetime.combine(target.date(), dt.time(h, m), tzinfo=scheduler.ROME) <= dt.timedelta(hours=2)]
+                    self.assertEqual(scheduler.due_slot(later), max(candidates))
                 else:
                     self.assertIsNone(scheduler.due_slot(target + dt.timedelta(minutes=90)))
             self.assertIsNone(scheduler.due_slot(dt.datetime.fromisoformat(date + 'T03:00').replace(tzinfo=scheduler.ROME)))
@@ -45,7 +51,7 @@ class SchedulerTests(unittest.TestCase):
                     function(invalid, *([True] if name == 'slot_finish' else []))
 
     def test_duplicate_slot_never_starts_scan(self):
-        with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 11, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', side_effect=[{'scheduler_revision': 'rome-three-slots-v1'}, {'games': []}, {'games': []}, {'claimed': False}]) as call, patch.object(scheduler, 'execute_scan') as execute:
+        with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 11, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', side_effect=[{'scheduler_revision': 'rome-five-prepublication-slots-v1'}, {'games': []}, {'games': []}, {'claimed': False}]) as call, patch.object(scheduler, 'execute_scan') as execute:
             scheduler.run()
             execute.assert_not_called()
             self.assertEqual(call.call_count, 4)
@@ -64,7 +70,7 @@ class SchedulerTests(unittest.TestCase):
             def fake_call(path, **kwargs):
                 calls.append(path)
                 if path == '/api/health':
-                    return {'scheduler_revision': 'rome-three-slots-v1'}
+                    return {'scheduler_revision': 'rome-five-prepublication-slots-v1'}
                 if path == '/api/schedule?date=' + failed_day:
                     raise TimeoutError('simulated ESPN outage')
                 if path.startswith('/api/schedule?'):
@@ -83,7 +89,7 @@ class SchedulerTests(unittest.TestCase):
         def fake_call(path, **kwargs):
             calls.append(path)
             if path == '/api/health':
-                return {'scheduler_revision': 'rome-three-slots-v1'}
+                return {'scheduler_revision': 'rome-five-prepublication-slots-v1'}
             if path.startswith('/api/schedule?'):
                 if not failed[0]:
                     failed[0] = True
@@ -131,15 +137,16 @@ class SchedulerTests(unittest.TestCase):
         target = dt.datetime(2026, 10, 28, 14, 30, tzinfo=scheduler.ROME)
         self.assertTrue(scheduler.valid_slot("2026-10-28T14:30"))
         self.assertFalse(scheduler.valid_slot("2026-10-28T14:00"))
-        self.assertFalse(scheduler.valid_slot("2026-10-28T12:00"))
-        self.assertEqual(scheduler.due_slot(target + dt.timedelta(hours=2)), target)  # 16:30, before cutoff
-        self.assertIsNone(scheduler.due_slot(target + dt.timedelta(hours=2, seconds=1)))
+        self.assertTrue(scheduler.valid_slot("2026-10-28T12:00"))
+        self.assertEqual(scheduler.due_slot(target + dt.timedelta(hours=2)), target + dt.timedelta(hours=2))
+        self.assertEqual(scheduler.due_slot(target + dt.timedelta(hours=2, seconds=1)), target + dt.timedelta(hours=2))
+        self.assertIsNone(scheduler.due_slot(target.replace(hour=18, minute=0)))
         self.assertEqual(scheduler.due_slot(target.astimezone(dt.timezone.utc)), target)
         calls = []
         def fake_call(path, **kwargs):
             calls.append(path)
             if path == "/api/health":
-                return {"scheduler_revision": "rome-three-slots-v1"}
+                return {"scheduler_revision": "rome-five-prepublication-slots-v1"}
             if path.startswith("/api/schedule"):
                 return {"games": []}
             if "/slot/claim?" in path:

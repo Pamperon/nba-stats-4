@@ -47,8 +47,8 @@ test('archive displays all distinct daily tickets without a scan selector or inv
  const calls=[];
  const dom=app(async(url,options={})=>{
   calls.push({url,method:options.method||'GET'});
-  if(url==='/api/history/dates')return response({dates:[{date:'2026-10-27'}]});
-  if(url.startsWith('/api/history?'))return response({date:'2026-10-27',official_lines:[line('Original Player'),line('Other Player',1.8,'unresolved')]});
+  if(url==='/api/history/dates')return response({dates:[{date:'2026-11-01'}]});
+  if(url.startsWith('/api/history?'))return response({date:'2026-11-01',official_lines:[line('Original Player'),line('Other Player',1.8,'unresolved')]});
   return response(base(url));
  });
  try{
@@ -58,17 +58,17 @@ test('archive displays all distinct daily tickets without a scan selector or inv
   assert.match(d.getElementById('history-tickets').textContent,/1,74/);
   assert.equal(d.querySelectorAll('.history-ticket').length,2);
   assert.equal(d.querySelectorAll('#extra-history input[type="date"]').length,1);
-  assert.match(d.getElementById('history-status').textContent,/Nessuna Top 5|selezioni ufficiali/);
+  assert.equal(d.getElementById('history-status').textContent,'');
   const metrics=d.getElementById('history-summary').textContent;
-  assert.match(metrics,/Brier Score/);
+  assert.doesNotMatch(metrics,/Brier Score/);
   assert.match(metrics,/Quota media/);
-  assert.match(metrics,/ROI teorico/);
+  assert.doesNotMatch(metrics,/ROI teorico/);
   assert.match(metrics,/Successo/);
   assert.ok(calls.every(call=>call.method==='GET'&&!call.url.startsWith('/api/odds/')));
  }finally{dom.window.close();}
 });
 
-test('archive ROI and mean odds exclude unresolved lines and Brier uses saved probabilities',async()=>{
+test('archive mean odds and success exclude unresolved lines without retired ROI or Brier metrics',async()=>{
  const samples=[
   {...line('A',1.25), 'Prob. stimata %':80},
   {...line('B',1.8), 'Prob. stimata %':70},
@@ -76,15 +76,15 @@ test('archive ROI and mean odds exclude unresolved lines and Brier uses saved pr
   {...line('D',9,'unresolved'),'Prob. stimata %':99},
   {...line('E',1.4),'Prob. stimata %':null}
  ];
- const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',official_lines:samples}:base(url)));
+ const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-11-01'}]}:url.startsWith('/api/history?')?{date:'2026-11-01',official_lines:samples}:base(url)));
  try{
   await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
   const values=Array.from(d.querySelectorAll('#history-summary>div')).map(node=>[node.querySelector('span').textContent,node.querySelector('strong').textContent]);
   const metric=Object.fromEntries(values);
   assert.equal(metric['Successo'],'75,0%');
-  assert.equal(metric['ROI teorico'],'11,2%');
+  assert.equal(metric['ROI teorico'],undefined);
   assert.equal(metric['Quota media'],'1,56');
-  assert.equal(metric['Brier Score'],'0,257');
+  assert.equal(metric['Brier Score'],undefined);
   assert.equal(metric['Da verificare'],'1');
  }finally{dom.window.close();}
 });
@@ -101,7 +101,7 @@ test('missing archive and request errors have retryable empty states',async()=>{
 });
 
 test('archive names are escaped and a direct footer-page URL opens the correct page',async()=>{
- const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-10-27'}]}:url.startsWith('/api/history?')?{date:'2026-10-27',official_lines:[line('<img src=x onerror=alert(1)>')]}:base(url)),false,'#archivio');
+ const dom=app(async url=>response(url==='/api/history/dates'?{dates:[{date:'2026-11-01'}]}:url.startsWith('/api/history?')?{date:'2026-11-01',official_lines:[line('<img src=x onerror=alert(1)>')]}:base(url)),false,'#archivio');
  try{
   await tick();await tick();const d=dom.window.document;
   assert.equal(d.getElementById('extra-history').hidden,false);
@@ -361,7 +361,7 @@ test('a genuinely different day clears fixture, loaded batch and open details',a
 });
 
 test('archive reload discovers new dates, retains the selected day and allows opening the added day',async()=>{
- let dates=['2026-10-28'],dateCalls=0;const requested=[];
+ let dates=['2026-11-01'],dateCalls=0;const requested=[];
  const dom=app(async url=>{
   if(url==='/api/history/dates'){dateCalls++;return response({dates:dates.map(date=>({date}))});}
   if(url.startsWith('/api/history?')){const date=url.split('=')[1];requested.push(date);return response({date,official_lines:[line(date)]});}
@@ -369,10 +369,10 @@ test('archive reload discovers new dates, retains the selected day and allows op
  });
  try{
   await tick();const d=dom.window.document;d.querySelector('[data-extra=history]').click();await tick();await tick();
-  dates=['2026-10-29','2026-10-28'];d.getElementById('history-retry').click();await tick();await tick();
-  const select=d.getElementById('history-date');assert.equal(dateCalls,2);assert.equal(select.min,'2026-10-28');assert.equal(select.max,'2026-10-29');assert.equal(select.value,'2026-10-28');
-  select.value='2026-10-29';select.dispatchEvent(new dom.window.Event('change'));await tick();await tick();
-  assert.equal(requested.at(-1),'2026-10-29');assert.equal(dateCalls,2);assert.match(d.getElementById('history-tickets').textContent,/2026-10-29/);
+  dates=['2026-11-02','2026-11-01'];d.querySelector('[data-extra=history]').click();await tick();await tick();
+  const select=d.getElementById('history-date');assert.equal(dateCalls,2);assert.equal(select.min,'2026-11-01');assert.equal(select.max,'2026-11-02');assert.equal(select.value,'2026-11-01');
+  select.value='2026-11-02';select.dispatchEvent(new dom.window.Event('change'));await tick();await tick();
+  assert.equal(requested.at(-1),'2026-11-02');assert.equal(dateCalls,2);assert.match(d.getElementById('history-tickets').textContent,/2026-11-02/);
   assert.equal(d.getElementById('history-tickets').classList.contains('history-grid'),false);
   assert.equal(d.querySelectorAll('#history-tickets>.daily-group>.history-grid').length,1);
  }finally{dom.window.close();}

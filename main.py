@@ -405,7 +405,7 @@ def publication_session(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
 
 
 @app.get('/api/picks/session')
-def session_picks():
+def session_picks(compact: bool = False):
     """One publication date and one immutable official set, regardless of tipoff date."""
     import nba_session_picks
     import recommendations
@@ -455,8 +455,13 @@ def session_picks():
     if single:
         sid = str(single.get('ESPN ID') or single.get('Giocatore') or '').strip().casefold()
         preliminary = [p for p in preliminary if str(p.get('ESPN ID') or p.get('Giocatore') or '').strip().casefold()!=sid]
+    quote_count = len(results)
+    player_count = len({r.get('Giocatore') for r in results})
+    # The forecast page already has every selected row in its frozen picks.
+    # Quote exploration uses saved/latest, so compact clients need only counts.
     return {'date':day,'publication_date':day,'session_start_at':manifest['start_at'],
-            'session_end_at':manifest['end_at'],'results':results,
+            'session_end_at':manifest['end_at'],'results':[] if compact else results,
+            'quote_count': quote_count,
             'recommendations':{'policy':'fixed-1800-v1','lines':official['lines'] if official else []},
             'official_top5':official,'official_top5_pending':official is None,
             'official_single':official['single'] if official else None,
@@ -464,7 +469,7 @@ def session_picks():
             'preliminary_top5':preliminary[:5] if official is None else [],
             'preliminary_single':single if official is None else None,
             'fixture_count':len(manifest['games']),
-            'player_count':len({r.get('Giocatore') for r in results}),
+            'player_count':player_count,
             'odds_api_calls':0}
 
 
@@ -790,7 +795,8 @@ def visible_snapshot(snapshot):
     return result
 
 @app.get('/api/saved/latest')
-def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$')):
+def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$'),
+                 compact: bool = False):
     if not storage.configured():
         raise HTTPException(503, 'Database non configurato')
     try:
@@ -853,6 +859,13 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
                 pick for pick in visible['preliminary_top5']
                 if str(pick.get('ESPN ID') or pick.get('Giocatore') or '').strip().casefold() != single_id
             ][:5]
+    if compact:
+        # Only these columns are used by pickExplanation. Keep every historical
+        # observation and its original date; never replace frozen logs with live data.
+        visible = {**visible, 'player_logs': {
+            name: [{k: game[k] for k in ('GAME_DATE', 'PTS', 'AST', 'REB') if k in game}
+                   for game in games]
+            for name, games in visible.get('player_logs', {}).items()}}
     return visible
 
 @app.get('/api/saved/archive')
@@ -1215,6 +1228,26 @@ def calibration_settlement_status():
                          'eligible': expected, 'verified': matched, 'bins': bins}
                         for day, job, expected, matched, bins in rows],
             'odds_api_calls': 0}
+
+
+@app.get('/admin/monitor', include_in_schema=False)
+def admin_monitor_page():
+    return FileResponse('web/monitor-admin.html', headers={
+        'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow',
+        'Referrer-Policy': 'no-referrer',
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"})
+
+
+@app.get('/api/admin/monitor', dependencies=[Depends(auth)])
+def admin_monitor_report(response: Response):
+    import admin_monitor
+    response.headers['Cache-Control'] = 'no-store'
+    try:
+        return admin_monitor.report()
+    except Exception:
+        logger.exception('Admin monitor unavailable')
+        raise HTTPException(503, 'Monitoraggio temporaneamente non disponibile',
+                            headers={'Cache-Control': 'no-store'})
 
 
 @app.get('/api/calibration/summary', dependencies=[Depends(auth)])

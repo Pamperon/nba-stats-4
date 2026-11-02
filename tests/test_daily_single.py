@@ -19,13 +19,14 @@ class DailySingleTests(unittest.TestCase):
     def test_independent_probability_and_edge(self):
         with patch.object(recommendations, 'rejection_reasons', return_value=[]):
             self.assertIsNone(recommendations.select_single([row('A', 1.70, 62)]))
-            chosen = recommendations.select_single([row('B', 1.80, 65)])
+            self.assertIsNone(recommendations.select_single([row('A', 1.80, 70)]))
+            chosen = recommendations.select_single([row('B', 1.80, 71)])
             self.assertEqual(chosen['Giocatore'], 'B')
 
     def test_select_by_expected_return(self):
         with patch.object(recommendations, 'rejection_reasons', return_value=[]):
             chosen = recommendations.select_single([
-                row('A', 1.80, 65), row('B', 2.00, 63)])
+                row('A', 1.70, 75), row('B', 1.90, 72), row('C', 2.00, 99)])
             self.assertEqual(chosen['Giocatore'], 'B')
 
     def test_existing_risk_filter(self):

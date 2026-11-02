@@ -6,10 +6,12 @@ const path=require('node:path');
 const {JSDOM}=require('jsdom');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'web/index.html'),'utf8');
+const windows=[];
+test.afterEach(()=>{for(const window of windows.splice(0))window.close()});
 const script=fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8');
 function setup(hash=''){
  const dom=new JSDOM(html,{url:'https://basketlab.it/'+hash,runScripts:'outside-only'});
- const {window}=dom,doc=window.document;
+ const {window}=dom,doc=window.document;windows.push(window);
  window.scrollTo=()=>{};
  window.HTMLElement.prototype.scrollIntoView=function(){};
  for(const b of doc.querySelectorAll('#quote-tabs [data-tab]'))b.addEventListener('click',()=>{for(const x of doc.querySelectorAll('#quote-tabs [data-tab]'))x.classList.toggle('active',x===b)});
@@ -114,10 +116,8 @@ test('featured cards display separate odds and probability values',async()=>{
  const {window,doc}=setup();
  doc.querySelector('#picks').innerHTML='<article class="pick-selection"><div class="pick-profile"><button class="pick-player-link">Player</button></div><div class="pick-market">OVER 4.5 REB</div><div class="pick-values"><div><small>QUOTA</small><strong>1,86</strong></div><div><small>STIMA DEL MODELLO</small><strong>67.5%</strong></div></div></article>';
  await new Promise(resolve=>window.queueMicrotask(resolve));
- const values=doc.querySelectorAll('.hub-featured-value');
- assert.equal(values.length,2);
- assert.equal(values[0].querySelector('strong').textContent,'1,86');
- assert.equal(values[1].querySelector('strong').textContent,'67.5%');
+ assert.equal(doc.querySelector('.bl-data-odd strong').textContent,'1,86');
+ assert.equal(doc.querySelector('.bl-data-prob strong').textContent,'67.5%');
  window.close();
 });
 
@@ -143,8 +143,8 @@ test('calendar day navigation does not alter the prediction date or dashboard pi
  window.fetch=async()=>({ok:true,json:async()=>({games:[]})});
  doc.querySelector('.hub-mobile-bar [data-hub="calendar"]').click();
  const buttons=doc.querySelectorAll('#hub-calendar-dates button');
- assert.equal(buttons.length,2);
- buttons[1].click();
+ assert.equal(buttons.length,7);
+ [...buttons].find(b=>b.getAttribute('aria-label')==='3 novembre 2026').click();
  assert.equal(native.value,'2026-11-02','calendar must not change the shared predictions date');
  assert.equal(dateChanges,0,'calendar must not trigger predictions reload');
  assert.equal(doc.querySelector('#hub-calendar-day-summary strong').textContent,'3 novembre 2026');
