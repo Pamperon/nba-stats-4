@@ -251,7 +251,9 @@ def schedule(date: str):
                         'time': rome.strftime('%H:%M'),
                         'start_at': rome.isoformat(),
                         'status': event.get('status', {}).get('type', {}).get('description', ''),
-                        'upcoming': event.get('status', {}).get('type', {}).get('state') == 'pre'
+                        'upcoming': event.get('status', {}).get('type', {}).get('state') == 'pre',
+                        'home_score': home.get('score'),
+                        'away_score': away.get('score')
                     }
         return {'date': date, 'games': sorted(events.values(), key=lambda x: x['time']),
                 'source': 'ESPN', 'odds_api_calls': 0}
