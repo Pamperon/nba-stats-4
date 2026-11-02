@@ -1119,14 +1119,17 @@ def calibration_settle():
     candidates = [x['date'] for x in reversed(storage.available_dates())
                   if x['date'] <= today and x['date'] not in settled]
     processed = []
-    for day in candidates[:2]:
+    # Rotate through the backlog: two permanently unverifiable days must not
+    # starve every other historical date on each scheduled run.
+    from datetime import date as _date
+    from datetime import timedelta as _timedelta
+    # Exclude today's unfinished games; a completed game day is eligible.
+    for day in candidates[:14]:
         try:
             snapshot = storage.earliest_completed(day)
             if not snapshot or not snapshot.get('results'):
                 processed.append({'date':day,'status':'empty'})
                 continue
-            # Recommendation archives are independent of the calibration
-            # snapshot. An invalid calibration sample must not block them.
             import recommendations
             ticket_count = recommendations.settle_snapshots(day)
             verified, expected = settle_espn.settle_archive(snapshot, day)
@@ -1135,7 +1138,7 @@ def calibration_settle():
         except Exception as exc:
             logger.exception('NBA calibration settlement failed for %s', day)
             processed.append({'date':day,'status':'skipped','reason':str(exc)[:160]})
-    return {'processed':processed,'pending':max(0,len(candidates)-2),'odds_api_calls':0}
+    return {'processed':processed,'pending':max(0,len(candidates)-14),'odds_api_calls':0}
 
 @app.get('/api/calibration/settlement-status', dependencies=[Depends(auth)])
 def calibration_settlement_status():
