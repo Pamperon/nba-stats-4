@@ -1446,3 +1446,30 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .bl-prob-track span{display:block;height:100%;background:linear-gradient(90deg,#36b89a,#76e0af);border-radius:20px}
 .bl-data-arrow{font-size:24px;font-weight:400;color:#ffb374;align-self:center}
 @media(max-width:390px){.bl-broadcast-hero{grid-template-columns:90px minmax(0,1fr);gap:10px}.bl-broadcast-hero>.bl-player-photo{width:90px;height:125px}.hub-featured-list .bl-datalab-card{grid-template-columns:17px 56px minmax(0,1fr) 10px;gap:7px;padding:9px}.bl-datalab-card>.bl-player-photo{width:56px;height:83px}.bl-data-name{font-size:14px}.bl-data-prob strong{font-size:17px}.bl-data-odd strong{font-size:16px}}
+
+/* NBA CLASSIC C — cinematic arena background, full-bleed player, white matchup ribbon */
+.hub-single-section{border-color:#df8745!important;background:linear-gradient(160deg,#15283e,#081724)!important;box-shadow:0 0 0 1px #8e5062,0 0 20px #e88a4430!important}
+.hub-single-content .bl-broadcast{padding:0!important;gap:0!important;overflow:hidden!important;border:0!important;border-radius:15px 15px 0 0!important;background:#0b1725!important;position:relative}
+.hub-single-content .bl-broadcast-hero{position:relative!important;display:grid!important;grid-template-columns:46% 54%!important;align-items:end!important;gap:0!important;min-height:235px!important;padding:20px 12px 0!important;isolation:isolate;background:radial-gradient(ellipse at 80% 0%,#e3ad6a4a,transparent 32%),linear-gradient(180deg,#15253877 0%,#0c182477 52%,#0b1725 100%)}
+.hub-single-content .bl-broadcast-hero::before{content:"";position:absolute;z-index:-2;inset:0;background-image:radial-gradient(ellipse at 78% 9%,#fff8d6 0 1px,#ffe1aa 2px,#ffe1aa55 5px,transparent 38px),radial-gradient(ellipse at 68% 10%,#fff8d6 0 1px,#ffe1aa 2px,#ffe1aa55 5px,transparent 36px),radial-gradient(ellipse at 88% 14%,#fff8d6 0 1px,#ffe1aa 2px,#ffe1aa55 5px,transparent 36px),radial-gradient(ellipse at 58% 17%,#fff8d6 0 1px,#ffe1aa 2px,#ffe1aa55 5px,transparent 36px),repeating-linear-gradient(172deg,transparent 0 11px,#fff5d509 12px 13px,transparent 14px 22px),linear-gradient(180deg,#263448 0%,#0b1828 46%,#111823 100%);opacity:.96}
+.hub-single-content .bl-broadcast-hero::after{content:"";position:absolute;z-index:-1;inset:34% 0 0;background:radial-gradient(ellipse at 50% 95%,#f0b87b23,transparent 70%),repeating-linear-gradient(0deg,#c0d0e015 0 2px,#17283b 2px 5px,#091726 5px 8px);opacity:.7;mask-image:linear-gradient(transparent,#000 50%)}
+.hub-single-content .bl-broadcast-hero>.bl-player-photo{width:100%!important;height:220px!important;border-radius:0!important;background:transparent!important;overflow:visible!important;align-self:end;z-index:2}
+.hub-single-content .bl-broadcast-hero>.bl-player-photo img{width:125%!important;max-width:none!important;height:115%!important;object-fit:contain!important;object-position:center bottom!important;filter:drop-shadow(0 4px 13px #0009)}
+.hub-single-content .bl-broadcast-intro{align-self:center!important;z-index:2!important;gap:10px!important;padding:0 4px 30px 0!important}
+.hub-single-content .bl-broadcast-name{font-size:clamp(24px,7vw,37px)!important;line-height:1.01!important;text-transform:uppercase!important;letter-spacing:-.8px!important;text-shadow:0 2px 9px #000a}
+.hub-single-content .bl-broadcast-info{font-size:14px!important;color:#e4e7ee!important}
+.hub-single-content .bl-broadcast-fixture{display:none!important}
+.hub-single-content .bl-classic-matchup{display:flex;align-items:center;justify-content:space-around;gap:5px;position:relative;z-index:3;margin:-10px 13px 11px;padding:10px 7px;min-height:46px;background:#f7f8fb;border-radius:14px;color:#0c1623;box-shadow:0 4px 14px #0008}
+.hub-single-content .bl-classic-matchup .bl-broadcast-team{color:#0c1623!important;font-weight:850;font-size:11px;gap:5px}
+.hub-single-content .bl-classic-matchup .bl-broadcast-team img{width:27px!important;height:27px!important}
+.hub-single-content .bl-classic-matchup .bl-broadcast-vs{font-weight:900;color:#121b28;font-size:12px}
+.hub-single-content .bl-broadcast-line{margin:0 13px 10px!important;border:0!important;border-radius:12px!important;background:linear-gradient(90deg,#ff9e19,#fa6913)!important;padding:13px 8px!important}
+.hub-single-content .bl-broadcast-line small{display:none!important}
+.hub-single-content .bl-broadcast-line strong{color:#fff!important;font-size:clamp(22px,6.5vw,29px)!important;text-shadow:0 1px 2px #c85c1c}
+.hub-single-content .bl-broadcast-metrics{margin:0 13px 12px!important;gap:0!important;border-radius:12px!important;background:#111e2e!important;overflow:hidden!important}
+.hub-single-content .bl-broadcast-metric{border:0!important;border-radius:0!important;background:transparent!important;padding:14px 8px!important;text-align:center;justify-items:center;gap:5px!important}
+.hub-single-content .bl-broadcast-metric+.bl-broadcast-metric{border-left:1px solid #688097!important}
+.hub-single-content .bl-broadcast-metric strong{font-size:clamp(25px,7vw,34px)!important}
+.hub-single-content .bl-broadcast-metric.bl-metric-green strong{color:#65ee9c!important}
+.hub-single-content .bl-broadcast-action{margin:0 13px 12px!important;width:calc(100% - 26px)!important;background:#0e1722!important;border:2px solid #ffc153!important;border-radius:13px!important;color:white!important;font-size:15px!important;min-height:49px!important;text-transform:none!important;letter-spacing:0!important}
+@media(max-width:390px){.hub-single-content .bl-broadcast-hero{min-height:210px!important}.hub-single-content .bl-broadcast-hero>.bl-player-photo{height:190px!important}.hub-single-content .bl-broadcast-intro{padding-bottom:24px!important}.hub-single-content .bl-classic-matchup .bl-broadcast-team{font-size:10px}}
