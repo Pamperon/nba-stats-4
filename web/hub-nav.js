@@ -393,12 +393,16 @@ function fixtureTime(game){
 }
 let calendarRequest=0;
 let calendarSelectedDate='';
-async function openCalendarBoxscore(game){
+let activeCalendarBoxscore=null;
+let calendarBoxscoreRequest=0;
+async function openCalendarBoxscore(game,refresh=false){
+ if(!refresh){activeCalendarBoxscore=game;document.body.classList.add('hub-boxscore-open')}
+ const request=++calendarBoxscoreRequest;
  const panel=$('#hub-calendar-boxscore'),games=$('#hub-calendar-games');
  if(!panel||!games)return;
  games.hidden=true;panel.hidden=false;panel.replaceChildren();
  const back=document.createElement('button');back.type='button';back.className='hub-boxscore-back';back.textContent='‹ Torna alle partite';
- back.onclick=()=>{panel.hidden=true;games.hidden=false;panel.replaceChildren()};
+ back.onclick=()=>{activeCalendarBoxscore=null;calendarBoxscoreRequest++;document.body.classList.remove('hub-boxscore-open');panel.hidden=true;games.hidden=false;panel.replaceChildren();renderCalendar()};
  panel.append(back);
  const heading=document.createElement('h3');heading.textContent=game.away+' – '+game.home;panel.append(heading);
  const score=document.createElement('div');score.className='hub-boxscore-headline';score.textContent=String(game.away_score??'')+' – '+String(game.home_score??'');panel.append(score);
@@ -406,7 +410,7 @@ async function openCalendarBoxscore(game){
  try{
   const response=await fetch('/api/nba/boxscore?event_id='+encodeURIComponent(game.event_id));
   if(!response.ok)throw new Error('Tabellino non disponibile');
-  const data=await response.json();loading.remove();
+  const data=await response.json();if(request!==calendarBoxscoreRequest)return;loading.remove();
   if(!data.teams?.some(team=>team.players?.length)){const empty=document.createElement('p');empty.textContent='ESPN non ha ancora pubblicato le statistiche dei giocatori.';panel.append(empty);return}
   for(const team of data.teams){
    const section=document.createElement('section');section.className='hub-boxscore-team';
@@ -419,11 +423,11 @@ async function openCalendarBoxscore(game){
    for(const player of team.players){const line=document.createElement('tr');[player.name,player.minutes,player.points,player.rebounds,player.assists].forEach(value=>{const cell=document.createElement('td');cell.textContent=value??'—';line.append(cell)});body.append(line)}
    table.append(body);scroll.append(table);section.append(scroll);panel.append(section);
   }
- }catch(error){loading.textContent='Impossibile caricare il tabellino ESPN in questo momento.'}
+ }catch(error){if(request===calendarBoxscoreRequest)loading.textContent='Impossibile caricare il tabellino ESPN in questo momento.'}
 }
 function renderCalendar(){
  const dates=$('#hub-calendar-dates'),games=$('#hub-calendar-games'),summary=$('#hub-calendar-day-summary');
- const boxscore=$('#hub-calendar-boxscore');if(boxscore){boxscore.hidden=true;boxscore.replaceChildren()}if(games)games.hidden=false;
+ const boxscore=$('#hub-calendar-boxscore');if(boxscore){boxscore.hidden=true;boxscore.replaceChildren()}if(games)games.hidden=false;activeCalendarBoxscore=null;calendarBoxscoreRequest++;document.body.classList.remove('hub-boxscore-open');
  if(!dates||!games)return;
  const source=$('#date-strip'),nativeDate=$('#date'),fixture=$('#finder-fixture');
  const dayButtons=[...(source?.querySelectorAll('button')||[])];
@@ -459,7 +463,7 @@ function renderCalendar(){
     });
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
     const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);
-    const state=document.createElement('span');state.className='hub-calendar-state';const finished=!game.upcoming&&/final|terminat|conclus|finished|completed/i.test(String(game.status||''));state.textContent=game.upcoming?'Da giocare':finished?'Terminata':'Live';if(!game.upcoming&&!finished)state.classList.add('live');
+    const state=document.createElement('span');state.className='hub-calendar-state';const finished=game.state==='post'||(!game.upcoming&&/final|terminat|conclus|finished|completed/i.test(String(game.status||'')));state.textContent=game.upcoming?'Da giocare':finished?'Terminata':'Live';if(!game.upcoming&&!finished)state.classList.add('live');
     // Display only actual scores provided by the NBA fixture feed; never infer them.
     const scorePair=Array.isArray(game.scores)?game.scores:null;
     const awayScore=game.away_score??game.awayScore??scorePair?.[0];
@@ -473,7 +477,7 @@ function renderCalendar(){
     if(hasOdds){const odds=document.createElement('span');odds.className='hub-calendar-odds';odds.textContent='Quote disponibili';row.append(odds)}
     row.append(state);
     info.append(time);row.append(info);
-    row.addEventListener('click',()=>finished&&game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));row.setAttribute('aria-label',match+(finished?' · Apri tabellino partita':' · Apri dettagli partita'));
+    row.addEventListener('click',()=>!game.upcoming&&game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));row.setAttribute('aria-label',match+(!game.upcoming?' · Apri tabellino partita':' · Apri dettagli partita'));
     games.append(row)
    }
   }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
@@ -559,6 +563,7 @@ function renderCalendar(){
 // Refresh the visible calendar without changing the prediction date or OddsPapi data.
 const calendarLiveTimer=setInterval(()=>{
  if(!calendar||document.hidden||document.body.dataset.hubView!=='calendar')return;
+ if(activeCalendarBoxscore){if(activeCalendarBoxscore.state==='in')openCalendarBoxscore(activeCalendarBoxscore,true);return}
  const selected=calendarSelectedDate||$('#date')?.value||italyDay(new Date());
  const cached=nbaFixtureCache.get('date:'+selected);
  if(!cached||cached.expires<=Date.now())renderCalendar();
