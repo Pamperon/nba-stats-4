@@ -307,6 +307,21 @@ def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
         state = (payload.get('header', {}).get('competitions') or [{}])[0].get('status', {}).get('type', {}).get('state', '')
         if state not in ('post', 'in'):
             raise HTTPException(409, 'Tabellino disponibile durante o dopo la partita')
+        competition = (payload.get('header', {}).get('competitions') or [{}])[0]
+        quarters = []
+        competitors = competition.get('competitors') or []
+        by_side = {entry.get('homeAway'): entry for entry in competitors}
+        away_lines = by_side.get('away', {}).get('linescores') or []
+        home_lines = by_side.get('home', {}).get('linescores') or []
+        for index in range(max(len(away_lines), len(home_lines))):
+            away_period = away_lines[index] if index < len(away_lines) else {}
+            home_period = home_lines[index] if index < len(home_lines) else {}
+            quarters.append({
+                'period': index + 1,
+                'label': f'Q{index + 1}' if index < 4 else f'OT{index - 3}',
+                'away': away_period.get('displayValue', away_period.get('value')),
+                'home': home_period.get('displayValue', home_period.get('value')),
+            })
         teams = []
         for group in payload.get('boxscore', {}).get('players', []):
             team = group.get('team', {}).get('displayName', '')
@@ -326,7 +341,7 @@ def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
                                     'minutes': value('MIN'), 'points': value('PTS'),
                                     'rebounds': value('REB'), 'assists': value('AST')})
             teams.append({'team': team, 'players': players})
-        return {'event_id': event_id, 'teams': teams, 'state': state, 'source': 'ESPN', 'odds_api_calls': 0}
+        return {'event_id': event_id, 'teams': teams, 'quarters': quarters, 'state': state, 'source': 'ESPN', 'odds_api_calls': 0}
     except HTTPException:
         raise
     except Exception:
