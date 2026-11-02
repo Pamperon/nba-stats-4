@@ -62,6 +62,34 @@ def init_storage():
     threading.Thread(target=_release_guard_when_public, daemon=True, name='nba-deploy-release').start()
     threading.Thread(target=_render_scheduler_loop, daemon=True, name='nba-render-scheduler').start()
     threading.Thread(target=_official_publication_loop, daemon=True, name='nba-official-publisher').start()
+    threading.Thread(target=_archive_settlement_loop, daemon=True, name='nba-archive-verifier').start()
+
+
+def _archive_settlement_loop():
+    """Verify recent published lines independently of the calibration workflow.
+
+    ESPN only, no paid odds calls. Never reselect or alter pregame picks.
+    """
+    from datetime import timedelta as _timedelta
+    if shutdown_event.wait(75):
+        return
+    while not shutdown_event.is_set():
+        try:
+            import recommendations
+            today = datetime.now(ZoneInfo('Europe/Rome')).date()
+            for offset in (2, 1, 0):
+                day = (today - _timedelta(days=offset)).isoformat()
+                if shutdown_event.is_set():
+                    return
+                try:
+                    updated = recommendations.settle_snapshots(day)
+                    logger.info('NBA archive verifier %s: %s snapshots checked', day, updated)
+                except Exception:
+                    logger.exception('NBA archive verifier failed for %s', day)
+        except Exception:
+            logger.exception('NBA archive verifier loop failed')
+        if shutdown_event.wait(3600):
+            return
 
 
 def _release_guard_when_public():
