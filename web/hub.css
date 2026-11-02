@@ -1351,3 +1351,24 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 .hub-datalab-card:hover,.hub-datalab-card:focus-visible{border-color:#ec963f!important;outline:none}
 @media(min-width:850px){.hub-datalab-card .hub-featured-summary{grid-template-columns:80px minmax(0,1fr)!important}.hub-datalab-card .hub-featured-avatar{width:80px!important;max-width:80px!important;height:100px!important}}
 @media(max-width:380px){.hub-datalab-card{gap:6px!important;padding:8px!important}.hub-datalab-rank{flex-basis:15px;font-size:16px}.hub-datalab-card .hub-featured-summary{grid-template-columns:54px minmax(0,1fr)!important;gap:4px 7px!important}.hub-datalab-card .hub-featured-avatar{width:54px!important;max-width:54px!important;height:77px!important}.hub-datalab-card .hub-featured-value strong{font-size:14px!important}.hub-single-content .pick-avatar{width:82px!important;height:104px!important;flex-basis:82px!important}}
+
+/* A+B visual fidelity refinements */
+.hub-single-content>.pick-selection{padding:13px!important}
+.hub-single-content .pick-profile{align-items:center!important;gap:12px!important}
+.hub-single-content .pick-avatar{width:88px!important;height:106px!important;flex-basis:88px!important}
+.hub-single-content .pick-profile-info h3{font-size:clamp(19px,5vw,24px)!important}
+.hub-single-content .pick-fixture{padding:7px 8px!important;margin:8px 0!important;gap:6px!important}
+.hub-single-content .fixture-team{max-width:43%!important;flex:1 1 0!important}
+.hub-single-content .fixture-team-name{font-size:10px!important;line-height:1.2!important;overflow-wrap:normal!important}
+.hub-single-content .pick-market{margin:7px 0!important;padding:9px!important;font-size:20px!important}
+.hub-single-content .pick-values{margin:8px 0!important}
+.hub-single-content .pick-values>div{padding:9px!important}
+.hub-single-content .pick-values strong{font-size:23px!important}
+.hub-single-content .pick-stats-button{display:none!important}
+.hub-datalab-card .hub-featured-value{border:0!important;background:transparent!important;padding:4px 0!important}
+.hub-datalab-card .hub-featured-values{gap:8px!important}
+.hub-datalab-card .hub-featured-value small{font-size:9px!important}
+.hub-datalab-track{width:100%;height:5px;border-radius:99px;background:#2c4b62;overflow:hidden;margin-top:6px}
+.hub-datalab-track span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#36a88d,#69dfb3)}
+.hub-datalab-card .hub-featured-avatar{height:80px!important}
+.hub-datalab-card{min-height:105px!important}
