@@ -382,7 +382,7 @@ def nba_quote_coverage(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
     """Recent observed quote coverage by fixture, independent of UI dropdown."""
     if not storage.configured():
         return {'date': date, 'fixtures': []}
-    rows = storage.recent_fixture_coverage(date, max_age_hours=8)
+    rows = storage.recent_fixture_coverage(date, max_age_hours=24)
     return {'date': date, 'fixtures': sorted({
         str(row.get('Partita') or '').strip() for row in rows
         if str(row.get('Partita') or '').strip()
@@ -432,7 +432,7 @@ def session_picks():
     for calendar_date in (day, (datetime.strptime(day,'%Y-%m-%d')+timedelta(days=1)).strftime('%Y-%m-%d')):
         # Merge recent scans by fixture: partial updates must not hide games
         # that had valid odds in an earlier scan. Official picks stay immutable.
-        for row in storage.recent_fixture_coverage(calendar_date):
+        for row in storage.recent_fixture_coverage(calendar_date, max_age_hours=24):
             parts = str(row.get('Partita') or '').split(' - ')
             if len(parts) != 2:
                 continue
@@ -805,7 +805,7 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
     rome_today = datetime.now(ZoneInfo('Europe/Rome')).date()
     snapshot_day = snapshot.get('date')
     if snapshot_day in (rome_today.isoformat(), (rome_today + timedelta(days=1)).isoformat()):
-        merged_rows = storage.recent_fixture_coverage(snapshot_day, max_age_hours=8)
+        merged_rows = storage.recent_fixture_coverage(snapshot_day, max_age_hours=24)
         if merged_rows:
             snapshot = {**snapshot, 'results': merged_rows}
     visible = visible_snapshot(snapshot)
