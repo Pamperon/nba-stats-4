@@ -239,7 +239,9 @@ def schedule(date: str):
             for event in response.json().get('events', []):
                 start = datetime.fromisoformat(event['date'].replace('Z', '+00:00'))
                 rome = start.astimezone(ZoneInfo('Europe/Rome'))
-                if rome.strftime('%Y-%m-%d') != date:
+                status_state = event.get('status', {}).get('type', {}).get('state', '')
+                # Show previous-day games on today's calendar only while ESPN marks them live.
+                if rome.strftime('%Y-%m-%d') != date and not (status_state == 'in' and rome.date() == (day.date() - timedelta(days=1))):
                     continue
                 teams = (event.get('competitions') or [{}])[0].get('competitors') or []
                 home = next((x for x in teams if x.get('homeAway') == 'home'), {})
@@ -252,7 +254,9 @@ def schedule(date: str):
                         'time': rome.strftime('%H:%M'),
                         'start_at': rome.isoformat(),
                         'status': event.get('status', {}).get('type', {}).get('description', ''),
-                        'upcoming': event.get('status', {}).get('type', {}).get('state') == 'pre',
+                        'upcoming': status_state == 'pre',
+                        'state': status_state,
+                        'carried_live': rome.strftime('%Y-%m-%d') != date,
                         'home_score': home.get('score'),
                         'away_score': away.get('score')
                     }
@@ -301,8 +305,8 @@ def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
         response.raise_for_status()
         payload = response.json()
         state = (payload.get('header', {}).get('competitions') or [{}])[0].get('status', {}).get('type', {}).get('state', '')
-        if state != 'post':
-            raise HTTPException(409, 'Tabellino disponibile a partita terminata')
+        if state not in ('post', 'in'):
+            raise HTTPException(409, 'Tabellino disponibile durante o dopo la partita')
         teams = []
         for group in payload.get('boxscore', {}).get('players', []):
             team = group.get('team', {}).get('displayName', '')
@@ -322,7 +326,7 @@ def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
                                     'minutes': value('MIN'), 'points': value('PTS'),
                                     'rebounds': value('REB'), 'assists': value('AST')})
             teams.append({'team': team, 'players': players})
-        return {'event_id': event_id, 'teams': teams, 'source': 'ESPN', 'odds_api_calls': 0}
+        return {'event_id': event_id, 'teams': teams, 'state': state, 'source': 'ESPN', 'odds_api_calls': 0}
     except HTTPException:
         raise
     except Exception:
