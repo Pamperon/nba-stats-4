@@ -317,7 +317,7 @@ $('#hub-match-search')?.addEventListener('input',renderMatchPlayers);
  $('#hub-match-filter-toggle')?.addEventListener('click',()=>{const panel=$('#hub-match-filter-panel'),button=$('#hub-match-filter-toggle');if(!panel||!button)return;panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));const arrow=$('#hub-match-filter-chevron');if(arrow)arrow.textContent=panel.hidden?'▾':'▴'});
 
 document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b===button));renderMatchPlayers()}));
-$('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;go.home();select('home')});
+$('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;if(calendarSelectedDate){go.calendar();select('calendar')}else{go.home();select('home')}});
 let calendarRefreshTimer=null;
 function scheduleCalendarRefresh(){
  if(!calendar)return;
@@ -397,7 +397,7 @@ let calendarWeekStart='';
 let calendarVisibleMonth='';
 function calendarIsoOffset(iso,days){const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)}
 function calendarMonday(iso){return calendarIsoOffset(iso,-((new Date(iso+'T12:00:00Z').getUTCDay()+6)%7))}
-function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=calendarMonday(iso);calendarVisibleMonth=iso.slice(0,7);renderCalendar()}
+function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=calendarIsoOffset(iso,-3);calendarVisibleMonth=iso.slice(0,7);renderCalendar()}
 
 let activeCalendarBoxscore=null;
 let calendarBoxscoreRequest=0;
@@ -474,7 +474,7 @@ function renderCalendar(){
  const requestedDate=calendarSelectedDate||options[index]?.value||selectedValue;
  const compactDate=$('#hub-calendar-compact-date');if(compactDate&&requestedDate){const d=new Date(requestedDate+'T12:00:00Z');compactDate.textContent=new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(d)}
  if(requestedDate)calendarSelectedDate=requestedDate;
- if(!calendarWeekStart&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarWeekStart=calendarMonday(requestedDate);
+ if(!calendarWeekStart&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarWeekStart=calendarIsoOffset(requestedDate,-3);
  if(!calendarVisibleMonth&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarVisibleMonth=requestedDate.slice(0,7);
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
@@ -512,7 +512,7 @@ function renderCalendar(){
     if(hasOdds){const odds=document.createElement('span');odds.className='hub-calendar-odds';odds.textContent='Quote disponibili';row.append(odds)}
     row.append(state);
     info.append(time);row.append(info);
-    row.addEventListener('click',()=>!game.upcoming&&game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));row.setAttribute('aria-label',match+(!game.upcoming?' · Apri tabellino partita':' · Apri dettagli partita'));
+    row.addEventListener('click',()=>game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));row.setAttribute('aria-label',match+(!game.upcoming?' · Apri tabellino partita':' · Apri dettagli partita'));
     games.append(row)
    }
   }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
@@ -627,7 +627,7 @@ for(const [id,offset] of [['hub-calendar-yesterday',-1],['hub-calendar-today',0]
   calendarSelectDate(date.toISOString().slice(0,10));
  });
 }
-function shiftCalendarWeek(delta){calendarWeekStart=calendarIsoOffset(calendarWeekStart||calendarMonday(calendarSelectedDate||italyDay(new Date())),delta*7);renderCalendar()}
+function shiftCalendarWeek(delta){calendarSelectDate(calendarIsoOffset(calendarSelectedDate||italyDay(new Date()),delta*7))}
 $('#hub-calendar-prev')?.addEventListener('click',()=>shiftCalendarWeek(-1));
 $('#hub-calendar-next')?.addEventListener('click',()=>shiftCalendarWeek(1));
 const calendarWeekStrip=$('#hub-calendar-dates');let calendarTouchStart=null;
