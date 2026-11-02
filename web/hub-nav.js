@@ -410,7 +410,9 @@ function matchingFixtureOption(match){
  return opts.find(v=>fixtureKey(v)===key)||'';
 }
 let pendingCalendarFixture=0;
+let pendingCalendarListener=null;
 function openFixtureDetails(match){
+ if(pendingCalendarListener){document.removeEventListener('basketlab:quotes-loaded',pendingCalendarListener);pendingCalendarListener=null;}
  const date=$('#date');
  const target=calendarSelectedDate;
  const current=date?.value||'';
@@ -419,10 +421,12 @@ function openFixtureDetails(match){
   const onLoaded=event=>{
    if(request!==pendingCalendarFixture||event.detail?.date!==target)return;
    document.removeEventListener('basketlab:quotes-loaded',onLoaded);
+   pendingCalendarListener=null;
    const available=matchingFixtureOption(match);
    openMatchQuotes(available||match);
    if(!available){const area=$('#hub-match-fixture-meta');if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.'}
   };
+  pendingCalendarListener=onLoaded;
   document.addEventListener('basketlab:quotes-loaded',onLoaded);
   date.value=target;
   date.dispatchEvent(new Event('change',{bubbles:true}));
