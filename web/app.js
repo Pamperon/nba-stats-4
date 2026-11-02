@@ -192,6 +192,7 @@ $('date').addEventListener('change',async()=>{
  }finally{
   if(request===dateSelectionRequest&&$('date').value===selected){
    setDateLoading(false);
+   document.dispatchEvent(new CustomEvent('basketlab:quotes-loaded',{detail:{date:selected}}));
    if(view)requestAnimationFrame(()=>{
     if(request!==dateSelectionRequest||document.querySelector('nav button.active')?.dataset.tab!==view.tab)return;
     if(view.tab==='finder'){$('finder-scroll').scrollLeft=view.x;$('finder-top-scroll').scrollLeft=view.x;}
