@@ -10,9 +10,10 @@ const source = fs.readFileSync(path.join(root, 'web/app.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'web/index.html'), 'utf8');
 const response = payload => ({ok: true, json: async () => payload});
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function browser(fetch) {
+function browser(fetch, setup = () => {}) {
   const dom = new JSDOM(html, {url: 'https://nba.invalid', runScripts: 'outside-only', pretendToBeVisual: true});
   dom.window.fetch = fetch;
+  setup(dom.window);
   dom.window.eval(source + '\nwindow.__audit = {getData: () => data, getPlayerInit: () => playerStatsInitialized, setPlayerInit: value => {playerStatsInitialized = value;}, setPlayerGames: value => {playerGames = value;}, enableSession: () => {sessionPicksEnabled=true;}, refreshSession: refreshSessionPicks};');
   return dom;
 }
@@ -207,7 +208,7 @@ test('status polling only reads saved endpoints and refreshes a newly completed 
     assert.equal(dom.window.document.getElementById('scan-status'),null);
     assert.equal(dom.window.__audit.getData().state,'done');
     assert.ok(calls.filter(c=>c.url.startsWith('/api/saved/latest')).length>=2);
-    assert.ok(calls.every(c=>c.method==='GET'&&c.url.startsWith('/api/saved/')));
+    assert.ok(calls.every(c=>c.method==='GET'&&(c.url.startsWith('/api/saved/')||c.url==='/api/picks/session?compact=true')));
   }finally{dom.window.close();}
 });
 
@@ -242,7 +243,7 @@ test('a completed saved job retries a failed snapshot read without waiting for a
   await timers[0]();await tick();
   assert.equal(reads,2);
   assert.equal(dom.window.__audit.getData().job_id,'saved');
-  assert.ok(calls.every(c=>c.method==='GET'&&c.url.startsWith('/api/saved/')));
+  assert.ok(calls.every(c=>c.method==='GET'&&(c.url.startsWith('/api/saved/')||c.url==='/api/picks/session?compact=true')));
  }finally{dom.window.close();}
 });
 
@@ -262,7 +263,7 @@ test('an open page rechecks started games even when the saved job never changes'
   await timers[0]();await tick();
   assert.equal(reads,2);
   assert.equal(dom.window.__audit.getData().fixture_count,1);
-  assert.ok(calls.every(c=>c.method==='GET'&&c.url.startsWith('/api/saved/')));
+  assert.ok(calls.every(c=>c.method==='GET'&&(c.url.startsWith('/api/saved/')||c.url==='/api/picks/session?compact=true')));
  }finally{dom.window.close();}
 });
 
@@ -898,20 +899,42 @@ test('concurrent session refreshes share a request and failures can retry',async
 });
 
 test('a stalled shared session request is aborted and releases the next refresh',async()=>{
- let requests=0;
+ let requests=0,expire;
  const dom=browser((url,options={})=>{
   if(url==='/api/saved/dates')return Promise.resolve(response({dates:[]}));
   if(url==='/api/picks/session?compact=true'){
    requests++;return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true}));
   }
   return Promise.resolve(response({}));
- });
- try{
-  await tick();const w=dom.window,audit=w.__audit;let expire;
+ },w=>{
   const timeout=w.setTimeout.bind(w);
   w.setTimeout=(callback,ms,...args)=>{if(ms===20000)expire=callback;return timeout(callback,ms,...args);};
+ });
+ try{
+  await tick();const w=dom.window,audit=w.__audit;
   audit.enableSession();const first=audit.refreshSession();assert.equal(requests,1);
   assert.equal(typeof expire,'function');expire();await first;
   const second=audit.refreshSession();assert.equal(requests,2);expire();await second;
+ }finally{dom.window.close();}
+});
+
+test('homepage single renders before calendar dates and quote archive resolve',async()=>{
+ const pending=new Map(),calls=[];
+ const dom=browser(url=>{calls.push(url);return new Promise(resolve=>pending.set(url,resolve));});
+ try{
+  const w=dom.window,d=w.document;
+  w.eval(fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8'));
+  assert.ok(pending.has('/api/picks/session?compact=true'));
+  assert.ok(pending.has('/api/saved/dates'));
+  const single={Giocatore:'Fast Player','ESPN ID':'123',Squadra:'BOS',Partita:'Boston Celtics - Miami Heat',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75};
+  pending.get('/api/picks/session?compact=true')(response({date:'2099-01-01',publication_date:'2099-01-01',recommendations:{policy:'fixed-1800-v1',lines:[]},official_top5_pending:false,official_single:single}));
+  await tick();await tick();
+  assert.equal(w.__audit.getData(),null);
+  assert.match(d.getElementById('hub-single-content').textContent,/Fast Player/i);
+  pending.get('/api/saved/dates')(response({dates:[{date:'2099-01-01'}],session_picks_enabled:true}));
+  await tick();
+  assert.equal(calls.filter(url=>url==='/api/picks/session?compact=true').length,1);
+  assert.ok(pending.has('/api/saved/latest?date=2099-01-01&compact=true'));
+  assert.match(d.getElementById('hub-single-content').textContent,/Fast Player/i);
  }finally{dom.window.close();}
 });

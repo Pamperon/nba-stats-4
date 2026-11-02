@@ -140,11 +140,11 @@ function setDateLoading(loading,clearSnapshot=true){
  if(loading&&clearSnapshot){
   // Clear the previous day's snapshot immediately; never show stale counts or picks.
   data=null;
-  ++pickProfileRequest;
+  if(!sessionPicksData)++pickProfileRequest;
   $('quote-summary').hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
   renderDateMetrics(null);
   $('quote-updated').textContent='';
-  $('picks').replaceChildren();
+  if(!sessionPicksData)$('picks').replaceChildren();
   $('rows').replaceChildren();
   $('finder-cards').replaceChildren();$('finder-count').textContent='';syncFinderFixtures();
  }
@@ -374,12 +374,12 @@ function render(){
   $('quote-updated').textContent=valid?((data.results||[]).length?'Ultimo aggiornamento ':'Ultimo controllo: ')+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
  }
 
- if(!data){
+ if(!data&&!sessionPicksData){
   $('quote-updated').textContent='Dati non disponibili';
   $('picks').innerHTML='<div class="panel"><h2>Pronostici</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p></div>';
   $('rows').innerHTML='';$('finder-cards').innerHTML='';$('finder-count').textContent='';return;
  }
- const rows=data.results||[];
+ const rows=data?.results||[];
 
  const pickSource=sessionPicksData||data;
  const pending=[];
@@ -1015,9 +1015,10 @@ async function initializeArchive(){
  try {
   const response=await api('/api/saved/dates');
   const payload=await response.json();
-  sessionPicksEnabled=payload.session_picks_enabled===true;
+  sessionPicksEnabled=payload.session_picks_enabled!==false;
   document.body.classList.toggle('session-picks-enabled',sessionPicksEnabled);
-  if(sessionPicksEnabled)refreshSessionPicks();
+  if(sessionPicksEnabled&&!sessionPicksData)refreshSessionPicks();
+  if(!sessionPicksEnabled){++sessionPicksRequest;sessionPicksData=null;render();}
   const dates=(payload.dates||[]).map(item=>item.date);
   $('date').innerHTML=dates.map(date=>'<option value="'+esc(date)+'">'+new Date(date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})+'</option>').join('');
   if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();setArchiveStatus('Nessuna analisi archiviata','notice');return;}
@@ -1028,7 +1029,7 @@ async function initializeArchive(){
  }catch(error){setArchiveStatus('Archivio temporaneamente non disponibile · riprova più tardi','error');}
 }
 let sessionPicksRequest=0;
-let sessionPicksEnabled=false;
+let sessionPicksEnabled=true;
 let sessionPicksInFlight=null;
 async function refreshSessionPicks(){
  if(!sessionPicksEnabled)return;
@@ -1044,7 +1045,7 @@ async function refreshSessionPicks(){
   if(request!==sessionPicksRequest)return;
   if(!payload||!Array.isArray(payload.recommendations?.lines)||!payload.publication_date)throw new Error('Invalid session payload');
   sessionPicksData=payload;
-  if(data)render();
+  render();
  }catch(error){
   // Preserve the legacy calendar-date view if the new session service fails.
   if(request===sessionPicksRequest){sessionPicksData=null;if(data)render();}
@@ -1054,6 +1055,8 @@ async function refreshSessionPicks(){
  try{return await pending;}finally{clearTimeout(timeout);if(sessionPicksInFlight===pending)sessionPicksInFlight=null;}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSessionPicks()});
+// The homepage pick must not wait for calendar discovery or the quote archive.
+refreshSessionPicks();
 initializeArchive();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
 
