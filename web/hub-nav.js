@@ -58,8 +58,9 @@ function featuredPicks(){
  list.replaceChildren();
  for(const source of visibleSources){
   const card=document.createElement('div');card.className='hub-featured-card hub-datalab-card';
+  const rank=document.createElement('span');rank.className='hub-datalab-rank';rank.textContent=String(list.children.length+1);card.append(rank);
   const content=document.createElement('div');content.className='hub-featured-summary';
-  const name=document.createElement('strong');name.textContent=source.querySelector('.pick-player-link')?.textContent||'Analisi NBA';
+  const name=document.createElement('strong');name.textContent=(source.querySelector('.pick-player-link')?.textContent||'Analisi NBA').replace(/^([^,]+),\s*(.+)$/,'$2 $1');
   const market=document.createElement('p');market.textContent=source.querySelector('.pick-market')?.textContent||'';
   const values=document.createElement('div');values.className='hub-featured-values';
   const blocks=[...source.querySelectorAll('.pick-values > div')];
@@ -69,7 +70,7 @@ function featuredPicks(){
   content.append(name,market,values);card.append(content);
   const action=document.createElement('button');action.type='button';action.textContent='Statistiche giocatore →';
   action.addEventListener('click',()=>{go.picks();select('picks');source.querySelector('.pick-stats-button')?.click()});
-  card.append(action);list.append(card);
+  card.append(action);card.setAttribute('role','button');card.tabIndex=0;card.addEventListener('click',event=>{if(!event.target.closest('button'))action.click()});card.addEventListener('keydown',event=>{if(event.key==='Enter')action.click()});list.append(card);
  }
  if(!visibleSources.length)list.textContent='Nessuna selezione disponibile per la giornata.';
 }
