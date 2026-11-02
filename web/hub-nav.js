@@ -57,7 +57,7 @@ function featuredPicks(){
  const visibleSources=sources.length?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
  list.replaceChildren();
  for(const source of visibleSources){
-  const card=document.createElement('div');card.className='hub-featured-card';
+  const card=document.createElement('div');card.className='hub-featured-card hub-datalab-card';
   const content=document.createElement('div');content.className='hub-featured-summary';
   const name=document.createElement('strong');name.textContent=source.querySelector('.pick-player-link')?.textContent||'Analisi NBA';
   const market=document.createElement('p');market.textContent=source.querySelector('.pick-market')?.textContent||'';
