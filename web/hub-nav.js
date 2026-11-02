@@ -368,7 +368,7 @@ function renderCalendar(){
  if(!dates||!games)return;
  const source=$('#date-strip'),nativeDate=$('#date'),fixture=$('#finder-fixture');
  const dayButtons=[...(source?.querySelectorAll('button')||[])];
- const selectedValue=calendarSelectedDate||nativeDate?.value||'';
+ const selectedValue=calendarSelectedDate||nativeDate?.value||italyDay(new Date());
  const options=[...(nativeDate?.options||[])].filter(o=>o.value);
  let index=options.findIndex(o=>o.value===selectedValue);
  if(index<0||index>=dayButtons.length){
@@ -376,7 +376,7 @@ function renderCalendar(){
  }
  if(index<0)index=0;
  const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
- const requestedDate=options[index]?.value||selectedValue;
+ const requestedDate=calendarSelectedDate||options[index]?.value||selectedValue;
  if(requestedDate)calendarSelectedDate=requestedDate;
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
@@ -420,6 +420,27 @@ function renderCalendar(){
   }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
  }
 
+ const monthGrid=$('#hub-calendar-month-grid'),monthLabel=$('#hub-calendar-month-label');
+ if(monthGrid&&/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDate)){
+  const [year,month]=requestedDate.split('-').map(Number);
+  const first=new Date(Date.UTC(year,month-1,1));
+  const monthName=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric',timeZone:'UTC'}).format(first);
+  if(monthLabel)monthLabel.textContent=monthName.charAt(0).toUpperCase()+monthName.slice(1);
+  monthGrid.replaceChildren();
+  for(const label of ['L','M','M','G','V','S','D']){const head=document.createElement('span');head.className='hub-month-weekday';head.textContent=label;monthGrid.append(head)}
+  const offset=(first.getUTCDay()+6)%7;
+  const daysInMonth=new Date(Date.UTC(year,month,0)).getUTCDate();
+  for(let blank=0;blank<offset;blank++){const space=document.createElement('span');space.className='hub-month-empty';monthGrid.append(space)}
+  const today=italyDay(new Date());
+  for(let day=1;day<=daysInMonth;day++){
+   const iso=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+   const button=document.createElement('button');button.type='button';button.textContent=String(day);button.className='hub-month-day'+(iso===requestedDate?' active':'')+(iso===today?' today':'');
+   button.setAttribute('aria-label',new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')));
+   button.setAttribute('aria-pressed',String(iso===requestedDate));
+   button.addEventListener('click',()=>{calendarSelectedDate=iso;renderCalendar()});
+   monthGrid.append(button);
+  }
+ }
  dates.replaceChildren();games.replaceChildren();
  dayButtons.forEach((day,i)=>{
   const button=document.createElement('button');button.type='button';
@@ -445,7 +466,7 @@ function renderCalendar(){
  const active=dates.children[index];if(active&&active.getBoundingClientRect().width)active.scrollIntoView({block:'nearest',inline:'nearest'});
  const loading=$('#date-loading')?.hidden===false||fixture?.disabled;
  if(summary){
-  const label=options[index]?.textContent.trim()||dayButtons[index]?.textContent.trim()||'Giornata selezionata';
+  const label=/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)?new Intl.DateTimeFormat('it-IT',{timeZone:'UTC',day:'numeric',month:'long',year:'numeric'}).format(new Date(requestedDate+'T12:00:00Z')):(options[index]?.textContent.trim()||'Giornata selezionata');
   summary.replaceChildren();
   const title=document.createElement('strong');title.textContent=label;
   const count=document.createElement('span');count.textContent=isEspnCalendar?'Caricamento calendario NBA…':loading?'Caricamento…':matches.length+' '+(matches.length===1?'partita':'partite');
@@ -481,6 +502,24 @@ const fixtureObserverTarget=$('#finder-fixture');
 if(fixtureObserverTarget)new MutationObserver(scheduleCalendarRefresh).observe(fixtureObserverTarget,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','value','selected']});
 const dayStripTarget=$('#date-strip');
 if(dayStripTarget)new MutationObserver(scheduleCalendarRefresh).observe(dayStripTarget,{childList:true,subtree:true,attributes:true,attributeFilter:['class','aria-selected','aria-pressed']});
+function shiftCalendarMonth(delta){
+ const selected=calendarSelectedDate||$('#date')?.value||italyDay(new Date());
+ if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(selected))return;
+ const [year,month]=selected.split('-').map(Number);
+ const target=new Date(Date.UTC(year,month-1+delta,1));
+ const day=Math.min(Number(selected.slice(8)),new Date(Date.UTC(target.getUTCFullYear(),target.getUTCMonth()+1,0)).getUTCDate());
+ calendarSelectedDate=target.getUTCFullYear()+'-'+String(target.getUTCMonth()+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+ renderCalendar();
+}
+$('#hub-calendar-month-prev')?.addEventListener('click',()=>shiftCalendarMonth(-1));
+$('#hub-calendar-month-next')?.addEventListener('click',()=>shiftCalendarMonth(1));
+for(const [id,offset] of [['hub-calendar-yesterday',-1],['hub-calendar-today',0],['hub-calendar-tomorrow',1]]){
+ $('#'+id)?.addEventListener('click',()=>{
+  const today=italyDay(new Date());
+  const date=new Date(today+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+offset);
+  calendarSelectedDate=date.toISOString().slice(0,10);renderCalendar();
+ });
+}
 $('#hub-calendar-prev')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:-220,behavior:'smooth'}));
 $('#hub-calendar-next')?.addEventListener('click',()=>$('#hub-calendar-dates')?.scrollBy({left:220,behavior:'smooth'}));
 let homeFixturesRequest=0;
