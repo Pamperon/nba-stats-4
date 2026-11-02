@@ -46,6 +46,21 @@ function refresh(){
  if(count)count.textContent=cards?String(cards):'0';
  if(last){const raw=(updated?.textContent||'').trim();const stamp=raw.match(/(?:\d{1,2}:\d{2})(?::\d{2})?/);last.textContent=stamp?stamp[0]:'—';last.title=raw;}
 }
+async function loadModelPerformance(){
+ const body=performance?.querySelector('.hub-performance-body');
+ if(!body)return;
+ try{
+  const response=await fetch('/api/history/performance',{headers:{Accept:'application/json'}});
+  if(!response.ok)throw new Error('Performance unavailable');
+  const stats=await response.json();
+  if(!stats.published){body.innerHTML='<div><strong>In attesa dei primi risultati ufficiali</strong><p>Le statistiche compariranno quando saranno disponibili selezioni Top 5 pubblicate.</p></div>';return}
+  const pct=stats.success_pct==null?'—':stats.success_pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';
+  body.innerHTML='<div class="bl-perf-grid">'+[
+   ['Pubblicate',stats.published],['Verificate',stats.verified],['Centrate',stats.won],['Non centrate',stats.lost],['Da verificare',stats.pending],['Successo',pct]
+  ].map(([label,value])=>'<div class="bl-perf-item"><strong>'+value+'</strong><span>'+label+'</span></div>').join('')+'</div>';
+ }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
+}
+loadModelPerformance();
 if(metricTarget){new MutationObserver(refresh).observe(metricTarget,{childList:true,subtree:true,characterData:true})}
 if(updated){new MutationObserver(refresh).observe(updated,{childList:true,subtree:true,characterData:true})}
 if($('#picks'))new MutationObserver(refresh).observe($('#picks'),{childList:true,subtree:true});
