@@ -1259,3 +1259,15 @@ body.hub-boxscore-open .hub-calendar-boxscore{padding-top:0}
 .hub-calendar-view .hub-calendar-quick-days button{min-height:39px;background:#14283f;border:1px solid #34506c;border-radius:10px;font-size:13px}
 body.hub-boxscore-open .hub-calendar-nav{display:none!important}
 @media(max-width:380px){.hub-calendar-view .hub-calendar-nav>button{flex-basis:24px}.hub-calendar-view .hub-calendar-dates{gap:3px}.hub-calendar-view .hub-calendar-dates .hub-calendar-date{min-height:59px}.hub-calendar-view .hub-calendar-dates .hub-calendar-date strong{font-size:14px}}
+
+/* Homepage single: cloned prediction cards live outside #picks, so preserve logo sizing. */
+.hub-single-content .pick-fixture{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.hub-single-content .fixture-team{display:flex;align-items:center;gap:5px;min-width:0}
+.hub-single-content .team-logo{width:32px;height:32px;min-width:32px;flex:0 0 32px;display:grid;place-items:center;position:relative;border-radius:50%;background:#203957;overflow:hidden;font-size:9px}
+.hub-single-content .team-logo img{display:block;position:absolute;inset:1px;width:30px!important;height:30px!important;max-width:30px!important;max-height:30px!important;object-fit:contain}
+.hub-single-content .team-logo span{font-size:9px}
+.hub-single-content .fixture-team-name{min-width:0;font-size:12px}
+@media(max-width:760px){
+ .hub-single-content .team-logo{width:26px;height:26px;min-width:26px;flex-basis:26px}
+ .hub-single-content .team-logo img{width:24px!important;height:24px!important;max-width:24px!important;max-height:24px!important}
+}
