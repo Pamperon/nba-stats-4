@@ -522,6 +522,9 @@ function renderCalendar(){
     games.append(row)
    }
    if(remaining>4){
+    const note=document.createElement('p');note.className='hub-games-more-note';
+    note.textContent='Stai visualizzando le prime 4 di '+remaining+' partite in programma';
+    games.append(note);
     const more=document.createElement('button');more.type='button';more.className='hub-games-more';
     more.textContent='Vedi altre '+(remaining-4)+' partite ›';
     more.addEventListener('click',()=>{go.calendar();select('calendar')});
