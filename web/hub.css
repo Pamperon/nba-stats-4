@@ -1241,3 +1241,21 @@ body.hub-boxscore-open .hub-calendar-boxscore{padding-top:0}
 .hub-boxscore-period-table th:first-child,.hub-boxscore-period-table td:first-child{text-align:left;padding-left:12px;font-weight:700;min-width:115px;max-width:155px;white-space:normal}
 .hub-boxscore-period-table th:last-child,.hub-boxscore-period-table td:last-child{font-weight:850;color:#fff}
 .hub-boxscore-period-table tbody tr:last-child td{border-bottom:0}
+
+
+/* Basket Lab: fixed seven-day NBA week, swipe navigation and compact month accordion. */
+.hub-calendar-view .hub-calendar-nav{display:flex!important;align-items:center;gap:6px;margin:4px 0 12px}
+.hub-calendar-view .hub-calendar-nav>button{display:flex;align-items:center;justify-content:center;flex:0 0 30px;min-height:49px;border-radius:12px;background:#172b43;border:1px solid #35516f;color:#f59e0b;font-size:24px}
+.hub-calendar-view .hub-calendar-dates{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;flex:1;min-width:0;overflow:hidden;padding:0;touch-action:pan-y}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date{min-width:0;width:100%;min-height:66px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 0;border:1px solid #304760;border-radius:11px;background:#192d45;color:#fff}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date small{font-size:10px;color:#aabed4;font-weight:650}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date strong{font-size:16px;line-height:1.1}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date.active{background:#f59e0b;border-color:#f59e0b;color:#142033}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date.active small{color:#142033}
+.hub-calendar-date-dot{width:4px;height:4px;border-radius:50%;background:#f59e0b}
+.hub-calendar-date.active .hub-calendar-date-dot{background:#142033}
+.hub-calendar-view .hub-calendar-collapse-toggle{background:#0f2036;border:1px solid #314c68;border-radius:13px;padding:13px 15px}
+.hub-calendar-view .hub-calendar-quick-days{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}
+.hub-calendar-view .hub-calendar-quick-days button{min-height:39px;background:#14283f;border:1px solid #34506c;border-radius:10px;font-size:13px}
+body.hub-boxscore-open .hub-calendar-nav{display:none!important}
+@media(max-width:380px){.hub-calendar-view .hub-calendar-nav>button{flex-basis:24px}.hub-calendar-view .hub-calendar-dates{gap:3px}.hub-calendar-view .hub-calendar-dates .hub-calendar-date{min-height:59px}.hub-calendar-view .hub-calendar-dates .hub-calendar-date strong{font-size:14px}}
