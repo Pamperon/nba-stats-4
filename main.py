@@ -1118,6 +1118,18 @@ def calibration_settle():
             "SELECT scan_date FROM nba_calibration_settled").fetchall()}
     candidates = [x['date'] for x in reversed(storage.available_dates())
                   if x['date'] <= today and x['date'] not in settled]
+    # Archive verification is independent from calibration and must also run
+    # for dates already calibrated, including the official Top 5 and single.
+    import recommendations
+    archive_updates = []
+    for archive_day in [item['date'] for item in reversed(storage.available_dates())][:14]:
+        if archive_day > today:
+            continue
+        try:
+            updated = recommendations.settle_snapshots(archive_day)
+            archive_updates.append({'date': archive_day, 'snapshots': updated})
+        except Exception:
+            logger.exception('Incremental archive verification failed for %s', archive_day)
     processed = []
     # Rotate through the backlog: two permanently unverifiable days must not
     # starve every other historical date on each scheduled run.
@@ -1138,7 +1150,7 @@ def calibration_settle():
         except Exception as exc:
             logger.exception('NBA calibration settlement failed for %s', day)
             processed.append({'date':day,'status':'skipped','reason':str(exc)[:160]})
-    return {'processed':processed,'pending':max(0,len(candidates)-14),'odds_api_calls':0}
+    return {'processed':processed,'archive_updates':archive_updates,'pending':max(0,len(candidates)-14),'odds_api_calls':0}
 
 @app.get('/api/calibration/settlement-status', dependencies=[Depends(auth)])
 def calibration_settlement_status():
