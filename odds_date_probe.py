@@ -81,7 +81,7 @@ def run_once(api_key):
     return report
 
 
-UNFILTERED_ID = 'nba-unfiltered-feed-20261105-v1'
+UNFILTERED_ID = 'nba-unfiltered-feed-20261105-v2'
 
 
 def bet365_sources(fixture, fid, catalog):
