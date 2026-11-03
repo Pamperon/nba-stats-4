@@ -222,6 +222,19 @@ function renderMatchH2H(teams,games){
  wins.forEach((count,i)=>{const segment=document.createElement('span');segment.style.width=(100*count/games.length)+'%';segment.style.background=colors[i];bar.append(segment)});widget.append(bar);
  const note=document.createElement('small');note.textContent=games.length+' '+(games.length===1?'partita':'partite')+' negli ultimi 21 giorni';widget.append(note);
 }
+const matchFormCache=new Map();
+const MATCH_FORM_TTL=5*60*1000;
+function getMatchFormData(date,teams){
+ const key=JSON.stringify([date,...teams]);
+ const cached=matchFormCache.get(key);
+ if(cached&&cached.expires>Date.now())return cached.promise;
+ const url='/api/match/form?date='+encodeURIComponent(date)+'&team_a='+encodeURIComponent(teams[0])+'&team_b='+encodeURIComponent(teams[1]);
+ const entry={expires:Date.now()+MATCH_FORM_TTL,promise:null};
+ entry.promise=fetch(url).then(r=>{if(!r.ok)throw new Error('ESPN temporaneamente non disponibile');return r.json()}).catch(error=>{if(matchFormCache.get(key)===entry)matchFormCache.delete(key);throw error});
+ matchFormCache.set(key,entry);
+ if(matchFormCache.size>40)matchFormCache.delete(matchFormCache.keys().next().value);
+ return entry.promise;
+}
 async function loadMatchForm(match){
  const request=++matchFormRequest;
  const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
@@ -234,10 +247,7 @@ async function loadMatchForm(match){
  try{
   const date=$('#date')?.value;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))throw new Error('Data non disponibile');
-  const url='/api/match/form?date='+encodeURIComponent(date)+'&team_a='+encodeURIComponent(teams[0])+'&team_b='+encodeURIComponent(teams[1]);
-  const response=await fetch(url);
-  if(!response.ok)throw new Error('ESPN temporaneamente non disponibile');
-  const data=await response.json();
+  const data=await getMatchFormData(date,teams);
   if(request!==matchFormRequest||activeMatch!==match)return;
   const fixtureMeta=$('#hub-match-fixture-meta');
   if(fixtureMeta){
@@ -572,11 +582,22 @@ function renderCalendar(){
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
  if(isEspnCalendar){
-  Promise.all([
-   fetchNbaFixtures(requestedDate),
-   fetch('/api/nba/quote-coverage?date='+encodeURIComponent(requestedDate))
-    .then(r=>r.ok?r.json():{fixtures:[]}).catch(()=>({fixtures:[]}))
-  ]).then(([fixtures,coverage])=>{
+  // Paint the fixture list as soon as ESPN responds; quote coverage is an independent enhancement.
+  const coveragePromise=fetch('/api/nba/quote-coverage?date='+encodeURIComponent(requestedDate))
+   .then(r=>r.ok?r.json():{fixtures:[]}).catch(()=>({fixtures:[]}));
+  fetchNbaFixtures(requestedDate).then(fixtures=>{
+   const coverage={fixtures:[]};
+   coveragePromise.then(latest=>{
+    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
+    const quoted=new Set((latest.fixtures||[]).map(fixtureKey));
+    games.querySelectorAll('.hub-calendar-match[data-fixture-key]').forEach(row=>{
+     const hasOdds=quoted.has(row.dataset.fixtureKey);
+     let badge=row.querySelector('.hub-calendar-odds');
+     if(hasOdds&&!badge){badge=document.createElement('span');badge.className='hub-calendar-odds';badge.textContent='Quote disponibili';row.append(badge)}
+     else if(!hasOdds&&badge)badge.remove();
+    });
+   });
+
    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
    const quoted=new Set((coverage.fixtures||[]).map(fixtureKey));
    games.replaceChildren();
@@ -584,7 +605,7 @@ function renderCalendar(){
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
    for(const [gameIndex,game] of fixtures.entries()){
     const match=fixtureName(game),hasOdds=quoted.has(fixtureKey(match));
-    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.theme=String(gameIndex%4);fixtureTeamGradient(row,game.away,game.home);
+    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.fixtureKey=fixtureKey(match);row.dataset.theme=String(gameIndex%4);fixtureTeamGradient(row,game.away,game.home);
     const names=[game.away,game.home];
     names.forEach((team,i)=>{
      if(i){const vs=document.createElement('span');vs.className='hub-calendar-versus';vs.textContent='VS';row.append(vs)}
