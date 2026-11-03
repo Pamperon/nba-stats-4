@@ -40,12 +40,13 @@ for(let sample=0;sample<3;sample++)test('measure mobile/desktop loading and API 
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:150,downloadThroughput:200000,uploadThroughput:100000});
  }
- await page.addInitScript(()=>{window.__perf={lcp:0,cls:0};new PerformanceObserver(list=>{for(const entry of list.getEntries())window.__perf.lcp=entry.startTime;}).observe({type:'largest-contentful-paint',buffered:true});new PerformanceObserver(list=>{for(const entry of list.getEntries())if(!entry.hadRecentInput)window.__perf.cls+=entry.value;}).observe({type:'layout-shift',buffered:true});});
+ await page.addInitScript(()=>{window.__perf={lcp:0,cls:0};new PerformanceObserver(list=>{for(const entry of list.getEntries())window.__perf.lcp=entry.startTime;}).observe({type:'largest-contentful-paint',buffered:true});new PerformanceObserver(list=>{for(const entry of list.getEntries())if(!entry.hadRecentInput){window.__perf.cls+=entry.value;(window.__shifts||(window.__shifts=[])).push({value:entry.value,sources:entry.sources.map(s=>({node:s.node?.id||s.node?.className,from:s.previousRect.y,to:s.currentRect.y}))});}}).observe({type:'layout-shift',buffered:true});});
  const started=Date.now();await page.goto('/');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');const picksReady=Date.now()-started;
  await page.waitForTimeout(1600);
  const metrics=await page.evaluate(()=>({...window.__perf,domReady:performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd}));
  const record={project:testInfo.project.name,sample,phase:process.env.BASKETLAB_BASELINE?'baseline':'optimized',picksReadyMs:picksReady,...metrics,apiRequests:api.slice()};
  console.log('BASKETLAB_METRIC '+JSON.stringify(record));
+ if(!process.env.BASKETLAB_BASELINE&&metrics.cls>0.1)console.log('BASKETLAB_LAYOUT_SHIFTS '+JSON.stringify(await page.evaluate(()=>window.__shifts)));
  await testInfo.attach('performance',{body:JSON.stringify(record,null,2),contentType:'application/json'});
  expect(picksReady).toBeLessThan(10000);expect(metrics.cls).toBeLessThan(0.3);
  if(!process.env.BASKETLAB_BASELINE){expect(api).not.toContain('/api/saved/latest');expect(api).not.toContain('/api/saved/dates');expect(api).not.toContain('/api/players/teams');}
