@@ -1382,42 +1382,119 @@ def saved_status(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         raise HTTPException(503, 'Stato aggiornamento temporaneamente non disponibile')
 
 
+def _published_history(date, result):
+    import public_views
+    day = datetime.strptime(date, '%Y-%m-%d').date()
+    import official_top5
+    if official_top5.eligible_day(date):
+        official = official_top5.get(date)
+        if official:
+            result['official_lines'] = []
+            identities = {public_views.leg_identity(row) for row in official['lines']}
+            by_identity = {public_views.leg_identity(row): row for row in result['lines']}
+            for row in official['lines']:
+                result['official_lines'].append(by_identity.get(public_views.leg_identity(row), row))
+            result['other_lines'] = [row for row in result['lines'] if public_views.leg_identity(row) not in identities]
+            result['official_saved_at'] = official['published_at']
+            result['has_daily_model'] = True
+            result['official_summary'] = {status: sum(row.get('status') == status for row in result['official_lines'])
+                                          for status in ('won','lost','unresolved')}
+            result['official_policy'] = official['policy']
+        else:
+            result['official_lines'] = []
+            result['official_summary'] = {status: 0 for status in ('won','lost','unresolved')}
+            result['has_daily_model'] = False
+    # Session-era archive: official picks belong to their publication day,
+    # even if the NBA game starts after midnight on the next calendar date.
+    import nba_session_picks
+    if nba_session_picks.eligible(date):
+        session_official = nba_session_picks.read(date)
+        if session_official:
+            tomorrow = (day + timedelta(days=1)).isoformat()
+            next_history = public_views.history(tomorrow)
+            all_scored = list(result.get('lines', [])) + list(next_history.get('lines', []))
+            by_identity = {public_views.leg_identity(row): row for row in all_scored}
+            result['official_lines'] = [
+                by_identity.get(public_views.leg_identity(row), row)
+                for row in session_official['lines']
+            ]
+            result['official_saved_at'] = session_official['published_at']
+            result['has_daily_model'] = True
+            result['official_policy'] = session_official['policy']
+            result['official_summary'] = {
+                status: sum(row.get('status') == status for row in result['official_lines'])
+                for status in ('won', 'lost', 'unresolved')
+            }
+            single = session_official.get('single')
+            scored_single = (by_identity.get(public_views.leg_identity(single), single)
+                             if single else None)
+            result['session_single_archive'] = {
+                'published': bool(single), 'selection': scored_single,
+                'outcome': {'status': scored_single.get('status', 'unresolved'),
+                            'actual': scored_single.get('actual')} if scored_single else None,
+                'status': scored_single.get('status', 'unresolved') if scored_single else 'not_published',
+                'published_at': session_official['published_at']
+            }
+    # New category remains separate from existing historical Top 5.
+    # No backfilling: only explicitly published singles count.
+    import daily_single_archive
+    result['single_archive'] = (daily_single_archive.read(date) if official_top5.eligible_day(date)
+                                else {'published': False, 'selection': None, 'outcome': None})
+    single_record = result['single_archive']
+    if (single_record.get('published') and single_record.get('selection')
+            and not single_record.get('outcome')):
+        saved_single = single_record['selection']
+        identity = public_views.leg_identity(saved_single)
+        matched = next((row for row in result.get('lines', [])
+                        if public_views.leg_identity(row) == identity), None)
+        if matched:
+            single_record['outcome'] = {'status': matched.get('status', 'unresolved'),
+                                        'actual': matched.get('actual')}
+            single_record['status'] = matched.get('status', 'unresolved')
+        else:
+            single_record['outcome'] = {'status': 'unresolved', 'actual': None}
+            single_record['status'] = 'unresolved'
+    if result.get('session_single_archive'):
+        result['single_archive'] = result['session_single_archive']
+    result['top5_archive'] = {
+        'lines': result.get('official_lines', []),
+        'summary': result.get('official_summary', {}),
+    }
+    return result
+
+
+def _performance_counts(states):
+    won = states.count('won')
+    lost = states.count('lost')
+    verified = won + lost
+    return {'published': len(states), 'verified': verified, 'won': won, 'lost': lost,
+            'pending': len(states) - verified,
+            'success_pct': round(won * 100 / verified, 1) if verified else None}
+
+
 @app.get('/api/history/performance')
 def public_history_performance():
-    """Read-only results of published daily Top 5, never all simulated lines."""
+    """Summarize published selections from the public archive."""
     import public_views
     import official_top5
     today = datetime.now(ZoneInfo('Europe/Rome')).date()
     dates = public_views.history_dates(today)['dates'][:30]
-    won = lost = pending = published = 0
+    top5_states = []
+    single_states = []
     days = 0
     for entry in dates:
-        day = entry['date']
-        if not official_top5.eligible_day(day):
+        date = entry['date']
+        if not official_top5.eligible_day(date):
             continue
-        official = official_top5.get(day)
-        if not official or not official.get('lines'):
-            continue
-        try:
-            archive = public_views.history(day)
-            matched = {public_views.leg_identity(row): row for row in archive['lines']}
-            days += 1
-            for selected in official['lines']:
-                published += 1
-                state = matched.get(public_views.leg_identity(selected), {}).get('status', 'unresolved')
-                if state == 'won':
-                    won += 1
-                elif state == 'lost':
-                    lost += 1
-                else:
-                    pending += 1
-        except Exception:
-            logger.exception('Performance read failed for %s', day)
-            continue
-    return {'published': published, 'verified': won + lost,
-            'won': won, 'lost': lost, 'pending': pending, 'days': days,
-            'success_pct': round(won * 100 / (won + lost), 1) if won + lost else None,
-            'odds_api_calls': 0}
+        archive = _published_history(date, public_views.history(date))
+        lines = archive['top5_archive']['lines']
+        top5_states.extend(line.get('status') for line in lines)
+        days += bool(lines)
+        single = archive['single_archive']
+        if single.get('published'):
+            single_states.append((single.get('outcome') or {}).get('status'))
+    return {**_performance_counts(top5_states), 'single': _performance_counts(single_states),
+            'days': days, 'odds_api_calls': 0}
 
 
 @app.get('/api/history/dates')
@@ -1447,82 +1524,7 @@ def public_history(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         except Exception:
             logger.warning('ESPN start times unavailable for progressive preview: %s', date)
         result = public_views.history(date, starts=starts)
-        import official_top5
-        if official_top5.eligible_day(date):
-            official = official_top5.get(date)
-            if official:
-                result['official_lines'] = []
-                identities = {public_views.leg_identity(row) for row in official['lines']}
-                by_identity = {public_views.leg_identity(row): row for row in result['lines']}
-                for row in official['lines']:
-                    result['official_lines'].append(by_identity.get(public_views.leg_identity(row), row))
-                result['other_lines'] = [row for row in result['lines'] if public_views.leg_identity(row) not in identities]
-                result['official_saved_at'] = official['published_at']
-                result['has_daily_model'] = True
-                result['official_summary'] = {status: sum(row.get('status') == status for row in result['official_lines'])
-                                              for status in ('won','lost','unresolved')}
-                result['official_policy'] = official['policy']
-            else:
-                result['official_lines'] = []
-                result['official_summary'] = {status: 0 for status in ('won','lost','unresolved')}
-                result['has_daily_model'] = False
-        # Session-era archive: official picks belong to their publication day,
-        # even if the NBA game starts after midnight on the next calendar date.
-        import nba_session_picks
-        if nba_session_picks.eligible(date):
-            session_official = nba_session_picks.read(date)
-            if session_official:
-                tomorrow = (day + timedelta(days=1)).isoformat()
-                next_history = public_views.history(tomorrow)
-                all_scored = list(result.get('lines', [])) + list(next_history.get('lines', []))
-                by_identity = {public_views.leg_identity(row): row for row in all_scored}
-                result['official_lines'] = [
-                    by_identity.get(public_views.leg_identity(row), row)
-                    for row in session_official['lines']
-                ]
-                result['official_saved_at'] = session_official['published_at']
-                result['has_daily_model'] = True
-                result['official_policy'] = session_official['policy']
-                result['official_summary'] = {
-                    status: sum(row.get('status') == status for row in result['official_lines'])
-                    for status in ('won', 'lost', 'unresolved')
-                }
-                single = session_official.get('single')
-                scored_single = (by_identity.get(public_views.leg_identity(single), single)
-                                 if single else None)
-                result['session_single_archive'] = {
-                    'published': bool(single), 'selection': scored_single,
-                    'outcome': {'status': scored_single.get('status', 'unresolved'),
-                                'actual': scored_single.get('actual')} if scored_single else None,
-                    'status': scored_single.get('status', 'unresolved') if scored_single else 'not_published',
-                    'published_at': session_official['published_at']
-                }
-        # New category remains separate from existing historical Top 5.
-        # No backfilling: only explicitly published singles count.
-        import daily_single_archive
-        result['single_archive'] = (daily_single_archive.read(date) if official_top5.eligible_day(date)
-                                    else {'published': False, 'selection': None, 'outcome': None})
-        single_record = result['single_archive']
-        if (single_record.get('published') and single_record.get('selection')
-                and not single_record.get('outcome')):
-            saved_single = single_record['selection']
-            identity = public_views.leg_identity(saved_single)
-            matched = next((row for row in result.get('lines', [])
-                            if public_views.leg_identity(row) == identity), None)
-            if matched:
-                single_record['outcome'] = {'status': matched.get('status', 'unresolved'),
-                                            'actual': matched.get('actual')}
-                single_record['status'] = matched.get('status', 'unresolved')
-            else:
-                single_record['outcome'] = {'status': 'unresolved', 'actual': None}
-                single_record['status'] = 'unresolved'
-        if result.get('session_single_archive'):
-            result['single_archive'] = result['session_single_archive']
-        result['top5_archive'] = {
-            'lines': result.get('official_lines', []),
-            'summary': result.get('official_summary', {}),
-        }
-        return result
+        return _published_history(date, result)
     except Exception:
         logger.exception('Cannot read public recommendation archive')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
