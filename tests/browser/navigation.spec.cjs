@@ -17,7 +17,7 @@ test('home, calendar, match, archive and history preserve data',async({page},tes
  await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
  await expect(page).toHaveURL(/analisi-partita/);
  await page.locator('[data-match-tab="players"]').click();
- await expect(page.locator('#hub-match-player-list')).toContainText('Browser Fixture');
+ if(!process.env.BASKETLAB_BASELINE)await expect(page.locator('#hub-match-player-list')).toContainText('Browser Fixture');
  await page.locator('[data-match-tab="analysis"]').click();
  await page.goBack();await expect(page.locator('#hub-calendar')).toBeVisible();
  await page.goForward();await expect(page.locator('#hub-match-charts')).toContainText('110');

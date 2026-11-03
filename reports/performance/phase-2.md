@@ -54,3 +54,9 @@ The release check now compares candidate medians with baseline medians on the sa
 `/api/health` exposes `history_warmup` state, completion timestamp and successfully warmed dates (no credentials or user data). This permits read-only production verification that the worker actually completed a cycle, without initiating scans or restarting the service.
 
 Final local verification: 102 JavaScript tests and 287 Python tests. Chromium desktop/mobile tests run on GitHub before merge. All model-related source files remain unchanged from b7e483f.
+
+## Live fixture-order correction
+
+Production verification found a stored `Detroit Pistons - Philadelphia 76ers` quote fixture displayed as `Philadelphia 76ers - Detroit Pistons` by the calendar. The prior exact-order comparison hid existing player quotes. Match-day lookup now compares the two normalized team identities without depending on order; it still reads only the currently selected date and returns original saved rows unchanged. It does not change prices, probabilities, line selection, model or fixture orientation in the UI. Diagnostics use the same identity. The browser fixture deliberately reverses provider order so the candidate must show player quotes; baseline player matching is a documented known failure. Local JavaScript tests: 103.
+
+`warmup-live.json` records the read-only health verification of the operational warmup on production, including the successfully prepared dates. This is distinct from synthetic browser measurements.

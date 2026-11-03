@@ -951,3 +951,17 @@ test('future session previews show the correct official publication day',async()
   assert.match(dom.window.document.querySelector('.hub-featured h2').textContent,/preliminari/);
  }finally{dom.window.close();}
 });
+
+test('saved match quotes retain exact values when providers reverse team order',async()=>{
+ const selected={Giocatore:'Original Player',Squadra:'Philadelphia 76ers',Partita:'Detroit Pistons - Philadelphia 76ers',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75};
+ const other={...selected,Giocatore:'Other Fixture',Partita:'Detroit Pistons - Boston Celtics'};
+ const dom=browser(async url=>response(url==='/api/saved/dates'?{dates:[{date:'2099-01-01'}]}:url.startsWith('/api/saved/latest')?{date:'2099-01-01',results:[selected,other]}:url.startsWith('/api/saved/status')?{state:'waiting'}:{}));
+ try{
+  await tick();await tick();
+  const rows=dom.window.BasketLabMatchRows('Philadelphia 76ers - Detroit Pistons');
+  assert.equal(rows.length,1);assert.equal(rows[0],selected);
+  assert.equal(dom.window.BasketLabMatchDiagnostics('Philadelphia 76ers - Detroit Pistons').matching,1);
+  assert.equal(dom.window.BasketLabMatchRows('Philadelphia 76ers - Boston Celtics').length,0);
+  assert.equal(dom.window.BasketLabMatchRows('invalid').length,0);
+ }finally{dom.window.close();}
+});
