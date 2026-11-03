@@ -17,7 +17,7 @@ function setup(hash=''){
  for(const b of doc.querySelectorAll('#quote-tabs [data-tab]'))b.addEventListener('click',()=>{for(const x of doc.querySelectorAll('#quote-tabs [data-tab]'))x.classList.toggle('active',x===b)});
  for(const b of doc.querySelectorAll('[data-extra]'))b.addEventListener('click',()=>{doc.querySelector('#app').hidden=true;doc.querySelector('#extra-history').hidden=b.dataset.extra!=='history';doc.querySelector('#extra-about').hidden=b.dataset.extra!=='about'});
  window.eval(fs.readFileSync(path.join(root,'web/modules/router.js'),'utf8'));
- for(const file of ['match-charts','match-data'])window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
+ for(const file of ['match-charts','match-data','calendar-data','boxscore-view','match-players'])window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
  window.eval(script);
  return {window,doc};
 }

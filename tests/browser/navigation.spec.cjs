@@ -16,6 +16,9 @@ test('home, calendar, match, archive and history preserve data',async({page},tes
  await expect(page.locator('#hub-match-title')).toContainText('Boston Celtics');
  await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
  await expect(page).toHaveURL(/analisi-partita/);
+ await page.locator('[data-match-tab="players"]').click();
+ await expect(page.locator('#hub-match-player-list')).toContainText('Browser Fixture');
+ await page.locator('[data-match-tab="analysis"]').click();
  await page.goBack();await expect(page.locator('#hub-calendar')).toBeVisible();
  await page.goForward();await expect(page.locator('#hub-match-charts')).toContainText('110');
  await page.goto('/archivio');await page.locator('[data-history-mode="top5"]').click();await expect(page.locator('#history-tickets')).toContainText('Browser Fixture');

@@ -27,3 +27,12 @@ test('an in-flight loader is shared and a failed loader can retry',async()=>{
   release(new Error('temporary'));await tick();
  }finally{dom.window.close();}
 });
+test('visible pages refresh expired data without polling hidden sections',async()=>{
+ const dom=new JSDOM('<body data-hub-view="home">',{url:'https://basketlab.it',runScripts:'outside-only',pretendToBeVisual:true});
+ try{
+  const w=dom.window;let timer,now=0,calls=0;w.setInterval=fn=>{timer=fn;};w.Date.now=()=>now;w.eval(source);
+  w.BasketLabSections.register('picks',async()=>calls++,1);await tick();assert.equal(calls,1);
+  now=2;timer();await tick();assert.equal(calls,2);
+  w.document.body.dataset.hubView='history';now=4;timer();await tick();assert.equal(calls,2);
+ }finally{dom.window.close();}
+});
