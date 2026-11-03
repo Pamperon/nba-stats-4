@@ -77,6 +77,9 @@ def init_storage():
     threading.Thread(target=_render_scheduler_loop, daemon=True, name='nba-render-scheduler').start()
     threading.Thread(target=_official_publication_loop, daemon=True, name='nba-official-publisher').start()
     threading.Thread(target=_archive_settlement_loop, daemon=True, name='nba-archive-verifier').start()
+    from match_prewarm import run as warm_match_history
+    threading.Thread(target=warm_match_history, args=(shutdown_event, schedule),
+                     daemon=True, name='nba-match-history-warmup').start()
 
 
 def _archive_settlement_loop():
