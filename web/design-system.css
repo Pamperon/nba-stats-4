@@ -337,3 +337,28 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
     grid-template-columns: 64px minmax(0, 1fr);
   }
 }
+
+#player .bl-player-controls {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid #294758;
+  border-radius: 12px;
+  background: #0d2031;
+}
+#player .bl-player-controls .filters,
+#player .bl-player-controls .bl-player-market,
+#player .bl-player-controls .bl-window-tabs,
+#player .bl-player-controls .bl-player-advanced {
+  margin: 0;
+}
+#player .bl-player-controls .filters {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
+}
+#player .bl-player-controls .bl-player-advanced > summary {
+  background: transparent;
+  border: 0;
+  padding: 6px 2px;
+}
