@@ -799,6 +799,7 @@ function preloadPlayerSeasons(team,id){
 
 const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
+ document.dispatchEvent(new CustomEvent('basketlab:player-open',{detail:{origin:returnOrigin}}));
  const navigation=++pickNavigationRequest;
  rememberQuotePosition(document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab);
  syncArea('player');
@@ -890,6 +891,7 @@ async function loadPlayerProfile(request,team,id){
  $('player-profile').hidden=false;
  $('player-display-name').textContent=name;
  $('player-meta').textContent=$('team').selectedOptions[0]?.textContent||'';
+ globalThis.BasketLabDesign?.playerTheme(teamAbbrev($('team').selectedOptions[0]?.textContent));
  $('player-initials').textContent=name.trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
  const avatar=$('player-photo').parentElement;
  const oldPhoto=$('player-photo');
@@ -917,6 +919,7 @@ async function changePlayer(selection=null,preserveLine=false){
  playerGames=[];
  $('player-summary').innerHTML='';$('player-trends').innerHTML='';
  $('chart').innerHTML='';
+ $('player-visual')?.replaceChildren();
  $('player-status').textContent='';
  if(!team||!id){$('player-profile').hidden=true;setPlayerLoading(false);return;}
  setPlayerLoading(true);
@@ -999,6 +1002,7 @@ function drawPlayer(){
  $('player-summary').innerHTML=[['Over '+line,hits+'/'+games.length],['Frequenza Over',games.length?(100*hits/games.length).toFixed(1)+'%':'—'],['Media '+stat,games.length?avg.toFixed(1):'—']].map(([a,b])=>'<div class="metric"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join('');
  $('player-trends').innerHTML='<div class="player-trends-title">Over sulla linea · partite disponibili</div><div class="player-trends-list">'+[5,10,20].map(n=>{const subset=dated.slice(0,n);const count=subset.filter(g=>Number(g[stat])>line).length;return '<div><small>Ultime '+n+'</small><strong>'+(subset.length?count+'/'+subset.length:'—')+'</strong></div>';}).join('')+'</div>'+(undated?'<p class="player-unknown">'+undated+(undated===1?' partita senza data esclusa':' partite senza data escluse')+' dalle statistiche recenti.</p>':'')+(venue!=='all'&&unknownVenue?'<p class="player-unknown">'+unknownVenue+(unknownVenue===1?' partita esclusa: campo non verificato.':' partite escluse: campo non verificato.')+'</p>':'');
  const max=Math.max(line+1,...games.map(g=>Number(g[stat])),1);
+ globalThis.BasketLabDesign?.playerChart(games,stat,line,max);
  $('chart').innerHTML=games.slice().reverse().map(g=>{
   const val=Number(g[stat]),date=String(g.GAME_DATE||'').slice(5,10).split('-').reverse().join('/');
   const matchup=String(g.MATCHUP||'').trim(),match=matchup.match(/^(@|vs|\?)\s+(.+)$/i);const opponent=match&&match[2]!=='?'?match[2]:'Avversario n.d.';

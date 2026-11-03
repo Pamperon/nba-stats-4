@@ -193,7 +193,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  assert.equal(doc.querySelector('#picks-showcase').hidden,false);
  assert.equal(doc.querySelector('#app').hidden,true);
  assert.equal(singlePanel.hidden,false);assert.equal(topPanel.hidden,false);
- assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/ANALISI COMPLETA/);
+ assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/Apri analisi/);
  singlePanel.querySelector('.bl-broadcast-action').click();
  topPanel.querySelector('.bl-datalab-card').click();
  assert.equal(singleClicks,1);assert.equal(topClicks,1);
@@ -207,7 +207,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  assert.equal(topPanel.parentElement,homeParent);
  assert.equal(doc.querySelector('#picks-showcase').hidden,true);
  assert.equal(doc.querySelectorAll('.hub-single-section').length,1);
- assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/VEDI NEI PRONOSTICI/);
+ assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/Apri analisi/);
  doc.querySelector('.hub-sidebar [data-hub="stats"]').click();
  assert.equal(singlePanel.hidden,true);assert.equal(topPanel.hidden,true);
 });

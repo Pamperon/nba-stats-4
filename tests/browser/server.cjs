@@ -14,11 +14,15 @@ const payload=url=>{
  if(url.pathname==='/api/history/dates')return {dates:[{date:'2026-11-03'}]};
  if(url.pathname==='/api/history/performance')return {published:0};
  if(url.pathname==='/api/history')return {official_lines:[{...row,status:'won',actual:22}],other_lines:[],single_archive:{published:false}};
- if(url.pathname==='/api/players/teams')return {teams:[]};
+ if(url.pathname==='/api/players/teams')return {teams:[{id:'2',name:'Boston Celtics'}]};
+ if(url.pathname==='/api/players/roster')return {players:[{id:'123',name:'Browser Fixture',position:'Ala',jersey:'0'}]};
+ if(url.pathname==='/api/players/log')return {athlete_id:'123',season:url.searchParams.get('season'),games:Array.from({length:10},(_,i)=>({GAME_ID:String(400+i),GAME_DATE:new Date(Date.UTC(2026,10,2-i)).toISOString().slice(0,10),PTS:[28,22,31,26,24,33,27,19,30,29][i],REB:5+i%4,AST:3+i%3,MIN:32,SEASON_TYPE:2,MATCHUP:'vs ATL'}))};
+ if(url.pathname==='/api/players/team-logs')return {logs:{}};
  return {};
 };
 http.createServer((req,res)=>{
  const url=new URL(req.url,'http://127.0.0.1');
+ if(url.pathname.startsWith('/api/players/headshot/')){res.writeHead(200,{'Content-Type':'image/svg+xml'});return res.end('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="240"><circle cx="100" cy="70" r="45" fill="#c8a27b"/><path d="M30 240V150Q100 100 170 150V240" fill="#11774f"/></svg>');}
  if(url.pathname.startsWith('/api/')){
   if(req.method!=='GET'){res.writeHead(204);return res.end();}
   const delay=url.pathname==='/api/saved/latest'?1200:url.pathname==='/api/match/form'?400:40;

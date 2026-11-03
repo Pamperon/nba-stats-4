@@ -50,3 +50,26 @@ for(let sample=0;sample<3;sample++)test('measure mobile/desktop loading and API 
  expect(picksReady).toBeLessThan(10000);expect(metrics.cls).toBeLessThan(0.3);
  if(!process.env.BASKETLAB_BASELINE){expect(api).not.toContain('/api/saved/latest');expect(api).not.toContain('/api/saved/dates');expect(api).not.toContain('/api/players/teams');}
 });
+
+test('approved coordinated design: player charts, contextual back and responsive screens',async({page},testInfo)=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'New design is verified on the candidate; baseline keeps its original UI');
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
+ await page.screenshot({path:testInfo.outputPath('home-redesign.png'),fullPage:true});
+ await page.locator('.bl-broadcast-action').click();
+ await expect(page).toHaveURL(/statistiche/);
+ await expect(page.locator('#player-visual .bl-chart-bar')).toHaveCount(10);
+ await page.locator('[data-player-market="REB"]').click();await expect(page.locator('#stat')).toHaveValue('REB');
+ await expect(page.locator('[data-player-market="REB"]')).toHaveAttribute('aria-pressed','true');
+ await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
+ await page.locator('#back-to-picks').click();await expect(page).toHaveURL('http://127.0.0.1:4173/');
+ await page.goto(match);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
+ await page.screenshot({path:testInfo.outputPath('match-redesign.png'),fullPage:true});
+ await page.locator('[data-match-tab="players"]').click();await expect(page.locator('.hub-match-player-card')).toBeVisible();
+ await page.locator('.hub-match-player-stats-link').click();await expect(page).toHaveURL(/statistiche/);
+ await expect(page.locator('#back-to-picks')).toContainText('Torna all’analisi');
+ await page.locator('#back-to-picks').click();await expect(page).toHaveURL(/analisi-partita/);
+ await expect(page.locator('#hub-match-title')).toContainText('Boston Celtics');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ expect(errors).toEqual([]);
+});
