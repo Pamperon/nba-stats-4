@@ -183,7 +183,7 @@ function openMatchQuotes(match){
  saveHubState();syncRoute();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
-const {renderMatchCharts,renderMatchH2H}=window.BasketLabMatchCharts(document,matchTeamCodes);
+const {renderMatchCharts,renderMatchH2H}=window.BasketLabMatchCharts(document,matchTeamCodes,displayNum);
 const getMatchFormData=window.BasketLabMatchData((...args)=>fetch(...args));
 async function loadMatchForm(match){
  const request=++matchFormRequest;

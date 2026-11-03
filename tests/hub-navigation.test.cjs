@@ -278,3 +278,15 @@ test('match request cache shares in-flight loads and retries incomplete historie
  const retry=read('2026-11-05',['A','B']);
  assert.equal(calls,2);release();await retry;
 });
+
+test('successful match data renders charts and summary through extracted module',async()=>{
+ const {window,doc}=setup('analisi-partita?data=2026-11-05&trasferta=Boston+Celtics&casa=Atlanta+Hawks');
+ const team=(name,wins,points)=>({team:name,games:5,wins,losses:5-wins,avg_points:points,results:[{date:'2026-11-01',scored:110,allowed:100,opponent:'Other'}]});
+ window.fetch=async url=>({ok:true,json:async()=>url.includes('/match/form')?{teams:[team('Boston Celtics',4,110),team('Atlanta Hawks',2,100)],window_days:21,moneyline_odds:[1.8,2.1],h2h:[]}:{games:[]}});
+ doc.querySelector('[data-match-tab="analysis"]').click();
+ await new Promise(r=>setImmediate(r));
+ assert.match(doc.querySelector('#hub-match-charts').textContent,/Media punti segnati/);
+ assert.match(doc.querySelector('#hub-match-charts').textContent,/110/);
+ assert.match(doc.querySelector('.hub-match-summary p').textContent,/bilancio recente migliore/);
+ assert.match(doc.querySelector('#hub-match-h2h-chart').textContent,/Nessuno scontro diretto/);
+});
