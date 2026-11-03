@@ -57,7 +57,12 @@ test('approved coordinated design: player charts, contextual back and responsive
  await page.route('**/api/picks/session**',async route=>{const response=await route.fetch();const data=await response.json();data.preliminary_top5=Array.from({length:5},(_,i)=>({...data.preliminary_single,Giocatore:'Browser Fixture '+(i+1)}));await route.fulfill({response,json:data});});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
- await expect(page.locator('#hub-featured-list .bl-datalab-card')).toHaveCount(5);
+ await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(2);
+ await expect(page.locator('.hub-trust-strip')).toBeVisible();
+ await page.locator('.hub-featured-more').click();await expect(page).toHaveURL(/pronostici/);
+ await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(5);
+ await page.locator((testInfo.project.name==='mobile'?'.hub-mobile-bar':'.hub-sidebar')+' [data-hub="home"]').click();
+ await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(2);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('home-redesign.png'),fullPage:true});
  await page.locator('.bl-broadcast-action').click();
