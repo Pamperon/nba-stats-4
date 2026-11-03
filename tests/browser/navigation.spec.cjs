@@ -53,14 +53,18 @@ for(let sample=0;sample<3;sample++)test('measure mobile/desktop loading and API 
 
 test('approved coordinated design: player charts, contextual back and responsive screens',async({page},testInfo)=>{
  test.skip(!!process.env.BASKETLAB_BASELINE,'New design is verified on the candidate; baseline keeps its original UI');
+ await page.route('**/api/picks/session**',async route=>{const response=await route.fetch();const data=await response.json();data.preliminary_top5=Array.from({length:5},(_,i)=>({...data.preliminary_single,Giocatore:'Browser Fixture '+(i+1)}));await route.fulfill({response,json:data});});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
+ await expect(page.locator('#hub-featured-list .bl-datalab-card')).toHaveCount(5);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('home-redesign.png'),fullPage:true});
  await page.locator('.bl-broadcast-action').click();
  await expect(page).toHaveURL(/statistiche/);
  await expect(page.locator('#player-visual .bl-chart-bar')).toHaveCount(10);
  await page.locator('[data-player-market="REB"]').click();await expect(page.locator('#stat')).toHaveValue('REB');
  await expect(page.locator('[data-player-market="REB"]')).toHaveAttribute('aria-pressed','true');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
  await page.locator('#back-to-picks').click();await expect(page).toHaveURL('http://127.0.0.1:4173/');
  await page.goto(match);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
