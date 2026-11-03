@@ -436,3 +436,21 @@ html {
   max-height: calc(100dvh - 80px);
   overflow-y: auto;
 }
+
+.hub-home-banner .hub-landing {
+  position: relative;
+  margin-bottom: 0;
+}
+.hub-home-banner .hub-banner-title img {
+  border-radius: 0;
+  mask-image: linear-gradient(#000 81%, transparent);
+}
+.hub-home-banner .hub-live-metrics {
+  position: absolute;
+  left: 3.4%;
+  bottom: 3%;
+  margin: 0;
+}
+.hub-home-banner .hub-trust-strip span {
+  background: #13283a80;
+}
