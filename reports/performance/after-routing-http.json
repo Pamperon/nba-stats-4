@@ -1,0 +1,61 @@
+{
+  "captured_utc": "2026-11-03T14:03:38.629759+00:00",
+  "source_commit": "d4387170f48e42e04ad5e5b0aef8c3d4a7d3d69c",
+  "samples": [
+    {
+      "path": "/",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4111,
+      "total_ms": 4112,
+      "bytes": 29932,
+      "server_timing": null
+    },
+    {
+      "path": "/static/app.js",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4707,
+      "total_ms": 4717,
+      "bytes": 74258,
+      "server_timing": null
+    },
+    {
+      "path": "/static/hub-nav.js",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4102,
+      "total_ms": 4149,
+      "bytes": 72990,
+      "server_timing": null
+    },
+    {
+      "path": "/api/health",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4111,
+      "total_ms": 4111,
+      "bytes": 392,
+      "server_timing": "app;dur=0.56"
+    },
+    {
+      "path": "/api/nba/fixtures?date=2026-11-05",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4283,
+      "total_ms": 4283,
+      "bytes": 3375,
+      "server_timing": "app;dur=1.32"
+    },
+    {
+      "path": "/api/match/form?date=2026-11-05&team_a=Boston%20Celtics&team_b=Atlanta%20Hawks",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4193,
+      "total_ms": 4193,
+      "bytes": 1038,
+      "server_timing": "app;dur=165.14"
+    }
+  ],
+  "measurement_checkout_commit": "35cfc406ddb95c42b723235660b63648c3bfa11d"
+}

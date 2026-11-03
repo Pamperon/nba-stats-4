@@ -1,0 +1,801 @@
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#e8effa;background:#0b1220}*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;justify-content:space-between;padding:18px max(22px,4vw);border-bottom:1px solid #25344b;background:#101a2a}.brand{display:flex;align-items:center;gap:12px;font-size:20px}.brand b{color:#f5f8ff}.brand span{font-size:10px;letter-spacing:1px;background:#273c5a;padding:5px 8px;border-radius:8px;color:#9dbde5}main{max-width:1440px;margin:auto;padding:28px 26px}.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:26px}.hero small{color:#f49b58;letter-spacing:2px;font-weight:700}.hero h1{font-size:clamp(27px,4vw,42px);margin:8px 0}.hero p,.note,footer{color:#9cb0cb}.actions{display:flex;gap:10px}button,input,select{font:inherit;border:1px solid #354862;border-radius:10px;padding:11px 13px;background:#17263b;color:#f0f5ff}button{cursor:pointer}button:hover{background:#25405e}nav{display:flex;gap:8px;margin-bottom:18px}nav button{flex:1}nav .active{background:#275386;border-color:#5292d9}.panel,.metric{background:linear-gradient(135deg,#162338,#101a29);border:1px solid #293b54;border-radius:17px;padding:22px;margin-bottom:18px;box-shadow:0 12px 30px #0002}.panel h2{margin:0 0 18px}.status{padding:14px 16px;background:#13253b;border:1px solid #264a70;border-radius:12px;margin-bottom:20px;color:#bad6f6}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric small{display:block;color:#9cb0cb;margin-bottom:8px}.metric strong{font-size:27px}.filters{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:20px}.filters label{display:flex;flex-direction:column;gap:7px;color:#9cb0cb;font-size:12px}.filters input{width:115px}.filters select{min-width:130px}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left}th,td{padding:12px;border-bottom:1px solid #2b3b52;font-size:13px}th{color:#9cb0cb}tr:hover{background:#203047}.good{color:#53c99a}.bad{color:#f08091}.barrow{display:grid;grid-template-columns:74px 1fr 42px;gap:12px;align-items:center;margin:10px 0;font-size:12px}.track{height:25px;border-radius:6px;background:#27354a;position:relative;overflow:hidden}.fill{height:100%;background:#48aa82;border-radius:5px}.fill.under{background:#c96578}.line{position:absolute;top:0;bottom:0;border-left:2px dashed #f4a749}footer{padding:25px 0;text-align:center;font-size:12px}@media(max-width:760px){main{padding:18px 12px}.hero{align-items:stretch;flex-direction:column}.actions{flex-direction:column}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:15px}.brand{font-size:16px}.filters label{flex:1}.filters input,.filters select{width:100%}nav button{padding:10px 4px;font-size:12px}}
+
+.player-profile{display:flex;align-items:center;gap:24px;margin:6px 0 20px;padding:22px;border:1px solid #345174;border-radius:18px;background:radial-gradient(ellipse at 5% 0%,#244568 0%,#16263d 50%,#101a29 100%);min-height:170px}
+.player-profile[hidden]{display:none}
+.player-avatar{position:relative;flex:0 0 130px;width:130px;height:130px;border-radius:50%;overflow:hidden;border:3px solid #6a9dd1;background:linear-gradient(145deg,#385b80,#17283e);display:grid;place-items:center;box-shadow:0 6px 26px #0005}
+.player-avatar img{position:absolute;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:1}
+.player-avatar img:not([src]),.player-avatar img[src=""]{display:none}
+.player-avatar span{font-size:38px;font-weight:800;color:#dbeafb}
+.player-profile-body{min-width:0;flex:1}
+.player-eyebrow{font-size:10px;letter-spacing:2px;font-weight:800;color:#f5a66c}
+.player-profile-body h3{font-size:clamp(21px,2.5vw,32px);margin:7px 0 5px}
+.player-profile-body p{color:#a8c1df;font-size:13px;margin:0 0 15px}
+.player-season-stats{display:flex;gap:10px;flex-wrap:wrap}
+.player-season-stats .season-stat{min-width:95px;padding:10px 15px;border:1px solid #34506c;border-radius:11px;background:#102039a8}
+.season-stat small{display:block;color:#a7c1df;font-size:10px;margin-bottom:4px}
+.season-stat strong{font-size:21px}
+@media(max-width:600px){.player-profile{gap:13px;padding:14px;align-items:flex-start}.player-avatar{flex-basis:88px;width:88px;height:88px}.player-avatar span{font-size:25px}.player-season-stats .season-stat{min-width:68px;padding:8px 10px}.season-stat strong{font-size:17px}}
+
+.player-avatar img{display:block;visibility:visible;opacity:1}
+.player-avatar.has-photo span{visibility:hidden}
+
+/* Dashboard candidate profile */
+.pick-profile{display:flex;align-items:center;gap:20px;margin:20px 0 16px;min-width:0}
+.pick-avatar{width:94px;height:94px;flex:0 0 94px;border-radius:50%;background:linear-gradient(140deg,#263c60,#15243b);border:2px solid #3b5779;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.pick-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+.pick-avatar span{font-size:27px;font-weight:800;color:#d8e7fb}
+.pick-profile-info{min-width:0}
+.pick-profile-info h3{margin:0 0 6px;font-size:clamp(20px,3vw,26px)}
+.pick-profile-info p{margin:0 0 9px;color:#9cb0cb;font-size:13px}
+.pick-market{font-size:13px;font-weight:800;letter-spacing:.6px;color:#f7aa71}
+.pick-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:440px;margin:12px 0 16px}
+.pick-values>div{border:1px solid #334966;border-radius:12px;background:#15243a;padding:15px 18px}
+.pick-values small{display:block;color:#9cb0cb;letter-spacing:.8px;font-size:11px}
+.pick-values strong{display:block;margin-top:5px;font-size:clamp(25px,4vw,34px)}
+@media(max-width:520px){.pick-profile{gap:13px}.pick-avatar{width:74px;height:74px;flex-basis:74px}.pick-values{max-width:none}}
+
+/* Dashboard: status remains accessible to assistive technologies without a duplicate box. */
+#status[hidden]{display:none!important}
+.pick-values>div:last-child strong{color:#53c99a}
+.pick-avatar.has-photo span{visibility:hidden}
+
+/* Dashboard compact three-column metrics, including narrow mobile screens. */
+#metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#metrics .metric{min-width:0;padding:14px 10px;text-align:center}
+#metrics .metric small{font-size:clamp(9px,2.3vw,12px);white-space:nowrap;letter-spacing:0}
+#metrics .metric strong{font-size:clamp(18px,5vw,27px);overflow-wrap:anywhere}
+#pick>.note{font-size:11px;line-height:1.4;color:#8da3be;margin-top:8px}
+
+#pick .pick-market{font-size:clamp(16px,3.5vw,19px);font-weight:800;letter-spacing:.35px;line-height:1.35}
+
+/* Dashboard recommendation groups */
+.pick-group{margin-top:16px}
+.pick-group-range{color:#a8bdd8;font-size:12px;margin:-8px 0 12px}
+.pick-group-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.pick-selection{min-width:0;border:1px solid #2d4561;border-radius:14px;padding:14px;background:#111e30}
+.pick-selection .pick-profile{gap:12px;margin:4px 0 12px}
+.pick-selection .pick-avatar{width:68px;height:68px;flex-basis:68px}
+.pick-selection .pick-profile-info h3{font-size:clamp(16px,2.5vw,20px)}
+.pick-selection .pick-market{font-size:clamp(14px,2.6vw,17px)}
+.pick-selection .pick-values{gap:8px;margin:10px 0 0}
+.pick-selection .pick-values>div{padding:10px 12px}
+.pick-selection .pick-values strong{font-size:22px}
+.pick-combined{display:flex;flex-wrap:wrap;gap:12px 26px;margin:15px 0 4px;font-size:13px;color:#b9cce2}
+.pick-combined strong{color:#eaf2ff;font-size:19px;margin-left:6px}
+.pick-group>.note{font-size:11px;line-height:1.4;margin:12px 0 0}
+
+/* Compact, app-first masthead. Existing date selector and tab logic stay unchanged. */
+.app-header{max-width:none;padding:15px max(16px,4vw);gap:14px;background:#101a2a}
+.app-header .brand{display:flex;align-items:center;gap:11px;min-width:0}
+.app-header .brand-icon{width:43px;height:43px;display:grid;place-items:center;border-radius:12px;background:#1a2d46;font-size:25px;flex:0 0 43px}
+.app-header .brand-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.app-header .brand-copy b{font-size:21px;line-height:1.1;letter-spacing:.2px;white-space:nowrap}
+.app-header .brand-copy small{font-size:9px;letter-spacing:1.2px;color:#8fa7c7;white-space:nowrap}
+
+.app-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,320px);gap:15px 25px;align-items:center;margin-bottom:19px}
+
+.app-hero .actions{display:block;min-width:0}
+.app-hero .date-control{display:flex;flex-direction:column;gap:9px;background:#16263b;border:1px solid #354862;border-radius:16px;padding:13px 16px;min-width:0}
+.app-hero .date-label{font-size:11px;font-weight:700;letter-spacing:1.2px;color:#9cb0cb}
+.app-hero .date-label span{font-size:16px;color:#f59a55;margin-right:6px}
+.app-hero #date{width:100%;min-width:0;padding:5px 22px 5px 0;border:0;background:transparent;color:#f2f6ff;font-size:clamp(16px,2.4vw,20px);font-weight:650;cursor:pointer}
+.app-hero #date:focus-visible{outline:2px solid #f59a55;outline-offset:4px}
+
+@media(max-width:760px){
+ .app-header{padding:13px 16px}
+ .app-header .brand-copy b{font-size:20px}
+ .app-hero{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-bottom:16px}
+
+ .app-hero .date-control{padding:12px 15px}
+ .app-hero #date{font-size:18px}
+}
+@media(max-width:370px){
+ .app-header .brand-copy b{font-size:17px}
+ .app-header .brand-copy small{font-size:8px;letter-spacing:.8px}
+}
+
+/* Keep the date selector visually neutral after tapping on Android Chrome. */
+.app-hero #date:focus{outline:none;box-shadow:none}
+.app-hero #date:focus-visible{outline:2px solid #5292d9;outline-offset:3px}
+.app-hero .date-control:focus-within{border-color:#354862;box-shadow:none}
+.date-loading-panel[hidden]{display:none}
+.date-loading-panel{display:flex;align-items:center;gap:12px;margin:4px 0 18px;padding:20px;border:1px solid #354862;border-radius:15px;background:#16263b;color:#e8effa;font-weight:600}
+.date-loading-spinner{width:19px;height:19px;flex:0 0 19px;border:2px solid #536c8d;border-top-color:#f59a55;border-radius:50%;animation:date-loading-spin .75s linear infinite}
+@keyframes date-loading-spin{to{transform:rotate(360deg)}}
+#app.date-is-loading #dashboard,#app.date-is-loading #finder{display:none!important}
+@media(prefers-reduced-motion:reduce){.date-loading-spinner{animation:none}}
+
+/* Three compact player-stat metrics on one row, including narrow Android screens. */
+#player-summary.player-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#player-summary.player-summary-grid .metric{min-width:0;padding:13px 9px;text-align:center;margin-bottom:12px}
+#player-summary.player-summary-grid .metric small{font-size:clamp(9px,2.5vw,12px);line-height:1.25;overflow-wrap:anywhere}
+#player-summary.player-summary-grid .metric strong{font-size:clamp(16px,4.2vw,25px);white-space:nowrap}
+#player-loading[hidden]{display:none}
+#player.player-is-loading #player-profile,#player.player-is-loading #player-summary,#player.player-is-loading #player-chart-title,#player.player-is-loading #chart{display:none!important}
+
+/* Compact, accessible quote finder dropdowns */
+#finder .filters{gap:9px;align-items:flex-end}
+#finder .filters label{flex:0 1 135px;min-width:105px;max-width:155px}
+#finder .filters select{width:100%;min-width:0;padding:10px 26px 10px 9px;font-size:13px}
+#finder .filters #csv{white-space:nowrap}
+#finder .table-scroll-hint{display:flex;justify-content:flex-end;align-items:center;gap:6px;color:#9dbde5;font-size:12px;margin:-7px 0 7px}
+#finder .table-scroll-hint span{font-size:20px;color:#f49b58}
+#finder .finder-scroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:auto;scrollbar-color:#f49b58 #26364e;padding-bottom:7px}
+#finder .finder-scroll::-webkit-scrollbar{height:10px}
+#finder .finder-scroll::-webkit-scrollbar-track{background:#26364e;border-radius:8px}
+#finder .finder-scroll::-webkit-scrollbar-thumb{background:#f49b58;border-radius:8px;border:2px solid #26364e}
+#finder .finder-scroll:focus-visible{outline:2px solid #f49b58;outline-offset:2px}
+@media(max-width:760px){#finder .filters label{flex:1 1 calc(50% - 9px);max-width:none;min-width:0}#finder .filters select{width:100%}}
+
+/* Second horizontal scrollbar above the quote results; synced with the table */
+#finder .finder-top-scroll{overflow-x:auto;overflow-y:hidden;height:17px;margin:0 0 7px;scrollbar-width:auto;scrollbar-color:#f49b58 #26364e}
+#finder .finder-top-scroll[hidden]{display:none}
+#finder .finder-top-scroll>div{height:1px}
+#finder .finder-top-scroll::-webkit-scrollbar{height:12px}
+#finder .finder-top-scroll::-webkit-scrollbar-track{background:#26364e;border-radius:8px}
+#finder .finder-top-scroll::-webkit-scrollbar-thumb{background:#f49b58;border:2px solid #26364e;border-radius:8px}
+#finder .finder-top-scroll:focus-visible{outline:2px solid #f49b58;outline-offset:2px}
+
+/* Compact masthead and icon-based tabs. Date/hero intentionally unchanged. */
+.app-header{position:sticky;top:0;z-index:50;padding:9px max(14px,3vw);min-height:60px;box-shadow:0 5px 20px #0003}
+.app-header .brand{gap:9px}
+.app-header .brand-icon{width:37px;height:37px;flex-basis:37px;border-radius:10px;font-size:22px}
+.app-header .brand-copy{gap:2px}
+.app-header .brand-copy b{font-size:19px;line-height:1.1}
+.app-header .brand-copy small{font-size:8px;letter-spacing:1px}
+.app-header .brand-version{color:#f49b58;font-size:.78em;font-weight:750}
+#app>nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:5px;background:#111f32;border:1px solid #293e59;border-radius:14px}
+#app>nav button{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:9px 3px;border:1px solid transparent;border-radius:10px;background:transparent;color:#a5b9d3;font-size:12px;font-weight:600;line-height:1.2}
+#app>nav button .tab-icon{font-size:20px;line-height:1.1;font-weight:700}
+#app>nav button.active{background:#274c78;border-color:#3b6593;color:#fff}
+#app>nav button:focus-visible{outline:2px solid #f49b58;outline-offset:2px}
+@media(max-width:760px){.app-header{padding:8px 13px;min-height:56px}.app-header .brand-copy b{font-size:18px}#app>nav button{font-size:11px;padding:8px 2px}}
+@media(max-width:370px){.app-header .brand-copy b{font-size:16px}.app-header .brand-copy small{font-size:7px}#app>nav button{font-size:10px}}
+
+/* Date-only top area: remove redundant dashboard heading and source strip. */
+.app-hero{display:block;margin:0 0 13px;padding:0}
+.app-hero .actions{display:block;width:100%;max-width:340px}
+.app-hero .date-control{width:100%;margin:0}
+@media(max-width:760px){.app-hero{display:block;margin-bottom:12px}.app-hero .actions{max-width:none}.app-hero .date-control{padding:11px 14px}}
+
+/* Shared, space-efficient quote snapshot above the dashboard and finder. */
+#quote-summary[hidden]{display:none!important}
+#quote-summary{margin:0 0 13px;padding:10px 12px 8px;border:1px solid #293b54;border-radius:13px;background:#101d30}
+#quote-summary #metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#quote-summary #metrics .metric{margin:0;padding:8px 5px;border-radius:9px;box-shadow:none;background:#182b43;text-align:center}
+#quote-summary #metrics .metric small{font-size:10px;margin-bottom:3px;color:#a8bdd7}
+#quote-summary #metrics .metric strong{font-size:clamp(17px,4vw,23px);line-height:1.2}
+#quote-summary .quote-updated{padding:9px 2px 1px;text-align:center;font-size:11px;line-height:1.35;color:#a7bdd6}
+@media(max-width:370px){#quote-summary{padding:8px}#quote-summary #metrics{gap:5px}#quote-summary #metrics .metric small{font-size:9px}#quote-summary .quote-updated{font-size:10px}}
+
+/* NBA STATS PRO — compact premium header and accessible date strip */
+.app-header{background:#101827;border-bottom:1px solid #263348;padding:16px max(18px,4vw)}
+.app-header .brand-icon{background:#f28a45;color:#101522;font-size:27px;font-weight:900;border-radius:12px}
+.app-header .brand-copy b{font-size:clamp(19px,3vw,25px);letter-spacing:.15px}
+.app-header .brand-version{background:transparent!important;color:#f28a45!important;padding:0!important;font-size:inherit!important;letter-spacing:inherit!important}
+.app-header .brand-copy small{color:#9ca9bc;letter-spacing:1.4px}
+.app-hero{margin-bottom:20px}
+.app-hero .actions{width:100%}
+.app-hero .date-control{width:100%;background:#111d2d;border:1px solid #2d3b50;border-radius:20px;padding:20px;gap:14px}
+.app-hero .date-label{font-size:12px;letter-spacing:1.6px;color:#a7b5c9}
+.date-strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;padding:2px 1px 8px}
+.date-chip{flex:0 0 78px;min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#1b2638;color:#fff;border:1px solid #2d3b50;border-radius:13px;scroll-snap-align:start;cursor:pointer}
+.date-chip .day-name{font-size:11px;color:#a6b2c5;font-weight:700;letter-spacing:.5px}
+.date-chip .day-number{font-size:27px;font-weight:800;line-height:1}
+.date-chip[aria-pressed="true"]{background:#f28a45;color:#101522;border-color:#f28a45}
+.date-chip[aria-pressed="true"] .day-name{color:#101522}
+.date-chip:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+.app-hero #date{font-size:13px;width:100%;padding:8px 10px;border:1px solid #354862;border-radius:9px;background:#1b2638;color:#dce7f7}
+@media(max-width:760px){.app-header{padding:15px 16px}.app-hero .date-control{padding:16px}.date-chip{flex-basis:73px;min-height:75px}.app-header .brand-copy b{font-size:19px}}
+
+/* Compact date navigation: the horizontal cards are the only visible picker.
+   Preserve #date as an accessible state/control for existing app.js listeners. */
+.app-hero{margin-bottom:13px}
+.app-hero .date-control{position:relative;padding:14px 16px 12px;gap:10px;border-radius:16px}
+.app-hero .date-label{font-size:11px;letter-spacing:1.4px}
+.date-strip{gap:8px;padding:1px 1px 4px}
+.date-chip{flex-basis:65px;min-height:65px;gap:3px;border-radius:11px}
+.date-chip .day-name{font-size:10px}
+.date-chip .day-number{font-size:23px}
+
+.app-hero #date.date-native-select{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;opacity:0!important;pointer-events:none!important}
+@media(max-width:760px){.app-hero .date-control{padding:13px 14px 11px;gap:10px}.date-chip{flex-basis:64px;min-height:64px}.app-hero{margin-bottom:12px}}
+
+/* Date cards fill the available row, with reduced vertical footprint. */
+.app-hero .date-control{padding:10px 12px 9px;gap:7px}
+.date-strip{display:flex;width:100%;gap:7px;padding:1px 0 3px;overflow-x:auto}
+.date-chip{flex:1 0 0;min-width:68px;min-height:51px;padding:5px 4px;gap:1px;border-radius:10px}
+.date-chip .day-name{font-size:10px;line-height:1.15}
+.date-chip .day-number{font-size:21px;line-height:1.1}
+
+#app.date-is-loading #status{display:none!important}
+#app.date-is-loading #dashboard,#app.date-is-loading #finder{display:none!important}
+#app .date-loading-panel{margin:0 0 14px}
+@media(max-width:760px){.app-hero .date-control{padding:10px 12px 9px;gap:7px}.date-chip{flex:1 0 0;min-width:68px;min-height:51px}.app-hero{margin-bottom:10px}}
+
+/* Consistent header-to-content rhythm and a more recognizable brand. */
+.app-header{padding:11px max(14px,3vw);min-height:62px}
+.app-header .brand-icon{display:grid;place-items:center;background:#f28a45;color:#142037;width:40px;height:40px;flex-basis:40px}
+.app-header .brand-icon svg{display:block;width:30px;height:30px}
+main{padding-top:14px}
+.header-update{margin-left:auto;display:flex;align-items:center;gap:6px;color:#9ca9bc;font-size:12px;font-weight:650;white-space:nowrap;border:1px solid #304055;border-radius:999px;padding:6px 9px}
+.header-update-dot{width:7px;height:7px;border-radius:50%;background:#758398}
+.header-update.has-data .header-update-dot{background:#51c99a}
+@media(max-width:760px){.app-header{padding:9px 13px;min-height:58px}main{padding-top:13px}.header-update{font-size:11px;padding:5px 7px}.app-header .brand-copy b{font-size:18px}}
+@media(max-width:365px){.header-update{font-size:10px;gap:4px;padding:5px}.app-header .brand-copy small{letter-spacing:.4px}}
+/* Keep native touch momentum; avoid repeated paint work on wide finder tables. */
+#finder .finder-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
+#finder .finder-scroll table{border-collapse:separate;border-spacing:0}
+#finder .finder-top-scroll{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+
+/* Centered NBA STATS PRO brand — basketball + growth logo (concept 2). */
+.app-header{display:flex;justify-content:center;align-items:center;min-height:88px;padding:12px 14px;background:#101827}
+.app-header .brand{display:flex;justify-content:center;align-items:center;gap:13px;width:100%;max-width:680px}
+.app-header .brand-icon{display:grid;place-items:center;flex:0 0 64px;width:64px;height:64px;padding:0;background:transparent;border-radius:0;color:inherit}
+.app-header .brand-icon svg{display:block;width:64px;height:64px;overflow:visible}
+.app-header .brand-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.app-header .brand-copy b{font-size:clamp(22px,4.7vw,36px);line-height:1.08;letter-spacing:.3px;white-space:nowrap}
+.app-header .brand-copy small{font-size:clamp(8px,1.6vw,12px);letter-spacing:clamp(1px,.4vw,3px);white-space:nowrap}
+@media(max-width:760px){.app-header{min-height:78px;padding:11px 10px}.app-header .brand{gap:8px}.app-header .brand-icon{flex-basis:52px;width:52px;height:52px}.app-header .brand-icon svg{width:52px;height:52px}.app-header .brand-copy b{font-size:clamp(19px,5.2vw,29px)}.app-header .brand-copy small{font-size:clamp(7px,1.75vw,10px);letter-spacing:1px}}
+@media(max-width:370px){.app-header .brand{gap:6px}.app-header .brand-icon{flex-basis:44px;width:44px;height:44px}.app-header .brand-icon svg{width:44px;height:44px}.app-header .brand-copy b{font-size:19px}.app-header .brand-copy small{font-size:7px;letter-spacing:.65px}}
+
+.pick-player-link{display:inline;padding:0;border:0;border-radius:3px;background:transparent;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#607a98;text-underline-offset:4px}
+.pick-player-link:hover{background:transparent;color:#ffb05e;text-decoration-color:currentColor}
+.pick-avatar[role="button"]{cursor:pointer}
+.pick-player-link:focus-visible,.pick-avatar[role="button"]:focus-visible{outline:2px solid #ffb05e;outline-offset:5px}
+
+.pick-explanation{margin-top:14px;border-top:1px solid #334966;padding-top:12px}
+.pick-explanation summary{cursor:pointer;color:#ffb05e;font-weight:700;font-size:14px;line-height:1.4}
+.pick-explanation summary:focus-visible{outline:2px solid #ffb05e;outline-offset:4px}
+.pick-explanation-body{font-size:13px;line-height:1.5;color:#d2dfee}
+.pick-explanation-body p{margin:13px 0 0}.pick-explanation-body b{display:block;color:#eef5ff;margin-bottom:3px}
+.pick-explanation-warning{background:#352c28;border-left:3px solid #ffb05e;border-radius:6px;padding:9px 10px}
+.pick-explanation-body .pick-explanation-note{color:#9cb0cb;font-size:12px}
+
+/* Recommendation cards: mobile-first presentation; saved selections are unchanged. */
+#picks .pick-group{padding:16px;border-color:#304967;background:linear-gradient(145deg,#14243b,#101c2e)}
+#picks .pick-group h2{display:inline-block;margin:0 0 6px;padding:6px 11px;border-radius:8px;background:#f58b44;color:#101824;font-size:16px;line-height:1.2}
+#picks .pick-group-range{margin:0 0 14px;color:#a8bdd8}
+#picks .pick-group-items{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+#picks .pick-selection{padding:14px;background:#0d1c2e;border-color:#2c4564}
+#picks .pick-profile{align-items:center;margin:0 0 12px;gap:12px}
+#picks .pick-avatar{width:72px;height:72px;flex:0 0 72px;border-radius:13px}
+#picks .pick-profile-info{flex:1;min-width:0}
+#picks .pick-profile-info h3{margin:0 0 4px}
+#picks .pick-player-link{font-size:clamp(17px,4vw,23px);line-height:1.2;overflow-wrap:anywhere}
+#picks .pick-player-meta,#picks .pick-fixture{font-size:12px;line-height:1.35;margin:0 0 5px;color:#a8bdd8;overflow-wrap:anywhere}
+#picks .pick-market{display:inline-block;margin-top:3px;padding:7px 10px;border:1px solid #b75e2c;border-radius:8px;background:#30231f;color:#ffad6c;font-size:15px}
+#picks .pick-values{max-width:none;margin:0 0 10px;gap:8px}
+#picks .pick-values>div{padding:9px 11px;background:#152a43}
+#picks .pick-values small{font-size:10px;letter-spacing:.3px}
+#picks .pick-values strong{font-size:22px;color:#f8a357}
+#picks .pick-stats-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;background:#f58b44;border:1px solid #f58b44;color:#101824;font-weight:800}
+#picks .pick-stats-button:hover{background:#ffac68}
+#picks .pick-stats-button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#picks .pick-explanation{margin-top:10px;padding:10px 12px;border:1px solid #304967;border-radius:9px;background:#14263d}
+#picks .pick-explanation summary{min-height:24px;display:list-item}
+#picks .pick-combined{margin:12px 0 0;padding:12px;border:1px solid #39506a;border-radius:10px;background:#152a43;line-height:1.5}
+#picks .pick-combined strong{color:#ffad6c}
+@media(min-width:900px){#picks .pick-selection{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(230px,1fr) minmax(160px,.6fr);gap:12px;align-items:center}#picks .pick-profile,#picks .pick-values{margin:0}#picks .pick-explanation{grid-column:1/-1;margin:0}#picks .pick-stats-button{width:100%}}
+@media(max-width:360px){#picks .pick-group{padding:12px}#picks .pick-selection{padding:11px}#picks .pick-avatar{width:60px;height:60px;flex-basis:60px}#picks .pick-values small{font-size:9px}}
+
+/* The forecast layout follows the approved Basket Lab concept. */
+#picks .pick-group{overflow:hidden;padding:18px;background:linear-gradient(145deg,#142640,#0e1e33);border:1px solid #294565;box-shadow:0 14px 32px #0003}
+#picks .pick-group-heading{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+#picks .pick-group h2{margin:0;padding:0;background:transparent;color:#f6f8fd;font-size:clamp(24px,3vw,34px);font-weight:850;line-height:1;text-transform:uppercase;letter-spacing:.02em}
+#picks .pick-group-range{margin:0;color:#adc0d8;font-size:12px;line-height:1.4}
+#picks .pick-selection{background:#0d1d31;border:1px solid #29415f;border-radius:12px;padding:14px}
+#picks .pick-profile{min-width:0}
+#picks .pick-avatar{background:linear-gradient(155deg,#54789c,#172d48);border:1px solid #405e7f}
+#picks .pick-avatar img{object-fit:cover;object-position:center top}
+#picks .pick-player-link{text-decoration:none;color:#f4f7fd;font-weight:800}
+#picks .pick-player-link:hover{text-decoration:underline}
+#picks .pick-market{font-weight:850;letter-spacing:.02em}
+#picks .pick-values>div{background:#12253e;border-color:#2e496b}
+#picks .pick-values strong{color:#ff8f34;font-weight:850}
+#picks .pick-stats-button{color:#fff;background:#ff7c21;border-color:#ff7c21;min-height:46px}
+#picks .pick-stats-button:hover{background:#ff963e}
+#picks .pick-explanation{background:#15283f;border-color:#324c69;padding:12px 14px}
+#picks .pick-explanation summary{color:#eff5ff;font-size:14px}
+#picks .pick-combined{background:#10243b;border-color:#314d6a;gap:10px 28px}
+#picks .pick-combined span{flex:1 1 190px}
+#picks .pick-combined strong{color:#ff8f34}
+#picks .pick-group-1 .pick-avatar{width:96px;height:104px;flex-basis:96px}
+#picks .pick-group-1 .pick-player-link{font-size:clamp(21px,5vw,31px);line-height:1.1}
+#picks .pick-group-1 .pick-market{font-size:17px;padding:9px 12px}
+#picks .pick-group-1 .pick-values strong{font-size:26px}
+@media(min-width:900px){
+ #picks .pick-group{padding:20px}
+ #picks .pick-group-1 .pick-selection{grid-template-columns:minmax(390px,1.4fr) minmax(260px,.9fr) minmax(175px,.55fr);gap:18px;padding:20px}
+ #picks .pick-group-1 .pick-avatar{width:150px;height:150px;flex-basis:150px}
+ #picks .pick-group-1 .pick-profile{gap:22px}
+ #picks .pick-group-1 .pick-market{font-size:20px;padding:12px 15px}
+ #picks .pick-group-1 .pick-values>div{padding:15px 16px;min-height:83px}
+ #picks .pick-group-1 .pick-values strong{font-size:30px}
+ #picks .pick-group-2 .pick-selection,#picks .pick-group-3 .pick-selection{grid-template-columns:minmax(340px,1.4fr) minmax(230px,.9fr) minmax(160px,.55fr);padding:10px 12px}
+ #picks .pick-group-2 .pick-avatar,#picks .pick-group-3 .pick-avatar{width:62px;height:62px;flex-basis:62px}
+ #picks .pick-group-2 .pick-player-link,#picks .pick-group-3 .pick-player-link{font-size:19px}
+ #picks .pick-group-2 .pick-stats-button,#picks .pick-group-3 .pick-stats-button{color:#e9f1fd;background:transparent;border:1px solid #7890ad}
+ #picks .pick-group-2 .pick-stats-button:hover,#picks .pick-group-3 .pick-stats-button:hover{background:#25405e}
+}
+@media(max-width:500px){
+ #picks .pick-group{padding:14px}
+ #picks .pick-group-heading{gap:7px 12px}
+ #picks .pick-group h2{font-size:23px}
+ #picks .pick-selection{padding:12px}
+ #picks .pick-group-1 .pick-avatar{width:82px;height:92px;flex-basis:82px}
+ #picks .pick-group-1 .pick-player-link{font-size:21px}
+ #picks .pick-group-1 .pick-market{font-size:15px;padding:7px 9px}
+ #picks .pick-values>div{min-width:0}
+ #picks .pick-values small{white-space:normal;line-height:1.25}
+}
+
+/* Matchup, navigation and layout. Saved data remains the source of truth. */
+
+#picks .pick-group{scroll-margin-top:100px}
+#picks .pick-group:focus{outline:none}
+#picks .pick-selection{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:center}
+#picks .pick-selection>*{min-width:0}
+#picks .pick-selection .pick-profile,#picks .pick-selection .pick-values{margin:0}
+#picks .pick-market{display:block;margin:0;color:#fff;border-color:#ff8736;background:#30211f;font-size:16px}
+#picks .pick-fixture{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;margin:0;padding:10px;background:#10233b;border:1px solid #294362;border-radius:10px;color:#ebf2fc;line-height:1.25}
+#picks .fixture-team{display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 100px;justify-content:center}
+#picks .fixture-team-name{font-size:12px;font-weight:700;text-align:center;overflow-wrap:anywhere}
+#picks .fixture-vs{font-size:11px;font-weight:850;color:#91a9c8}
+#picks .team-logo{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;position:relative;border-radius:50%;background:#203957;color:#d6e7fa;font-size:9px;font-weight:800}
+#picks .team-logo img{position:absolute;width:30px;height:30px;object-fit:contain;z-index:1}
+#picks .team-logo.has-logo span{visibility:hidden}
+#picks .fixture-time{flex:1 0 100%;text-align:center;font-size:12px;color:#adc3df;font-weight:700}
+#picks .fixture-time[hidden]{display:none}
+#picks .pick-values{max-width:none;width:100%}
+#picks .pick-combined{border-left:3px solid #f58b44}
+#picks .pick-combined span{min-width:0}
+#picks .pick-explanation{width:100%;margin:0;grid-column:auto}
+.back-to-picks{min-height:44px;margin:0 0 12px;background:#172d49;color:#f2f6ff;font-weight:750;border-color:#527398}
+.back-to-picks[hidden]{display:none}
+@media(min-width:900px){
+ #picks .pick-group-1 .pick-selection{grid-template-columns:minmax(260px,1.2fr) minmax(250px,1fr) minmax(220px,.85fr) minmax(155px,.65fr);grid-template-areas:'profile fixture fixture fixture' 'profile market values action' 'explain explain explain explain';gap:14px}
+ #picks .pick-group-1 .pick-profile{grid-area:profile;align-self:stretch}
+ #picks .pick-group-1 .pick-fixture{grid-area:fixture}
+ #picks .pick-group-1 .pick-market{grid-area:market}
+ #picks .pick-group-1 .pick-values{grid-area:values}
+ #picks .pick-group-1 .pick-stats-button{grid-area:action}
+ #picks .pick-group-1 .pick-explanation{grid-area:explain}
+ #picks .pick-group-2 .pick-selection,#picks .pick-group-3 .pick-selection{grid-template-columns:minmax(210px,1.2fr) minmax(190px,1fr) minmax(140px,.7fr) minmax(170px,.8fr) minmax(130px,.65fr);gap:10px}
+ #picks .pick-group-2 .pick-explanation,#picks .pick-group-3 .pick-explanation{grid-column:1/-1}
+ #picks .pick-group-2 .pick-values>div,#picks .pick-group-3 .pick-values>div{padding:8px}
+ #picks .pick-group-2 .pick-values strong,#picks .pick-group-3 .pick-values strong{font-size:20px}
+ #picks .pick-group-2 .pick-stats-button,#picks .pick-group-3 .pick-stats-button{padding:8px}
+}
+@media(max-width:500px){
+
+ #picks .pick-selection{gap:9px}
+ #picks .fixture-team-name{font-size:11px}
+ #picks .team-logo{width:28px;height:28px;flex-basis:28px}
+ #picks .team-logo img{width:26px;height:26px}
+ #picks .pick-market{font-size:15px}
+}
+
+/* Compact match alongside the player on smaller screens. */
+#picks .fixture-name-short{display:none}
+@media(max-width:899px){
+ #picks .pick-selection{grid-template-columns:minmax(0,1fr) minmax(115px,42%);gap:9px}
+ #picks .pick-profile{grid-column:1;grid-row:1;gap:8px;align-self:center}
+ #picks .pick-fixture{grid-column:2;grid-row:1;gap:3px;padding:8px 4px;min-width:0}
+ #picks .pick-market,#picks .pick-values,#picks .pick-stats-button,#picks .pick-explanation{grid-column:1/-1}
+ #picks .pick-avatar,#picks .pick-group-1 .pick-avatar{width:56px;height:64px;flex-basis:56px}
+ #picks .pick-player-link,#picks .pick-group-1 .pick-player-link{font-size:clamp(15px,4vw,19px)}
+ #picks .pick-player-meta{font-size:11px}
+ #picks .fixture-team{flex:1 1 0;gap:2px;min-width:0}
+ #picks .team-logo{width:21px;height:21px;flex:0 0 21px;font-size:7px}
+ #picks .team-logo img{width:20px;height:20px}
+ #picks .fixture-team-name{font-size:10px;white-space:nowrap}
+ #picks .fixture-name-full{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+ #picks .fixture-name-short{display:inline}
+ #picks .fixture-vs{font-size:9px}
+ #picks .fixture-time{font-size:10px}
+}
+@media(max-width:350px){
+ #picks .pick-selection{grid-template-columns:minmax(0,1fr) minmax(108px,40%)}
+ #picks .pick-avatar,#picks .pick-group-1 .pick-avatar{width:44px;height:54px;flex-basis:44px}
+ #picks .pick-player-link,#picks .pick-group-1 .pick-player-link{font-size:15px}
+ #picks .fixture-team{flex-direction:column}
+}
+#picks .pick-combined-warning{flex:1 0 100%;margin:0;color:#ffcfad;font-size:12px;line-height:1.5}
+
+/* Main areas stay reachable while the page scrolls; the logo scrolls away. */
+.app-header{position:static;box-shadow:none}
+.primary-nav-wrap{position:sticky;top:0;z-index:100;padding:7px max(12px,3vw);background:#0f1b2d;border-bottom:1px solid #2b405c;box-shadow:0 4px 14px #0004}
+.primary-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;max-width:1000px;margin:0 auto;padding:4px;background:#101e31;border:1px solid #2d4563;border-radius:12px}
+.primary-nav button{min-width:0;min-height:44px;padding:8px 9px;border:1px solid transparent;background:transparent;color:#b8cbe3;font-weight:750;font-size:14px;line-height:1.2}
+.primary-nav button.active{background:#f58b44;border-color:#f58b44;color:#111b2a}
+.primary-nav button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#date-area[hidden]{display:none!important}
+#app>nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+#app>nav button[hidden],#app>nav.stats-mode{display:none!important}
+body.statistics-area #date-loading,body.statistics-area #status{display:none!important}
+@media(max-width:400px){.primary-nav-wrap{padding:6px 8px}.primary-nav button{font-size:12px;padding:8px 4px}}
+
+/* Compact forecast controls retain clear 44px touch targets. */
+#app>nav{margin:0 0 9px;padding:4px;gap:4px}
+#app>nav button{min-height:44px;flex-direction:row;gap:7px;padding:5px 8px;font-size:13px}
+#app>nav button .tab-icon{font-size:17px}
+#date-area{margin:0 0 9px}
+#date-area .date-control{padding:9px 12px;gap:6px}
+#date-area .date-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#date-area .date-heading #date-month{font-size:11px;color:#a7bdd6;text-align:right}
+#date-area .date-strip{padding:0;gap:6px}
+#date-area .date-chip{min-height:44px;padding:4px;gap:1px}
+#date-area .date-chip .day-number{font-size:19px}
+#quote-summary{padding:9px 12px;margin-bottom:12px}
+#quote-summary #metrics{gap:0;align-items:center}
+#quote-summary #metrics .metric{display:flex;align-items:baseline;justify-content:center;gap:4px;min-width:0;padding:3px 2px;background:transparent;border:0;border-radius:0}
+#quote-summary #metrics .metric+.metric{border-left:1px solid #344a66}
+#quote-summary #metrics .metric small{order:2;margin:0;font-size:10px;line-height:1.2;text-transform:lowercase}
+#quote-summary #metrics .metric strong{font-size:17px;line-height:1.2}
+#quote-summary .quote-updated{padding:7px 0 0;font-size:11px}
+@media(max-width:360px){#app>nav button{font-size:12px}#quote-summary{padding:8px 6px}#quote-summary #metrics .metric{gap:3px}#quote-summary #metrics .metric strong{font-size:15px}#quote-summary #metrics .metric small{font-size:9px}}
+
+/* Quote analysis: compact controls and readable mobile result cards. */
+.finder-primary-filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(110px,1fr);gap:10px;margin:0 0 10px}
+.finder-primary-filters label{display:flex;flex-direction:column;gap:6px;color:#b0c3db;font-size:12px}
+.finder-primary-filters input,.finder-primary-filters select{width:100%;min-width:0;min-height:44px}
+.finder-advanced,.finder-guide{border:1px solid #304965;border-radius:10px;background:#13253c;margin:0 0 10px}
+.finder-advanced summary,.finder-guide summary{padding:12px;cursor:pointer;font-size:13px;font-weight:700;color:#eaf2fc}
+.finder-advanced .filters{padding:0 12px 12px;margin:0}
+.finder-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;color:#b0c3db;font-size:12px}
+.finder-actions #csv{min-height:40px;padding:7px 10px}
+.finder-guide>div{padding:0 12px 10px;color:#c9d8eb;font-size:12px;line-height:1.45}
+.finder-guide p{margin:0 0 8px}
+.finder-player{cursor:pointer}
+#finder table .finder-player{padding:0;border:0;border-radius:0;background:transparent;color:#eaf2ff;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.finder-player:focus-visible,.finder-advanced summary:focus-visible,.finder-guide summary:focus-visible{outline:2px solid #ffad6c;outline-offset:2px}
+.finder-cards{display:none}
+@media(max-width:760px){
+ #finder .finder-scroll,#finder .finder-top-scroll,#finder .table-scroll-hint{display:none!important}
+ #finder .finder-cards{display:grid;gap:9px}
+ #finder .finder-card{min-width:0;padding:12px;background:#101f33;border:1px solid #304a69;border-radius:12px}
+ #finder .finder-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+ #finder .finder-card-top>div{min-width:0}
+ #finder .finder-card-top strong{display:block;overflow-wrap:anywhere;font-size:15px}
+ #finder .finder-card-top span{display:block;color:#a9bfd9;font-size:11px;margin-top:3px}
+ #finder .finder-card-top button{min-height:40px;flex:0 0 auto;padding:7px 9px;font-size:11px;border-color:#57779a}
+ #finder .finder-card-market{margin:10px 0;color:#ffb16d;font-weight:800;font-size:14px}
+ #finder .finder-card-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #finder .finder-card-values span{padding:8px 10px;background:#192e49;border:1px solid #304b6a;border-radius:8px}
+ #finder .finder-card-values small{display:block;color:#adbed6;font-size:10px}
+ #finder .finder-card-values b{display:block;margin-top:3px;color:#f6f8fc;font-size:19px}
+
+ #finder .finder-empty{color:#b8cbe0;line-height:1.5}
+}
+
+/* Compact mobile results: player and line together, values on one row. */
+@media(max-width:760px){
+ #finder .finder-cards{gap:7px}
+ #finder .finder-card{padding:10px 12px}
+ #finder .finder-card-top{align-items:center;gap:8px}
+ #finder .finder-card-top .finder-card-subline{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 8px;margin-top:3px}
+ #finder .finder-card-top .finder-card-subline span{display:inline;margin:0}
+ #finder .finder-card-top .finder-card-market{color:#ffb16d;font-size:12px;font-weight:800;line-height:1.3}
+ #finder .finder-card-values{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 20px;margin-top:8px}
+ #finder .finder-card-values span{display:flex;align-items:baseline;gap:5px;padding:0;background:transparent;border:0;border-radius:0}
+ #finder .finder-card-values small{display:inline;font-size:11px}
+ #finder .finder-card-values b{display:inline;margin:0;font-size:15px}
+
+}
+
+/* Keep the extra-data control aligned with the quote and estimate on mobile. */
+@media(max-width:760px){
+ #finder .finder-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;align-items:center}
+ #finder .finder-card-top{grid-column:1/-1}
+ #finder .finder-card-values{grid-column:1;gap:4px 12px;margin-top:6px}
+
+}
+
+/* Keep the button and the values in place when the details are expanded. */
+@media(max-width:760px){
+ #finder .finder-details-toggle{grid-column:2;grid-row:2;display:flex;align-items:center;justify-content:flex-end;gap:4px;min-height:36px;margin:6px 0 0;padding:4px 0;border:0;background:transparent;color:#e8f1ff;font-size:12px;font-weight:700;white-space:nowrap}
+ #finder .finder-details-toggle::before{content:'▸';color:#a9bfd9}
+ #finder .finder-details-toggle[aria-expanded=true]::before{content:'▾'}
+ #finder .finder-details-toggle:focus-visible{outline:2px solid #ffad6c;outline-offset:2px}
+ #finder .finder-extra{grid-column:1/-1;grid-row:3;color:#c6d7eb;font-size:12px;line-height:1.4;padding:4px 0 2px}
+ #finder .finder-extra[hidden]{display:none}
+}
+
+/* Inline, accessible help and saved information for quote cards. */
+#finder .finder-heading{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+#finder .finder-heading h2{margin:0}
+#finder .finder-heading .finder-guide{position:relative;flex:0 0 auto;margin:0;border:0;background:transparent}
+#finder .finder-heading .finder-guide summary{display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid #557394;border-radius:50%;background:#1a304c;color:#f2f7ff;font-size:17px;list-style:none}
+#finder .finder-heading .finder-guide summary::-webkit-details-marker{display:none}
+#finder .finder-heading .finder-guide[open] summary{background:#24476f}
+#finder .finder-heading .finder-guide>div{position:absolute;right:0;top:calc(100% + 8px);z-index:10;width:min(320px,calc(100vw - 56px));padding:14px;border:1px solid #49688c;border-radius:12px;background:#172a43;box-shadow:0 14px 30px #0009;color:#d8e5f5}
+#finder .finder-heading .guide-title{display:block;margin:0 0 9px;color:#fff;font-size:14px}
+#finder .finder-heading .finder-guide p:last-child{margin-bottom:0}
+@media(max-width:760px){
+ #finder .finder-extra{display:flex;flex-wrap:wrap;gap:5px 16px;padding:6px 0 3px}
+ #finder .finder-extra span{display:inline-block}
+ #finder .finder-extra b{color:#eef5ff}
+ #finder .finder-extra[hidden]{display:none}
+}
+
+/* Compact single panel: a clipped vertical date wheel and saved counts. */
+#date-area .actions{max-width:none}
+#date-area .date-control{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(120px,1fr);grid-template-areas:'wheel metrics' 'updated updated';gap:4px 14px;padding:9px 12px}
+#date-area .wheel-panel{grid-area:wheel;min-width:0}
+#date-area .date-heading{margin:0 0 3px}
+#date-area .date-label{font-size:10px}
+#date-area .date-heading #date-month{font-size:10px}
+#date-area .wheel-row{display:flex;align-items:center;gap:4px}
+#date-area .date-strip{position:relative;display:block;height:70px;min-width:0;overflow:hidden;touch-action:pan-x;overscroll-behavior:contain;border-radius:9px;background:#101e31;border:1px solid #2a405b;scrollbar-width:none}
+#date-area .date-strip:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#date-area .date-chip{position:absolute;left:0;right:0;width:100%;height:42px;min-height:42px;margin:0;display:flex;flex-direction:row;gap:7px;align-items:center;justify-content:center;padding:4px;border-radius:7px}
+#date-area .date-chip .day-name{font-size:11px}
+#date-area .date-chip .day-number{font-size:20px}
+#date-area .wheel-previous{top:-28px;opacity:.42}
+#date-area .wheel-selected{top:14px;opacity:1;z-index:1}
+#date-area .wheel-next{top:56px;opacity:.42}
+#date-area .date-arrows{display:flex;flex-direction:column;gap:2px;flex:0 0 28px}
+#date-area .date-arrows button{width:28px;height:32px;min-height:32px;padding:0;line-height:1;border:1px solid #334a68;background:#172a43;color:#dce9fa;font-size:21px;transform:rotate(90deg)}
+#date-area .date-arrows button:disabled{opacity:.35;cursor:default}
+#date-area .date-arrows button:focus-visible{outline:2px solid #fff;outline-offset:1px}
+#date-area #quote-summary{display:contents}
+#date-area #quote-summary[hidden]{display:none!important}
+#date-area #metrics{grid-area:metrics;display:flex;flex-direction:column;justify-content:center;gap:0;border-left:1px solid #344a66;padding-left:12px}
+#date-area #metrics .metric{display:flex;justify-content:flex-start;gap:6px;width:100%;padding:3px 0;border:0;background:transparent}
+#date-area #metrics .metric+.metric{border:0}
+#date-area #metrics .metric strong{font-size:16px}
+#date-area #metrics .metric small{font-size:11px}
+#date-area #quote-updated{grid-area:updated;padding:5px 0 0;border-top:1px solid #2b405b;text-align:center;font-size:11px}
+@media(max-width:350px){#date-area .date-control{grid-template-columns:minmax(0,1fr) minmax(94px,.75fr);gap:4px 8px;padding:8px}#date-area #metrics{padding-left:8px}#date-area .date-arrows{flex-basis:26px}#date-area .date-arrows button{width:26px}}
+/* Keep neighbouring date labels partially visible inside the wheel. */
+#date-area .wheel-previous .day-name,#date-area .wheel-previous .day-number{transform:translateY(12px)}
+#date-area .wheel-next .day-name,#date-area .wheel-next .day-number{transform:translateY(-12px)}
+
+/* Compact horizontal date selector and grouped snapshot counts. */
+#date-area .date-control{grid-template-columns:minmax(145px,2fr) minmax(0,3fr);gap:4px 8px;padding:10px 10px 8px}
+#date-area .wheel-panel{min-width:0}
+#date-area .date-heading{justify-content:center;gap:6px;margin:0;color:#a8c5e8}
+#date-area .calendar-icon{font-size:15px;line-height:1;color:#a8c5e8}
+#date-area .date-heading #date-month{font-size:11px;text-transform:uppercase;white-space:nowrap;text-align:center}
+#date-area .wheel-row{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:0}
+#date-area .date-arrows{display:contents}
+#date-area .date-arrows button{transform:none;width:40px;height:44px;min-height:44px;border:0;background:transparent;color:#ff8b3d;font-size:30px;line-height:1;padding:0}
+#date-area #date-prev{grid-column:1;grid-row:1}
+#date-area #date-next{grid-column:3;grid-row:1}
+#date-area .date-strip{grid-column:2;grid-row:1;height:44px;border:0;background:transparent;overflow:visible;touch-action:auto}
+#date-area .date-chip.wheel-previous,#date-area .date-chip.wheel-next{display:none}
+#date-area .date-chip.wheel-selected{position:static;height:44px;min-height:44px;gap:4px;padding:0;background:transparent;border:0;color:#f5f8ff;pointer-events:none}
+#date-area .date-chip .day-name{font-size:clamp(12px,3.4vw,17px);font-weight:800}
+#date-area .date-chip .day-number{font-size:clamp(17px,4.4vw,23px);font-weight:800}
+#date-area #metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;padding:8px 2px;gap:0;border:1px solid #294565;border-radius:10px;background:#172d49;min-height:62px}
+#date-area #metrics .metric{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;padding:0 1px;border:0}
+#date-area #metrics .metric+.metric{border-left:1px solid #3b5876}
+#date-area #metrics .metric strong{font-size:clamp(16px,4vw,22px);line-height:1}
+#date-area #metrics .metric small{font-size:clamp(9px,2.5vw,11px);line-height:1.1;white-space:nowrap}
+#date-area #quote-updated{border:0;padding:2px 0 0;font-size:10px}
+@media(max-width:350px){#date-area .date-control{grid-template-columns:minmax(125px,2fr) minmax(0,3fr);gap:4px;padding:8px 6px}#date-area .wheel-row{grid-template-columns:34px minmax(0,1fr) 34px}#date-area .date-arrows button{width:34px}#date-area .date-heading #date-month{font-size:10px}#date-area #metrics .metric small{font-size:9px}}
+
+/* Keep the selected day legible and allow vertical page scrolling alongside horizontal date swipes. */
+#date-area .date-chip[aria-pressed="true"] .day-name{color:#f5f8ff}
+#date-area .wheel-panel,#date-area .date-strip{touch-action:pan-y}
+
+/* Date: day and abbreviated month above the full weekday. */
+#date-area .wheel-panel{background:#172d49;border:1px solid #294565;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:62px}
+#date-area .date-heading{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#date-area .wheel-row{width:100%;grid-template-columns:32px minmax(0,1fr) 32px}
+#date-area .date-arrows button{width:32px;font-size:28px}
+#date-area .date-chip.wheel-selected{display:flex;flex-direction:column;gap:3px;min-width:0}
+#date-area .date-chip .day-date{display:flex;align-items:baseline;justify-content:center;gap:4px;white-space:nowrap}
+#date-area .date-chip .day-number{font-size:clamp(19px,5vw,25px);line-height:1}
+#date-area .date-chip .day-month{font-size:clamp(11px,3vw,15px);font-weight:800;color:#f5f8ff}
+#date-area .date-chip[aria-pressed="true"] .day-name{font-size:clamp(8px,2.1vw,10px);letter-spacing:.4px;line-height:1.1;white-space:nowrap;color:#aec8e7}
+@media(max-width:350px){#date-area .wheel-row{grid-template-columns:28px minmax(0,1fr) 28px}#date-area .date-arrows button{width:28px}#date-area .date-chip[aria-pressed="true"] .day-name{letter-spacing:0;font-size:8px}}
+
+/* Compact, aligned actions; the explanation expands below both controls. */
+#picks .pick-actions{grid-column:1/-1;position:relative;min-width:0}
+#picks .pick-actions .pick-explanation{display:block;margin:0;padding:0;border:0;background:transparent;width:100%}
+#picks .pick-actions .pick-explanation summary{display:flex;align-items:center;justify-content:center;gap:5px;width:calc(50% - 4px);min-height:44px;padding:8px 4px;border:1px solid #49627e;border-radius:9px;color:#eaf2ff;font-size:13px;list-style:none;cursor:pointer}
+#picks .pick-actions .pick-explanation summary::-webkit-details-marker{display:none}
+#picks .pick-actions .pick-explanation summary::after{content:'⌄';color:#ff9a54;font-size:16px}
+#picks .pick-actions .pick-explanation[open] summary::after{content:'⌃'}
+#picks .pick-actions .pick-explanation-body{padding:0 3px}
+#picks .pick-actions .pick-stats-button{position:absolute;top:0;right:0;width:calc(50% - 4px);min-height:44px;padding:8px 4px;font-size:13px}
+@media(min-width:900px){#picks .pick-group-1 .pick-selection{grid-template-columns:minmax(200px,1.2fr) minmax(200px,1fr) minmax(180px,.8fr);grid-template-areas:none}#picks .pick-group-1 .pick-profile,#picks .pick-group-1 .pick-fixture,#picks .pick-group-1 .pick-market,#picks .pick-group-1 .pick-values{grid-area:auto}#picks .pick-group-2 .pick-selection,#picks .pick-group-3 .pick-selection{grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(120px,.7fr) minmax(150px,.8fr)}#picks .pick-actions{grid-column:1/-1}}
+
+#picks .pick-actions .pick-explanation summary{font-size:clamp(10px,3vw,13px);gap:3px;white-space:nowrap}
+#picks .pick-actions .pick-explanation summary::before{content:"⌄";color:#ff9a54;font-size:16px;flex:none}
+#picks .pick-actions .pick-explanation[open] summary::before{content:"⌃"}
+
+/* Enlarge the brand within the existing header. */
+.app-header .brand{gap:10px}
+.app-header .brand-icon{width:70px;height:70px;flex-basis:70px}
+.app-header .brand-icon svg{width:70px;height:70px}
+.app-header .brand-copy b{font-size:clamp(26px,5vw,40px)}
+.app-header .brand-copy small{font-size:clamp(9px,1.75vw,12px)}
+@media(max-width:760px){.app-header{min-height:78px;padding:6px 10px}.app-header .brand{gap:8px}.app-header .brand-icon{width:60px;height:60px;flex-basis:60px}.app-header .brand-icon svg{width:60px;height:60px}.app-header .brand-copy b{font-size:clamp(23px,6.3vw,31px)}.app-header .brand-copy small{font-size:clamp(8px,2vw,10px);letter-spacing:1px}}
+@media(max-width:350px){.app-header .brand-icon{width:52px;height:52px;flex-basis:52px}.app-header .brand-icon svg{width:52px;height:52px}.app-header .brand-copy b{font-size:clamp(20px,6.2vw,23px)}.app-header .brand-copy small{font-size:7px;letter-spacing:.6px}}
+#picks .pick-actions .pick-explanation summary::before{content:none}
+#picks .pick-actions .pick-explanation[open] summary::before{content:none}
+#picks .pick-actions .pick-explanation summary::after{content:'+';font-size:17px;line-height:1}
+#picks .pick-actions .pick-explanation[open] summary::after{content:'−'}
+
+/* Compact explanations remain readable when they wrap on narrow screens. */
+#picks .pick-explanation-body .pick-detail-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:9px 0 0;font-size:12px;line-height:1.45}
+#picks .pick-explanation-body .pick-detail-row b{display:inline;margin:0;color:#b7cce4;white-space:nowrap}
+#picks .pick-explanation-body .pick-detail-row span{min-width:0;color:#e6eef9}
+#picks .pick-explanation-body .pick-explanation-warning{margin-top:10px}
+
+/* Clear, concise explanations and an optional definition. */
+#picks .pick-explanation-body .pick-detail-row{display:block;margin:10px 0 0;font-size:12px;line-height:1.45}
+#picks .pick-explanation-body .pick-detail-row b{display:block;margin:0 0 2px;white-space:normal;color:#b7cce4}
+#picks .pick-implied-help{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;min-height:23px;padding:0;border-radius:50%;font-size:12px;font-weight:700;vertical-align:middle}
+#picks .pick-implied-help:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#picks .pick-implied-description{display:block;margin-top:6px;color:#bed1e8;font-size:12px;line-height:1.45}
+#picks .pick-implied-description[hidden]{display:none}
+
+/* Slightly larger logo, scaled to the available mobile width. */
+.app-header .brand-icon{width:76px;height:76px;flex-basis:76px}
+.app-header .brand-icon svg{width:76px;height:76px}
+.app-header .brand-copy b{font-size:clamp(28px,5.3vw,42px)}
+@media(max-width:760px){.app-header .brand-icon{width:66px;height:66px;flex-basis:66px}.app-header .brand-icon svg{width:66px;height:66px}.app-header .brand-copy b{font-size:clamp(24px,6.6vw,33px)}}
+@media(max-width:350px){.app-header .brand-icon{width:56px;height:56px;flex-basis:56px}.app-header .brand-icon svg{width:56px;height:56px}.app-header .brand-copy b{font-size:clamp(20px,6.3vw,23px)}}
+
+/* Scale the mobile brand with the viewport while preserving side margins. */
+@media(max-width:760px){.app-header{padding:5px 12px}.app-header .brand{gap:clamp(5px,2vw,10px)}.app-header .brand-icon{width:clamp(56px,20vw,84px);height:clamp(56px,20vw,84px);flex-basis:clamp(56px,20vw,84px)}.app-header .brand-icon svg{width:100%;height:100%}.app-header .brand-copy b{font-size:clamp(27px,10vw,46px);letter-spacing:0}.app-header .brand-copy small{font-size:clamp(7px,2.1vw,11px);letter-spacing:clamp(.5px,.25vw,1.2px)}}
+
+/* Optical centering accounts for empty space in the logo artwork. */
+.app-header .brand{transform:translateX(-5px)}
+
+@media(max-width:760px){.app-header .brand-copy small{font-size:clamp(9px,2.65vw,13px);letter-spacing:clamp(.45px,.18vw,.8px)}}
+
+/* Game labels sit above compact horizontal bars for readability on mobile. */
+.player-trends{margin:0 0 14px}.player-trends-title{color:#a8bdd8;font-size:11px;margin-bottom:6px}.player-trends-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.player-trends-list>div{background:#182b43;border:1px solid #304866;border-radius:9px;padding:7px;text-align:center}.player-trends-list small{display:block;color:#a8bdd8;font-size:10px}.player-trends-list strong{font-size:16px}.player-unknown{font-size:11px;color:#a8bdd8}.player-game{margin:0 0 10px}.player-game-info{color:#b4c8df;font-size:11px;line-height:1.35;margin-bottom:3px}.player-game .barrow{grid-template-columns:minmax(0,1fr) 34px;gap:8px;margin:0}.player-game .track{height:19px}.player-game .barrow strong{text-align:right}.player-is-loading #player-trends{display:none!important}
+
+/* Keep all four season figures on one line in the profile. */
+.player-season-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;max-width:480px}
+.player-season-stats .season-stat{min-width:0;padding:8px 6px}
+.player-season-stats .season-stat small{font-size:clamp(8px,2vw,10px);letter-spacing:0;white-space:nowrap}
+.player-season-stats .season-stat strong{font-size:clamp(14px,4vw,18px)}
+@media(max-width:380px){.player-season-stats{gap:4px}.player-season-stats .season-stat{padding:7px 3px}.player-season-stats .season-stat small{font-size:8px}}
+
+/* Secondary information pages stay in the footer. */
+.footer-links{display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 6px;font-size:12px}.footer-links a{color:#9eb1ca;text-decoration:none;display:inline-flex;align-items:center;min-height:36px;padding:4px}.footer-links a:hover,.footer-links a[aria-current=page]{color:#f8ac70;text-decoration:underline}.footer-links span{color:#62738b}.back-to-site{display:inline-block;font-size:13px;color:#afc5df;margin-bottom:22px;text-decoration:none}.back-to-site:hover{text-decoration:underline}
+.extra-panel{max-width:1180px;margin:0 auto}.extra-panel h1{font-size:clamp(26px,5vw,36px);margin:6px 0 14px;line-height:1.15}.extra-panel h2{font-size:21px;margin:24px 0 14px}.extra-panel h3{font-size:18px;margin:0}.extra-panel h4{font-size:17px;margin:0 0 6px}.section-eyebrow{color:#ffad66;font-size:11px;letter-spacing:1.8px;font-weight:700}.section-intro{color:#c2d1e4;line-height:1.65;max-width:750px}.feature-note{font-size:13px;color:#a7bad3;line-height:1.65;max-width:900px}
+.extra-filters{display:flex;flex-wrap:wrap;gap:16px;margin:22px 0}.extra-filters label{display:grid;gap:8px;min-width:180px;max-width:440px;flex:1;color:#bdcde0;font-size:13px}.extra-filters select{width:100%;min-width:0;min-height:46px;box-sizing:border-box;background:#0d1c2e;color:#f0f5fc;border:1px solid #35516e;border-radius:10px;padding:10px 12px;font:inherit}
+.feature-metrics{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.feature-metrics>div{min-width:88px;flex:1;padding:14px;background:#172b44;border:1px solid #304a68;border-radius:12px}.feature-metrics strong,.feature-metrics span{display:block}.feature-metrics strong{font-size:25px}.feature-metrics span{font-size:12px;color:#b4c6df;margin-top:5px}
+.history-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:12px 0 24px}.history-ticket{padding:18px;border:1px solid #334a64;border-radius:16px;background:#102035;min-width:0}.ticket-heading{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}.outcome{display:inline-block;font-size:12px;padding:6px 9px;border-radius:8px;background:#25354b;color:#c1cee0}.outcome-won{background:#193d35;color:#9de5bd}.outcome-lost{background:#452b35;color:#f4b1b9}.outcome-unresolved{background:#3e3525;color:#f6d79c}.history-leg{border-top:1px solid #2c425c;padding:16px 0}.history-leg p{color:#a9bdd7;font-size:13px;line-height:1.5;margin:5px 0 12px}.leg-selection{font-size:14px}.leg-selection span{display:block;margin-top:8px}.leg-selection b,.ticket-total strong{color:#ffa052}.history-leg .leg-result{margin-bottom:0}.ticket-total{border-top:1px solid #2c425c;padding-top:14px;line-height:1.6}
+.extra-panel>div>button,.finder-quick-actions button,.finder-more{min-height:44px;padding:10px 14px;border:1px solid #405778;border-radius:10px;background:#1b3452;color:#e8f0fc;font:inherit;font-size:13px;cursor:pointer}.finder-quick-actions{display:flex;justify-content:flex-end;align-items:center;margin:14px 0}.finder-more{display:none}
+.about-panel h2{margin:28px 0 10px}.about-panel p{line-height:1.75;max-width:850px;color:#c0cee1}.back-to-top{position:fixed;right:18px;bottom:20px;z-index:20;min-height:44px;padding:10px 16px;border:1px solid #e68b49;border-radius:24px;background:#172c43;color:#ffb277;box-shadow:0 4px 18px #0006;cursor:pointer}.footer-links a:focus-visible,.extra-panel button:focus-visible,.back-to-site:focus-visible{outline:3px solid #ffad66;outline-offset:3px}
+@media(max-width:900px){.history-grid{grid-template-columns:1fr}.history-ticket{padding:20px}}
+@media(max-width:760px){.footer-links{font-size:12px;gap:10px}.extra-filters label{min-width:100%;font-size:14px}.extra-filters select{font-size:16px}.feature-metrics{gap:8px}.feature-metrics>div{min-width:64px;padding:12px}.feature-metrics strong{font-size:22px}.finder-more{display:block;width:100%;margin:12px 0}.finder-primary-filters input,.finder-primary-filters select{font-size:16px}.back-to-top{bottom:14px;right:12px}}
+
+/* Mobile refinements: comfortable controls without widening the page. */
+@media(max-width:760px){
+ #finder .finder-heading .finder-guide summary{width:44px;height:44px}
+ #finder .finder-card-top button{min-height:44px;padding:8px 10px;font-size:12px}
+ #finder .finder-details-toggle{min-height:44px;min-width:88px;padding:6px 4px;margin-top:2px}
+ #finder .finder-actions #csv{min-height:44px}
+ #finder .finder-advanced select,#player .filters select{font-size:16px;min-height:44px}
+ #finder .finder-primary-filters{grid-template-columns:minmax(0,1fr) minmax(100px,.6fr)}
+ #finder .finder-card-values{gap:4px 10px}
+ #finder .finder-quick-actions{margin:6px 0 10px}
+ #player .filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;align-items:end}
+ #player .filters label{min-width:0;gap:6px}
+ #player .filters label:nth-child(-n+2){grid-column:1/-1}
+ #player .filters select{width:100%;min-width:0;max-width:100%;padding-left:9px;padding-right:6px}
+ #player .player-profile{display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 12px;padding:14px;min-height:0}
+ #player .player-profile[hidden]{display:none}
+ #player .player-profile-body{display:contents}
+ #player .player-avatar{grid-column:1;grid-row:1/4;width:64px;height:64px;align-self:center}
+ #player .player-eyebrow,#player #player-display-name,#player #player-meta{grid-column:2;min-width:0;overflow-wrap:anywhere}
+ #player #player-display-name{font-size:21px;margin:0;line-height:1.2}
+ #player #player-meta{font-size:12px;margin:0;line-height:1.4}
+ #player .player-season-stats{grid-column:1/-1;width:100%;max-width:none;margin-top:10px}
+ #player .player-season-stats .season-stat{padding:10px 6px;text-align:center}
+ #player .player-season-stats .season-stat small{font-size:10px}
+ #player .player-season-stats .season-stat strong{font-size:18px}
+ #picks .pick-player-meta{overflow-wrap:anywhere}
+ .back-to-top{bottom:calc(14px + env(safe-area-inset-bottom,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+ footer{padding-bottom:calc(25px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-width:360px){
+ #finder .finder-card-top{flex-wrap:wrap}
+ #finder .finder-card-top .finder-card-identity{flex:1 1 100%}
+ #finder .finder-card-top button{width:100%;margin-top:2px}
+ #finder .finder-card-values{flex-wrap:wrap}
+ #picks .pick-selection{grid-template-columns:minmax(0,1fr)}
+ #picks .pick-profile{grid-column:1;grid-row:1}
+ #picks .pick-fixture{grid-column:1;grid-row:2;padding:8px}
+ #picks .fixture-team{flex-direction:row}
+ #picks .pick-avatar,#picks .pick-group-1 .pick-avatar{width:56px;height:64px;flex-basis:56px}
+}
+
+/* Direct player search and fixture filtering use the existing visual language. */
+#finder .finder-primary-filters{grid-template-columns:minmax(0,1.3fr) minmax(100px,.6fr) minmax(0,1.5fr)}
+@media(max-width:760px){
+ #finder .finder-primary-filters{grid-template-columns:minmax(0,1fr) minmax(100px,.6fr)}
+ #finder .finder-fixture-filter{grid-column:1/-1}
+}
+
+/* One editable player selector, alongside the existing team selector. */
+.player-picker{position:relative;display:flex;flex-direction:column;gap:7px;min-width:0;flex:1 1 185px;color:#9cb0cb;font-size:12px}
+.player-picker-control{display:flex;min-height:44px;border:1px solid #354862;border-radius:10px;background:#17263b;overflow:hidden}
+.player-picker-control:focus-within{outline:2px solid #ffad6c;outline-offset:2px}
+#player-search{width:100%;min-width:0;border:0;border-radius:0;padding:11px 10px;background:transparent;outline:none}
+#player-picker-toggle,#player-search-activate{flex:0 0 42px;min-height:44px;padding:0;border:0;border-left:1px solid #354862;border-radius:0;background:transparent;font-size:18px}
+.player-picker-popup{position:absolute;left:0;top:100%;z-index:30;width:max(100%,280px);max-width:calc(100vw - 54px);padding:6px;background:#13243b;border:1px solid #46617e;border-radius:10px;box-shadow:0 12px 24px #0006}
+.player-picker-popup[hidden],.player-search-results[hidden]{display:none}
+#player-search-status{color:#b7cbe3;font-size:12px;line-height:1.4;margin:4px 6px}
+#player-search-status:empty{display:none}
+.player-search-results{max-height:280px;overflow-y:auto;overscroll-behavior:contain;display:grid;gap:3px}
+.player-search-results button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:44px;gap:3px;border:0;background:transparent;white-space:normal;padding:9px;font-size:13px}
+.player-search-results button span{font-size:11px;color:#adc4df}
+.player-search-results button:hover,.player-search-results [aria-selected=true]{background:#294969}
+@media(max-width:760px){
+ #player .filters>.player-picker{grid-column:1/-1;gap:6px}
+ #player-search{font-size:16px}
+ .player-picker-popup{width:100%;max-width:100%}
+}
+
+#player-search[readonly]{cursor:pointer}
+#player-search-activate{display:grid;place-items:center;color:#b8cbe3}
+#player-search-activate:hover{background:#294969;color:#fff}
+
+/* Categories occupy full rows; only the tickets within each category form a grid. */
+.history-groups{display:block}.daily-group{min-width:0}.history-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}.history-leg h4,.history-leg p,.leg-selection{overflow-wrap:anywhere}
+
+/* Game details stay inside their chart row and work with touch or keyboard. */
+.player-chart-help{font-size:12px;color:#a8bdd8;margin:0 0 14px}
+.player-game>summary{list-style:none;cursor:pointer;border-radius:8px;padding:8px 4px;min-height:44px}
+.player-game>summary::-webkit-details-marker{display:none}
+.player-game>summary:focus-visible{outline:2px solid #fa9148;outline-offset:3px}
+.player-game>summary:hover{background:#203047}
+.player-game-chevron{float:right;color:#fa9148;font-size:17px;line-height:12px;margin-left:8px}
+.player-game[open] .player-game-chevron{transform:rotate(180deg)}
+.player-game-detail{background:#132238;border:1px solid #304866;border-radius:10px;padding:12px;margin:6px 0 12px}
+.player-game-detail dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
+.player-game-detail dt{font-size:11px;color:#a8bdd8;margin-bottom:4px}
+.player-game-detail dd{font-size:13px;margin:0;overflow-wrap:anywhere}
+.player-game-result{font-size:13px;color:#e8effa;border-top:1px solid #304866;margin:12px 0 0;padding-top:10px;overflow-wrap:anywhere}
+
+/* Native calendar picker: mobile-friendly and consistent with Basket Lab dark theme. */
+#history-date{color-scheme:dark;min-height:44px;max-width:230px;padding:10px 12px;background:#13243b;color:#f2f6fc;border:1px solid #46617e;border-radius:10px;font:inherit}
+#history-date:focus-visible{outline:2px solid #fa9148;outline-offset:2px}
+#history-date-hint{display:block;margin-top:6px}
+
+/* Archive KPI layout: three metrics per row on narrow mobile screens. */
+#history-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#history-summary>div{min-width:0;box-sizing:border-box;padding:12px 9px}
+#history-summary>div:nth-child(4){grid-column:1}
+#history-summary>div:nth-child(5){grid-column:2}
+#history-summary>div:nth-child(6){grid-column:3}
+#history-summary strong{font-size:clamp(17px,4.4vw,25px);overflow-wrap:anywhere}
+#history-summary span{font-size:12px;overflow-wrap:anywhere}
+
+
+/* Quote Explorer 2.0: compact grouped player markets, mobile-first */
+@media(max-width:760px){
+ #finder .finder-cards{display:grid;gap:13px}
+ #finder .finder-player-group{padding:13px;border:1px solid #3b5f7e;border-radius:15px;background:linear-gradient(145deg,#142e46,#0c1e30)}
+ #finder .finder-player-group .finder-card-top{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:12px}
+ #finder .finder-player-group .finder-card-identity{min-width:0}
+ #finder .finder-player-group .finder-card-identity>strong{font-size:16px}
+ #finder .finder-player-group .finder-card-subline{display:flex;gap:9px;color:#9fb8ce;font-size:11px}
+ #finder .finder-player-group .finder-player{padding:8px 10px;font-size:11px;white-space:nowrap}
+ #finder .finder-market-group{padding-top:9px;margin-top:9px;border-top:1px solid #34516b}
+ #finder .finder-market-group h4{display:flex;align-items:center;justify-content:space-between;margin:0 0 9px;color:#ffac65;font-size:13px}
+ #finder .finder-market-group h4 small{font-weight:400;color:#a5bfd3}
+ #finder .finder-lines-head,#finder .finder-line-main{display:grid;grid-template-columns:.8fr 1fr .95fr 1fr .9fr;gap:5px;align-items:center}
+ #finder .finder-lines-head{padding:5px 3px 7px;font-size:9px;color:#9db4c9;letter-spacing:.025em}
+ #finder .finder-line{border-top:1px solid #29455e}
+ #finder .finder-line-main{padding:10px 3px;color:#eaf3fc;font-size:12px;font-variant-numeric:tabular-nums}
+ #finder .finder-line-main b{font-size:13px}
+ #finder .finder-line-main strong{color:#ffae68}
+ #finder .finder-line-main .finder-positive{color:#79dfae;font-weight:700}
+ #finder .finder-line-actions{display:flex;flex-direction:column;align-items:flex-end}
+ #finder .finder-line-actions .finder-details-toggle{padding:3px 2px 8px;font-size:10px;background:transparent;border:0;color:#b7cce0}
+ #finder .finder-line-actions .finder-extra{width:100%;padding:9px;background:#0a1b2b;border-radius:8px;margin-bottom:8px}
+ #finder .finder-primary-filters{gap:9px}
+}

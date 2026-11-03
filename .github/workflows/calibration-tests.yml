@@ -1,0 +1,76 @@
+name: Complete offline checks
+on:
+  push:
+    paths:
+      - '**/*.py'
+      - 'web/**'
+      - 'tests/**'
+      - 'requirements*.txt'
+      - 'package*.json'
+      - '.github/workflows/calibration-tests.yml'
+  pull_request:
+    paths:
+      - '**/*.py'
+      - 'web/**'
+      - 'tests/**'
+      - 'requirements*.txt'
+      - 'package*.json'
+      - '.github/workflows/calibration-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pool-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-test-password
+          POSTGRES_DB: pool_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install -r requirements-dev.txt
+      - run: python scripts/check_connection_pool.py
+        env:
+          POOL_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/pool_test
+  production-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install -r requirements-dev.txt
+      - run: python scripts/run_offline_tests.py
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: pip install -r requirements-dev.txt
+      - run: npm ci --ignore-scripts
+      - run: python scripts/run_offline_tests.py
+      - run: python scripts/check_tracking_db.py
+      - run: python scripts/check_database_security.py
+      - run: python -m compileall -q main.py engine.py storage.py scan_tracking.py player_stats.py calibration.py calibration_validation.py progressive_calibration.py minutes_shadow.py performance_report.py settle_espn.py scripts tests
+      - run: npm test

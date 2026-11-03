@@ -1,0 +1,1091 @@
+{
+  "daily": [
+    {
+      "date": "2026-10-23",
+      "job_id": "df84969ed0e54286b9d9162b546cc4bc",
+      "saved_at": "2026-10-23T16:27:58.707544+00:00",
+      "eligible_lines": 228,
+      "verified_lines": 228,
+      "selection_origin": "reconstructed_legacy_ui",
+      "tickets": {
+        "policy": "reconstructed-legacy-ui",
+        "groups": {
+          "Singola": {
+            "status": "won",
+            "legs": [
+              {
+                "player": "Jones, Tre",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 2.0,
+                "estimated_probability": 79.1,
+                "actual": 11.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.0,
+            "unit_profit": 1.0
+          },
+          "Doppia": {
+            "status": "won",
+            "legs": [
+              {
+                "player": "Okoro, Isaac",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.52,
+                "estimated_probability": 82.2,
+                "actual": 12.0,
+                "win": true
+              },
+              {
+                "player": "Green, AJ",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.4,
+                "estimated_probability": 81.2,
+                "actual": 11.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.128,
+            "unit_profit": 1.1279999999999997
+          },
+          "Tripla": {
+            "status": "incomplete",
+            "legs": [
+              {
+                "player": "Buzelis, Matas",
+                "market": "REB",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.36,
+                "estimated_probability": 76.8,
+                "actual": 5.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 1.36,
+            "unit_profit": null
+          }
+        }
+      },
+      "minutes_screen_comparison": {
+        "policy": "risk-screen-v1",
+        "groups": {
+          "Singola": {
+            "status": "won",
+            "legs": [
+              {
+                "player": "Jones, Tre",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 2.0,
+                "estimated_probability": 79.1,
+                "actual": 11.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.0,
+            "unit_profit": 1.0
+          },
+          "Doppia": {
+            "status": "won",
+            "legs": [
+              {
+                "player": "Okoro, Isaac",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.52,
+                "estimated_probability": 82.2,
+                "actual": 12.0,
+                "win": true
+              },
+              {
+                "player": "Green, AJ",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.4,
+                "estimated_probability": 81.2,
+                "actual": 11.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.128,
+            "unit_profit": 1.1279999999999997
+          },
+          "Tripla": {
+            "status": "incomplete",
+            "legs": [
+              {
+                "player": "Buzelis, Matas",
+                "market": "REB",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.36,
+                "estimated_probability": 76.8,
+                "actual": 5.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 1.36,
+            "unit_profit": null
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-10-24",
+      "job_id": "db472cd6f3b14e1fa286dd34726e10fc",
+      "saved_at": "2026-10-23T16:36:59.666969+00:00",
+      "eligible_lines": 2165,
+      "verified_lines": 2154,
+      "selection_origin": "reconstructed_legacy_ui",
+      "tickets": {
+        "policy": "reconstructed-legacy-ui",
+        "groups": {
+          "Singola": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Sexton, Collin",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 1.74,
+                "estimated_probability": 86.4,
+                "actual": 5.0,
+                "win": false
+              }
+            ],
+            "combined_odds": 1.74,
+            "unit_profit": -1
+          },
+          "Doppia": {
+            "status": "unresolved",
+            "legs": [
+              {
+                "player": "Sheppard, Reed",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.42,
+                "estimated_probability": 96.2,
+                "actual": null,
+                "win": null
+              },
+              {
+                "player": "Bey, Saddiq",
+                "market": "REB",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.41,
+                "estimated_probability": 88.6,
+                "actual": 3.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.0022,
+            "unit_profit": null
+          },
+          "Tripla": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Leonard, Kawhi",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 19.5,
+                "odds": 1.27,
+                "estimated_probability": 93.3,
+                "actual": 16.0,
+                "win": false
+              },
+              {
+                "player": "Shead, Jamal",
+                "market": "AST",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.31,
+                "estimated_probability": 91.4,
+                "actual": 5.0,
+                "win": true
+              },
+              {
+                "player": "Ayton, Deandre",
+                "market": "REB",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.2,
+                "estimated_probability": 90.6,
+                "actual": 6.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 1.9964,
+            "unit_profit": -1
+          }
+        }
+      },
+      "minutes_screen_comparison": {
+        "policy": "risk-screen-v1",
+        "groups": {
+          "Singola": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Sexton, Collin",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 1.74,
+                "estimated_probability": 86.4,
+                "actual": 5.0,
+                "win": false
+              }
+            ],
+            "combined_odds": 1.74,
+            "unit_profit": -1
+          },
+          "Doppia": {
+            "status": "unresolved",
+            "legs": [
+              {
+                "player": "Sheppard, Reed",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.42,
+                "estimated_probability": 96.2,
+                "actual": null,
+                "win": null
+              },
+              {
+                "player": "Bey, Saddiq",
+                "market": "REB",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.41,
+                "estimated_probability": 88.6,
+                "actual": 3.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.0022,
+            "unit_profit": null
+          },
+          "Tripla": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Leonard, Kawhi",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 19.5,
+                "odds": 1.27,
+                "estimated_probability": 93.3,
+                "actual": 16.0,
+                "win": false
+              },
+              {
+                "player": "Shead, Jamal",
+                "market": "AST",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.31,
+                "estimated_probability": 91.4,
+                "actual": 5.0,
+                "win": true
+              },
+              {
+                "player": "Ayton, Deandre",
+                "market": "REB",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.2,
+                "estimated_probability": 90.6,
+                "actual": 6.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 1.9964,
+            "unit_profit": -1
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-10-25",
+      "job_id": "4c7016cb2149442ebb1320461f7bc761",
+      "saved_at": "2026-10-25T16:10:10.873864+00:00",
+      "eligible_lines": 306,
+      "verified_lines": 306,
+      "selection_origin": "reconstructed_legacy_ui",
+      "tickets": {
+        "policy": "reconstructed-legacy-ui",
+        "groups": {
+          "Singola": {
+            "status": "won",
+            "legs": [
+              {
+                "player": "Nesmith, Aaron",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 1.89,
+                "estimated_probability": 64.8,
+                "actual": 13.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 1.89,
+            "unit_profit": 0.8899999999999999
+          },
+          "Doppia": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Oubre Jr., Kelly",
+                "market": "REB",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.55,
+                "estimated_probability": 84.1,
+                "actual": 2.0,
+                "win": false
+              },
+              {
+                "player": "Jackson Jr., Jaren",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 14.5,
+                "odds": 1.54,
+                "estimated_probability": 82.7,
+                "actual": 20.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.387,
+            "unit_profit": -1
+          },
+          "Tripla": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "George, Keyonte",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 14.5,
+                "odds": 1.23,
+                "estimated_probability": 87.5,
+                "actual": 24.0,
+                "win": true
+              },
+              {
+                "player": "Mamukelashvili, Sandro",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.22,
+                "estimated_probability": 87.5,
+                "actual": 9.0,
+                "win": true
+              },
+              {
+                "player": "Nembhard, Andrew",
+                "market": "AST",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.26,
+                "estimated_probability": 83.0,
+                "actual": 3.0,
+                "win": false
+              }
+            ],
+            "combined_odds": 1.8908,
+            "unit_profit": -1
+          }
+        }
+      },
+      "minutes_screen_comparison": {
+        "policy": "risk-screen-v1",
+        "groups": {
+          "Singola": {
+            "status": "won",
+            "legs": [
+              {
+                "player": "Nesmith, Aaron",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 1.89,
+                "estimated_probability": 64.8,
+                "actual": 13.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 1.89,
+            "unit_profit": 0.8899999999999999
+          },
+          "Doppia": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Oubre Jr., Kelly",
+                "market": "REB",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.55,
+                "estimated_probability": 84.1,
+                "actual": 2.0,
+                "win": false
+              },
+              {
+                "player": "Jackson Jr., Jaren",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 14.5,
+                "odds": 1.54,
+                "estimated_probability": 82.7,
+                "actual": 20.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.387,
+            "unit_profit": -1
+          },
+          "Tripla": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "George, Keyonte",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 14.5,
+                "odds": 1.23,
+                "estimated_probability": 87.5,
+                "actual": 24.0,
+                "win": true
+              },
+              {
+                "player": "Mamukelashvili, Sandro",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.22,
+                "estimated_probability": 87.5,
+                "actual": 9.0,
+                "win": true
+              },
+              {
+                "player": "Nembhard, Andrew",
+                "market": "AST",
+                "choice": "Over",
+                "line": 4.5,
+                "odds": 1.26,
+                "estimated_probability": 83.0,
+                "actual": 3.0,
+                "win": false
+              }
+            ],
+            "combined_odds": 1.8908,
+            "unit_profit": -1
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-10-26",
+      "job_id": "8c6247f959524bf5a417869fe39f45a6",
+      "saved_at": "2026-10-25T16:13:54.968568+00:00",
+      "eligible_lines": 898,
+      "verified_lines": 840,
+      "selection_origin": "reconstructed_legacy_ui",
+      "tickets": {
+        "policy": "reconstructed-legacy-ui",
+        "groups": {
+          "Singola": {
+            "status": "unresolved",
+            "legs": [
+              {
+                "player": "Edgecombe, VJ",
+                "market": "AST",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.83,
+                "estimated_probability": 77.0,
+                "actual": null,
+                "win": null
+              }
+            ],
+            "combined_odds": 1.83,
+            "unit_profit": null
+          },
+          "Doppia": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Leonard, Kawhi",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 19.5,
+                "odds": 1.4,
+                "estimated_probability": 91.3,
+                "actual": null,
+                "win": null
+              },
+              {
+                "player": "Grant, Jerami",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 1.42,
+                "estimated_probability": 82.3,
+                "actual": 5.0,
+                "win": false
+              }
+            ],
+            "combined_odds": 1.988,
+            "unit_profit": -1
+          },
+          "Tripla": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Shead, Jamal",
+                "market": "AST",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.22,
+                "estimated_probability": 91.5,
+                "actual": 0.0,
+                "win": false
+              },
+              {
+                "player": "Maxey, Tyrese",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 19.5,
+                "odds": 1.26,
+                "estimated_probability": 87.7,
+                "actual": 29.0,
+                "win": true
+              },
+              {
+                "player": "Williams, Jaylin",
+                "market": "REB",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.2,
+                "estimated_probability": 86.4,
+                "actual": 0.0,
+                "win": false
+              }
+            ],
+            "combined_odds": 1.8446,
+            "unit_profit": -1
+          }
+        }
+      },
+      "minutes_screen_comparison": {
+        "policy": "risk-screen-v1",
+        "groups": {
+          "Singola": {
+            "status": "unresolved",
+            "legs": [
+              {
+                "player": "Edgecombe, VJ",
+                "market": "AST",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.83,
+                "estimated_probability": 77.0,
+                "actual": null,
+                "win": null
+              }
+            ],
+            "combined_odds": 1.83,
+            "unit_profit": null
+          },
+          "Doppia": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Leonard, Kawhi",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 19.5,
+                "odds": 1.4,
+                "estimated_probability": 91.3,
+                "actual": null,
+                "win": null
+              },
+              {
+                "player": "Grant, Jerami",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 9.5,
+                "odds": 1.42,
+                "estimated_probability": 82.3,
+                "actual": 5.0,
+                "win": false
+              }
+            ],
+            "combined_odds": 1.988,
+            "unit_profit": -1
+          },
+          "Tripla": {
+            "status": "lost",
+            "legs": [
+              {
+                "player": "Shead, Jamal",
+                "market": "AST",
+                "choice": "Over",
+                "line": 2.5,
+                "odds": 1.22,
+                "estimated_probability": 91.5,
+                "actual": 0.0,
+                "win": false
+              },
+              {
+                "player": "Maxey, Tyrese",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 19.5,
+                "odds": 1.26,
+                "estimated_probability": 87.7,
+                "actual": 29.0,
+                "win": true
+              },
+              {
+                "player": "Ball, LaMelo",
+                "market": "PTS",
+                "choice": "Over",
+                "line": 14.5,
+                "odds": 1.38,
+                "estimated_probability": 83.6,
+                "actual": 15.0,
+                "win": true
+              }
+            ],
+            "combined_odds": 2.1213,
+            "unit_profit": -1
+          }
+        }
+      }
+    }
+  ],
+  "skipped": [],
+  "tickets": {
+    "Singola": {
+      "won": 2,
+      "lost": 1,
+      "unresolved": 1
+    },
+    "Doppia": {
+      "won": 1,
+      "unresolved": 1,
+      "lost": 2
+    },
+    "Tripla": {
+      "incomplete": 1,
+      "lost": 3
+    }
+  },
+  "calibration_validation": {
+    "days": 4,
+    "n": 3528,
+    "adjusted_predictions": 1900,
+    "brier_original": 0.12140845408163263,
+    "brier_candidate": 0.12117717934498003,
+    "improved": true,
+    "daily": [
+      {
+        "date": "2026-10-23",
+        "n": 228,
+        "brier_original": 0.11130234210526317,
+        "brier_candidate": 0.11130234210526317,
+        "adjusted_predictions": 0
+      },
+      {
+        "date": "2026-10-24",
+        "n": 2154,
+        "brier_original": 0.11855622841225626,
+        "brier_candidate": 0.11855839293252843,
+        "adjusted_predictions": 1250
+      },
+      {
+        "date": "2026-10-25",
+        "n": 306,
+        "brier_original": 0.13320886274509802,
+        "brier_candidate": 0.13171408895898787,
+        "adjusted_predictions": 178
+      },
+      {
+        "date": "2026-10-26",
+        "n": 840,
+        "brier_original": 0.12716674285714286,
+        "brier_candidate": 0.12673436325115836,
+        "adjusted_predictions": 472
+      }
+    ]
+  },
+  "calibration_eligible": false,
+  "minutes_unique_opportunities": {
+    "normal": {
+      "unique_player_market_games": 573,
+      "verified_selections": 561,
+      "selection_rule": "highest pregame estimated expected value per player-market-game",
+      "groups": {
+        "market:AST": {
+          "n": 110,
+          "wins": 68,
+          "losses": 42,
+          "win_rate": 0.6182,
+          "mean_predicted": 0.6334,
+          "brier": 0.2296,
+          "flat_stake_roi": -0.0742,
+          "flat_stake_units": -8.16
+        },
+        "market:AST:odds:doppia": {
+          "n": 37,
+          "wins": 21,
+          "losses": 16,
+          "win_rate": 0.5676,
+          "mean_predicted": 0.6117,
+          "brier": 0.2629,
+          "flat_stake_roi": -0.1138,
+          "flat_stake_units": -4.21
+        },
+        "market:AST:odds:singola": {
+          "n": 31,
+          "wins": 16,
+          "losses": 15,
+          "win_rate": 0.5161,
+          "mean_predicted": 0.5355,
+          "brier": 0.2521,
+          "flat_stake_roi": -0.0623,
+          "flat_stake_units": -1.93
+        },
+        "market:AST:odds:tripla": {
+          "n": 42,
+          "wins": 31,
+          "losses": 11,
+          "win_rate": 0.7381,
+          "mean_predicted": 0.7248,
+          "brier": 0.1835,
+          "flat_stake_roi": -0.0481,
+          "flat_stake_units": -2.02
+        },
+        "market:PTS": {
+          "n": 237,
+          "wins": 151,
+          "losses": 86,
+          "win_rate": 0.6371,
+          "mean_predicted": 0.653,
+          "brier": 0.2423,
+          "flat_stake_roi": -0.0499,
+          "flat_stake_units": -11.82
+        },
+        "market:PTS:odds:doppia": {
+          "n": 97,
+          "wins": 58,
+          "losses": 39,
+          "win_rate": 0.5979,
+          "mean_predicted": 0.6588,
+          "brier": 0.2544,
+          "flat_stake_roi": -0.098,
+          "flat_stake_units": -9.51
+        },
+        "market:PTS:odds:singola": {
+          "n": 55,
+          "wins": 31,
+          "losses": 24,
+          "win_rate": 0.5636,
+          "mean_predicted": 0.5587,
+          "brier": 0.2571,
+          "flat_stake_roi": 0.0469,
+          "flat_stake_units": 2.58
+        },
+        "market:PTS:odds:tripla": {
+          "n": 85,
+          "wins": 62,
+          "losses": 23,
+          "win_rate": 0.7294,
+          "mean_predicted": 0.7074,
+          "brier": 0.2189,
+          "flat_stake_roi": -0.0575,
+          "flat_stake_units": -4.89
+        },
+        "market:REB": {
+          "n": 214,
+          "wins": 123,
+          "losses": 91,
+          "win_rate": 0.5748,
+          "mean_predicted": 0.6065,
+          "brier": 0.242,
+          "flat_stake_roi": -0.1316,
+          "flat_stake_units": -28.16
+        },
+        "market:REB:odds:doppia": {
+          "n": 91,
+          "wins": 52,
+          "losses": 39,
+          "win_rate": 0.5714,
+          "mean_predicted": 0.5891,
+          "brier": 0.2449,
+          "flat_stake_roi": -0.1216,
+          "flat_stake_units": -11.07
+        },
+        "market:REB:odds:singola": {
+          "n": 55,
+          "wins": 26,
+          "losses": 29,
+          "win_rate": 0.4727,
+          "mean_predicted": 0.5253,
+          "brier": 0.252,
+          "flat_stake_roi": -0.1267,
+          "flat_stake_units": -6.97
+        },
+        "market:REB:odds:tripla": {
+          "n": 68,
+          "wins": 45,
+          "losses": 23,
+          "win_rate": 0.6618,
+          "mean_predicted": 0.6955,
+          "brier": 0.2301,
+          "flat_stake_roi": -0.1488,
+          "flat_stake_units": -10.12
+        },
+        "odds:doppia": {
+          "n": 225,
+          "wins": 131,
+          "losses": 94,
+          "win_rate": 0.5822,
+          "mean_predicted": 0.6229,
+          "brier": 0.2519,
+          "flat_stake_roi": -0.1102,
+          "flat_stake_units": -24.79
+        },
+        "odds:singola": {
+          "n": 141,
+          "wins": 73,
+          "losses": 68,
+          "win_rate": 0.5177,
+          "mean_predicted": 0.5406,
+          "brier": 0.254,
+          "flat_stake_roi": -0.0448,
+          "flat_stake_units": -6.32
+        },
+        "odds:tripla": {
+          "n": 195,
+          "wins": 138,
+          "losses": 57,
+          "win_rate": 0.7077,
+          "mean_predicted": 0.707,
+          "brier": 0.2152,
+          "flat_stake_roi": -0.0873,
+          "flat_stake_units": -17.03
+        },
+        "overall": {
+          "n": 561,
+          "wins": 342,
+          "losses": 219,
+          "win_rate": 0.6096,
+          "mean_predicted": 0.6314,
+          "brier": 0.2397,
+          "flat_stake_roi": -0.0858,
+          "flat_stake_units": -48.14
+        }
+      }
+    },
+    "watch": {
+      "unique_player_market_games": 27,
+      "verified_selections": 27,
+      "selection_rule": "highest pregame estimated expected value per player-market-game",
+      "groups": {
+        "market:AST": {
+          "n": 6,
+          "wins": 3,
+          "losses": 3,
+          "win_rate": 0.5,
+          "mean_predicted": 0.7063,
+          "brier": 0.2338,
+          "flat_stake_roi": -0.25,
+          "flat_stake_units": -1.5
+        },
+        "market:AST:odds:doppia": {
+          "n": 3,
+          "wins": 1,
+          "losses": 2,
+          "win_rate": 0.3333,
+          "mean_predicted": 0.6733,
+          "brier": 0.3268,
+          "flat_stake_roi": -0.51,
+          "flat_stake_units": -1.53
+        },
+        "market:AST:odds:singola": {
+          "n": 2,
+          "wins": 1,
+          "losses": 1,
+          "win_rate": 0.5,
+          "mean_predicted": 0.6805,
+          "brier": 0.2011,
+          "flat_stake_roi": -0.085,
+          "flat_stake_units": -0.17
+        },
+        "market:AST:odds:tripla": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate": 1.0,
+          "mean_predicted": 0.857,
+          "brier": 0.0204,
+          "flat_stake_roi": 0.2,
+          "flat_stake_units": 0.2
+        },
+        "market:PTS": {
+          "n": 11,
+          "wins": 6,
+          "losses": 5,
+          "win_rate": 0.5455,
+          "mean_predicted": 0.6526,
+          "brier": 0.279,
+          "flat_stake_roi": -0.1955,
+          "flat_stake_units": -2.15
+        },
+        "market:PTS:odds:doppia": {
+          "n": 5,
+          "wins": 3,
+          "losses": 2,
+          "win_rate": 0.6,
+          "mean_predicted": 0.6228,
+          "brier": 0.3129,
+          "flat_stake_roi": -0.104,
+          "flat_stake_units": -0.52
+        },
+        "market:PTS:odds:singola": {
+          "n": 3,
+          "wins": 1,
+          "losses": 2,
+          "win_rate": 0.3333,
+          "mean_predicted": 0.578,
+          "brier": 0.2802,
+          "flat_stake_roi": -0.4133,
+          "flat_stake_units": -1.24
+        },
+        "market:PTS:odds:tripla": {
+          "n": 3,
+          "wins": 2,
+          "losses": 1,
+          "win_rate": 0.6667,
+          "mean_predicted": 0.777,
+          "brier": 0.2212,
+          "flat_stake_roi": -0.13,
+          "flat_stake_units": -0.39
+        },
+        "market:REB": {
+          "n": 10,
+          "wins": 6,
+          "losses": 4,
+          "win_rate": 0.6,
+          "mean_predicted": 0.6785,
+          "brier": 0.2581,
+          "flat_stake_roi": -0.071,
+          "flat_stake_units": -0.71
+        },
+        "market:REB:odds:doppia": {
+          "n": 5,
+          "wins": 3,
+          "losses": 2,
+          "win_rate": 0.6,
+          "mean_predicted": 0.6834,
+          "brier": 0.281,
+          "flat_stake_roi": -0.028,
+          "flat_stake_units": -0.14
+        },
+        "market:REB:odds:singola": {
+          "n": 2,
+          "wins": 1,
+          "losses": 1,
+          "win_rate": 0.5,
+          "mean_predicted": 0.577,
+          "brier": 0.251,
+          "flat_stake_roi": -0.085,
+          "flat_stake_units": -0.17
+        },
+        "market:REB:odds:tripla": {
+          "n": 3,
+          "wins": 2,
+          "losses": 1,
+          "win_rate": 0.6667,
+          "mean_predicted": 0.738,
+          "brier": 0.2248,
+          "flat_stake_roi": -0.1333,
+          "flat_stake_units": -0.4
+        },
+        "odds:doppia": {
+          "n": 13,
+          "wins": 7,
+          "losses": 6,
+          "win_rate": 0.5385,
+          "mean_predicted": 0.6578,
+          "brier": 0.3038,
+          "flat_stake_roi": -0.1685,
+          "flat_stake_units": -2.19
+        },
+        "odds:singola": {
+          "n": 7,
+          "wins": 3,
+          "losses": 4,
+          "win_rate": 0.4286,
+          "mean_predicted": 0.607,
+          "brier": 0.2492,
+          "flat_stake_roi": -0.2257,
+          "flat_stake_units": -1.58
+        },
+        "odds:tripla": {
+          "n": 7,
+          "wins": 5,
+          "losses": 2,
+          "win_rate": 0.7143,
+          "mean_predicted": 0.7717,
+          "brier": 0.1941,
+          "flat_stake_roi": -0.0843,
+          "flat_stake_units": -0.59
+        },
+        "overall": {
+          "n": 27,
+          "wins": 15,
+          "losses": 12,
+          "win_rate": 0.5556,
+          "mean_predicted": 0.6741,
+          "brier": 0.2612,
+          "flat_stake_roi": -0.1615,
+          "flat_stake_units": -4.36
+        }
+      }
+    },
+    "unknown": {
+      "unique_player_market_games": 0,
+      "verified_selections": 0,
+      "selection_rule": "highest pregame estimated expected value per player-market-game",
+      "groups": {}
+    }
+  },
+  "limitations": [
+    "Four dates do not establish profitability or independent validation.",
+    "Alternate lines on one athlete are correlated; only the minutes view deduplicates them.",
+    "Legacy UI tickets are reconstructions, not proof of what a visitor saw.",
+    "Current injuries are never applied to archived predictions.",
+    "Only Over lines exist in these archives; Under performance cannot be inferred."
+  ],
+  "odds_api_calls": 0,
+  "database_writes": 0
+}

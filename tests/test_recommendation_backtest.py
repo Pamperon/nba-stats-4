@@ -1,0 +1,78 @@
+"""No-network tests: picks must be selected before actuals are available."""
+import unittest
+from scripts.recommendation_backtest import select_pregame, evaluate
+
+def pick(name, line, odds, probability, actual=None):
+    row = {"Partita":"A - B","Squadra":"A","Giocatore":name,"Mercato":"PTS",
+           "Scelta":"Over","Linea":line,"Quota":odds,"Prob. stimata %":probability}
+    if actual is not None:
+        row.update(actual=actual,played=True)
+    return row
+
+class RecommendationBacktestTests(unittest.TestCase):
+    def test_distinct_players_and_best_value(self):
+        rows=[pick("Alpha",19.5,1.8,70),pick("Alpha",24.5,1.8,60),
+              pick("Beta",19.5,1.55,75),pick("Beta",24.5,1.55,60),
+              pick("Gamma",9.5,1.55,70)]
+        selected=select_pregame(rows)
+        self.assertEqual(len(selected["singola"]),1)
+        self.assertEqual(selected["singola"][0]["Linea"],19.5)
+        self.assertEqual(len(selected["doppia"]),2)
+        self.assertEqual({r["Giocatore"] for r in selected["doppia"]},{"Beta","Gamma"})
+
+    def test_missing_settlement_is_not_replaced(self):
+        archive=[pick("Alpha",19.5,1.8,70),pick("Beta",19.5,1.8,55)]
+        result=evaluate(archive,[pick("Beta",19.5,1.8,55,25)])
+        self.assertFalse(result["singola"]["settled"])
+        self.assertIsNone(result["singola"]["unit_profit"])
+
+    def test_exclude_negative_value_and_non_evaluable(self):
+        negative = pick("Negative", 19.5, 1.8, 40)
+        excluded = pick("Excluded", 19.5, 1.8, 90)
+        excluded["Stato analisi"] = "Non valutabile"
+        good = pick("Valid", 19.5, 1.8, 70)
+        result = select_pregame([negative, excluded, good])
+        self.assertEqual([r["Giocatore"] for r in result["singola"]], ["Valid"])
+
+    def test_incomplete_tickets_are_not_scored(self):
+        archive = [pick("Only", 19.5, 1.55, 80)]
+        result = evaluate(archive, [pick("Only", 19.5, 1.55, 80, 25)])
+        self.assertFalse(result["doppia"]["complete"])
+        self.assertIsNone(result["doppia"]["unit_profit"])
+
+    def test_different_games_preferred_for_multiple(self):
+        first = pick("Alpha", 19.5, 1.55, 90)
+        second = pick("Beta", 19.5, 1.55, 85)
+        third = pick("Gamma", 19.5, 1.55, 80)
+        third["Partita"] = "C - D"
+        chosen = select_pregame([first, second, third])["doppia"]
+        self.assertEqual({r["Giocatore"] for r in chosen}, {"Alpha", "Gamma"})
+
+    def test_same_game_fallback_when_needed(self):
+        first = pick("Alpha", 19.5, 1.55, 90)
+        second = pick("Beta", 19.5, 1.55, 85)
+        chosen = select_pregame([first, second])["doppia"]
+        self.assertEqual(len(chosen), 2)
+
+    def test_invalid_espn_actual_does_not_crash_or_count_as_loss(self):
+        archive = [pick("Alpha", 19.5, 1.8, 70)]
+        invalid = pick("Alpha", 19.5, 1.8, 70, float("nan"))
+        report = evaluate(archive, [invalid])["singola"]
+        self.assertFalse(report["settled"])
+        self.assertEqual(report["missing_results"], 1)
+        self.assertIsNone(report["unit_profit"])
+
+    def test_invalid_espn_text_does_not_crash(self):
+        archive = [pick("Alpha", 19.5, 1.8, 70)]
+        invalid = pick("Alpha", 19.5, 1.8, 70, "unavailable")
+        report = evaluate(archive, [invalid])["singola"]
+        self.assertFalse(report["settled"])
+
+    def test_correct_settlement(self):
+        archive=[pick("Alpha",19.5,1.8,70)]
+        result=evaluate(archive,[pick("Alpha",19.5,1.8,70,25)])
+        self.assertTrue(result["singola"]["settled"])
+        self.assertAlmostEqual(result["singola"]["unit_profit"],0.8)
+
+if __name__=="__main__":
+    unittest.main()

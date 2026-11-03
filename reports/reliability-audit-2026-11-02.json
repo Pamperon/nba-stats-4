@@ -1,0 +1,3056 @@
+{
+  "date": "2026-11-02",
+  "source_commit": "85c7bfaaebc3b615fee0082dd03eb2af09aa5211",
+  "database_writes": 0,
+  "odds_api_calls": 0,
+  "evidence": "ESPN finalized boxscores and three neighboring league schedule dates, filtered to Europe/Rome tipoff date",
+  "reasons": {
+    "matched": 8793,
+    "athlete_not_in_boxscore": 181,
+    "confirmed_dnp": 109
+  },
+  "days": [
+    {
+      "date": "2026-10-23",
+      "eligible": 228,
+      "reasons": {
+        "matched": 228
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [],
+      "stored_matched": 228,
+      "stored_expected": 228
+    },
+    {
+      "date": "2026-10-24",
+      "eligible": 2166,
+      "reasons": {
+        "matched": 2155,
+        "athlete_not_in_boxscore": 11
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 34,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 394,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 527,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 667,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 884,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 1050,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 1069,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 1244,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 1457,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1496,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 1497,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Sheppard, Reed",
+          "team": "Houston Rockets",
+          "fixture": "San Antonio Spurs - Houston Rockets",
+          "athlete_id": "",
+          "market": "REB",
+          "line": 6.5
+        }
+      ],
+      "stored_matched": 2155,
+      "stored_expected": 2166
+    },
+    {
+      "date": "2026-10-25",
+      "eligible": 280,
+      "reasons": {
+        "matched": 280
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [],
+      "stored_matched": 280,
+      "stored_expected": 280
+    },
+    {
+      "date": "2026-10-26",
+      "eligible": 893,
+      "reasons": {
+        "matched": 835,
+        "confirmed_dnp": 32,
+        "athlete_not_in_boxscore": 26
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 2,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 4,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 11,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 16,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 40,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 44,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 49,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 55,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 75,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 108,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 121,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 130,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 140,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 160,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 167,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 174,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 197,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 204,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 215,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 249,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 254,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 277,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 278,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 279,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 325,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 333,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 342,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 357,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 366,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 371,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 373,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 382,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 445,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 446,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 475,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 476,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 506,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 507,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 518,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 549,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 561,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 590,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 39.5
+        },
+        {
+          "row_index": 597,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 598,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 603,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 611,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 622,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 627,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 637,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 44.5
+        },
+        {
+          "row_index": 649,
+          "reason": "confirmed_dnp",
+          "player": "Edgecombe, VJ",
+          "team": "Philadelphia 76ers",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "5124612",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 663,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 744,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "PTS",
+          "line": 49.5
+        },
+        {
+          "row_index": 752,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 763,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Keegan",
+          "team": "Sacramento Kings",
+          "fixture": "Sacramento Kings - Memphis Grizzlies",
+          "athlete_id": "4594327",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 848,
+          "reason": "confirmed_dnp",
+          "player": "Leonard, Kawhi",
+          "team": "Toronto Raptors",
+          "fixture": "Minnesota Timberwolves - Toronto Raptors",
+          "athlete_id": "6450",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 877,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 878,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 879,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Thompson, Ausar",
+          "team": "Detroit Pistons",
+          "fixture": "Philadelphia 76ers - Detroit Pistons",
+          "athlete_id": "4684742",
+          "market": "AST",
+          "line": 12.5
+        }
+      ],
+      "stored_matched": 835,
+      "stored_expected": 893
+    },
+    {
+      "date": "2026-10-27",
+      "eligible": 1506,
+      "reasons": {
+        "matched": 1453,
+        "confirmed_dnp": 17,
+        "athlete_not_in_boxscore": 36
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 15,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 25,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 67,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 110,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 153,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 158,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 178,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 197,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 234,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 329,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 378,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 398,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 405,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 458,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 459,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 461,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 560,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 561,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 579,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 627,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 630,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 685,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 726,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 744,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 805,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 814,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 865,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 867,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 872,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 884,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 900,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 905,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 916,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 922,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 1005,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1019,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "AST",
+          "line": 12.5
+        },
+        {
+          "row_index": 1042,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 1102,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1113,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 1142,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 1149,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 1153,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 1154,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "AST",
+          "line": 14.5
+        },
+        {
+          "row_index": 1184,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 1197,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 1207,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Houston Rockets - Atlanta Hawks",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 1244,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 1255,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 1398,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 1399,
+          "reason": "confirmed_dnp",
+          "player": "Nembhard, Andrew",
+          "team": "Indiana Pacers",
+          "fixture": "Milwaukee Bucks - Indiana Pacers",
+          "athlete_id": "4395712",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 1478,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 1479,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Holmgren, Chet",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4433255",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1480,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Wallace, Cason",
+          "team": "Oklahoma City Thunder",
+          "fixture": "Oklahoma City Thunder - Phoenix Suns",
+          "athlete_id": "4683692",
+          "market": "REB",
+          "line": 9.5
+        }
+      ],
+      "stored_matched": 1453,
+      "stored_expected": 1506
+    },
+    {
+      "date": "2026-10-28",
+      "eligible": 677,
+      "reasons": {
+        "matched": 677
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [],
+      "stored_matched": 677,
+      "stored_expected": 677
+    },
+    {
+      "date": "2026-10-29",
+      "eligible": 2006,
+      "reasons": {
+        "matched": 1927,
+        "athlete_not_in_boxscore": 43,
+        "confirmed_dnp": 36
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 34,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 41,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 58,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 59,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 60,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 92,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 129,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 200,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 205,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 208,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 236,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 335,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 356,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 370,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 371,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 415,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 418,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 430,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 538,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 540,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 555,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 587,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 591,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 594,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 632,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 663,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 684,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 719,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 745,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 754,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 778,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 839,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 854,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 870,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 881,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "PTS",
+          "line": 39.5
+        },
+        {
+          "row_index": 921,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 933,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 958,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 964,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 994,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 996,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 1044,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 1051,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 1077,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 1127,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 1148,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 1193,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 1202,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 1219,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 1247,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 1248,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "PTS",
+          "line": 44.5
+        },
+        {
+          "row_index": 1267,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 1303,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 1310,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1311,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "AST",
+          "line": 12.5
+        },
+        {
+          "row_index": 1380,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 1381,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "PTS",
+          "line": 49.5
+        },
+        {
+          "row_index": 1383,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1390,
+          "reason": "confirmed_dnp",
+          "player": "Santos, Gui",
+          "team": "Golden State Warriors",
+          "fixture": "Minnesota Timberwolves - Golden State Warriors",
+          "athlete_id": "4997536",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 1419,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 39.5
+        },
+        {
+          "row_index": 1437,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 1453,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 1454,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 1501,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 1504,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 1517,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "PTS",
+          "line": 44.5
+        },
+        {
+          "row_index": 1518,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 1520,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 1585,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 1604,
+          "reason": "confirmed_dnp",
+          "player": "Smart, Marcus",
+          "team": "Houston Rockets",
+          "fixture": "Milwaukee Bucks - Houston Rockets",
+          "athlete_id": "2990992",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 1687,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 1688,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 1689,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 1700,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Doncic, Luka",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "3945274",
+          "market": "AST",
+          "line": 14.5
+        },
+        {
+          "row_index": 1792,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Markkanen, Lauri",
+          "team": "Utah Jazz",
+          "fixture": "Utah Jazz - San Antonio Spurs",
+          "athlete_id": "4066336",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1827,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 1828,
+          "reason": "confirmed_dnp",
+          "player": "Johnson, Tre",
+          "team": "Washington Wizards",
+          "fixture": "Cleveland Cavaliers - Washington Wizards",
+          "athlete_id": "5238230",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 1859,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 1860,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "LA Clippers - Los Angeles Lakers",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 9.5
+        }
+      ],
+      "stored_matched": 1927,
+      "stored_expected": 2006
+    },
+    {
+      "date": "2026-10-30",
+      "eligible": 455,
+      "reasons": {
+        "matched": 428,
+        "athlete_not_in_boxscore": 27
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 16,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 27,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 28,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 53,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 61,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 83,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 112,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 113,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 116,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 141,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 194,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 195,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 204,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 225,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 231,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 274,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 275,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 309,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 310,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 324,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 354,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 385,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "PTS",
+          "line": 39.5
+        },
+        {
+          "row_index": 386,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 387,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "AST",
+          "line": 12.5
+        },
+        {
+          "row_index": 388,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Murray, Dejounte",
+          "team": "New Orleans Pelicans",
+          "fixture": "New Orleans Pelicans - Sacramento Kings",
+          "athlete_id": "3907497",
+          "market": "AST",
+          "line": 14.5
+        },
+        {
+          "row_index": 394,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 427,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams III, Robert",
+          "team": "Portland Trail Blazers",
+          "fixture": "Portland Trail Blazers - Memphis Grizzlies",
+          "athlete_id": "4066211",
+          "market": "AST",
+          "line": 4.5
+        }
+      ],
+      "stored_matched": 428,
+      "stored_expected": 455
+    },
+    {
+      "date": "2026-10-31",
+      "eligible": 279,
+      "reasons": {
+        "matched": 262,
+        "athlete_not_in_boxscore": 17
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 11,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 15,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 24,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 38,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 50,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 57,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 89,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 94,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 113,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 133,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "AST",
+          "line": 9.5
+        },
+        {
+          "row_index": 140,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 178,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 180,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 222,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "AST",
+          "line": 12.5
+        },
+        {
+          "row_index": 223,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "AST",
+          "line": 14.5
+        },
+        {
+          "row_index": 233,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "PTS",
+          "line": 34.5
+        },
+        {
+          "row_index": 253,
+          "reason": "athlete_not_in_boxscore",
+          "player": "James, LeBron",
+          "team": "Philadelphia 76ers",
+          "fixture": "Charlotte Hornets - Philadelphia 76ers",
+          "athlete_id": "1966",
+          "market": "PTS",
+          "line": 39.5
+        }
+      ],
+      "stored_matched": 262,
+      "stored_expected": 279
+    },
+    {
+      "date": "2026-11-01",
+      "eligible": 338,
+      "reasons": {
+        "athlete_not_in_boxscore": 10,
+        "matched": 315,
+        "confirmed_dnp": 13
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 0,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 24,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 26,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 31,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 62,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 69,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 85,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 110,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 114,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 116,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 122,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 158,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 164,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 167,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 215,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 234,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 241,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 242,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 268,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 283,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "PTS",
+          "line": 29.5
+        },
+        {
+          "row_index": 284,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 285,
+          "reason": "confirmed_dnp",
+          "player": "Toppin, Obi",
+          "team": "Indiana Pacers",
+          "fixture": "Indiana Pacers - Brooklyn Nets",
+          "athlete_id": "4278355",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 308,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Robinson, Mitchell",
+          "team": "Boston Celtics",
+          "fixture": "Orlando Magic - Boston Celtics",
+          "athlete_id": "4351852",
+          "market": "AST",
+          "line": 4.5
+        }
+      ],
+      "stored_matched": 315,
+      "stored_expected": 338
+    },
+    {
+      "date": "2026-11-02",
+      "eligible": 255,
+      "reasons": {
+        "matched": 233,
+        "athlete_not_in_boxscore": 11,
+        "confirmed_dnp": 11
+      },
+      "duplicate_matched_lines": 0,
+      "missing": [
+        {
+          "row_index": 19,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 21,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 27,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "PTS",
+          "line": 4.5
+        },
+        {
+          "row_index": 32,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 60,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 64,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 67,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "PTS",
+          "line": 9.5
+        },
+        {
+          "row_index": 79,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 2.5
+        },
+        {
+          "row_index": 94,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 101,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 110,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "PTS",
+          "line": 14.5
+        },
+        {
+          "row_index": 121,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "AST",
+          "line": 2.5
+        },
+        {
+          "row_index": 123,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "REB",
+          "line": 9.5
+        },
+        {
+          "row_index": 148,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 4.5
+        },
+        {
+          "row_index": 150,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 167,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 19.5
+        },
+        {
+          "row_index": 171,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 175,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "AST",
+          "line": 4.5
+        },
+        {
+          "row_index": 195,
+          "reason": "confirmed_dnp",
+          "player": "Poeltl, Jakob",
+          "team": "Toronto Raptors",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "3134908",
+          "market": "AST",
+          "line": 6.5
+        },
+        {
+          "row_index": 201,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "PTS",
+          "line": 24.5
+        },
+        {
+          "row_index": 202,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 6.5
+        },
+        {
+          "row_index": 231,
+          "reason": "athlete_not_in_boxscore",
+          "player": "Williams, Ziaire",
+          "team": "Los Angeles Lakers",
+          "fixture": "Los Angeles Lakers - Toronto Raptors",
+          "athlete_id": "4433137",
+          "market": "REB",
+          "line": 9.5
+        }
+      ],
+      "stored_matched": 233,
+      "stored_expected": 255
+    }
+  ]
+}

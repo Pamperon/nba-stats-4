@@ -1,0 +1,168 @@
+{
+  "captured_utc": "2026-11-03T13:53:11.055732+00:00",
+  "source_commit": "bdb1c78",
+  "samples": [
+    {
+      "path": "/",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 5226,
+      "total_ms": 5269,
+      "bytes": 29771,
+      "server_timing": null
+    },
+    {
+      "path": "/",
+      "run": 1,
+      "status": 200,
+      "ttfb_ms": 4308,
+      "total_ms": 4308,
+      "bytes": 29771,
+      "server_timing": null
+    },
+    {
+      "path": "/",
+      "run": 2,
+      "status": 200,
+      "ttfb_ms": 4183,
+      "total_ms": 4224,
+      "bytes": 29771,
+      "server_timing": null
+    },
+    {
+      "path": "/static/app.js",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 3970,
+      "total_ms": 4013,
+      "bytes": 74055,
+      "server_timing": null
+    },
+    {
+      "path": "/static/app.js",
+      "run": 1,
+      "status": 200,
+      "ttfb_ms": 4032,
+      "total_ms": 4084,
+      "bytes": 74055,
+      "server_timing": null
+    },
+    {
+      "path": "/static/app.js",
+      "run": 2,
+      "status": 200,
+      "ttfb_ms": 3922,
+      "total_ms": 3976,
+      "bytes": 74055,
+      "server_timing": null
+    },
+    {
+      "path": "/static/hub-nav.js",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4242,
+      "total_ms": 4292,
+      "bytes": 76800,
+      "server_timing": null
+    },
+    {
+      "path": "/static/hub-nav.js",
+      "run": 1,
+      "status": 200,
+      "ttfb_ms": 4040,
+      "total_ms": 4080,
+      "bytes": 76800,
+      "server_timing": null
+    },
+    {
+      "path": "/static/hub-nav.js",
+      "run": 2,
+      "status": 200,
+      "ttfb_ms": 4104,
+      "total_ms": 4131,
+      "bytes": 76800,
+      "server_timing": null
+    },
+    {
+      "path": "/api/health",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4081,
+      "total_ms": 4081,
+      "bytes": 392,
+      "server_timing": "app;dur=0.51"
+    },
+    {
+      "path": "/api/health",
+      "run": 1,
+      "status": 200,
+      "ttfb_ms": 4091,
+      "total_ms": 4091,
+      "bytes": 392,
+      "server_timing": "app;dur=0.57"
+    },
+    {
+      "path": "/api/health",
+      "run": 2,
+      "status": 200,
+      "ttfb_ms": 4216,
+      "total_ms": 4217,
+      "bytes": 392,
+      "server_timing": "app;dur=0.54"
+    },
+    {
+      "path": "/api/nba/fixtures?date=2026-11-05",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 4045,
+      "total_ms": 4045,
+      "bytes": 3375,
+      "server_timing": "app;dur=9.04"
+    },
+    {
+      "path": "/api/nba/fixtures?date=2026-11-05",
+      "run": 1,
+      "status": 200,
+      "ttfb_ms": 4076,
+      "total_ms": 4076,
+      "bytes": 3375,
+      "server_timing": "app;dur=1.32"
+    },
+    {
+      "path": "/api/nba/fixtures?date=2026-11-05",
+      "run": 2,
+      "status": 200,
+      "ttfb_ms": 3935,
+      "total_ms": 3936,
+      "bytes": 3375,
+      "server_timing": "app;dur=3.13"
+    },
+    {
+      "path": "/api/match/form?date=2026-11-05&team_a=Boston%20Celtics&team_b=Atlanta%20Hawks",
+      "run": 0,
+      "status": 200,
+      "ttfb_ms": 6585,
+      "total_ms": 6586,
+      "bytes": 1038,
+      "server_timing": "app;dur=2538.77"
+    },
+    {
+      "path": "/api/match/form?date=2026-11-05&team_a=Boston%20Celtics&team_b=Atlanta%20Hawks",
+      "run": 1,
+      "status": 200,
+      "ttfb_ms": 4966,
+      "total_ms": 4966,
+      "bytes": 1038,
+      "server_timing": "app;dur=281.19"
+    },
+    {
+      "path": "/api/match/form?date=2026-11-05&team_a=Boston%20Celtics&team_b=Atlanta%20Hawks",
+      "run": 2,
+      "status": 200,
+      "ttfb_ms": 4228,
+      "total_ms": 4228,
+      "bytes": 1038,
+      "server_timing": "app;dur=272.14"
+    }
+  ]
+}

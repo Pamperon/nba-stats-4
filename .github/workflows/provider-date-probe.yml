@@ -1,0 +1,41 @@
+name: One-shot NBA evening feed comparison
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/provider-date-probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nba-evening-feed-20261105-v1
+  cancel-in-progress: false
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wait for exact deployment and execute bounded diagnostic once
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json,os,time,urllib.request
+          base='https://nba-stats-4.onrender.com'
+          token=os.environ['NBA_STATS_ACCESS_TOKEN']
+          if not token:raise SystemExit('Server access token missing')
+          def call(path,method='GET',timeout=15):
+              request=urllib.request.Request(base+path,method=method,headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+              with urllib.request.urlopen(request,timeout=timeout) as response:return json.load(response)
+          for attempt in range(30):
+              try:
+                  if call('/api/health')['deployment_commit']==os.environ['EXPECTED_COMMIT']:break
+              except Exception:pass
+              time.sleep(10)
+          else:raise SystemExit('Expected deploy not ready; diagnostic not called')
+          # Exactly one POST, with no transport retries. Server reservation
+          # prevents a workflow rerun from consuming another request budget.
+          result=call('/api/diagnostics/odds-date?evening=true',method='POST',timeout=250)
+          print(json.dumps(result,ensure_ascii=False),flush=True)
+          if result.get('state')!='done':raise SystemExit('Diagnostic incomplete; inspect saved report before retrying')
+          PY

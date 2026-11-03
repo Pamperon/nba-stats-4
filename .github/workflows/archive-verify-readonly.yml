@@ -1,0 +1,58 @@
+name: Archive ESPN verification (read only)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/archive-verify-readonly.yml'
+      - 'scripts/verify_archive.py'
+      - 'scripts/archive_performance.py'
+      - 'settle_espn.py'
+      - 'tests/test_archive_performance.py'
+      - 'scripts/recommendation_backtest.py'
+      - 'tests/test_recommendation_backtest.py'
+      - 'scripts/multiday_backtest.py'
+      - 'tests/test_multiday_backtest.py'
+  workflow_dispatch:
+jobs:
+  verify-2026-10-24:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Test pregame line selection without network
+        run: python -m unittest tests.test_archive_performance tests.test_recommendation_backtest tests.test_multiday_backtest -v
+      - name: Fetch public saved archive (no bookmaker requests)
+        run: |
+          python - <<'PY'
+          import requests, json
+          url = 'https://nba-stats-4.onrender.com/api/saved/archive?date=2026-10-24'
+          response = requests.get(url, timeout=100)
+          response.raise_for_status()
+          payload = response.json()
+          assert payload.get('date') == '2026-10-24', 'Archive date mismatch'
+          assert payload.get('results'), 'Empty archive'
+          with open('archive-2026-10-24.json', 'w') as f:
+              json.dump(payload, f)
+          print('Fetched', len(payload['results']), 'archived rows')
+          PY
+      - name: Compare with final ESPN boxscores
+        run: python -m scripts.verify_archive --file archive-2026-10-24.json --date 2026-10-24
+      - name: Evaluate pregame single double triple candidates (read only)
+        run: |
+          python - <<'PY'
+          import json
+          import settle_espn
+          from scripts.recommendation_backtest import evaluate
+          with open('archive-2026-10-24.json') as f:
+              archive = json.load(f)
+          verified, eligible = settle_espn.settle_archive(archive, '2026-10-24')
+          print(json.dumps({'eligible': eligible, 'verified': len(verified),
+                            'proposals': evaluate(archive['results'], verified)}, indent=2))
+          PY
+      - name: Print performance by market and odds band (read only)
+        run: python -m scripts.archive_performance --date 2026-10-24
+      - name: Compare all available historical dates (read only)
+        run: python -m scripts.multiday_backtest --dates 2026-10-20 2026-10-21 2026-10-22 2026-10-23 2026-10-24
