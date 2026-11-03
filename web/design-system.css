@@ -231,3 +231,41 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
     object-position: top center;
   }
 }
+
+#player .player-eyebrow {
+  display: none;
+}
+#player .bl-window-tabs {
+  margin: 8px 0;
+}
+#player .bl-window-tabs button[aria-pressed="true"] {
+  background: #ff983f;
+  color: #071522;
+}
+#player .bl-chart-column {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+#player .bl-chart-column:focus-visible {
+  outline: 2px solid #ff983f;
+}
+#player .bl-chart-bar.is-under {
+  background: #c96980;
+}
+#player .bl-chart-detail {
+  margin: 4px 0 0;
+  color: #c3d9e9;
+  font-size: 12px;
+}
+#player .bl-player-register {
+  margin-top: 12px;
+}
+#player .bl-player-register > summary {
+  padding: 12px;
+  border: 1px solid #294656;
+  border-radius: 10px;
+  cursor: pointer;
+}
