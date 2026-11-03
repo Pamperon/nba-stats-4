@@ -267,6 +267,25 @@ def storage_self_test():
         logger.exception('Database self-test failed')
         raise HTTPException(503, 'Test database fallito; controlla i log Render')
 
+_schedule_scoreboards = TTLCache(maxsize=32, ttl=60)
+_schedule_scoreboard_lock = threading.RLock()
+
+
+def _schedule_scoreboard(us_day):
+    with _schedule_scoreboard_lock:
+        if us_day in _schedule_scoreboards:
+            return _schedule_scoreboards[us_day]
+        response = requests.get(
+            'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+            params={'dates': us_day, 'limit': 100}, timeout=12)
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload.get('events'), list):
+            raise ValueError('Invalid ESPN calendar')
+        _schedule_scoreboards[us_day] = payload
+        return payload
+
+
 @app.get('/api/schedule', dependencies=[Depends(auth)])
 def schedule(date: str):
     """NBA fixtures from ESPN only; zero OddsPapi calls."""
@@ -275,11 +294,7 @@ def schedule(date: str):
         events = {}
         for offset in (-1, 0):
             us_day = (day + timedelta(days=offset)).strftime('%Y%m%d')
-            response = requests.get(
-                'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-                params={'dates': us_day, 'limit': 100}, timeout=12)
-            response.raise_for_status()
-            for event in response.json().get('events', []):
+            for event in _schedule_scoreboard(us_day)['events']:
                 start = datetime.fromisoformat(event['date'].replace('Z', '+00:00'))
                 rome = start.astimezone(ZoneInfo('Europe/Rome'))
                 status_state = event.get('status', {}).get('type', {}).get('state', '')
@@ -414,8 +429,13 @@ def public_nba_fixtures(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
 
 
 @app.get('/api/nba/publication-session')
-def publication_session(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$')):
+def publication_session(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$'), upcoming: bool = False):
     """Read-only session fixture manifest; not yet an official picks endpoint."""
+    if upcoming:
+        from session_window import next_publication_session
+        _, manifest = next_publication_session(datetime.strptime(date, '%Y-%m-%d').date(),
+                                               datetime.now(ZoneInfo('Europe/Rome')), nba_publication_session)
+        return manifest
     return nba_publication_session(date)
 
 
@@ -436,7 +456,8 @@ def session_picks(compact: bool = False):
                datetime.fromisoformat(g['start_at']) > now
                for g in previous_manifest['games']):
             day = previous_day
-    manifest = nba_publication_session(day)
+    from session_window import next_publication_session
+    day, manifest = next_publication_session(datetime.strptime(day, '%Y-%m-%d').date(), now, nba_publication_session)
     official = nba_session_picks.read(day) if nba_session_picks.eligible(day) else None
     # Publish on demand only when due; no paid API calls.
     if official is None and nba_session_picks.eligible(day) and now >= nba_session_picks.cutoff_for(day):
@@ -476,7 +497,7 @@ def session_picks(compact: bool = False):
     # Quote exploration uses saved/latest, so compact clients need only counts.
     return {'date':day,'publication_date':day,'session_start_at':manifest['start_at'],
             'session_end_at':manifest['end_at'],'results':[] if compact else results,
-            'quote_count': quote_count,
+            'quote_count': quote_count, 'publication_cutoff_at': nba_session_picks.cutoff_for(day).isoformat(),
             'recommendations':{'policy':'fixed-1800-v1','lines':official['lines'] if official else []},
             'official_top5':official,'official_top5_pending':official is None,
             'official_single':official['single'] if official else None,
@@ -834,7 +855,7 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
     # scans. Historical snapshots and immutable official picks remain untouched.
     rome_today = datetime.now(ZoneInfo('Europe/Rome')).date()
     snapshot_day = snapshot.get('date')
-    if snapshot_day in (rome_today.isoformat(), (rome_today + timedelta(days=1)).isoformat()):
+    if snapshot_day and rome_today <= datetime.strptime(snapshot_day, '%Y-%m-%d').date() < rome_today + timedelta(days=7):
         merged_rows = storage.recent_fixture_coverage(snapshot_day, max_age_hours=24)
         if merged_rows:
             snapshot = {**snapshot, 'results': merged_rows}
@@ -984,6 +1005,16 @@ def saved_dates():
                     upcoming_dates.add(day)
             except HTTPException:
                 logger.warning('Cannot check ESPN calendar for %s; retaining archived dates', day)
+        if not upcoming_dates:
+            from session_window import scan_schedules
+            try:
+                future_schedules = scan_schedules(today, schedule)
+            except RuntimeError:
+                logger.warning('Cannot discover next NBA date; retaining archived dates')
+                future_schedules = []
+            for future_day, payload in future_schedules:
+                if any(game.get('upcoming') for game in payload['games']):
+                    dates.add(future_day);upcoming_dates.add(future_day)
         return {'dates': [{'date': day} for day in sorted(dates)],
                 'default_date': min(upcoming_dates) if upcoming_dates else None,
                 'odds_api_calls': 0, 'session_picks_enabled': True}

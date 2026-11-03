@@ -175,7 +175,7 @@ def get_markets():
         if not isinstance(data, list):
             raise ValueError("Formato catalogo mercati inatteso")
         return {str(m["marketId"]): m for m in data if str(m.get("sportId")) == "11"}
-    return odds_feed.cached_payload("odds:markets:v1:" + day, 48 * 3600, download)["data"]
+    return odds_feed.cached_payload("odds:markets:v1:" + day, 48 * 3600, download, empty_max_age_seconds=3 * 3600)["data"]
 
 def fixture_start_rome(fixture):
     """Convert an OddsPapi ISO timestamp to Italian local time."""

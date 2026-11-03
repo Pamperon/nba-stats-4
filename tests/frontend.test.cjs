@@ -938,3 +938,14 @@ test('homepage single renders before calendar dates and quote archive resolve',a
   assert.match(d.getElementById('hub-single-content').textContent,/Fast Player/i);
  }finally{dom.window.close();}
 });
+
+test('future session previews show the correct official publication day',async()=>{
+ const payload={date:'2026-11-04',publication_date:'2026-11-04',recommendations:{policy:'fixed-1800-v1',lines:[]},official_top5_pending:true,preliminary_top5:[],preliminary_single:{Giocatore:'Future Player','ESPN ID':'123',Squadra:'BOS',Partita:'Boston Celtics - Miami Heat',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75}};
+ const dom=browser(url=>url==='/api/picks/session?compact=true'?Promise.resolve(response(payload)):new Promise(()=>{}));
+ try{
+  dom.window.eval(fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8'));
+  await tick();await tick();
+  assert.match(dom.window.document.getElementById('hub-single-state').textContent,/Anteprima.*04\/11.*18:00/);
+  assert.match(dom.window.document.querySelector('.hub-featured h2').textContent,/preliminari/);
+ }finally{dom.window.close();}
+});

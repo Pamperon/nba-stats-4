@@ -398,8 +398,9 @@ function render(){
     :'';
   const singlePick=pendingPublication?pickSource.preliminary_single:pickSource.official_single;
   const singleHeading=pendingPublication?'Singola preliminare':'Singola del giorno';
-  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno"><div class="pick-group-heading"><h2>'+singleHeading+'</h2></div>'+
-    (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
+  const publicationLabel='Anteprima · ufficiale il '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' alle 18:00';
+  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno" data-publication-label="'+esc(publicationLabel)+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2></div>'+
+    (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00 del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+'.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
     (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna Singola idonea disponibile per questa giornata.</p>')+'</section>';
   pending.push(singlePick?[singlePick]:[]);
   pending.push(pendingPublication?featured:chosen);
