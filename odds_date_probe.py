@@ -148,10 +148,10 @@ CONFIRMED = {
 }
 
 
-def confirmed_coverage(fixture, fid, catalog):
+def confirmed_coverage(fixture, fid, catalog, fixtures=CONFIRMED):
     if str(fixture.get('fixtureId')) != fid:
         raise ProbeError('Single response fixture ID mismatch')
-    home, away, expected = CONFIRMED[fid]
+    home, away, expected = fixtures[fid]
     try:
         actual = datetime.fromisoformat(fixture['startTime'].replace('Z', '+00:00'))
         if actual.tzinfo is None or actual != datetime.fromisoformat(expected):
@@ -173,9 +173,19 @@ def confirmed_coverage(fixture, fid, catalog):
             'markets_total':len(markets),'active_player_outcomes_all_markets':all_players}
 
 
-def run_confirmed_once(api_key):
+def run_confirmed_once(api_key, evening=False):
+    test_id = CONFIRMED_ID
+    fixtures = CONFIRMED
+    budget = 3
+    if evening:
+        test_id = 'nba-confirmed-props-20261105-evening-v1'
+        fixtures = dict(CONFIRMED)
+        del fixtures['id1100013273719530']
+        fixtures['id1100013273719520'] = (
+            'Boston Celtics', 'Milwaukee Bucks', '2026-11-05T01:30:00+01:00')
+        budget = 4
     with storage.connection() as conn:
-        existing = conn.execute('SELECT result FROM nba_provider_probe WHERE test_id=%s', (CONFIRMED_ID,)).fetchone()
+        existing = conn.execute('SELECT result FROM nba_provider_probe WHERE test_id=%s', (test_id,)).fetchone()
         if existing:
             return {'reused':True,**existing[0]}
         active = conn.execute("SELECT COUNT(*) FROM nba_scan_attempts WHERE state IN ('queued','running') AND heartbeat_at > NOW()-INTERVAL '2 minutes'").fetchone()[0]
@@ -186,15 +196,26 @@ def run_confirmed_once(api_key):
         if not isinstance(catalog, dict):
             raise ProbeError('Saved catalog unavailable; no provider requests made')
         reserved = conn.execute('INSERT INTO nba_provider_probe(test_id,result) VALUES(%s,%s) ON CONFLICT DO NOTHING RETURNING test_id',
-                                (CONFIRMED_ID,Jsonb({'state':'reserved','billable_request_budget':3}))).fetchone()
+                                (test_id,Jsonb({'state':'reserved','billable_request_budget':budget}))).fetchone()
         if not reserved:
             return {'reused':True,'state':'reserved'}
-    caller = Caller(api_key,limit=3,job_id=CONFIRMED_ID)
-    report = {'test_id':CONFIRMED_ID,'state':'running','billable_request_budget':3,'fixtures':[]}
+    caller = Caller(api_key,limit=budget,job_id=test_id)
+    report = {'test_id':test_id,'state':'running','billable_request_budget':budget,'fixtures':[]}
     try:
-        for fid in CONFIRMED:
+        bulk = {}
+        if evening:
+            rows = fixtures_list(caller.get('odds-by-tournaments', tournamentIds='132',
+                                            bookmakers='bet365.it', verbosity=3))
+            bulk = {str(row['fixtureId']): row for row in rows}
+        for fid in fixtures:
             fixture = caller.get('odds',fixtureId=fid,bookmakers='bet365.it',verbosity=3)
-            report['fixtures'].append(confirmed_coverage(fixture,fid,catalog))
+            item = confirmed_coverage(fixture, fid, catalog, fixtures)
+            if evening:
+                item['bulk_present'] = fid in bulk
+                bulk_coverage = coverage(bulk.get(fid, {}), catalog)
+                item['bulk_active_selections'] = bulk_coverage['active_selections']
+                item['bulk_by_market_type'] = bulk_coverage['by_market_type']
+            report['fixtures'].append(item)
         report['state'] = 'done'
     except ProbeError as exc:
         report.update(state='error',error=str(exc))
@@ -203,5 +224,5 @@ def run_confirmed_once(api_key):
     finally:
         report['billable_calls']=caller.count;report['requests']=caller.history
         with storage.connection() as conn:
-            conn.execute('UPDATE nba_provider_probe SET result=%s WHERE test_id=%s',(Jsonb(report),CONFIRMED_ID))
+            conn.execute('UPDATE nba_provider_probe SET result=%s WHERE test_id=%s',(Jsonb(report),test_id))
     return report

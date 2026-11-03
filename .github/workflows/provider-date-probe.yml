@@ -1,4 +1,4 @@
-name: One-shot unfiltered NBA feed comparison
+name: One-shot NBA evening feed comparison
 on:
   push:
     branches: [main]
@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: nba-unfiltered-feed-20261105-v2
+  group: nba-evening-feed-20261105-v1
   cancel-in-progress: false
 jobs:
   compare:
@@ -35,7 +35,7 @@ jobs:
           else:raise SystemExit('Expected deploy not ready; diagnostic not called')
           # Exactly one POST, with no transport retries. Server reservation
           # prevents a workflow rerun from consuming another request budget.
-          result=call('/api/diagnostics/odds-date?unfiltered=true',method='POST',timeout=180)
+          result=call('/api/diagnostics/odds-date?evening=true',method='POST',timeout=250)
           print(json.dumps(result,ensure_ascii=False),flush=True)
           if result.get('state')!='done':raise SystemExit('Diagnostic incomplete; inspect saved report before retrying')
           PY
