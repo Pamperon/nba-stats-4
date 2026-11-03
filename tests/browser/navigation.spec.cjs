@@ -68,7 +68,7 @@ test('approved coordinated design: player charts, contextual back and responsive
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
  await page.locator('#back-to-picks').click();await expect(page).toHaveURL('http://127.0.0.1:4173/');
- await page.goto(match);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
+ await page.locator('.hub-premium-fixture').click();await expect(page).toHaveURL(/analisi-partita\?data=2026-11-05/);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
  await page.screenshot({path:testInfo.outputPath('match-redesign.png'),fullPage:true});
  await page.locator('[data-match-tab="players"]').click();await expect(page.locator('.hub-match-player-card')).toBeVisible();
  await page.locator('.hub-match-player-stats-link').click();await expect(page).toHaveURL(/statistiche/);

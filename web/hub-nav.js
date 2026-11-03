@@ -731,7 +731,7 @@ function refreshShowcase(){
     const arrow=document.createElement('span');arrow.className='hub-premium-arrow';arrow.textContent='›';arrow.setAttribute('aria-hidden','true');
     matchup.append(away,center,home,arrow);
     row.append(matchup);
-    row.addEventListener('click',()=>openFixtureDetails(match));
+    row.addEventListener('click',()=>{calendarSelectedDate=game.calendar_date||italyDay(new Date(game.start_at));openFixtureDetails(match)});
     games.append(row)
    }
    if(remaining>4){
