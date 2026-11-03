@@ -1,7 +1,7 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(process.env.WEB_ROOT||'web');
 const row={Giocatore:'Browser Fixture',Squadra:'BOS',Partita:'Boston Celtics - Atlanta Hawks',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75,'ESPN ID':'123','Stato analisi':'Valutabile (stima empirica)'};
-const game={event_id:'123',away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,state:'pre',start_at:'2026-11-05T01:00:00+01:00',status:'Scheduled'};
+const game={event_id:'123',away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,state:'pre',start_at:new Date(Date.now()+2*86400000).toISOString(),status:'Scheduled'};
 const team=(team,wins,avg_points)=>({team,games:5,wins,losses:5-wins,avg_points,results:[{date:'2026-11-01',scored:110,allowed:100,opponent:'Fixture'}]});
 const payload=url=>{
  if(url.pathname==='/api/saved/dates')return {dates:[{date:'2026-11-05'}],default_date:'2026-11-05',session_picks_enabled:true};
