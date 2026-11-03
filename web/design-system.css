@@ -66,3 +66,18 @@ body[data-hub-view=home] #hub-featured-list>.bl-datalab-card:nth-of-type(n+3){di
 .hub-featured-more{display:none}
 body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:44px;margin-top:12px;padding:11px 15px;border:1px solid #fb9a45;border-radius:11px;background:var(--bl-accent);color:#142230;font-size:14px;font-weight:750;cursor:pointer}
 .hub-single-content .bl-broadcast-action{min-height:44px!important}
+
+.hub-landing .hub-banner-title {
+  max-width: none;
+  margin: 0;
+}
+.hub-banner-title img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+.app-header .brand-copy b,
+.app-header .brand-version {
+  text-transform: none;
+}
