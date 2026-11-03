@@ -49,6 +49,47 @@ function paintNbaUpdates(panel,payload,teams){
  panel.append(heading,list,source);
 }
 const nbaUpdatesPanel=$('#hub-nba-updates-panel');
+const newsPage=$('#nba-news-page'),newsList=$('#nba-news-list'),newsPreview=$('#nba-news-preview');
+let newsRequest,newsExpires=0;
+function loadNews(target,limit){
+ if(!target)return;
+ target.textContent='Caricamento notizie…';
+ if(!newsRequest||Date.now()>=newsExpires){
+  newsExpires=Date.now()+300000;
+  newsRequest=fetch('/api/nba/news').then(response=>{
+   if(!response.ok)throw new Error('News unavailable');
+   return response.json();
+  }).catch(()=>{newsRequest=null;return null});
+ }
+ newsRequest.then(payload=>{
+  const articles=payload?.articles?.slice(0,limit)||[];
+  target.replaceChildren();
+  if(!articles.length){
+   target.textContent=payload?'Nessuna notizia disponibile.':'Notizie ESPN temporaneamente non disponibili.';
+   return;
+  }
+  for(const item of articles){
+   const article=document.createElement('article');article.className='nba-news-card';
+   const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
+   const copy=document.createElement('div');
+   const title=document.createElement('h3');title.textContent=item.title;
+   const meta=document.createElement('small');meta.textContent='ESPN';
+   const stamp=new Date(item.published||'');
+   if(!Number.isNaN(stamp.getTime()))meta.textContent+=' · '+stamp.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+   copy.append(meta,title);link.append(copy);
+   if(item.image){const img=document.createElement('img');img.src=item.image;img.alt='';img.loading='lazy';link.append(img)}
+   article.append(link);target.append(article);
+  }
+ });
+}
+if(nbaUpdatesPanel&&window.IntersectionObserver){
+ const observer=new IntersectionObserver(entries=>{
+  if(entries.some(entry=>entry.isIntersecting)&&document.body.dataset.hubView==='home'){
+   observer.disconnect();loadNews(newsPreview,4);
+  }
+ });
+ observer.observe(nbaUpdatesPanel);
+}
 const menuToggle=$('.hub-menu-toggle'),menuDrawer=$('#hub-menu-drawer');
 function closeMenu(){if(!menuDrawer)return;menuDrawer.hidden=true;menuToggle?.setAttribute('aria-expanded','false');menuToggle?.setAttribute('aria-label','Apri menu di navigazione')}
 menuToggle?.addEventListener('click',()=>{const opening=menuDrawer.hidden;menuDrawer.hidden=!opening;menuToggle.setAttribute('aria-expanded',String(opening));menuToggle.setAttribute('aria-label',opening?'Chiudi menu di navigazione':'Apri menu di navigazione')});
@@ -56,6 +97,7 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu()}
 document.addEventListener('click',event=>{if(menuDrawer&&!menuDrawer.hidden&&!event.target.closest('.hub-menu-drawer,.hub-menu-toggle'))closeMenu()});
 const tab=name=>$('[data-tab="'+name+'"]');
 const go={
+ news(){loadNews(newsList,24);window.scrollTo(0,0);},
  home(){ $('#area-quotes')?.click();tab('dashboard')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  picks(){ $('#area-quotes')?.click();tab('dashboard')?.click();tab('dashboard')?.scrollIntoView({block:'start',behavior:'smooth'});},
  stats(){ playerReturn=null;$('#area-stats')?.click();window.scrollTo({top:0,behavior:'smooth'});},
@@ -94,7 +136,9 @@ function display(){
   if(singleShowcase&&singleShowcase.previousSibling!==singleHomeAnchor)singleHomeAnchor.after(singleShowcase);
   if(featured&&featured.previousSibling!==featuredHomeAnchor)featuredHomeAnchor.after(featured);
  }
- const shell=$('#app');if(shell)shell.hidden=calendar||picksView;
+ const newsView=document.body.dataset.hubView==='news';
+ if(newsPage)newsPage.hidden=!newsView;
+ const shell=$('#app');if(shell)shell.hidden=calendar||picksView||newsView;
  landing.hidden=!home||extra;tiles.hidden=!home||extra;
  if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
  if(featured)featured.hidden=!(home||picksView)||extra;

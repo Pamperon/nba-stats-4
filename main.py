@@ -844,6 +844,51 @@ def visible_snapshot(snapshot):
     result['visibility_valid_until'] = min(starts).isoformat() if starts else None
     return result
 
+_nba_news_cache = TTLCache(maxsize=1, ttl=600)
+_nba_news_lock = threading.Lock()
+
+
+@app.get('/api/nba/news')
+def nba_news():
+    """Expose ESPN article metadata and links, without republishing articles."""
+    from urllib.parse import urlparse
+
+    def espn_url(value):
+        parsed = urlparse(value or '')
+        return value if parsed.scheme == 'https' and parsed.hostname in {
+            'www.espn.com', 'espn.com', 'a.espncdn.com', 'a1.espncdn.com',
+            'a2.espncdn.com', 'a3.espncdn.com', 'a4.espncdn.com',
+        } else None
+
+    with _nba_news_lock:
+        cached = _nba_news_cache.get('current')
+        if cached is not None:
+            return cached
+        try:
+            response = requests.get(
+                'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news',
+                params={'limit': 24}, timeout=8)
+            response.raise_for_status()
+            articles = []
+            seen = set()
+            for item in response.json()['articles']:
+                url = espn_url(item.get('links', {}).get('web', {}).get('href'))
+                title = item.get('headline')
+                if not title or not url or url in seen:
+                    continue
+                seen.add(url)
+                image = next((image for row in item.get('images', [])
+                              if (image := espn_url(row.get('url')))), None)
+                articles.append({'title': title, 'url': url, 'image': image,
+                                 'published': item.get('published')})
+        except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError):
+            raise HTTPException(503, 'Notizie ESPN temporaneamente non disponibili') from None
+        articles.sort(key=lambda article: article['published'] or '', reverse=True)
+        result = {'source': 'ESPN', 'articles': articles[:24]}
+        _nba_news_cache['current'] = result
+        return result
+
+
 _nba_updates_cache = TTLCache(maxsize=1, ttl=300)
 _nba_updates_lock = threading.Lock()
 
@@ -1698,6 +1743,7 @@ def sitemap_xml():
 
 app.mount('/static',VersionedStaticFiles(directory='web'),name='static')
 @app.get('/')
+@app.get('/notizie', include_in_schema=False)
 @app.get('/pronostici', include_in_schema=False)
 @app.get('/partite', include_in_schema=False)
 @app.get('/analisi-partita', include_in_schema=False)

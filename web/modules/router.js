@@ -1,7 +1,7 @@
 /* URL codec and History API. No data, model or DOM dependencies. */
 (function(root){
  'use strict';
- const paths={home:'/',picks:'/pronostici',calendar:'/partite',finder:'/analisi-quote',stats:'/statistiche',history:'/archivio',about:'/come-funziona'};
+ const paths={home:'/',picks:'/pronostici',calendar:'/partite',finder:'/analisi-quote',stats:'/statistiche',history:'/archivio',about:'/come-funziona',news:'/notizie'};
  function validDay(value){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';
   const day=new Date(value+'T12:00:00Z');
