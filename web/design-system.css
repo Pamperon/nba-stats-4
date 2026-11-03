@@ -119,3 +119,12 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
   font-size: 13px;
   font-style: normal;
 }
+
+.app-header .brand-wordmark {
+  display: block;
+  width: auto;
+  height: 36px;
+  max-width: calc(100vw - 136px);
+  object-fit: contain;
+  object-position: left center;
+}
