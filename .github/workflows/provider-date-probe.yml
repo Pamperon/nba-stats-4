@@ -1,4 +1,4 @@
-name: One-shot confirmed NBA player props comparison
+name: One-shot unfiltered NBA feed comparison
 on:
   push:
     branches: [main]
@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: nba-confirmed-props-20261105-v1
+  group: nba-unfiltered-feed-20261105-v1
   cancel-in-progress: false
 jobs:
   compare:
@@ -35,7 +35,7 @@ jobs:
           else:raise SystemExit('Expected deploy not ready; diagnostic not called')
           # Exactly one POST, with no transport retries. Server reservation
           # prevents a workflow rerun from consuming another request budget.
-          result=call('/api/diagnostics/odds-date?confirmed=true',method='POST',timeout=180)
+          result=call('/api/diagnostics/odds-date?unfiltered=true',method='POST',timeout=180)
           print(json.dumps(result,ensure_ascii=False),flush=True)
           if result.get('state')!='done':raise SystemExit('Diagnostic incomplete; inspect saved report before retrying')
           PY
