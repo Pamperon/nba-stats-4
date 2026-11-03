@@ -448,9 +448,14 @@ html {
 .hub-home-banner .hub-live-metrics {
   position: absolute;
   left: 3.4%;
-  bottom: 3%;
+  bottom: 6px;
   margin: 0;
 }
 .hub-home-banner .hub-trust-strip span {
   background: #13283a80;
+}
+
+.hub-home-banner .hub-trust-strip {
+  position: relative;
+  margin-top: -3px;
 }
