@@ -217,3 +217,27 @@ test('an empty Top 5 does not repeat the Single as a ranked analysis',async()=>{
  assert.equal(doc.querySelectorAll('#hub-featured-list .bl-datalab-card').length,0);
  assert.match(doc.querySelector('#hub-featured-list').textContent,/Nessuna analisi/);
 });
+
+test('calendar opens analysis before a changed-day quote feed resolves',async()=>{
+ const {window,doc}=setup();
+ const date=doc.querySelector('#date');
+ date.innerHTML='<option value="2026-11-02">2</option><option value="2026-11-03">3</option>';date.value='2026-11-02';
+ let quoteChanges=0;date.addEventListener('change',()=>quoteChanges++);
+ window.fetch=async url=>({ok:true,json:async()=>url.includes('/fixtures')?{games:[{away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,start_at:'2026-11-03T23:00:00Z'}]}:{fixtures:[]}});
+ doc.querySelector('[data-hub="calendar"]').click();
+ [...doc.querySelectorAll('#hub-calendar-dates button')].find(b=>b.getAttribute('aria-label')==='3 novembre 2026').click();
+ await new Promise(r=>setImmediate(r));
+ doc.querySelector('.hub-calendar-match').click();
+ assert.equal(quoteChanges,1);
+ assert.equal(date.value,'2026-11-03');
+ assert.equal(doc.querySelector('#hub-match-detail').hidden,false);
+ assert.ok(doc.body.classList.contains('hub-match-open'));
+ assert.match(doc.querySelector('#hub-match-title').textContent,/Boston Celtics/);
+ // A delayed feed for another day must not change the open fixture.
+ window.document.dispatchEvent(new window.CustomEvent('basketlab:quotes-loaded',{detail:{date:'2026-11-02'}}));
+ assert.match(doc.querySelector('#hub-match-title').textContent,/Boston Celtics/);
+ doc.querySelector('[data-hub="home"]').click();
+ window.document.dispatchEvent(new window.CustomEvent('basketlab:quotes-loaded',{detail:{date:'2026-11-03'}}));
+ assert.equal(doc.body.dataset.hubView,'home');
+ assert.ok(!doc.body.classList.contains('hub-match-open'));
+});
