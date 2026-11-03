@@ -30,7 +30,7 @@ function restoreQuotePosition(tab){
  const saved=quotePositions.get(tab);
  if(!saved||saved.date!==$('date').value)return false;
  requestAnimationFrame(()=>{
-  if(document.querySelector('nav button.active')?.dataset.tab!==tab||saved.date!==$('date').value)return;
+  if(document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab!==tab||saved.date!==$('date').value)return;
   if(tab==='finder'){$('finder-scroll').scrollLeft=saved.x;$('finder-top-scroll').scrollLeft=saved.x;}
   window.scrollTo({top:saved.y,behavior:'instant'});
  });
@@ -46,10 +46,10 @@ function syncArea(tab){
  }
  if(!stats)lastQuoteTab=tab;
 }
-$('area-quotes').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="'+lastQuoteTab+'"]').click();};
-$('area-stats').onclick=()=>{returnPick=null;document.querySelector('nav button[data-tab="player"]').click();};
-$('back-to-picks').onclick=()=>{document.querySelector('nav button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});if(!restoreQuotePosition(returnOrigin))returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='dashboard')refreshSessionPicks();if(b.dataset.tab==='player')rememberQuotePosition(document.querySelector('nav button.active')?.dataset.tab);document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=b.dataset.tab==='player';if(b.dataset.tab!=='player')restoreQuotePosition(b.dataset.tab);else window.scrollTo({top:0,behavior:'instant'});});
+$('area-quotes').onclick=()=>{returnPick=null;document.querySelector('#quote-tabs button[data-tab="'+lastQuoteTab+'"]').click();};
+$('area-stats').onclick=()=>{returnPick=null;document.querySelector('#quote-tabs button[data-tab="player"]').click();};
+$('back-to-picks').onclick=()=>{document.querySelector('#quote-tabs button[data-tab="'+returnOrigin+'"]').click();if(returnPick?.isConnected)returnPick.focus({preventScroll:true});if(!restoreQuotePosition(returnOrigin))returnPick?.scrollIntoView?.({block:'center'});returnPick=null;};
+document.querySelectorAll('#quote-tabs button[data-tab]').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='dashboard'&&!window.BasketLabSections)refreshSessionPicks();if(b.dataset.tab==='player')rememberQuotePosition(document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab);document.querySelectorAll('#quote-tabs button[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');syncArea(b.dataset.tab);if(b.dataset.tab!=='player')$('back-to-picks').hidden=true;if(b.dataset.tab==='player'&&!returnPick)$('back-to-picks').hidden=true;if(b.dataset.tab!=='player'){++pickNavigationRequest;++rosterRequest;++playerRequest;++seasonPrefetchGeneration;clearTimeout(seasonPrefetchTimer);setPlayerLoading(false);if(!activeRoster.length)playerStatsInitialized=false}if(b.dataset.tab==='player'){if(!playerStatsInitialized){playerStatsInitialized=true;initPlayers();}else if($('team').value&&activeRoster.length){prepareTeamLogs($('team').value,$('playerseason').value);if($('playername').value)preloadPlayerSeasons($('team').value,$('playername').value)}}document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!==b.dataset.tab);$('quote-summary').hidden=b.dataset.tab==='player';if(b.dataset.tab!=='player')restoreQuotePosition(b.dataset.tab);else window.scrollTo({top:0,behavior:'instant'});});
 function visibleDates(){
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  return Array.from($('date').options).map(o=>o.value).filter(d=>d&&d>=today);
@@ -101,7 +101,7 @@ function snapshotVisibilityExpired(){
  return Number.isFinite(until)&&Date.now()>=until;
 }
 function recheckVisibleSnapshot(){
- if(!document.hidden&&!$('app').classList.contains('date-is-loading')&&snapshotVisibilityExpired()){
+ if((!window.BasketLabSections||window.BasketLabSections.wants('quotes'))&&!document.hidden&&!$('app').classList.contains('date-is-loading')&&snapshotVisibilityExpired()){
   clearTimeout(scanStatusTimer);
   $('date').dispatchEvent(new Event('change',{bubbles:true}));
  }
@@ -109,6 +109,7 @@ function recheckVisibleSnapshot(){
 document.addEventListener('visibilitychange',recheckVisibleSnapshot);
 window.addEventListener('focus',recheckVisibleSnapshot);
 async function loadScanStatus(date,request,previousState=null){
+ if(window.BasketLabSections&&!window.BasketLabSections.wants('quotes'))return;
  if(request!==dateSelectionRequest||$('date').value!==date)return;
  if(!$('app').classList.contains('date-is-loading')&&snapshotVisibilityExpired()){
   $('date').dispatchEvent(new Event('change',{bubbles:true}));
@@ -141,7 +142,7 @@ function setDateLoading(loading,clearSnapshot=true){
   // Clear the previous day's snapshot immediately; never show stale counts or picks.
   data=null;
   if(!sessionPicksData)++pickProfileRequest;
-  $('quote-summary').hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
+  $('quote-summary').hidden=document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab==='player';
   renderDateMetrics(null);
   $('quote-updated').textContent='';
   if(!sessionPicksData)$('picks').replaceChildren();
@@ -152,10 +153,11 @@ function setDateLoading(loading,clearSnapshot=true){
 let selectedQuoteDate=null;
 $('date').addEventListener('change',async()=>{
  const selected=$('date').value;
+ if(selectedQuoteDate===selected&&$('app').classList.contains('date-is-loading'))return;
  renderDateStrip();
  const changedDay=selected!==selectedQuoteDate;
  selectedQuoteDate=selected;
- const tab=document.querySelector('nav button.active')?.dataset.tab;
+ const tab=document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab;
  const view=!changedDay&&['dashboard','finder'].includes(tab)?{tab,y:window.scrollY,x:$('finder-scroll').scrollLeft}:null;
  if(changedDay){finderVisibleLimit=100;finderExpandedKeys.clear();quotePositions.clear();$('finder-fixture').value='';}
  const request=++dateSelectionRequest;
@@ -194,7 +196,7 @@ $('date').addEventListener('change',async()=>{
    setDateLoading(false);
    document.dispatchEvent(new CustomEvent('basketlab:quotes-loaded',{detail:{date:selected}}));
    if(view)requestAnimationFrame(()=>{
-    if(request!==dateSelectionRequest||document.querySelector('nav button.active')?.dataset.tab!==view.tab)return;
+    if(request!==dateSelectionRequest||document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab!==view.tab)return;
     if(view.tab==='finder'){$('finder-scroll').scrollLeft=view.x;$('finder-top-scroll').scrollLeft=view.x;}
     window.scrollTo({top:view.y,behavior:'instant'});
    });
@@ -366,12 +368,13 @@ async function enrichSavedFixtureInfo(snapshot,request){
 function render(){
  const request=++pickProfileRequest;
  const summary=$('quote-summary');
- summary.hidden=document.querySelector('nav button.active')?.dataset.tab==='player';
- renderDateMetrics(sessionPicksData&&document.querySelector('nav button.active')?.dataset.tab==='dashboard'?sessionPicksData:data);
- if(data){
-  const saved=data.saved_at?new Date(data.saved_at):null;
+ summary.hidden=document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab==='player';
+ renderDateMetrics(sessionPicksData&&document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab==='dashboard'?sessionPicksData:data);
+ const timeSource=(sessionPicksData&&['home','picks'].includes(document.body.dataset.hubView))?sessionPicksData:data;
+ if(timeSource){
+  const saved=timeSource.saved_at?new Date(timeSource.saved_at):null;
   const valid=saved&&!Number.isNaN(saved.getTime());
-  $('quote-updated').textContent=valid?((data.results||[]).length?'Ultimo aggiornamento ':'Ultimo controllo: ')+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  $('quote-updated').textContent=valid?((timeSource.quote_count||(timeSource.results||[]).length)?'Ultimo aggiornamento ':'Ultimo controllo: ')+saved.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
  }
 
  if(!data&&!sessionPicksData){
@@ -779,7 +782,7 @@ function preloadPlayerSeasons(team,id){
  clearTimeout(seasonPrefetchTimer);
  const generation=++seasonPrefetchGeneration;
  const seasons=[...$('playerseason').options].map(o=>o.value);
- const active=()=>generation===seasonPrefetchGeneration&&$('team').value===team&&$('playername').value===id&&document.querySelector('nav button.active')?.dataset.tab==='player';
+ const active=()=>generation===seasonPrefetchGeneration&&$('team').value===team&&$('playername').value===id&&document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab==='player';
  seasonPrefetchTimer=setTimeout(()=>{
   seasonPrefetchTask=seasonPrefetchTask.catch(()=>{}).then(async()=>{
   for(const season of seasons){
@@ -794,14 +797,14 @@ function preloadPlayerSeasons(team,id){
 const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
  const navigation=++pickNavigationRequest;
- rememberQuotePosition(document.querySelector('nav button.active')?.dataset.tab);
+ rememberQuotePosition(document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab);
  syncArea('player');
  window.scrollTo({top:0,behavior:'instant'});
  $('back-to-picks').textContent=returnOrigin==='finder'?'← Torna ad Analisi quote':'← Torna ai pronostici';
  $('back-to-picks').hidden=false;
  ++rosterRequest;++playerRequest;++seasonPrefetchGeneration;
  clearTimeout(seasonPrefetchTimer);
- document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='player'));
+ document.querySelectorAll('#quote-tabs button[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab==='player'));
  document.querySelectorAll('.tab').forEach(tab=>tab.hidden=tab.id!=='player');
  $('quote-summary').hidden=true;
  playerStatsInitialized=true;setPlayerLoading(true);
@@ -1012,6 +1015,7 @@ function drawPlayer(){
 $('team').onchange=()=>{closePlayerPicker();++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;$('player-venue').onchange=drawPlayer;
 
 async function initializeArchive(){
+ const previousDate=$('date').value;
  setArchiveStatus('Caricamento giornate disponibili…');
  try {
   const response=await api('/api/saved/dates');
@@ -1025,7 +1029,7 @@ async function initializeArchive(){
   if(!dates.length){$('date').innerHTML='<option value="">Nessuna giornata disponibile</option>';renderDateStrip();setArchiveStatus('Nessuna analisi archiviata','notice');return;}
   const todayRome=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const route=window.BasketLabRouter?.read(location);
-  const requested=route?.match&&route.date;
+  const requested=(route?.match&&route.date)|| (dates.includes(previousDate)?previousDate:'');
   if(requested&&!dates.includes(requested))$('date').add(new Option(requested,requested));
   $('date').value=requested|| (dates.includes(payload.default_date)?payload.default_date:(dates.includes(todayRome)?todayRome:dates[0]));
   renderDateStrip();
@@ -1052,16 +1056,20 @@ async function refreshSessionPicks(){
   render();
  }catch(error){
   // Preserve the legacy calendar-date view if the new session service fails.
-  if(request===sessionPicksRequest){sessionPicksData=null;if(data)render();}
+  if(request===sessionPicksRequest){sessionPicksData=null;if(data)render();else if(window.BasketLabSections)initializeArchive();}
  }
  })();
  sessionPicksInFlight=pending;
  try{return await pending;}finally{clearTimeout(timeout);if(sessionPicksInFlight===pending)sessionPicksInFlight=null;}
 }
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSessionPicks()});
-// The homepage pick must not wait for calendar discovery or the quote archive.
-refreshSessionPicks();
-initializeArchive();
+// Legacy consumers retain their original boot; production uses section scheduling.
+if(window.BasketLabSections){
+ window.BasketLabSections.register('picks',refreshSessionPicks);
+ window.BasketLabSections.register('quotes',initializeArchive);
+}else{
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSessionPicks()});
+ refreshSessionPicks();initializeArchive();
+}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
 
 $('finder-more').onclick=()=>{

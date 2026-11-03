@@ -61,7 +61,7 @@ function display(){
  const singleAction=singleShowcase?.querySelector('.bl-broadcast-action');
  if(singleAction)singleAction.textContent=picksView?'ANALISI COMPLETA →':'VEDI NEI PRONOSTICI →';
 }
-function select(key){calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);document.body.dataset.hubView=key;display();saveHubState();syncRoute();}
+function select(key){calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);document.body.dataset.hubView=key;display();saveHubState();syncRoute();document.dispatchEvent(new CustomEvent('basketlab:view',{detail:{view:key}}));}
 
 document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
@@ -95,7 +95,7 @@ async function loadModelPerformance(){
   ].map(([label,value])=>'<div class="bl-perf-item"><strong>'+value+'</strong><span>'+label+'</span></div>').join('')+'</div>';
  }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
 }
-loadModelPerformance();
+if(!window.BasketLabSections)loadModelPerformance();
 if(metricTarget){new MutationObserver(refresh).observe(metricTarget,{childList:true,subtree:true,characterData:true})}
 if(updated){new MutationObserver(refresh).observe(updated,{childList:true,subtree:true,characterData:true})}
 if($('#picks'))new MutationObserver(refresh).observe($('#picks'),{childList:true,subtree:true});
@@ -776,7 +776,7 @@ function refreshShowcase(){
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?(group.dataset.publicationLabel||'Anteprima'):'Ufficiale / in attesa';
  }
- if(games){
+ if(games&&(!window.BasketLabSections||window.BasketLabSections.wants('home'))){
   // Homepage always previews the next NBA session, not yesterday's overnight window.
   const day=italyDay(new Date());
   const homeToken=++homeFixturesRequest;
@@ -868,5 +868,6 @@ if(window.BasketLabRouter){
  if(location.hash==='#archivio'){go.history();select('history')}
  else if(location.hash==='#come-funziona'){go.about();select('about')}
 }
+if(window.BasketLabSections)window.BasketLabSections.register('home',()=>{loadModelPerformance();refreshShowcase();});
 refresh();featuredPicks();updateInsights();refreshShowcase();
 })();
