@@ -518,21 +518,24 @@ function renderFinder({append=false}={}){
  syncFinderScrollWidth();
 }
 
-// Matchday view consumes the same already-loaded rows as the original quote explorer.
+// Matchday view consumes the same saved rows, regardless of provider team order.
+function matchFixtureKey(value){
+ const team=name=>{
+  const normalized=String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  return ['laclippers','losangelesclippers'].includes(normalized)?'losangelesclippers':normalized;
+ };
+ const teams=String(value||'').split(/\s+-\s+|\s+vs\.?\s+|\s+@\s+/i).map(team);
+ return teams.length===2&&teams.every(Boolean)?teams.sort().join('|'):'';
+}
 window.BasketLabMatchRows=(match)=>{
- const norm=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
- const fixture=norm(match||$('finder-fixture').value);
+ const fixture=matchFixtureKey(match||$('finder-fixture').value);
  if(!fixture)return [];
- const all=(data?.results||[]);
- // A real stored quote is displayable even when the empirical model cannot evaluate it.
- // Never apply Value Finder's probability, odds range, market, or analysis-state filters.
- const matching=all.filter(row=>norm(row.Partita)===fixture);
+ const matching=(data?.results||[]).filter(row=>matchFixtureKey(row.Partita)===fixture);
  return matching.filter(row=>Number.isFinite(Number(String(row.Quota??'').replace(',','.')))&&Number(String(row.Quota).replace(',','.'))>1);
 };
 window.BasketLabMatchDiagnostics=(match)=>{
- const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'');
- const all=data?.results||[];
- return {date:data?.date||$('date')?.value||'',total:all.length,fixture:match,matching:all.filter(row=>norm(row.Partita)===norm(match)).length};
+ const all=data?.results||[],key=matchFixtureKey(match);
+ return {date:data?.date||$('date')?.value||'',total:all.length,fixture:match,matching:key?all.filter(row=>matchFixtureKey(row.Partita)===key).length:0};
 };
 window.BasketLabMatchPlayerStats=row=>{returnOrigin='finder';openPickStats(row)};
 
