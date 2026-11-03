@@ -267,3 +267,14 @@ test('direct match route opens without quote options and preserves date and team
  assert.match(doc.querySelector('#hub-match-title').textContent,/Boston Celtics/);
  assert.equal(window.BasketLabRouter.read(window.location).date,'2026-11-05');
 });
+
+test('match request cache shares in-flight loads and retries incomplete histories',async()=>{
+ const {window}=setup();
+ let calls=0,release;
+ const read=window.BasketLabMatchData(()=>{calls++;return new Promise(r=>release=()=>r({ok:true,json:async()=>({history_complete:false,teams:[]})}));});
+ const first=read('2026-11-05',['A','B']),second=read('2026-11-05',['A','B']);
+ assert.equal(calls,1);assert.equal(first,second);
+ release();await first;
+ const retry=read('2026-11-05',['A','B']);
+ assert.equal(calls,2);release();await retry;
+});

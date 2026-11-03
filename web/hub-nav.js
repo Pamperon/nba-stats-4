@@ -209,6 +209,7 @@ async function loadMatchForm(match){
   const [a,b]=data.teams||[];
   if(!a||!b)throw new Error('Dati incompleti');
   renderMatchCharts(teams,a,b,data.window_days,data.moneyline_odds);
+  panel.dataset.historyComplete=String(data.history_complete!==false);
   boxes[0].querySelector('small').textContent='Forma recente · ultime 5 disponibili';
   boxes[0].querySelector('strong').textContent=teams[0]+': '+a.wins+'V / '+a.losses+'P';
   boxes[0].querySelector('p').textContent=teams[1]+': '+b.wins+'V / '+b.losses+'P · Campione: '+a.games+' e '+b.games+' partite negli ultimi '+data.window_days+' giorni';

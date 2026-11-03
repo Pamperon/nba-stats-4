@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI, HTTPException, Header, Depends, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response, JSONResponse
 from psycopg_pool import PoolTimeout, TooManyRequests, PoolClosed
-from fastapi.staticfiles import StaticFiles
+from web_delivery import VersionedStaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 import pandas as pd
 import requests
@@ -510,30 +510,17 @@ def session_picks(compact: bool = False):
 
 
 _match_form_cache = TTLCache(maxsize=40, ttl=1800)
-_match_scoreboard_cache = TTLCache(maxsize=90, ttl=7200)
-_match_scoreboard_lock = threading.RLock()
+_match_form_lock = threading.RLock()
+import match_history
+_ODDS_NOT_LOADED = object()
 
-def _match_daily_events(day):
-    key = day.strftime('%Y%m%d')
-    with _match_scoreboard_lock:
-        if key in _match_scoreboard_cache:
-            return _match_scoreboard_cache[key]
-    response = requests.get(
-        'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-        params={'dates': key}, timeout=9)
-    response.raise_for_status()
-    events = response.json().get('events', [])
-    with _match_scoreboard_lock:
-        _match_scoreboard_cache[key] = events
-    return events
-
-
-def _cached_match_moneyline(date, team_a, team_b):
+def _cached_match_moneyline(date, team_a, team_b, envelope=_ODDS_NOT_LOADED):
     """Read only the existing saved OddsPapi feed; never trigger a paid call."""
     if not storage.configured():
         return None
     try:
-        envelope = storage.cache_read("odds:nba:bet365.it:v1", max_age_hours=12)
+        if envelope is _ODDS_NOT_LOADED:
+            envelope = storage.cache_read("odds:nba:bet365.it:v1", max_age_hours=12)
         if not isinstance(envelope, dict):
             return None
         for fixture in (envelope.get("data") or {}).values():
@@ -568,10 +555,11 @@ def _cached_match_moneyline(date, team_a, team_b):
     return None
 
 
-def _cached_match_fixture_meta(date, team_a, team_b):
+def _cached_match_fixture_meta(date, team_a, team_b, envelope=_ODDS_NOT_LOADED):
     """Fixture time and cached odds timestamp without additional provider requests."""
     try:
-        envelope = storage.cache_read("odds:nba:bet365.it:v1", max_age_hours=12)
+        if envelope is _ODDS_NOT_LOADED:
+            envelope = storage.cache_read("odds:nba:bet365.it:v1", max_age_hours=12)
         if not isinstance(envelope, dict):
             return {}
         def canonical(name):
@@ -590,6 +578,18 @@ def _cached_match_fixture_meta(date, team_a, team_b):
     return {}
 
 
+def _match_market_data(date, team_a, team_b):
+    """Use one saved envelope for both price and time; never fetch provider odds."""
+    envelope = None
+    if storage.configured():
+        try:
+            envelope = storage.cache_read("odds:nba:bet365.it:v1", max_age_hours=12)
+        except Exception:
+            logger.warning('Saved match odds unavailable', exc_info=True)
+    return {'moneyline_odds': _cached_match_moneyline(date, team_a, team_b, envelope),
+            **_cached_match_fixture_meta(date, team_a, team_b, envelope)}
+
+
 @app.get('/api/match/form')
 def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
                team_a: str = Query(min_length=2, max_length=80),
@@ -602,23 +602,13 @@ def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
     if team_a.casefold() == team_b.casefold():
         raise HTTPException(400, 'Le squadre devono essere diverse')
     key = (date, team_a.casefold(), team_b.casefold())
-    if key in _match_form_cache:
-        return {**_match_form_cache[key], 'moneyline_odds': _cached_match_moneyline(date, team_a, team_b), **_cached_match_fixture_meta(date, team_a, team_b)}
+    with _match_form_lock:
+        cached = _match_form_cache.get(key)
+    if cached is not None:
+        return {**cached, **_match_market_data(date, team_a, team_b)}
     try:
-        # ESPN rejects a YYYYMMDD-YYYYMMDD range with HTTP 400.
-        # Query supported single-day scoreboards concurrently and cache each day.
-        days = [target - timedelta(days=offset) for offset in range(1, 22)]
-        events = []
-        failed_days = 0
-        with ThreadPoolExecutor(max_workers=7) as pool:
-            futures = {pool.submit(_match_daily_events, day): day for day in days}
-            for future in as_completed(futures):
-                try:
-                    events.extend(future.result())
-                except requests.RequestException:
-                    failed_days += 1
-                    logger.warning('ESPN scoreboard unavailable for %s', futures[future])
-        if failed_days == len(days):
+        events, failed_days = match_history.load_window(target)
+        if failed_days == 21:
             raise HTTPException(503, 'Risultati ESPN temporaneamente non disponibili')
         games = []
         for event in events:
@@ -651,8 +641,11 @@ def match_form(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
         result = {'source': 'ESPN', 'window_days': 21, 'odds_api_calls': 0,
                   'teams': [team_stats(team_a), team_stats(team_b)],
                   'h2h': [{'date': g['date'], 'teams': g['teams'], 'scores': g['scores']} for g in h2h]}
-        _match_form_cache[key] = result
-        return {**result, 'moneyline_odds': _cached_match_moneyline(date, team_a, team_b)}
+        result['history_complete'] = failed_days == 0
+        if not failed_days:
+            with _match_form_lock:
+                _match_form_cache[key] = result
+        return {**result, **_match_market_data(date, team_a, team_b)}
     except requests.RequestException:
         logger.warning('ESPN historical scoreboard temporarily unavailable', exc_info=True)
         raise HTTPException(503, 'Risultati storici ESPN temporaneamente non disponibili')
@@ -1652,7 +1645,7 @@ def sitemap_xml():
                     '<url><loc>https://basketlab.it/</loc></url></urlset>',
                     media_type='application/xml')
 
-app.mount('/static',StaticFiles(directory='web'),name='static')
+app.mount('/static',VersionedStaticFiles(directory='web'),name='static')
 @app.get('/')
 @app.get('/pronostici', include_in_schema=False)
 @app.get('/partite', include_in_schema=False)

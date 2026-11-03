@@ -19,4 +19,7 @@ class SpaRoutesTests(unittest.TestCase):
                 self.assertEqual(response.headers['cache-control'],'no-cache')
             for route in ['/api/missing','/static/missing.js','/missing']:
                 self.assertEqual(client.get(route).status_code,404)
+            versioned=client.get('/static/modules/router.js?v=routes-1')
+            self.assertEqual(versioned.headers['cache-control'],'public, max-age=86400')
+            self.assertEqual(client.get('/static/sw.js').headers['cache-control'],'no-cache')
             client.close()
