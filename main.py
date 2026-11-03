@@ -496,9 +496,17 @@ def session_picks(compact: bool = False):
         preliminary = [p for p in preliminary if str(p.get('ESPN ID') or p.get('Giocatore') or '').strip().casefold()!=sid]
     quote_count = len(results)
     player_count = len({r.get('Giocatore') for r in results})
+    # Metadata only: retain the update timestamp without loading full quote snapshots.
+    session_dates = {day, (datetime.strptime(day,'%Y-%m-%d')+timedelta(days=1)).strftime('%Y-%m-%d')}
+    try:
+        saved_at = max((item['saved_at'] for item in storage.available_dates()
+                        if item['date'] in session_dates and item.get('saved_at')), default=None)
+    except Exception:
+        logger.warning('Session update timestamp unavailable', exc_info=True)
+        saved_at = None
     # The forecast page already has every selected row in its frozen picks.
     # Quote exploration uses saved/latest, so compact clients need only counts.
-    return {'date':day,'publication_date':day,'session_start_at':manifest['start_at'],
+    return {'date':day,'publication_date':day,'saved_at':saved_at,'session_start_at':manifest['start_at'],
             'session_end_at':manifest['end_at'],'results':[] if compact else results,
             'quote_count': quote_count, 'publication_cutoff_at': nba_session_picks.cutoff_for(day).isoformat(),
             'recommendations':{'policy':'fixed-1800-v1','lines':official['lines'] if official else []},

@@ -1,0 +1,39 @@
+name: Mobile and desktop browser checks
+on:
+  pull_request:
+    paths: ['web/**', 'tests/**', 'package*.json', 'playwright.config.cjs', '.github/workflows/browser-checks.yml']
+  push:
+    branches: [main]
+    paths: ['web/**', 'tests/browser/**', 'package*.json', 'playwright.config.cjs', '.github/workflows/browser-checks.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Measure fixed pre-optimization baseline
+        run: |
+          mkdir -p /tmp/basketlab-browser-baseline
+          git archive b7e483f7b7b164efe36dd3ece00fccce3a4ce7f9 web | tar -x -C /tmp/basketlab-browser-baseline
+          BASKETLAB_BASELINE=1 WEB_ROOT=/tmp/basketlab-browser-baseline/web npm run test:browser
+          mv test-results baseline-results
+      - name: Test current mobile and desktop
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-performance-and-traces
+          path: |
+            test-results
+            baseline-results
