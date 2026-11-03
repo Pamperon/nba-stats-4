@@ -290,3 +290,25 @@ test('successful match data renders charts and summary through extracted module'
  assert.match(doc.querySelector('.hub-match-summary p').textContent,/bilancio recente migliore/);
  assert.match(doc.querySelector('#hub-match-h2h-chart').textContent,/Nessuno scontro diretto/);
 });
+
+test('invalid URL dates cannot crash calendar or open a match under a different day',()=>{
+ const {window}=setup();
+ for(const date of ['2026-99-99','2026-02-30','invalid']){
+  const route=window.BasketLabRouter.read(new URL('https://basketlab.it/analisi-partita?data='+date+'&trasferta=Boston&casa=Atlanta'));
+  assert.equal(route.date,'');assert.equal(route.match,'');
+ }
+ assert.equal(window.BasketLabRouter.read(new URL('https://basketlab.it/partite?data=2026-11-05')).date,'2026-11-05');
+});
+
+test('daily quote loading cannot hide the independent match analysis',()=>{
+ const {window,doc}=setup('analisi-partita?data=2026-11-05&trasferta=Boston+Celtics&casa=Atlanta+Hawks');
+ window.fetch=()=>new Promise(()=>{});
+ doc.querySelector('[data-match-tab="analysis"]').click();
+ const styles=doc.createElement('style');
+ styles.textContent=fs.readFileSync(path.join(root,'web/style.css'),'utf8')+'\n'+fs.readFileSync(path.join(root,'web/hub.css'),'utf8');
+ doc.head.append(styles);
+ doc.querySelector('#app').classList.add('date-is-loading');
+ assert.equal(window.getComputedStyle(doc.querySelector('#finder')).display,'block');
+ assert.equal(window.getComputedStyle(doc.querySelector('#date-loading')).display,'none');
+ assert.match(doc.querySelector('#hub-match-charts').textContent,/Caricamento/);
+});

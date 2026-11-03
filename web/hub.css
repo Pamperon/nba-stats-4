@@ -1612,3 +1612,7 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 #hub-match-charts .bl-match-v2-results .won{background:#189b69}
 #hub-match-charts .bl-match-v2-results .lost{background:#d84b55}
 @media(max-width:370px){#hub-match-charts .bl-match-v2-points-row{grid-template-columns:minmax(65px,1fr) minmax(55px,1.5fr) 39px;gap:6px}}
+
+/* Match statistics load independently of the saved daily quote feed. */
+body.hub-match-open #app.date-is-loading #finder{display:block!important}
+body.hub-match-open #app #date-loading{display:none!important}

@@ -192,6 +192,8 @@ async function loadMatchForm(match){
  const boxes=panel.querySelectorAll('.hub-match-data-block');
  const facts=panel.querySelectorAll('.hub-match-facts>div');
  const summary=panel.querySelector('.hub-match-summary p');
+ const chart=$('#hub-match-charts');if(chart)chart.textContent='Caricamento delle statistiche verificate…';
+ $('#hub-match-h2h-chart')?.replaceChildren();
  for(const block of boxes){block.querySelector('strong').textContent='Caricamento…';block.querySelector('p').textContent='Consultazione risultati ESPN verificati'}
  for(const fact of facts)fact.querySelector('small').textContent='Caricamento…';
  try{
@@ -239,6 +241,7 @@ async function loadMatchForm(match){
     if(h2hWins[0]!==h2hWins[1])lines.push('Scontri diretti nel periodo: '+teams[h2hWins[0]>h2hWins[1]?0:1]+' avanti '+Math.max(...h2hWins)+'-'+Math.min(...h2hWins)+'.');
     else lines.push('Scontri diretti nel periodo: parità '+h2hWins[0]+'-'+h2hWins[1]+'.');
    }
+   if(data.history_complete===false)lines.push('Storico ESPN parzialmente disponibile: riprova per completare il campione.');
    summary.textContent=lines.join(' ')+' Dati descrittivi, non una previsione del risultato.';
   }
  }catch(error){

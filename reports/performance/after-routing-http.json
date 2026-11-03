@@ -1,6 +1,6 @@
 {
   "captured_utc": "2026-11-03T14:03:38.629759+00:00",
-  "source_commit": "35cfc406ddb95c42b723235660b63648c3bfa11d",
+  "source_commit": "d4387170f48e42e04ad5e5b0aef8c3d4a7d3d69c",
   "samples": [
     {
       "path": "/",
@@ -56,5 +56,6 @@
       "bytes": 1038,
       "server_timing": "app;dur=165.14"
     }
-  ]
+  ],
+  "measurement_checkout_commit": "35cfc406ddb95c42b723235660b63648c3bfa11d"
 }
