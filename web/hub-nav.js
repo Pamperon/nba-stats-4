@@ -40,13 +40,33 @@ function paintNbaUpdates(panel,payload,teams){
  heading.textContent=teams?'Disponibilità giocatori':'Ultimi aggiornamenti NBA';
  const source=document.createElement('small');
  source.textContent='Fonte ESPN · '+new Date(payload.report_at).toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
- const list=document.createElement('ul');
+ const groups=new Map();
  for(const item of updates.slice(0,teams?updates.length:5)){
-  const row=document.createElement('li');
-  row.textContent=item.player+' · '+item.team+' · '+labels[item.status];
-  list.append(row);
+  if(!groups.has(item.team))groups.set(item.team,[]);
+  groups.get(item.team).push(item);
  }
- panel.append(heading,list,source);
+ const grid=document.createElement('div');
+ grid.className='availability-teams';
+ for(const [team,players] of groups){
+  const group=document.createElement('section');
+  const title=document.createElement('h4');
+  title.textContent=team;
+  const list=document.createElement('ul');
+  for(const item of players){
+   const row=document.createElement('li');
+   const name=document.createElement('span');
+   name.textContent=item.player;
+   const status=document.createElement('span');
+   status.className='availability-status';
+   status.dataset.status=item.status;
+   status.textContent=labels[item.status];
+   row.append(name,status);
+   list.append(row);
+  }
+  group.append(title,list);
+  grid.append(group);
+ }
+ panel.append(heading,grid,source);
 }
 const nbaUpdatesPanel=$('#hub-nba-updates-panel');
 const newsPage=$('#nba-news-page'),newsList=$('#nba-news-list'),newsPreview=$('#nba-news-preview');

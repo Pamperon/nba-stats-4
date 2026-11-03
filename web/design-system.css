@@ -539,3 +539,14 @@ html {
   .nba-news-preview .nba-news-card:first-child { grid-row: span 3; }
   .nba-news-preview .nba-news-card:first-child a { height: 100%; }
 }
+
+/* Availability in the match analysis */
+.availability-teams { display: grid; gap: .65rem; margin: .8rem 0; }
+.availability-teams section { min-width: 0; background: #0d2133; border: 1px solid #29455d; border-radius: 12px; padding: .55rem .7rem; }
+.availability-teams h4 { margin: .15rem 0 .35rem; color: #b8d3e8; font-size: .85rem; }
+.availability-teams ul { list-style: none; padding: 0; margin: 0; }
+.availability-teams li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: 0; padding: .42rem 0; font-size: .9rem; }
+.availability-teams li + li { border-top: 1px solid #29455d; }
+.availability-status { flex-shrink: 0; border-radius: 999px; padding: .18rem .48rem; background: #392e27; color: #ffd19a; font-size: .72rem; font-weight: 650; }
+.availability-status:is([data-status="out"], [data-status="suspension"]) { background: #432b3a; color: #ffb4c5; }
+@media (min-width: 800px) { .availability-teams { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

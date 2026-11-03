@@ -850,41 +850,55 @@ _nba_news_lock = threading.Lock()
 
 @app.get('/api/nba/news')
 def nba_news():
-    """Expose ESPN article metadata and links, without republishing articles."""
-    from urllib.parse import urlparse
-
-    def espn_url(value):
-        parsed = urlparse(value or '')
-        return value if parsed.scheme == 'https' and parsed.hostname in {
-            'www.espn.com', 'espn.com', 'a.espncdn.com', 'a1.espncdn.com',
-            'a2.espncdn.com', 'a3.espncdn.com', 'a4.espncdn.com',
-        } else None
+    """Expose Sky Sport NBA headlines and links from its Italian RSS feed."""
+    from email.utils import parsedate_to_datetime
+    from urllib.parse import urlsplit
+    from xml.etree import ElementTree
 
     with _nba_news_lock:
         cached = _nba_news_cache.get('current')
         if cached is not None:
             return cached
         try:
-            response = requests.get(
-                'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news',
-                params={'limit': 24}, timeout=8)
+            response = requests.get('https://sport.sky.it/rss/sport.xml', timeout=8)
             response.raise_for_status()
             articles = []
             seen = set()
-            for item in response.json()['articles']:
-                url = espn_url(item.get('links', {}).get('web', {}).get('href'))
-                title = item.get('headline')
-                if not title or not url or url in seen:
+            for item in ElementTree.fromstring(response.content).findall('./channel/item'):
+                url = item.findtext('link', '').strip()
+                parsed = urlsplit(url)
+                title = item.findtext('title', '').strip()
+                if (parsed.scheme not in {'http', 'https'} or parsed.hostname != 'sport.sky.it'
+                        or not parsed.path.startswith('/nba/') or not title):
+                    continue
+                url = parsed._replace(scheme='https', query='', fragment='').geturl()
+                if url in seen:
                     continue
                 seen.add(url)
-                image = next((image for row in item.get('images', [])
-                              if (image := espn_url(row.get('url')))), None)
+                published = None
+                try:
+                    published = parsedate_to_datetime(item.findtext('pubDate', '')).isoformat()
+                except (ValueError, TypeError, OverflowError):
+                    pass
+                image = None
+                for media in item.iter():
+                    if media.tag.rsplit('}', 1)[-1] not in {'thumbnail', 'content', 'enclosure'}:
+                        continue
+                    candidate = media.get('url', '')
+                    mime = media.get('type', '')
+                    if (urlsplit(candidate).scheme == 'https' and
+                            (mime.startswith('image/') or media.get('medium') == 'image'
+                             or media.tag.endswith('thumbnail'))):
+                        image = candidate
+                        break
                 articles.append({'title': title, 'url': url, 'image': image,
-                                 'published': item.get('published')})
-        except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError):
-            raise HTTPException(503, 'Notizie ESPN temporaneamente non disponibili') from None
+                                 'published': published})
+            if not articles:
+                raise ValueError('No NBA articles in Sky Sport RSS')
+        except (requests.RequestException, ElementTree.ParseError, ValueError):
+            raise HTTPException(503, 'Notizie Sky Sport temporaneamente non disponibili') from None
         articles.sort(key=lambda article: article['published'] or '', reverse=True)
-        result = {'source': 'ESPN', 'articles': articles[:24]}
+        result = {'source': 'Sky Sport', 'articles': articles[:24]}
         _nba_news_cache['current'] = result
         return result
 
