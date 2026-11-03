@@ -844,6 +844,43 @@ def visible_snapshot(snapshot):
     result['visibility_valid_until'] = min(starts).isoformat() if starts else None
     return result
 
+_nba_updates_cache = TTLCache(maxsize=1, ttl=300)
+_nba_updates_lock = threading.Lock()
+
+
+@app.get('/api/nba/updates')
+def nba_updates():
+    """Return current ESPN injury reports independently of the odds scanner."""
+    import availability
+    with _nba_updates_lock:
+        cached = _nba_updates_cache.get('current')
+        if cached is not None:
+            return cached
+        try:
+            response = requests.get(availability.URL, timeout=8)
+            response.raise_for_status()
+            payload = response.json()
+            timestamp = datetime.fromisoformat(payload['timestamp'].replace('Z', '+00:00'))
+            age = (datetime.now(ZoneInfo('UTC')) - timestamp).total_seconds()
+            if payload.get('status') != 'success' or not 0 <= age <= 1800:
+                raise ValueError('Unverified injury report')
+            updates = []
+            for group in payload['injuries']:
+                team = group.get('displayName') or group.get('team', {}).get('displayName')
+                if not team:
+                    continue
+                for item in group['injuries']:
+                    player = item['athlete'].get('displayName')
+                    status = str(item.get('status') or '').strip().lower()
+                    if player and status in {'out', 'doubtful', 'questionable', 'day-to-day', 'suspension'}:
+                        updates.append({'team': team, 'player': player, 'status': status})
+        except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError):
+            raise HTTPException(503, 'Aggiornamenti ESPN temporaneamente non disponibili') from None
+        result = {'source': 'ESPN', 'report_at': timestamp.isoformat(), 'updates': updates}
+        _nba_updates_cache['current'] = result
+        return result
+
+
 @app.get('/api/saved/latest')
 def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$'),
                  compact: bool = False):

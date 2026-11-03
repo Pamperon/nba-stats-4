@@ -459,3 +459,20 @@ html {
   position: relative;
   margin-top: -3px;
 }
+
+@media (max-width: 760px) {
+  .hub-menu-drawer .hub-menu-main { display: none; }
+}
+#quote-coverage { font-size: 12px; color: #c1d7e9; text-align: center; margin: 4px 0; }
+.hub-nba-updates {
+  grid-column: 1 / -1;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid #294758;
+  border-radius: 12px;
+  background: #102735;
+}
+.hub-nba-updates h3 { margin: 0 0 8px; }
+.hub-nba-updates ul { margin: 0; padding-inline-start: 18px; }
+.hub-nba-updates li + li { margin-top: 6px; }
+.hub-nba-updates small { color: #a8c3d7; }

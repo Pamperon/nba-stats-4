@@ -45,6 +45,12 @@ function display(){
  const extra=!!$('.extra-panel:not([hidden])');
  const picksView=document.body.dataset.hubView==='picks'&&!extra;
  picksPresentation.hidden=!picksView;
+ if(picksView&&!picksPresentation.querySelector('.hub-picks-archive')){
+  const link=document.createElement('button');
+  link.type='button';link.className='bl-back hub-picks-archive';link.dataset.hub='history';link.textContent='Archivio esiti →';
+  picksPresentation.prepend(link);
+ }
+
  if(picksView){
   for(const panel of [singleShowcase,featured])if(panel&&panel.parentElement!==picksPresentation)picksPresentation.append(panel);
  }else{
@@ -204,8 +210,62 @@ function openMatchQuotes(match){
 }
 const {renderMatchCharts,renderMatchH2H}=window.BasketLabMatchCharts(document,matchTeamCodes,displayNum);
 const getMatchFormData=window.BasketLabMatchData((...args)=>fetch(...args));
+const nbaUpdatesHome=$('#hub-nba-updates');
+const nbaUpdatesMatch=document.createElement('section');
+nbaUpdatesMatch.className='hub-nba-updates';
+nbaUpdatesMatch.hidden=true;
+$('#hub-match-analysis')?.append(nbaUpdatesMatch);
+let nbaUpdatesRequest;
+let nbaUpdatesExpires=0;
+function nbaUpdates(){
+ if(!nbaUpdatesRequest||Date.now()>=nbaUpdatesExpires){
+  nbaUpdatesExpires=Date.now()+300000;
+  nbaUpdatesRequest=Promise.resolve().then(()=>fetch('/api/nba/updates')).then(response=>{
+   if(!response.ok)throw new Error('ESPN unavailable');
+   return response.json();
+  }).catch(()=>null);
+ }
+ return nbaUpdatesRequest;
+}
+function paintNbaUpdates(panel,payload,teams){
+ if(!panel)return;
+ const labels={out:'Assente',doubtful:'In forte dubbio',questionable:'In dubbio','day-to-day':'Da valutare',suspension:'Sospeso'};
+ const normalize=name=>String(name).toLowerCase().replace(/^la /,'los angeles ');
+ const updates=(payload?.updates||[]).filter(item=>labels[item.status]&&(!teams||teams.includes(normalize(item.team))));
+ panel.replaceChildren();
+ panel.hidden=!updates.length;
+ if(panel.hidden)return;
+ const heading=document.createElement('h3');
+ heading.textContent=teams?'Disponibilità giocatori':'Ultimi aggiornamenti NBA';
+ const source=document.createElement('small');
+ source.textContent='Fonte ESPN · '+new Date(payload.report_at).toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+ const list=document.createElement('ul');
+ for(const item of updates.slice(0,teams?updates.length:5)){
+  const row=document.createElement('li');
+  row.textContent=item.player+' · '+item.team+' · '+labels[item.status];
+  list.append(row);
+ }
+ panel.append(heading,list,source);
+}
+function refreshHomeUpdates(){
+ if(document.body.dataset.hubView!=='home'||$('.extra-panel:not([hidden])')){
+  if(nbaUpdatesHome)nbaUpdatesHome.hidden=true;
+  return;
+ }
+ nbaUpdates().then(payload=>{
+  if(document.body.dataset.hubView==='home'&&!$('.extra-panel:not([hidden])'))paintNbaUpdates(nbaUpdatesHome,payload);
+ });
+}
+new MutationObserver(refreshHomeUpdates).observe(document.body,{attributes:true,attributeFilter:['data-hub-view']});
+refreshHomeUpdates();
 async function loadMatchForm(match){
  const request=++matchFormRequest;
+ nbaUpdatesMatch.hidden=true;
+ const updateTeams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(team=>team.trim().toLowerCase().replace(/^la /,'los angeles '));
+ nbaUpdates().then(payload=>{
+  if(request===matchFormRequest&&activeMatch===match)paintNbaUpdates(nbaUpdatesMatch,payload,updateTeams);
+ });
+
  const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
  const panel=$('#hub-match-analysis');if(!panel||teams.length!==2)return;
  const boxes=panel.querySelectorAll('.hub-match-data-block');

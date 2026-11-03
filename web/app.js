@@ -92,6 +92,14 @@ dateSwipeArea.addEventListener('pointercancel',()=>{dateSwipe=null;});
 function renderDateMetrics(snapshot){
  const values=[['PARTITE',snapshot?.fixture_count],['GIOCATORI',snapshot?.player_count],['QUOTE',snapshot?(snapshot.quote_count??(snapshot.results||[]).length):null]];
  $('metrics').innerHTML=values.map(([label,value])=>'<div class="metric"><small>'+label+'</small><strong>'+fmt(value)+'</strong></div>').join('');
+ const covered=new Set((snapshot?.results||[]).filter(row=>Number(String(row.Quota??'').replace(',','.'))>1).map(row=>matchFixtureKey(row.Partita)).filter(Boolean)).size;
+ const total=snapshot?.fixture_count;
+ const coverage=$('quote-coverage');
+ if(coverage){
+  coverage.hidden=!Number.isInteger(total)||total<1||covered>total;
+  coverage.textContent=coverage.hidden?'':'Quote giocatori disponibili per '+covered+' di '+total+' partite';
+ }
+
 }
 
 let scanStatusTimer=0;

@@ -22,7 +22,7 @@ return function renderMatchPlayers(){
   groups.get(key).rows.push(row);
  }
  list.replaceChildren();if(count)count.textContent=groups.size+' giocatori · '+[...groups.values()].reduce((sum,g)=>sum+g.rows.length,0)+' linee';
- if(!groups.size){const d=window.BasketLabMatchDiagnostics?.(activeMatch);list.textContent=rows.length?'Nessun giocatore corrisponde al mercato o alla ricerca.':d?.matching?'Sono presenti '+d.matching+' analisi per questa partita, ma nessuna quota valida salvata.':'Nessuna linea giocatore salvata per questa partita nella data '+(d?.date||'selezionata')+'. Le statistiche ESPN sono indipendenti dalle quote.';return}
+ if(!groups.size){const d=window.BasketLabMatchDiagnostics?.(activeMatch);list.textContent=rows.length?'Nessun giocatore corrisponde al mercato o alla ricerca.':d?.matching?'Sono presenti '+d.matching+' analisi per questa partita, ma nessuna quota valida salvata.':'Quote giocatori non disponibili nel feed salvato per questa partita nella data '+(d?.date||'selezionata')+'. Le statistiche ESPN sono indipendenti dalle quote.';return}
  const ordered=[...groups.values()].sort((a,b)=>sortBy==='name'?a.name.localeCompare(b.name,'it'):sortBy==='lines'?b.rows.length-a.rows.length||a.name.localeCompare(b.name,'it'):a.team.localeCompare(b.team,'it')||a.name.localeCompare(b.name,'it'));
  let lastTeam='';
  for(const group of ordered){
