@@ -85,7 +85,7 @@ function loadNews(target,limit){
   const articles=payload?.articles?.slice(0,limit)||[];
   target.replaceChildren();
   if(!articles.length){
-   target.textContent=payload?'Nessuna notizia disponibile.':'Notizie ESPN temporaneamente non disponibili.';
+   target.textContent=payload?'Nessuna notizia disponibile.':'Notizie Sky Sport temporaneamente non disponibili.';
    return;
   }
   for(const item of articles){
