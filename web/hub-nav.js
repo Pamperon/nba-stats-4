@@ -85,7 +85,7 @@ function loadNews(target,limit){
   const articles=payload?.articles?.slice(0,limit)||[];
   target.replaceChildren();
   if(!articles.length){
-   target.textContent=payload?'Nessuna notizia disponibile.':'Notizie Sky Sport temporaneamente non disponibili.';
+   target.textContent=payload?'Nessuna notizia disponibile.':'Notizie Pianeta Basket temporaneamente non disponibili.';
    return;
   }
   for(const item of articles){
@@ -93,7 +93,7 @@ function loadNews(target,limit){
    const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
    const copy=document.createElement('div');
    const title=document.createElement('h3');title.textContent=item.title;
-   const meta=document.createElement('small');meta.textContent='ESPN';
+   const meta=document.createElement('small');meta.textContent=payload.source;
    const stamp=new Date(item.published||'');
    if(!Number.isNaN(stamp.getTime()))meta.textContent+=' · '+stamp.toLocaleString('it-IT',{timeZone:'Europe/Rome',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
    copy.append(meta,title);link.append(copy);

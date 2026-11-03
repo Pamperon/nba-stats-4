@@ -848,58 +848,75 @@ _nba_news_cache = TTLCache(maxsize=1, ttl=600)
 _nba_news_lock = threading.Lock()
 
 
+_nba_news_last = TTLCache(maxsize=1, ttl=86400)
+
+
+def _pianeta_basket_articles(html):
+    from html.parser import HTMLParser
+    from urllib.parse import urljoin, urlsplit
+
+    origin = 'https://www.pianetabasket.com/nba'
+
+    class Headlines(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.url = None
+            self.parts = []
+            self.articles = {}
+
+        def handle_starttag(self, tag, attrs):
+            if tag != 'a':
+                return
+            parsed = urlsplit(urljoin(origin, dict(attrs).get('href') or ''))
+            self.url = None
+            self.parts = []
+            if (parsed.netloc == 'www.pianetabasket.com' and parsed.scheme == 'https'
+                    and parsed.path.startswith('/nba/') and parsed.path.rstrip('/') != '/nba'
+                    and not parsed.fragment and not parsed.query):
+                self.url = parsed.geturl()
+
+        def handle_data(self, data):
+            if self.url:
+                self.parts.append(data)
+
+        def handle_endtag(self, tag):
+            if tag == 'a' and self.url:
+                title = ' '.join(' '.join(self.parts).split())
+                if len(title) >= 16:
+                    self.articles.setdefault(self.url, {
+                        'title': title, 'url': self.url, 'image': None, 'published': None,
+                    })
+                self.url = None
+
+    parser = Headlines()
+    parser.feed(html)
+    parser.close()
+    return list(parser.articles.values())[:24]
+
+
 @app.get('/api/nba/news')
 def nba_news():
-    """Expose Sky Sport NBA headlines and links from its Italian RSS feed."""
-    from email.utils import parsedate_to_datetime
-    from urllib.parse import urlsplit
-    from xml.etree import ElementTree
-
+    """Expose headlines linking to Pianeta Basket's NBA coverage."""
     with _nba_news_lock:
         cached = _nba_news_cache.get('current')
         if cached is not None:
             return cached
         try:
-            response = requests.get('https://sport.sky.it/rss/sport.xml', timeout=8)
+            response = requests.get('https://www.pianetabasket.com/nba', timeout=8)
             response.raise_for_status()
-            articles = []
-            seen = set()
-            for item in ElementTree.fromstring(response.content).findall('./channel/item'):
-                url = item.findtext('link', '').strip()
-                parsed = urlsplit(url)
-                title = item.findtext('title', '').strip()
-                if (parsed.scheme not in {'http', 'https'} or parsed.hostname != 'sport.sky.it'
-                        or not parsed.path.startswith('/nba/') or not title):
-                    continue
-                url = parsed._replace(scheme='https', query='', fragment='').geturl()
-                if url in seen:
-                    continue
-                seen.add(url)
-                published = None
-                try:
-                    published = parsedate_to_datetime(item.findtext('pubDate', '')).isoformat()
-                except (ValueError, TypeError, OverflowError):
-                    pass
-                image = None
-                for media in item.iter():
-                    if media.tag.rsplit('}', 1)[-1] not in {'thumbnail', 'content', 'enclosure'}:
-                        continue
-                    candidate = media.get('url', '')
-                    mime = media.get('type', '')
-                    if (urlsplit(candidate).scheme == 'https' and
-                            (mime.startswith('image/') or media.get('medium') == 'image'
-                             or media.tag.endswith('thumbnail'))):
-                        image = candidate
-                        break
-                articles.append({'title': title, 'url': url, 'image': image,
-                                 'published': published})
-            if not articles:
-                raise ValueError('No NBA articles in Sky Sport RSS')
-        except (requests.RequestException, ElementTree.ParseError, ValueError):
-            raise HTTPException(503, 'Notizie Sky Sport temporaneamente non disponibili') from None
-        articles.sort(key=lambda article: article['published'] or '', reverse=True)
-        result = {'source': 'Sky Sport', 'articles': articles[:24]}
+            articles = _pianeta_basket_articles(response.text)
+            if len(articles) < 4:
+                raise ValueError('Insufficient NBA headlines')
+        except (requests.RequestException, ValueError) as error:
+            logging.getLogger(__name__).warning('Pianeta Basket news: %s', error)
+            cached = _nba_news_last.get('current')
+            if cached is not None:
+                return cached
+            raise HTTPException(503, 'Notizie Pianeta Basket temporaneamente non disponibili') from None
+        result = {'source': 'Pianeta Basket', 'articles': articles,
+                  'updated_at': datetime.now(ZoneInfo('UTC')).isoformat()}
         _nba_news_cache['current'] = result
+        _nba_news_last['current'] = result
         return result
 
 
