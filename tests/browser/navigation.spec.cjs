@@ -78,3 +78,17 @@ test('approved coordinated design: player charts, contextual back and responsive
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(errors).toEqual([]);
 });
+
+test('Home fixtures without calendar_date use the Italian tipoff day',async({page})=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'The original Home link did not preserve dates');
+ let expectedDay;
+ await page.route('**/api/nba/publication-session**',async route=>{
+  const response=await route.fetch(),data=await response.json();
+  expectedDay=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(data.games[0].start_at));
+  for(const game of data.games)delete game.calendar_date;
+  await route.fulfill({response,json:data});
+ });
+ await page.goto('/');await page.locator('.hub-premium-fixture').click();
+ expect(new URL(page.url()).searchParams.get('data')).toBe(expectedDay);
+ await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
+});
