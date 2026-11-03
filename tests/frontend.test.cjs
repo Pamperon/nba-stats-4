@@ -923,7 +923,7 @@ test('homepage single renders before calendar dates and quote archive resolve',a
  const dom=browser(url=>{calls.push(url);return new Promise(resolve=>pending.set(url,resolve));});
  try{
   const w=dom.window,d=w.document;
-  for(const file of ['match-charts','match-data'])w.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
+  for(const file of ['match-charts','match-data','calendar-data','boxscore-view','match-players'])w.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
   w.eval(fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8'));
   assert.ok(pending.has('/api/picks/session?compact=true'));
   assert.ok(pending.has('/api/saved/dates'));
@@ -944,7 +944,7 @@ test('future session previews show the correct official publication day',async()
  const payload={date:'2026-11-04',publication_date:'2026-11-04',recommendations:{policy:'fixed-1800-v1',lines:[]},official_top5_pending:true,preliminary_top5:[],preliminary_single:{Giocatore:'Future Player','ESPN ID':'123',Squadra:'BOS',Partita:'Boston Celtics - Miami Heat',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75}};
  const dom=browser(url=>url==='/api/picks/session?compact=true'?Promise.resolve(response(payload)):new Promise(()=>{}));
  try{
-  for(const file of ['match-charts','match-data'])dom.window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
+  for(const file of ['match-charts','match-data','calendar-data','boxscore-view','match-players'])dom.window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
   dom.window.eval(fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8'));
   await tick();await tick();
   assert.match(dom.window.document.getElementById('hub-single-state').textContent,/Anteprima.*04\/11.*18:00/);

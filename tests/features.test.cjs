@@ -12,7 +12,7 @@ function app(fetch,mobile=false,hash=''){
  dom.window.fetch=fetch;dom.window.matchMedia=()=>typeof mobile==='object'?mobile:({matches:mobile});dom.window.scrollTo=()=>{};
  dom.window.localStorage.setItem('basketlab:favorites:v1','[{"id":"123","name":"Old favorite"}]');
  dom.window.localStorage.setItem('unrelated-data','keep');
- for(const file of ['app.js','features.js'])dom.window.eval(fs.readFileSync(path.join(root,'web',file),'utf8'));
+ for(const file of ['app.js','modules/archive-view.js','features.js'])dom.window.eval(fs.readFileSync(path.join(root,'web',file),'utf8'));
  return dom;
 }
 function base(url){

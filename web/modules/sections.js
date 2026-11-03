@@ -18,5 +18,6 @@
  function register(name,load,ttl=60000){tasks.set(name,{load,ttl,expires:0,pending:null});queueMicrotask(refresh);}
  document.addEventListener('basketlab:view',()=>queueMicrotask(refresh));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+ root.setInterval(()=>{if(!document.hidden)refresh();},15000);
  root.BasketLabSections={register,run,wants};
 })(window);
