@@ -30,3 +30,18 @@ class MatchPrewarmTests(unittest.TestCase):
     def test_stopped_loop_does_not_delay_shutdown(self):
         stop=threading.Event();stop.set();schedule=Mock()
         match_prewarm.run(stop,schedule);schedule.assert_not_called()
+    def test_status_reports_completed_dates_without_exposing_mutable_state(self):
+        original=dict(match_prewarm._status)
+        stop=Mock();stop.is_set.return_value=False;stop.wait.side_effect=[False,True]
+        try:
+            with patch.object(match_prewarm,'warm_upcoming',return_value=['2026-11-05']):
+                match_prewarm.run(stop,Mock())
+            result=match_prewarm.status()
+            self.assertEqual(result['state'],'idle')
+            self.assertEqual(result['warmed_dates'],['2026-11-05'])
+            self.assertIsNotNone(result['last_completed_at'])
+            self.assertEqual(result['odds_api_calls'],0)
+            result['warmed_dates'].append('invalid')
+            self.assertEqual(match_prewarm.status()['warmed_dates'],['2026-11-05'])
+        finally:
+            match_prewarm._status.clear();match_prewarm._status.update(original)

@@ -248,6 +248,7 @@ def audience_admin():
 
 @app.get('/api/health')
 def health():
+    import match_prewarm
     with lock:
         active = sum(job['state'] in ('queued','running') for job in jobs.values())
     return {'status': 'ok', 'version': '4.0-optimized', 'odds_download_method': 'tournament-v1',
@@ -256,7 +257,7 @@ def health():
             'scheduler_revision': 'rome-five-prepublication-slots-v1',
             'scan_slots_italy': ['09:00', '12:00', '14:30', '16:30', '17:30'],
             'runtime_instance': RUNTIME_ID, 'scan_tracking_ready': tracking_ready,
-            'active_scans': active}
+            'active_scans': active, 'history_warmup': match_prewarm.status()}
 
 @app.get('/api/session', dependencies=[Depends(auth)])
 def session():
