@@ -9,6 +9,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from zoneinfo import ZoneInfo
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from session_window import scan_schedules
 
 BASE = "https://nba-stats-4.onrender.com"
 TOKEN = os.environ.get("NBA_STATS_ACCESS_TOKEN", "")
@@ -127,21 +130,7 @@ def slot_heartbeat(slot_key, stop):
 
 
 def load_schedules(scan_day):
-    schedules = []
-    for offset in (0, 1):
-        date = (scan_day + dt.timedelta(days=offset)).isoformat()
-        try:
-            payload = call("/api/schedule?date=" + date)
-            if not isinstance(payload, dict) or not isinstance(payload.get("games"), list):
-                raise ValueError("Invalid calendar response")
-            if any(not isinstance(game, dict) or type(game.get("upcoming")) is not bool
-                   for game in payload["games"]):
-                raise ValueError("Invalid game entry")
-        except Exception as exc:
-            raise RuntimeError("ESPN calendar unavailable for " + date +
-                               "; no slot claimed and no paid scan started") from exc
-        schedules.append((date, payload))
-    return schedules
+    return scan_schedules(scan_day, lambda date: call('/api/schedule?date=' + date))
 
 
 def execute_scan(now, slot, manual, source, schedules=None):
@@ -168,7 +157,7 @@ def execute_scan(now, slot, manual, source, schedules=None):
             print("No upcoming games; skipping paid scan", flush=True)
             continue
         print(len(upcoming), "upcoming games", flush=True)
-        # Every scheduled slot refreshes today's/tomorrow's snapshot when games remain.
+        # Every scheduled slot refreshes the selected upcoming snapshots when games remain.
         try:
             path = "/api/scan?date=" + date + "&source=" + urllib.parse.quote(source)
             if slot is not None:

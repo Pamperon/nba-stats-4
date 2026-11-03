@@ -1576,3 +1576,7 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 #picks-showcase[hidden]{display:none!important}
 #picks-showcase{min-width:0}
 #picks-showcase .hub-featured-heading>button[data-hub="picks"]{display:none}
+
+/* Dated early-preview badges must wrap on narrow mobile screens. */
+.hub-single-section .hub-featured-heading{flex-wrap:wrap}
+.hub-single-state{white-space:normal;max-width:100%;text-align:right}

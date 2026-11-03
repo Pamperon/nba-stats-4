@@ -100,6 +100,8 @@ function hubCardMetric(source,term){const blocks=[...source.querySelectorAll('.p
 function hubCardPhoto(source){const image=source.querySelector('.pick-avatar img');const frame=document.createElement('div');frame.className='bl-player-photo';if(image){const img=image.cloneNode(true);img.removeAttribute('id');img.loading='lazy';frame.append(img)}else{const fallback=document.createElement('span');fallback.textContent=source.querySelector('.pick-avatar span')?.textContent?.trim()||'NBA';frame.append(fallback)}return frame}
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');if(!list||!picks)return;
+ const heading=featured?.querySelector('h2');
+ if(heading)heading.textContent=picks.querySelector('#pick-giorno h2')?.textContent?.includes('provvisoria')?'🔥 Top 5 analisi preliminari':'🔥 Top 5 analisi di oggi';
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,5);
  const selected=sources.length||picks.querySelector('#pick-giorno')?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,5);
  list.replaceChildren();
@@ -414,7 +416,7 @@ async function fetchNbaFixtures(date,session=false){
  if(cached&&cached.expires>Date.now())return cached.promise;
  const url=session?'/api/nba/publication-session?date=':'/api/nba/fixtures?date=';
  const entry={expires:Date.now()+MINUTE,promise:null};
- entry.promise=fetch(url+encodeURIComponent(date)).then(r=>{if(!r.ok)throw new Error('ESPN calendar unavailable');return r.json()}).then(d=>{
+ entry.promise=fetch(url+encodeURIComponent(date)+(session?'&upcoming=true':'')).then(r=>{if(!r.ok)throw new Error('ESPN calendar unavailable');return r.json()}).then(d=>{
   const games=d.games||[];
   entry.expires=Date.now()+fixtureCacheTtl(games);
   return games;
@@ -774,7 +776,7 @@ function refreshShowcase(){
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
    const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent=document.body.dataset.hubView==='picks'?'ANALISI COMPLETA →':'VEDI NEI PRONOSTICI →';action.addEventListener('click',()=>{if(document.body.dataset.hubView==='picks'){pick.querySelector('.pick-stats-button')?.click();select('stats');return}go.picks();select('picks');singleShowcase.scrollIntoView({behavior:'smooth',block:'start'})});single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
-  if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?'Anteprima':'Ufficiale / in attesa';
+  if(state)state.textContent=group?.querySelector('h2')?.textContent?.toLowerCase().includes('preliminare')?(group.dataset.publicationLabel||'Anteprima'):'Ufficiale / in attesa';
  }
  if(games){
   // Homepage always previews the next NBA session, not yesterday's overnight window.

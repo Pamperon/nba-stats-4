@@ -51,10 +51,10 @@ class SchedulerTests(unittest.TestCase):
                     function(invalid, *([True] if name == 'slot_finish' else []))
 
     def test_duplicate_slot_never_starts_scan(self):
-        with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 11, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', side_effect=[{'scheduler_revision': 'rome-five-prepublication-slots-v1'}, {'games': []}, {'games': []}, {'claimed': False}]) as call, patch.object(scheduler, 'execute_scan') as execute:
+        with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 11, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', side_effect=[{'scheduler_revision': 'rome-five-prepublication-slots-v1'}, *([{'games': []}] * 7), {'claimed': False}]) as call, patch.object(scheduler, 'execute_scan') as execute:
             scheduler.run()
             execute.assert_not_called()
-            self.assertEqual(call.call_count, 4)
+            self.assertEqual(call.call_count, 9)
 
     def test_old_deployment_cannot_consume_slot(self):
         with patch.object(scheduler, 'TOKEN', 'offline-token'), patch.dict(scheduler.os.environ, {'NBA_STATS_DRY_RUN': '0', 'NBA_STATS_MANUAL_SCAN': '0'}), patch.object(scheduler, 'due_slot', return_value=dt.datetime(2026, 10, 25, 11, tzinfo=scheduler.ROME)), patch.object(scheduler, 'call', return_value={'status': 'ok'}) as call, patch.object(scheduler, 'execute_scan') as execute:
@@ -108,7 +108,7 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(sum('success=true' in path for path in calls), 1)
         self.assertFalse(any('success=false' in path for path in calls))
         # Successful preflight calendars are reused by execution, not re-fetched.
-        self.assertEqual(sum(path.startswith('/api/schedule?') for path in calls), 3)
+        self.assertEqual(sum(path.startswith('/api/schedule?') for path in calls), 8)
 
     def test_malformed_calendar_cannot_be_mistaken_for_no_games(self):
         for payload in ({}, {'games': None}, {'games': [None]}, {'games': [{}]}, {'games': [{'upcoming': 'false'}]}, []):

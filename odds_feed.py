@@ -8,7 +8,7 @@ _LOCK = threading.RLock()
 _MEMORY = TTLCache(maxsize=12, ttl=48 * 3600)
 
 
-def cached_payload(key, max_age_seconds, loader):
+def cached_payload(key, max_age_seconds, loader, *, empty_max_age_seconds=None):
     """Read before HTTP; preserve the original download time on every cache hit."""
     # Three stable database rows (calendar/catalog/feed), not a growing row per slot/day.
     persistent_key = key.split(":v1:", 1)[0] + ":v1" if ":v1:" in key else key
@@ -21,7 +21,9 @@ def cached_payload(key, max_age_seconds, loader):
             envelope = storage.cache_read(persistent_key, max_age_hours=48)
         if isinstance(envelope, dict) and envelope.get("identity", key) == key:
             age = time.time() - envelope.get("fetched_at", 0)
-            if 0 <= age < max_age_seconds and "data" in envelope:
+            allowed_age = (empty_max_age_seconds if empty_max_age_seconds is not None
+                           and envelope.get('data') == [] else max_age_seconds)
+            if 0 <= age < allowed_age and "data" in envelope:
                 _MEMORY[persistent_key] = envelope
                 return {**envelope, "source": "cache"}
         data = loader()  # Validators run inside the loader before persistence.
