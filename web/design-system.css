@@ -19,7 +19,7 @@ body{background:var(--bl-bg);color:var(--bl-text)}
 body[data-hub-view=home] :is(.hub-trust-strip,.hub-tiles,.hub-method-link){display:none!important}
 .hub-live-metrics{display:flex;justify-content:flex-end;margin:0 0 16px;padding:0;background:none;border:0}
 .hub-live-metrics .hub-live-metric{display:none;background:none;border:0;box-shadow:none;padding:0}
-.hub-live-metrics .hub-live-metric:last-child{display:flex;gap:6px;align-items:center;flex-direction:row-reverse;font-size:11px}.hub-live-metric:last-child>span{display:none}.hub-live-metric:last-child strong{font-size:12px}.hub-live-metric:last-child small{font-size:11px;color:var(--bl-muted)}
+.hub-live-metrics .hub-live-metric:last-child{min-height:20px;display:flex;gap:6px;align-items:center;flex-direction:row-reverse;font-size:11px}.hub-live-metric:last-child>span{display:none}.hub-live-metric:last-child strong{font-size:12px}.hub-live-metric:last-child small{font-size:11px;color:var(--bl-muted)}
 .hub-featured-heading{margin:0 0 12px;gap:10px;align-items:center}.hub-featured-heading h2{font-size:clamp(19px,2vw,24px);letter-spacing:-.5px;color:var(--bl-text)}
 .hub-featured-heading>button{color:var(--bl-accent);min-height:44px;font-weight:650;background:transparent;border:0;padding:8px 2px;font-size:12px}
 .hub-single-section .hub-single-content{min-height:380px}
