@@ -587,16 +587,7 @@ function renderCalendar(){
    .then(r=>r.ok?r.json():{fixtures:[]}).catch(()=>({fixtures:[]}));
   fetchNbaFixtures(requestedDate).then(fixtures=>{
    const coverage={fixtures:[]};
-   coveragePromise.then(latest=>{
-    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
-    const quoted=new Set((latest.fixtures||[]).map(fixtureKey));
-    games.querySelectorAll('.hub-calendar-match[data-fixture-key]').forEach(row=>{
-     const hasOdds=quoted.has(row.dataset.fixtureKey);
-     let badge=row.querySelector('.hub-calendar-odds');
-     if(hasOdds&&!badge){badge=document.createElement('span');badge.className='hub-calendar-odds';badge.textContent='Quote disponibili';row.append(badge)}
-     else if(!hasOdds&&badge)badge.remove();
-    });
-   });
+
 
    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
    const quoted=new Set((coverage.fixtures||[]).map(fixtureKey));
@@ -633,6 +624,16 @@ function renderCalendar(){
     row.addEventListener('click',()=>game.upcoming?openFixtureDetails(match):game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));row.setAttribute('aria-label',match+(!game.upcoming?' · Apri tabellino partita':' · Apri dettagli partita'));
     games.append(row)
    }
+   coveragePromise.then(latest=>{
+    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
+    const quoted=new Set((latest.fixtures||[]).map(fixtureKey));
+    games.querySelectorAll('.hub-calendar-match[data-fixture-key]').forEach(row=>{
+     const hasOdds=quoted.has(row.dataset.fixtureKey);
+     let badge=row.querySelector('.hub-calendar-odds');
+     if(hasOdds&&!badge){badge=document.createElement('span');badge.className='hub-calendar-odds';badge.textContent='Quote disponibili';row.append(badge)}
+     else if(!hasOdds&&badge)badge.remove();
+    });
+   });
   }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
  }
 
