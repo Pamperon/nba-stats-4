@@ -77,3 +77,30 @@ class ConfirmedFixtureTests(unittest.TestCase):
         self.assertEqual([call.kwargs['fixtureId'] for call in caller.get.call_args_list],list(probe.CONFIRMED))
         self.assertTrue(all(call.args==('odds',) for call in caller.get.call_args_list))
         self.assertEqual(len(result['fixtures']),3)
+
+class UnfilteredTests(unittest.TestCase):
+    def test_replay_never_calls_provider(self):
+        connection=MagicMock();connection.return_value.__enter__.return_value.execute.return_value.fetchone.return_value=({'state':'done'},)
+        with patch.object(probe.storage,'connection',connection),patch.object(probe,'Caller') as caller:
+            self.assertTrue(probe.run_unfiltered_once('secret')['reused'])
+        caller.assert_not_called()
+
+    def test_unfiltered_budget_and_source_separation(self):
+        fid=next(iter(probe.CONFIRMED));home,away,start=probe.CONFIRMED[fid]
+        fixture={'fixtureId':fid,'participant1Name':home,'participant2Name':away,'startTime':start,
+                 'bookmakerOdds':{'bet365':{'bookmakerIsActive':True,'markets':{}}}}
+        conn=MagicMock();conn.execute.return_value.fetchone.side_effect=[None,(0,),({'data':{}},),('reserved',)]
+        connection=MagicMock();connection.return_value.__enter__.return_value=conn
+        caller=Mock();caller.count=3;caller.history=[]
+        caller.get.side_effect=[[{'slug':'bet365.it','cloneOf':'bet365','private':'secret'}],fixture,[fixture]]
+        with patch.object(probe.storage,'connection',connection),patch.object(probe,'Caller',return_value=caller) as factory:
+            result=probe.run_unfiltered_once('secret')
+        factory.assert_called_once_with('secret',limit=3,job_id=probe.UNFILTERED_ID)
+        self.assertEqual(result['state'],'done')
+        self.assertFalse(result['single']['bookmaker_present'])
+        self.assertTrue(result['single']['sources']['bet365']['bookmaker_present'])
+        self.assertEqual([c.args[0] for c in caller.get.call_args_list],['bookmakers','odds','odds-by-tournaments'])
+        for call in caller.get.call_args_list:
+            self.assertNotIn('bookmakers',call.kwargs);self.assertNotIn('bookmaker',call.kwargs)
+        self.assertNotIn('secret',str(result))
+        self.assertTrue(all('nba_provider_probe' in c.args[0] for c in conn.execute.call_args_list if c.args[0].startswith(('INSERT','UPDATE'))))

@@ -91,7 +91,7 @@ class Caller:
         self.next_at = 0
 
     def get(self, endpoint, **params):
-        if endpoint not in ("account", "fixtures", "markets", "odds-by-tournaments", "odds"):
+        if endpoint not in ("account", "fixtures", "markets", "odds-by-tournaments", "odds", "bookmakers"):
             raise ProbeError("Endpoint not allowed")
         billable = endpoint != "account"
         if billable and self.count >= self.limit:

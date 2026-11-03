@@ -1537,11 +1537,12 @@ def diagnose_odds_tournament(check_missing: bool = False):
         raise HTTPException(503, 'Diagnostica temporaneamente non disponibile') from None
 
 @app.post('/api/diagnostics/odds-date', dependencies=[Depends(auth)])
-def diagnose_odds_date(confirmed: bool = False):
+def diagnose_odds_date(confirmed: bool = False, unfiltered: bool = False):
     import odds_date_probe
     import odds_provider_probe
     try:
-        return (odds_date_probe.run_confirmed_once(engine.API_KEY) if confirmed
+        return (odds_date_probe.run_unfiltered_once(engine.API_KEY) if unfiltered else
+                odds_date_probe.run_confirmed_once(engine.API_KEY) if confirmed
                 else odds_date_probe.run_once(engine.API_KEY))
     except odds_provider_probe.ProbeError as exc:
         raise HTTPException(409, str(exc)) from None

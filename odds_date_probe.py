@@ -81,6 +81,64 @@ def run_once(api_key):
     return report
 
 
+UNFILTERED_ID = 'nba-unfiltered-feed-20261105-v1'
+
+
+def bet365_sources(fixture, fid, catalog):
+    result = confirmed_coverage(fixture, fid, catalog)
+    result['sources'] = {}
+    for slug, book in (fixture.get('bookmakerOdds') or {}).items():
+        if 'bet365' in slug.lower():
+            mapped = {**fixture, 'bookmakerOdds': {'bet365.it': book}}
+            result['sources'][slug] = confirmed_coverage(mapped, fid, catalog)
+    return result
+
+
+def run_unfiltered_once(api_key):
+    """Read-only comparison: metadata, one known game, and NBA bulk, at most 3 calls."""
+    with storage.connection() as conn:
+        existing = conn.execute('SELECT result FROM nba_provider_probe WHERE test_id=%s', (UNFILTERED_ID,)).fetchone()
+        if existing:
+            return {'reused': True, **existing[0]}
+        active = conn.execute("SELECT COUNT(*) FROM nba_scan_attempts WHERE state IN ('queued','running') AND heartbeat_at > NOW()-INTERVAL '2 minutes'").fetchone()[0]
+        if active:
+            raise ProbeError('Scan active; diagnostic not started')
+        saved = conn.execute("SELECT payload FROM nba_player_cache WHERE cache_key='odds:markets:v1'").fetchone()
+        catalog = saved[0].get('data') if saved else None
+        if not isinstance(catalog, dict):
+            raise ProbeError('Saved catalog unavailable; no provider requests made')
+        reserved = conn.execute('INSERT INTO nba_provider_probe(test_id,result) VALUES(%s,%s) ON CONFLICT DO NOTHING RETURNING test_id',
+                                (UNFILTERED_ID, Jsonb({'state':'reserved','billable_request_budget':3}))).fetchone()
+        if not reserved:
+            return {'reused':True,'state':'reserved'}
+    caller = Caller(api_key, limit=3, job_id=UNFILTERED_ID)
+    report = {'test_id':UNFILTERED_ID,'state':'running','billable_request_budget':3}
+    try:
+        metadata = caller.get('bookmakers')
+        rows = metadata if isinstance(metadata, list) else metadata.get('bookmakers', metadata.get('data', []))
+        if isinstance(rows, dict):
+            rows = list(rows.values())
+        report['bookmakers'] = [{k: row.get(k) for k in ('bookmakerName','slug','cloneOf','liveOdds')}
+                                for row in rows if isinstance(row, dict) and 'bet365' in str(row.get('slug', '')).lower()]
+        fid = next(iter(CONFIRMED))
+        report['single'] = bet365_sources(caller.get('odds', fixtureId=fid, verbosity=3), fid, catalog)
+        bulk = fixtures_list(caller.get('odds-by-tournaments', tournamentIds='132', verbosity=3))
+        report['bulk_fixture_count'] = len(bulk)
+        report['bulk_confirmed'] = [bet365_sources(row, str(row['fixtureId']), catalog)
+                                    for row in bulk if str(row.get('fixtureId')) in CONFIRMED]
+        report['state'] = 'done'
+    except ProbeError as exc:
+        report.update(state='error',error=str(exc))
+    except Exception:
+        report.update(state='error',error='Unfiltered diagnostic error; no automatic retry')
+    finally:
+        report['billable_calls'] = caller.count
+        report['requests'] = caller.history
+        with storage.connection() as conn:
+            conn.execute('UPDATE nba_provider_probe SET result=%s WHERE test_id=%s', (Jsonb(report),UNFILTERED_ID))
+    return report
+
+
 CONFIRMED_ID = 'nba-confirmed-props-20261105-v1'
 # Exact games and Italian times provided in the user's Bet365 screenshot.
 CONFIRMED = {
