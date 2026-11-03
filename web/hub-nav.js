@@ -63,6 +63,7 @@ function display(){
  if(featured)featured.hidden=!(home||picksView)||extra;
  if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra;
  if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;
+ if(nbaUpdatesPanel)nbaUpdatesPanel.hidden=!home||extra;
  if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;
  const singleAction=singleShowcase?.querySelector('.bl-broadcast-action');
  if(singleAction)singleAction.textContent='Apri analisi →';
@@ -247,17 +248,19 @@ function paintNbaUpdates(panel,payload,teams){
  }
  panel.append(heading,list,source);
 }
-function refreshHomeUpdates(){
- if(document.body.dataset.hubView!=='home'||$('.extra-panel:not([hidden])')){
-  if(nbaUpdatesHome)nbaUpdatesHome.hidden=true;
-  return;
- }
+const nbaUpdatesPanel=$('#hub-nba-updates-panel');
+nbaUpdatesPanel?.addEventListener('toggle',()=>{
+ if(!nbaUpdatesPanel.open)return;
+ nbaUpdatesHome.hidden=false;
+ nbaUpdatesHome.textContent='Caricamento aggiornamenti ESPN…';
  nbaUpdates().then(payload=>{
-  if(document.body.dataset.hubView==='home'&&!$('.extra-panel:not([hidden])'))paintNbaUpdates(nbaUpdatesHome,payload);
+  paintNbaUpdates(nbaUpdatesHome,payload);
+  if(nbaUpdatesHome.hidden){
+   nbaUpdatesHome.hidden=false;
+   nbaUpdatesHome.textContent=payload?'Nessuna segnalazione disponibile.':'Aggiornamenti ESPN temporaneamente non disponibili.';
+  }
  });
-}
-new MutationObserver(refreshHomeUpdates).observe(document.body,{attributes:true,attributeFilter:['data-hub-view']});
-refreshHomeUpdates();
+});
 async function loadMatchForm(match){
  const request=++matchFormRequest;
  nbaUpdatesMatch.hidden=true;
