@@ -68,7 +68,7 @@ test('approved coordinated design: player charts, contextual back and responsive
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
  await page.locator('#back-to-picks').click();await expect(page).toHaveURL('http://127.0.0.1:4173/');
- await page.goto(match);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
+ await page.locator('.hub-premium-fixture').click();await expect(page).toHaveURL(/analisi-partita\?data=2026-11-05/);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
  await page.screenshot({path:testInfo.outputPath('match-redesign.png'),fullPage:true});
  await page.locator('[data-match-tab="players"]').click();await expect(page.locator('.hub-match-player-card')).toBeVisible();
  await page.locator('.hub-match-player-stats-link').click();await expect(page).toHaveURL(/statistiche/);
@@ -77,4 +77,18 @@ test('approved coordinated design: player charts, contextual back and responsive
  await expect(page.locator('#hub-match-title')).toContainText('Boston Celtics');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(errors).toEqual([]);
+});
+
+test('Home fixtures without calendar_date use the Italian tipoff day',async({page})=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'The original Home link did not preserve dates');
+ let expectedDay;
+ await page.route('**/api/nba/publication-session**',async route=>{
+  const response=await route.fetch(),data=await response.json();
+  expectedDay=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(data.games[0].start_at));
+  for(const game of data.games)delete game.calendar_date;
+  await route.fulfill({response,json:data});
+ });
+ await page.goto('/');await page.locator('.hub-premium-fixture').click();
+ expect(new URL(page.url()).searchParams.get('data')).toBe(expectedDay);
+ await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
 });
