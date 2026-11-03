@@ -1,0 +1,15 @@
+{
+  "before_commit": "d4387170f48e42e04ad5e5b0aef8c3d4a7d3d69c",
+  "after_commit": "c8a0b998402c75a3134c1d13686868b3d16560ea",
+  "request": "https://basketlab.it/api/match/form?date=2026-11-05&team_a=Boston%20Celtics&team_b=Atlanta%20Hawks",
+  "unchanged_fields": {
+    "source": true,
+    "window_days": true,
+    "odds_api_calls": true,
+    "teams": true,
+    "h2h": true,
+    "moneyline_odds": true
+  },
+  "history_complete": true,
+  "server_timing": "app;dur=3220.53"
+}

@@ -1,5 +1,5 @@
 """Repeatable, read-only baseline; processing time is separate from network time.
-Usage: python scripts/measure_http.py --output reports/performance/after-http.json
+Usage: python scripts/measure_http.py --deployed-commit SHA --output reports/performance/after-http.json
 Run from the same network as baseline. Never triggers an OddsPapi scan.
 """
 import argparse
@@ -13,6 +13,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--base',default='https://basketlab.it')
 parser.add_argument('--output',required=True)
 parser.add_argument('--runs',type=int,default=3)
+parser.add_argument('--deployed-commit',required=True,help='Verified production commit, not the local checkout')
 args=parser.parse_args()
 paths=['/','/static/app.js','/static/hub-nav.js','/api/health','/api/nba/fixtures?date=2026-11-05','/api/match/form?date=2026-11-05&team_a=Boston%20Celtics&team_b=Atlanta%20Hawks']
 rows=[]
@@ -29,4 +30,4 @@ for path in paths:
         rows.append(row)
         print(json.dumps(row),flush=True)
 with open(args.output,'w') as stream:
-    json.dump(dict(captured_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),samples=rows),stream,indent=2)
+    json.dump(dict(captured_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),source_commit=args.deployed_commit,measurement_checkout_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),samples=rows),stream,indent=2)

@@ -38,7 +38,7 @@ Rollback: revert the relevant PR and let main auto-deploy. All changes are code-
 
 ## Repeatable checks
 
-`python scripts/measure_http.py --output reports/performance/after-http.json`
+`python scripts/measure_http.py --deployed-commit VERIFIED_PRODUCTION_SHA --output reports/performance/after-http.json`
 
 `npm test`
 
@@ -52,6 +52,19 @@ Do not publish a speedup percentage unless the same cache state and measurement 
 * Partial windows are not persisted, not entered in the match-form cache and not retained by the browser cache. A retry can recover missing days. Statistical processing and verified-final filtering stay in the existing endpoint.
 * One saved odds envelope now supplies both price and fixture metadata on cold and warm responses. Warm enrichment uses one database read rather than two. No paid quote calls.
 * Versioned static resources receive a one-day browser cache; unversioned files (including the service worker) revalidate. HTML always revalidates. API/admin data is never added to these caches.
-* Deterministic verification: 93 JS and 282 Python tests passed locally, including concurrent requests, persistent cache reuse, incomplete sample retry, exact cold/warm stats equality, one-envelope enrichment and static cache policy.
+* Deterministic verification: 96 JS and 282 Python tests passed locally, including concurrent requests, persistent cache reuse, incomplete sample retry, exact cold/warm stats equality, one-envelope enrichment and static cache policy.
 
 These are request-count guarantees verified with controlled inputs, not measured mobile speedup percentages. The first request for a genuinely uncached historical window still depends on ESPN response time. No synthetic data substitutes for slow external data.
+
+
+## Live verification and final loading fix
+
+PR 184, 186 and 187 were merged only after successful GitHub checks, including PostgreSQL pool jobs. Render confirmed each production commit live. Browser verification covered direct Pronostici, calendar data (14 fixtures on Nov 5), archive, match URLs with date/teams, browser Back and rendered match graphs. Error-log lookup for the release interval returned no application errors.
+
+A browser check caught a missing chart formatter dependency after extraction. PR 187 fixes it and adds a successful-data rendering test. A further end-to-end check found the legacy quote-loading CSS still hid #finder: the final patch explicitly keeps match analysis visible while the quote snapshot loads, with real stylesheet/computed-display coverage. Charts clear their previous fixture while waiting, and incomplete-history summaries now identify the limited sample. Invalid URL dates are rejected by the router.
+
+`data-equivalence.json` records exact equality of source, historical window, teams/statistics, H2H and moneyline odds across the backend change. It is one live fixture-pair sample, supplemented by deterministic regression tests; not a claim to verify every historical record.
+
+`after-routing-http.json` identifies the measured production commit separately from the measurement checkout. `after-cache-http.json` repeats the baseline three times per endpoint on commit c8a0b998. Warm match server processing was 131–297 ms versus 272–281 ms at baseline; variation and the small sample do not justify a mobile speedup percentage. The uncached verification request still took 3221 ms server-side: external ESPN latency remains. Navigation visibility and cache reuse, rather than a guaranteed instant cold API, are the delivered improvements.
+
+Remaining measurement limits: no physical phone test, no credible Core Web Vitals/slow-4G dataset, no production load test. HTTP network totals from this execution environment include substantial transport overhead. The existing app.js and hub navigation still contain legacy coordination code; extracted modules provide a migration boundary rather than a full framework rewrite. Service-worker registration retains its original /static scope; root-page offline support is not promised. No infrastructure scale-up, provider scans or database migrations were performed.
