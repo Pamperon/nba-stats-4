@@ -1016,7 +1016,6 @@ function drawPlayer(){
 
  }).join('')||'<p>Nessuna partita disponibile per i filtri selezionati.</p>';
  if(games.length){
-  const hint=document.createElement('p');hint.className='player-chart-help';hint.textContent='Tocca una barra per vedere i dettagli della partita.';$('chart').prepend(hint);
   const ordered=games.slice().reverse();
   $('chart').querySelectorAll('.player-game').forEach((details,index)=>{details.addEventListener('toggle',()=>{if(details.open)loadPlayerGameResult(details,ordered[index]);});});
  }
