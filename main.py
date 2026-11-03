@@ -1654,5 +1654,13 @@ def sitemap_xml():
 
 app.mount('/static',StaticFiles(directory='web'),name='static')
 @app.get('/')
-def index(): return FileResponse('web/index.html')
+@app.get('/pronostici', include_in_schema=False)
+@app.get('/partite', include_in_schema=False)
+@app.get('/analisi-partita', include_in_schema=False)
+@app.get('/archivio', include_in_schema=False)
+@app.get('/statistiche', include_in_schema=False)
+@app.get('/analisi-quote', include_in_schema=False)
+@app.get('/come-funziona', include_in_schema=False)
+def index():
+    return FileResponse('web/index.html', headers={'Cache-Control': 'no-cache'})
 

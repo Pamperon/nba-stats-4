@@ -16,6 +16,8 @@ function setup(hash=''){
  window.HTMLElement.prototype.scrollIntoView=function(){};
  for(const b of doc.querySelectorAll('#quote-tabs [data-tab]'))b.addEventListener('click',()=>{for(const x of doc.querySelectorAll('#quote-tabs [data-tab]'))x.classList.toggle('active',x===b)});
  for(const b of doc.querySelectorAll('[data-extra]'))b.addEventListener('click',()=>{doc.querySelector('#app').hidden=true;doc.querySelector('#extra-history').hidden=b.dataset.extra!=='history';doc.querySelector('#extra-about').hidden=b.dataset.extra!=='about'});
+ window.eval(fs.readFileSync(path.join(root,'web/modules/router.js'),'utf8'));
+ for(const file of ['match-charts','match-data'])window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
  window.eval(script);
  return {window,doc};
 }
@@ -240,4 +242,28 @@ test('calendar opens analysis before a changed-day quote feed resolves',async()=
  window.document.dispatchEvent(new window.CustomEvent('basketlab:quotes-loaded',{detail:{date:'2026-11-03'}}));
  assert.equal(doc.body.dataset.hubView,'home');
  assert.ok(!doc.body.classList.contains('hub-match-open'));
+});
+
+test('SPA paths support direct links, navigation and browser Back',async()=>{
+ const {window,doc}=setup('pronostici');
+ assert.equal(doc.body.dataset.hubView,'picks');
+ doc.querySelector('[data-hub="history"]').click();
+ await new Promise(r=>setImmediate(r));
+ assert.equal(window.location.pathname,'/archivio');
+ doc.querySelector('[data-hub="home"]').click();
+ await new Promise(r=>setImmediate(r));
+ assert.equal(window.location.pathname,'/');
+ window.history.back();
+ await new Promise(r=>setTimeout(r,30));
+ assert.equal(window.location.pathname,'/archivio');
+ assert.equal(doc.body.dataset.hubView,'history');
+ assert.equal(doc.querySelector('#extra-history').hidden,false);
+});
+
+test('direct match route opens without quote options and preserves date and teams',()=>{
+ const {window,doc}=setup('analisi-partita?data=2026-11-05&trasferta=Boston+Celtics&casa=Atlanta+Hawks');
+ assert.equal(doc.querySelector('#date').value,'2026-11-05');
+ assert.ok(doc.body.classList.contains('hub-match-open'));
+ assert.match(doc.querySelector('#hub-match-title').textContent,/Boston Celtics/);
+ assert.equal(window.BasketLabRouter.read(window.location).date,'2026-11-05');
 });

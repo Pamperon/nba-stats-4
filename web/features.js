@@ -42,7 +42,7 @@
    if(focus){const title=el(section==='history'?'history-title':'about-title');title.focus();title.scrollIntoView?.({block:'start'});}
   }
   const hash=section?'#'+routes[section]:location.pathname+location.search;
-  if((section&&location.hash!==hash)||(!section&&location.hash))history.replaceState(null,'',hash);
+  if(!window.BasketLabRouter&&((section&&location.hash!==hash)||(!section&&location.hash)))history.replaceState(null,'',hash);
   if(section==='history')loadHistory(true);
  }
  document.querySelectorAll('[data-extra]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();show(link.dataset.extra);}));
