@@ -312,3 +312,16 @@ test('daily quote loading cannot hide the independent match analysis',()=>{
  assert.equal(window.getComputedStyle(doc.querySelector('#date-loading')).display,'none');
  assert.match(doc.querySelector('#hub-match-charts').textContent,/Caricamento/);
 });
+
+test('general quote route exits a match and browser Back restores its dedicated URL',async()=>{
+ const {window,doc}=setup('analisi-partita?data=2026-11-05&trasferta=Boston+Celtics&casa=Atlanta+Hawks');
+ doc.querySelector('.hub-sidebar [data-hub="finder"]').click();
+ await new Promise(r=>setImmediate(r));
+ assert.equal(window.location.pathname,'/analisi-quote');
+ assert.ok(!doc.body.classList.contains('hub-match-open'));
+ assert.equal(doc.querySelector('#hub-match-detail').hidden,true);
+ window.history.back();await new Promise(r=>setTimeout(r,30));
+ assert.equal(window.location.pathname,'/analisi-partita');
+ assert.ok(doc.body.classList.contains('hub-match-open'));
+ assert.equal(doc.querySelector('#hub-match-detail').hidden,false);
+});

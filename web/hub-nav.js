@@ -22,7 +22,7 @@ const go={
  home(){ $('#area-quotes')?.click();tab('dashboard')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  picks(){ $('#area-quotes')?.click();tab('dashboard')?.click();tab('dashboard')?.scrollIntoView({block:'start',behavior:'smooth'});},
  stats(){ $('#area-stats')?.click();window.scrollTo({top:0,behavior:'smooth'});},
- finder(){ $('#area-quotes')?.click();tab('finder')?.click();$('#quote-tabs')?.scrollIntoView({block:'start',behavior:'smooth'});},
+ finder(){ document.body.classList.remove('hub-match-open');const detail=$('#hub-match-detail');if(detail)detail.hidden=true;$('#area-quotes')?.click();tab('finder')?.click();$('#quote-tabs')?.scrollIntoView({block:'start',behavior:'smooth'});},
  history(){ $('[data-extra="history"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  about(){ $('[data-extra="about"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  calendar(){renderCalendar();window.scrollTo({top:0,behavior:'smooth'});}
