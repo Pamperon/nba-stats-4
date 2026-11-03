@@ -362,3 +362,63 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
   border: 0;
   padding: 6px 2px;
 }
+
+.hub-shell .hub-match-title-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(82px, 0.7fr) minmax(0, 1fr);
+  align-items: center;
+  padding: 12px 8px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+}
+.hub-shell .hub-match-title-wrap .hub-match-title {
+  display: contents;
+}
+.hub-match-title-wrap .hub-match-title > b {
+  display: none;
+}
+.hub-match-title-wrap .hub-match-team {
+  grid-row: 1;
+  min-width: 0;
+  text-align: center;
+}
+.hub-match-title-wrap .hub-match-team:first-child {
+  grid-column: 1;
+}
+.hub-match-title-wrap .hub-match-team:last-child {
+  grid-column: 3;
+}
+.hub-shell .hub-match-title-wrap .hub-match-fixture-meta {
+  grid-area: 1 / 2;
+  margin: 0;
+  padding: 0 2px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.hub-shell .hub-match-tabs {
+  margin: 10px 0 14px;
+  padding: 3px;
+  border: 1px solid #3b6686;
+  border-radius: 14px;
+  background: #0b243d;
+}
+.hub-shell .hub-match-tabs button {
+  min-height: 42px;
+  border-radius: 11px;
+}
+.hub-shell .hub-match-tabs button.active {
+  color: white;
+  background: linear-gradient(135deg, #064c98, #0073d8);
+  box-shadow: inset 0 0 0 1px #42d7ff;
+}
+.hub-shell .hub-boxscore-matchup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.hub-shell .hub-boxscore-headline {
+  margin: 0;
+  font-size: clamp(22px, 6vw, 40px);
+  white-space: nowrap;
+}

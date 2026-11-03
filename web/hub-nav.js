@@ -434,7 +434,7 @@ async function openCalendarBoxscore(game,refresh=false){
   const name=document.createElement('span');name.textContent=team;side.append(name);matchup.append(side);
  }
  header.append(matchup);
- const score=document.createElement('div');score.className='hub-boxscore-headline';score.textContent=String(game.away_score??'')+' – '+String(game.home_score??'');header.append(score);
+ const score=document.createElement('div');score.className='hub-boxscore-headline';score.textContent=String(game.away_score??'')+' – '+String(game.home_score??'');matchup.insertBefore(score,matchup.lastElementChild);
  const date=document.createElement('div');date.className='hub-boxscore-match-date';date.textContent=fixtureTime(game);header.append(date);
  panel.append(header);
  const loading=document.createElement('p');loading.textContent='Caricamento tabellino ESPN…';panel.append(loading);
