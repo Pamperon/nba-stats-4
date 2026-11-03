@@ -477,76 +477,65 @@ html {
 .hub-nba-updates li + li { margin-top: 6px; }
 .hub-nba-updates small { color: #a8c3d7; }
 
-.hub-editorial { grid-column: 1 / -1; margin: 16px 0; }
-.hub-editorial > h2 { font-size: 21px; margin: 0 0 10px; }
-.hub-editorial-card {
-  border: 1px solid #294758;
-  border-radius: 14px;
-  overflow: hidden;
-  background: #102735;
-}
-.hub-editorial-cover {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(12px, 5vw, 44px);
-  min-height: 104px;
-  background: linear-gradient(110deg, #163c2c, #0b2330 50%, #075438);
-  color: white;
-  font-size: clamp(28px, 8vw, 56px);
-  font-weight: 800;
-}
-.hub-editorial-cover b { font-size: 14px; color: #ffd3a7; }
-.hub-editorial-copy { padding: 16px; }
-.hub-editorial-copy h3 { margin: 6px 0; font-size: 21px; line-height: 1.2; }
-.hub-editorial-copy p { line-height: 1.5; }
-.hub-editorial-meta { color: #aec8d9; font-size: 12px; margin: 0; }
-.hub-editorial-copy summary { cursor: pointer; color: #ffad65; font-weight: 700; padding: 8px 0; }
-
-.nba-news-card a {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 76px;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  color: inherit;
-  text-decoration: none;
-}
-.nba-news-card { border-bottom: 1px solid #294758; }
-.nba-news-card h3 { margin: 4px 0 0; font-size: 15px; line-height: 1.35; }
-.nba-news-card small { color: #aec8d9; }
-.nba-news-card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
-.nba-news-preview .nba-news-card:first-child a { grid-template-columns: minmax(0,1fr) 108px; background: #102735; border-radius: 12px; }
-.nba-news-preview .nba-news-card:first-child h3 { font-size: 18px; }
-.hub-editorial > .bl-back { margin-top: 12px; }
-
+/* News shares the blue panels and amber accents of the home dashboard. */
 .hub-editorial {
+  grid-column: 1 / -1;
+  margin: 16px 0;
   padding: 14px;
   border: 1px solid #294758;
   border-radius: 16px;
-  background: #0d2031;
+  background: linear-gradient(145deg, #142d47, #0a1b2c);
 }
-.nba-news-preview .nba-news-card:first-child {
+.hub-editorial-meta { color: #aec8d9; font-size: 12px; }
+.nba-news-preview, #nba-news-list { display: grid; gap: 8px; }
+.nba-news-card {
   overflow: hidden;
-  border: 0;
+  border: 1px solid #294758;
   border-radius: 12px;
-  background: #142e43;
+  background: #102735;
 }
+.nba-news-card a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.nba-news-card a:focus-visible { outline-offset: -3px; }
+.nba-news-card h3 { margin: 4px 0 0; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.nba-news-card small { color: #aec8d9; font-size: 11px; }
+.nba-news-card img { width: 64px; aspect-ratio: 1; object-fit: cover; border-radius: 7px; }
 .nba-news-preview .nba-news-card:first-child a {
+  position: relative;
   display: flex;
-  flex-direction: column-reverse;
-  align-items: stretch;
-  gap: 0;
-  padding: 0;
-  background: transparent;
+  min-height: 156px;
+  align-items: flex-end;
+  padding: 16px;
+  background: linear-gradient(135deg, #224865, #071829);
+  isolation: isolate;
 }
 .nba-news-preview .nba-news-card:first-child img {
-  aspect-ratio: 2.4;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   border-radius: 0;
+  z-index: -2;
 }
-.nba-news-preview .nba-news-card:first-child a > div {
-  padding: 12px 14px;
+.nba-news-preview .nba-news-card:first-child a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent, #071522 94%);
+  z-index: -1;
 }
-.nba-news-card:not(:has(img)) a { grid-template-columns: minmax(0, 1fr); }
-.nba-news-card a:focus-visible { outline-offset: -3px; }
-.hub-editorial > .bl-back { display: block; text-align: center; }
+.nba-news-preview .nba-news-card:first-child small { color: #ffba81; }
+.nba-news-preview .nba-news-card:first-child h3 { font-size: clamp(17px, 4vw, 24px); }
+.hub-editorial > .bl-back { display: block; margin-top: 12px; text-align: center; }
+@media (min-width: 850px) {
+  .nba-news-preview { grid-template-columns: 1.35fr 1fr; }
+  .nba-news-preview .nba-news-card:first-child { grid-row: span 3; }
+  .nba-news-preview .nba-news-card:first-child a { height: 100%; }
+}
