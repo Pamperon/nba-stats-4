@@ -1580,3 +1580,35 @@ body[data-hub-view="home"] .hub-insights{display:none!important}
 /* Dated early-preview badges must wrap on narrow mobile screens. */
 .hub-single-section .hub-featured-heading{flex-wrap:wrap}
 .hub-single-state{white-space:normal;max-width:100%;text-align:right}
+
+
+/* Match analysis v2: compact, full-width comparisons; scoped to the match chart. */
+#hub-match-charts .bl-match-v2{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden}
+#hub-match-charts .bl-match-v2-section{padding:14px 14px 16px;min-width:0}
+#hub-match-charts .bl-match-v2-section+.bl-match-v2-section{border-top:1px solid #2a4961}
+#hub-match-charts .bl-match-v2-heading{display:block;margin-bottom:12px;font-size:14px;color:#f2f7fc}
+#hub-match-charts .bl-match-v2-labels{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}
+#hub-match-charts .bl-match-v2-side{display:flex;flex-direction:column;gap:3px;min-width:0;max-width:49%}
+#hub-match-charts .bl-match-v2-side:last-child{text-align:right}
+#hub-match-charts .bl-match-v2-side b{font-size:21px;font-variant-numeric:tabular-nums;color:#f6faff}
+#hub-match-charts .bl-match-v2-side small{font-size:11px;line-height:1.3;color:#bbcbdb;overflow-wrap:anywhere}
+#hub-match-charts .bl-match-v2-split{height:12px;display:flex;gap:2px;overflow:hidden;border-radius:999px;background:#243a4e}
+#hub-match-charts .bl-match-v2-split span{height:100%;min-width:0}
+#hub-match-charts .bl-match-v2-note{display:block;margin-top:8px;font-size:10px;color:#9cb1c5}
+#hub-match-charts .bl-match-v2-points-row{display:grid;grid-template-columns:minmax(75px,1fr) minmax(70px,2fr) 45px;align-items:center;gap:10px;margin:10px 0}
+#hub-match-charts .bl-match-v2-points-row small{font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+#hub-match-charts .bl-match-v2-points-row b{text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+#hub-match-charts .bl-match-v2-track{height:10px;border-radius:999px;background:#243a4e;overflow:hidden}
+#hub-match-charts .bl-match-v2-track span{display:block;height:100%;border-radius:999px}
+#hub-match-charts .bl-match-v2-form{padding:12px 14px;border:1px solid #31536d;border-radius:14px}
+#hub-match-charts .bl-match-v2-form-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+#hub-match-charts .bl-match-v2-form-head strong{font-size:13px;color:#ff992e}
+#hub-match-charts .bl-match-v2-form-head small{font-size:10px;text-align:right;color:#bdd0e0}
+#hub-match-charts .bl-match-v2-streak{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#hub-match-charts .bl-match-v2-streak>div{min-width:0}
+#hub-match-charts .bl-match-v2-streak small{display:block;margin-bottom:8px;font-size:11px}
+#hub-match-charts .bl-match-v2-results{display:flex;gap:4px}
+#hub-match-charts .bl-match-v2-results span{display:grid;place-items:center;flex:1;min-width:0;width:auto;height:24px;border-radius:6px;font-size:10px;font-weight:700;color:white}
+#hub-match-charts .bl-match-v2-results .won{background:#189b69}
+#hub-match-charts .bl-match-v2-results .lost{background:#d84b55}
+@media(max-width:370px){#hub-match-charts .bl-match-v2-points-row{grid-template-columns:minmax(65px,1fr) minmax(55px,1.5fr) 39px;gap:6px}}

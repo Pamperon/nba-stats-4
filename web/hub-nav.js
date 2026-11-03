@@ -182,19 +182,29 @@ function renderMatchCharts(teams,a,b,windowDays,matchOdds){
  const area=$('#hub-match-charts');if(!area)return;area.replaceChildren();
  const colors=teams.map(t=>matchTeamPalette[matchTeamCodes[t]]||'#4388b9');
  const panel=$('#hub-match-analysis');if(panel){panel.style.setProperty('--match-team-a',colors[0]);panel.style.setProperty('--match-team-b',colors[1]);}
- const card=document.createElement('div');card.className='hub-match-chart-card hub-match-comparison';
- const win=document.createElement('div');win.className='hub-match-compare-column';
- const winTitle=document.createElement('strong');winTitle.className='hub-match-compare-title';winTitle.textContent='Probabilità di vittoria';win.append(winTitle);
+ const make=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+ const card=make('div','hub-match-chart-card bl-match-v2');
+ const win=make('section','bl-match-v2-section');win.append(make('strong','bl-match-v2-heading','Probabilità di vittoria'));
  const validOdds=Array.isArray(matchOdds)&&matchOdds.length===2&&matchOdds.every(x=>Number.isFinite(Number(x))&&Number(x)>1);
- if(validOdds){const implied=matchOdds.map(x=>1/Number(x));const total=implied[0]+implied[1];teams.forEach((team,i)=>{const pct=implied[i]/total*100;const row=document.createElement('div');row.className='hub-match-win-row';const heading=document.createElement('div');heading.className='hub-match-win-label';const name=document.createElement('span');name.textContent=team;const number=document.createElement('b');number.textContent=pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';heading.append(name,number);const track=document.createElement('div');track.className='hub-match-chart-track';const fill=document.createElement('div');fill.className='hub-match-chart-fill';fill.style.width=pct+'%';fill.style.background=colors[i];track.append(fill);row.append(heading,track);win.append(row)})}
- else{const unavailable=document.createElement('p');unavailable.className='hub-match-win-unavailable';unavailable.textContent='Quote vincente partita non disponibili';win.append(unavailable);}
- const points=document.createElement('div');points.className='hub-match-compare-column';
- const ptsTitle=document.createElement('strong');ptsTitle.className='hub-match-compare-title';ptsTitle.textContent='Media punti segnati';points.append(ptsTitle);
- teams.forEach((team,i)=>{const row=document.createElement('div');row.className='hub-match-points-row';const name=document.createElement('span');name.textContent=team;const value=document.createElement('b');value.textContent=[a,b][i].avg_points==null?'—':displayNum([a,b][i].avg_points);row.append(name,value);points.append(row)});
- card.append(win,points);area.append(card);
- const form=document.createElement('div');form.className='hub-match-quick-tile';const label=document.createElement('strong');label.textContent='Forma (ultime 5)';const value=document.createElement('span');value.textContent=teams.map((team,i)=>team.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ');form.append(label,value);area.append(form);
- const streak=document.createElement('div');streak.className='hub-match-form-streak';teams.forEach((team,i)=>{const group=document.createElement('div');const name=document.createElement('small');name.textContent=team;group.append(name);const dots=document.createElement('div');dots.className='hub-match-form-dots';for(const game of [a,b][i].results||[]){const dot=document.createElement('span');dot.className=game.scored>game.allowed?'won':'lost';dot.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;dot.setAttribute('aria-label',game.scored>game.allowed?'Vittoria':'Sconfitta');dots.append(dot)}group.append(dots);streak.append(group)});area.append(streak);
-
+ if(validOdds){
+  const implied=matchOdds.map(x=>1/Number(x)),total=implied[0]+implied[1],pct=implied.map(x=>100*x/total);
+  const labels=make('div','bl-match-v2-labels');
+  teams.forEach((team,i)=>{const side=make('div','bl-match-v2-side');side.append(make('b','',pct[i].toLocaleString('it-IT',{maximumFractionDigits:1})+'%'),make('small','',team));labels.append(side)});
+  const bar=make('div','bl-match-v2-split');bar.setAttribute('role','img');bar.setAttribute('aria-label',teams.map((t,i)=>t+': '+pct[i].toFixed(1)+'%').join(', '));
+  pct.forEach((n,i)=>{const seg=make('span','');seg.style.width=n+'%';seg.style.background=colors[i];bar.append(seg)});
+  win.append(labels,bar);
+  win.append(make('small','bl-match-v2-note','Probabilità implicite normalizzate dalle quote disponibili'));
+ }else win.append(make('p','hub-match-win-unavailable','Quote vincente partita non disponibili'));
+ card.append(win);
+ const pts=make('section','bl-match-v2-section');pts.append(make('strong','bl-match-v2-heading','Media punti segnati'));
+ const vals=[a,b].map(x=>Number(x.avg_points));const scale=Math.max(120,...vals.filter(Number.isFinite),1);
+ teams.forEach((team,i)=>{const row=make('div','bl-match-v2-points-row');const name=make('small','',team);const track=make('div','bl-match-v2-track');const fill=make('span','');fill.style.width=Number.isFinite(vals[i])?Math.max(0,100*vals[i]/scale)+'%':'0%';fill.style.background=colors[i];track.append(fill);row.append(name,track,make('b','',Number.isFinite(vals[i])?displayNum(vals[i]):'—'));pts.append(row)});
+ card.append(pts);area.append(card);
+ const form=make('section','bl-match-v2-form');const formHead=make('div','bl-match-v2-form-head');formHead.append(make('strong','','Forma (ultime 5)'),make('small','',teams.map((t,i)=>t.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ')));form.append(formHead);
+ const streak=make('div','hub-match-form-streak bl-match-v2-streak');
+ teams.forEach((team,i)=>{const group=make('div','');group.append(make('small','',team));const dots=make('div','hub-match-form-dots bl-match-v2-results');
+ for(const game of [a,b][i].results||[]){const won=Number(game.scored)>Number(game.allowed);const chip=make('span',won?'won':'lost',won?'V':'P');chip.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;chip.setAttribute('aria-label',won?'Vittoria':'Sconfitta');dots.append(chip)}
+ group.append(dots);streak.append(group)});form.append(streak);area.append(form);
 }
 function renderMatchH2H(teams,games){
  const facts=$('#hub-match-analysis .hub-match-facts');
