@@ -12,7 +12,6 @@ picksPresentation.id='picks-showcase';picksPresentation.hidden=true;
 picksPresentation.setAttribute('aria-label','Pronostici del giorno');
 $('#app')?.before(picksPresentation);
 
-const nbaUpdatesHome=$('#hub-nba-updates');
 const nbaUpdatesMatch=document.createElement('section');
 nbaUpdatesMatch.className='hub-nba-updates';
 nbaUpdatesMatch.hidden=true;
@@ -50,18 +49,6 @@ function paintNbaUpdates(panel,payload,teams){
  panel.append(heading,list,source);
 }
 const nbaUpdatesPanel=$('#hub-nba-updates-panel');
-nbaUpdatesPanel?.addEventListener('toggle',()=>{
- if(!nbaUpdatesPanel.open)return;
- nbaUpdatesHome.hidden=false;
- nbaUpdatesHome.textContent='Caricamento aggiornamenti ESPN…';
- nbaUpdates().then(payload=>{
-  paintNbaUpdates(nbaUpdatesHome,payload);
-  if(nbaUpdatesHome.hidden){
-   nbaUpdatesHome.hidden=false;
-   nbaUpdatesHome.textContent=payload?'Nessuna segnalazione disponibile.':'Aggiornamenti ESPN temporaneamente non disponibili.';
-  }
- });
-});
 const menuToggle=$('.hub-menu-toggle'),menuDrawer=$('#hub-menu-drawer');
 function closeMenu(){if(!menuDrawer)return;menuDrawer.hidden=true;menuToggle?.setAttribute('aria-expanded','false');menuToggle?.setAttribute('aria-label','Apri menu di navigazione')}
 menuToggle?.addEventListener('click',()=>{const opening=menuDrawer.hidden;menuDrawer.hidden=!opening;menuToggle.setAttribute('aria-expanded',String(opening));menuToggle.setAttribute('aria-label',opening?'Chiudi menu di navigazione':'Apri menu di navigazione')});
