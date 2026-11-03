@@ -469,24 +469,36 @@ function openFixtureDetails(match){
  const target=calendarSelectedDate;
  const current=date?.value||'';
  const request=++pendingCalendarFixture;
- if(date&&target&&target!==current){
+ const dateChanged=!!(date&&target&&target!==current);
+ // Open the analysis immediately; the quote feed must never block navigation.
+ if(dateChanged)date.value=target;
+ const available=dateChanged?'':matchingFixtureOption(match);
+ openMatchQuotes(available||match);
+ if(dateChanged){
+  const meta=$('#hub-match-fixture-meta');
+  if(meta)meta.textContent='Caricamento quote della giornata…';
   const onLoaded=event=>{
    if(request!==pendingCalendarFixture||event.detail?.date!==target)return;
    document.removeEventListener('basketlab:quotes-loaded',onLoaded);
    pendingCalendarListener=null;
-   const available=matchingFixtureOption(match);
-   openMatchQuotes(available||match);
-   if(!available){const area=$('#hub-match-fixture-meta');if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.'}
+   if(fixtureKey(activeMatch)!==fixtureKey(match))return;
+   const resolved=matchingFixtureOption(match);
+   if(resolved){
+    const fixture=$('#finder-fixture');
+    if(fixture&&fixture.value!==resolved){fixture.value=resolved;fixture.dispatchEvent(new Event('change',{bubbles:true}))}
+    renderMatchPlayers();renderMatchMarketStats();
+   }else{
+    const area=$('#hub-match-fixture-meta');
+    if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.';
+   }
   };
   pendingCalendarListener=onLoaded;
   document.addEventListener('basketlab:quotes-loaded',onLoaded);
-  date.value=target;
   date.dispatchEvent(new Event('change',{bubbles:true}));
-  return;
+ }else if(!available){
+  const area=$('#hub-match-fixture-meta');
+  if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.';
  }
- const available=matchingFixtureOption(match);
- openMatchQuotes(available||match);
- if(!available){const area=$('#hub-match-fixture-meta');if(area)area.textContent='Nessuna quota disponibile per questa partita nella giornata selezionata.'}
 }
 function fixtureName(game){return String(game.away||'')+' - '+String(game.home||'')}
 function fixtureTime(game){
