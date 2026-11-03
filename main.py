@@ -1536,6 +1536,19 @@ def diagnose_odds_tournament(check_missing: bool = False):
         logger.exception('Cannot access one-shot provider diagnostic')
         raise HTTPException(503, 'Diagnostica temporaneamente non disponibile') from None
 
+@app.post('/api/diagnostics/odds-date', dependencies=[Depends(auth)])
+def diagnose_odds_date():
+    import odds_date_probe
+    import odds_provider_probe
+    try:
+        return odds_date_probe.run_once(engine.API_KEY)
+    except odds_provider_probe.ProbeError as exc:
+        raise HTTPException(409, str(exc)) from None
+    except Exception:
+        logger.exception('Date feed diagnostic unavailable')
+        raise HTTPException(503, 'Diagnostica temporaneamente non disponibile') from None
+
+
 @app.post('/api/scan', dependencies=[Depends(auth)])
 def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
          source: str = Query(default='manual', pattern=r'^(github|render|manual)$'),
