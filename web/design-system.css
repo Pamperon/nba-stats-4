@@ -476,3 +476,29 @@ html {
 .hub-nba-updates ul { margin: 0; padding-inline-start: 18px; }
 .hub-nba-updates li + li { margin-top: 6px; }
 .hub-nba-updates small { color: #a8c3d7; }
+
+.hub-editorial { grid-column: 1 / -1; margin: 16px 0; }
+.hub-editorial > h2 { font-size: 21px; margin: 0 0 10px; }
+.hub-editorial-card {
+  border: 1px solid #294758;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #102735;
+}
+.hub-editorial-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 5vw, 44px);
+  min-height: 104px;
+  background: linear-gradient(110deg, #163c2c, #0b2330 50%, #075438);
+  color: white;
+  font-size: clamp(28px, 8vw, 56px);
+  font-weight: 800;
+}
+.hub-editorial-cover b { font-size: 14px; color: #ffd3a7; }
+.hub-editorial-copy { padding: 16px; }
+.hub-editorial-copy h3 { margin: 6px 0; font-size: 21px; line-height: 1.2; }
+.hub-editorial-copy p { line-height: 1.5; }
+.hub-editorial-meta { color: #aec8d9; font-size: 12px; margin: 0; }
+.hub-editorial-copy summary { cursor: pointer; color: #ffad65; font-weight: 700; padding: 8px 0; }
