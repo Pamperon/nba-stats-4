@@ -1,8 +1,0 @@
-.env
-__pycache__/
-*.pyc
-.venv/
-node_modules/
-supabase/.temp/
-test-results/
-playwright-report/
