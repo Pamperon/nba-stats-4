@@ -44,3 +44,36 @@ class DateProbeTests(unittest.TestCase):
         with patch.object(probe,'run_once') as run:
             self.assertEqual(client.post('/api/diagnostics/odds-date').status_code,401)
         run.assert_not_called()
+
+class ConfirmedFixtureTests(unittest.TestCase):
+    def test_confirmed_fixture_validates_teams_time_and_counts_before_catalog_filter(self):
+        fid=next(iter(probe.CONFIRMED));home,away,start=probe.CONFIRMED[fid]
+        fixture={'fixtureId':fid,'participant1Name':home,'participant2Name':away,'startTime':start,
+                 'bookmakerOdds':{'bet365.it':{'bookmakerIsActive':True,'markets':{'unknown':{
+                     'marketActive':True,'outcomes':{'o':{'players':{'p':{'active':True,'playerName':'Player','price':1.8}}}}}}}}}
+        result=probe.confirmed_coverage(fixture,fid,{})
+        self.assertEqual(result['active_player_outcomes_all_markets'],1)
+        self.assertEqual(result['active_selections'],0)
+        self.assertTrue(result['bookmaker_present'])
+        for changed in ({'startTime':'2026-11-06T01:00:00+01:00'},{'participant1Name':'Other'},{'fixtureId':'wrong'}):
+            with self.assertRaises(probe.ProbeError):probe.confirmed_coverage({**fixture,**changed},fid,{})
+
+    def test_confirmed_probe_reuses_prior_result_without_new_calls(self):
+        connection=MagicMock();connection.return_value.__enter__.return_value.execute.return_value.fetchone.return_value=({'state':'done'},)
+        with patch.object(probe.storage,'connection',connection),patch.object(probe,'Caller') as caller:
+            self.assertEqual(probe.run_confirmed_once('secret'),{'reused':True,'state':'done'})
+        caller.assert_not_called()
+
+    def test_confirmed_probe_calls_only_the_three_screenshot_fixtures(self):
+        conn=MagicMock();conn.execute.return_value.fetchone.side_effect=[None,(0,),({'data':{}},),('reserved',)]
+        connection=MagicMock();connection.return_value.__enter__.return_value=conn
+        caller=Mock();caller.count=3;caller.history=[]
+        caller.get.side_effect=[{'fixtureId':fid,'participant1Name':home,'participant2Name':away,'startTime':start,'bookmakerOdds':{}}
+                                for fid,(home,away,start) in probe.CONFIRMED.items()]
+        with patch.object(probe.storage,'connection',connection),patch.object(probe,'Caller',return_value=caller) as factory:
+            result=probe.run_confirmed_once('secret')
+        factory.assert_called_once_with('secret',limit=3,job_id=probe.CONFIRMED_ID)
+        self.assertEqual(result['state'],'done')
+        self.assertEqual([call.kwargs['fixtureId'] for call in caller.get.call_args_list],list(probe.CONFIRMED))
+        self.assertTrue(all(call.args==('odds',) for call in caller.get.call_args_list))
+        self.assertEqual(len(result['fixtures']),3)
