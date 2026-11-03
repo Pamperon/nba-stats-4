@@ -104,3 +104,15 @@ class UnfilteredTests(unittest.TestCase):
             self.assertNotIn('bookmakers',call.kwargs);self.assertNotIn('bookmaker',call.kwargs)
         self.assertNotIn('secret',str(result))
         self.assertTrue(all('nba_provider_probe' in c.args[0] for c in conn.execute.call_args_list if c.args[0].startswith(('INSERT','UPDATE'))))
+
+    def test_metadata_request_is_durably_tracked_before_http(self):
+        import odds_provider_probe as provider
+        import scan_tracking
+        conn=MagicMock();connection=MagicMock();connection.return_value.__enter__.return_value=conn
+        response=Mock();response.status_code=200;response.json.return_value=[]
+        with patch.object(scan_tracking.storage,'connection',connection),patch.object(provider.requests,'get',return_value=response) as get:
+            caller=provider.Caller('secret',limit=1,job_id='offline-probe')
+            self.assertEqual(caller.get('bookmakers'),[])
+        self.assertEqual(caller.count,1)
+        self.assertTrue(any('INSERT INTO nba_odds_request_log' in call.args[0] for call in conn.execute.call_args_list))
+        get.assert_called_once()
