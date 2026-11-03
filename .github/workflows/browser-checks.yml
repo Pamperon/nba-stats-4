@@ -1,10 +1,10 @@
 name: Mobile and desktop browser checks
 on:
   pull_request:
-    paths: ['web/**', 'tests/**', 'package*.json', 'playwright.config.cjs', '.github/workflows/browser-checks.yml']
+    paths: ['web/**', 'tests/**', 'package*.json', 'playwright.config.cjs', 'scripts/check_browser_budget.cjs', '.github/workflows/browser-checks.yml']
   push:
     branches: [main]
-    paths: ['web/**', 'tests/browser/**', 'package*.json', 'playwright.config.cjs', '.github/workflows/browser-checks.yml']
+    paths: ['web/**', 'tests/browser/**', 'package*.json', 'playwright.config.cjs', 'scripts/check_browser_budget.cjs', '.github/workflows/browser-checks.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,6 +30,8 @@ jobs:
           mv test-results baseline-results
       - name: Test current mobile and desktop
         run: npm run test:browser
+      - name: Compare performance against baseline
+        run: node scripts/check_browser_budget.cjs baseline-results/browser-results.json test-results/browser-results.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

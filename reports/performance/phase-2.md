@@ -43,3 +43,14 @@ The original app/hub still coordinate legacy controls. These changes isolate con
 `python scripts/run_offline_tests.py`
 
 Local browser download was restricted in the execution environment; the actual Chromium runs completed on GitHub's pinned Ubuntu 24.04 runner.
+
+
+## Final module run and release budget
+
+Run 41655776703 re-tested final module candidate 81093d184 against the same baseline (three samples each). Mobile median selections: 3012 → 2957 ms; mobile LCP: 2564 → 2520 ms. Home API fanout remains 9 → 4. This remains a small controlled sample with essentially stable first-load timing, not a guaranteed production percentage. `browser-final.json` contains every sample.
+
+The release check now compares candidate medians with baseline medians on the same runner. It fails if selections or LCP regress by more than 25% + 250 ms, if measurements are missing, or if Home exceeds four API requests in this fixture. Tests separately fail on JS exceptions, navigation/data errors, hidden match analysis during quote loading, or missing player lines. These are lab regression limits, not claimed Core Web Vitals targets.
+
+`/api/health` exposes `history_warmup` state, completion timestamp and successfully warmed dates (no credentials or user data). This permits read-only production verification that the worker actually completed a cycle, without initiating scans or restarting the service.
+
+Final local verification: 102 JavaScript tests and 287 Python tests. Chromium desktop/mobile tests run on GitHub before merge. All model-related source files remain unchanged from b7e483f.
