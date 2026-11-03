@@ -28,6 +28,11 @@ const go={
  calendar(){renderCalendar();window.scrollTo({top:0,behavior:'smooth'});}
 };
 let home=true;let calendar=false;
+let routerReady=false,applyingRoute=false,routeQueued=false;
+function syncRoute(){
+ if(!routerReady||applyingRoute||routeQueued||!window.BasketLabRouter)return;
+ routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:''});});
+}
 const HUB_STATE_KEY='basketlab-hub-view-v1';
 function saveHubState(){
  try{sessionStorage.setItem(HUB_STATE_KEY,JSON.stringify({view:document.body.dataset.hubView||'home',date:calendarSelectedDate||'',match:document.body.classList.contains('hub-match-open')?activeMatch||'':'',boxscore:activeCalendarBoxscore?.event_id||'',scrollY:window.scrollY}))}catch(_){}
@@ -56,7 +61,7 @@ function display(){
  const singleAction=singleShowcase?.querySelector('.bl-broadcast-action');
  if(singleAction)singleAction.textContent=picksView?'ANALISI COMPLETA →':'VEDI NEI PRONOSTICI →';
 }
-function select(key){calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);document.body.dataset.hubView=key;display();saveHubState();}
+function select(key){calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);document.body.dataset.hubView=key;display();saveHubState();syncRoute();}
 
 document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
@@ -175,66 +180,11 @@ function openMatchQuotes(match){
  const oddMin=$('#hub-match-odd-min'),oddMax=$('#hub-match-odd-max');if(oddMin)oddMin.value='1.20';if(oddMax)oddMax.value='2.20';
  syncMatchQuickTeams();syncMatchOddsRange();
  matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.market==='PTS'));$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
+ saveHubState();syncRoute();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
-const matchTeamPalette={atl:'#e03a3e',bos:'#007a33',bkn:'#c5c5c5',cha:'#1d8cab',chi:'#ce1141',cle:'#b58a43',dal:'#0053bc',den:'#fdb927',det:'#c8102e',gs:'#ffc72c',hou:'#ce1141',ind:'#fdbb30',lac:'#c8102e',lal:'#fdb927',mem:'#5d76a9',mia:'#98002e',mil:'#00471b',min:'#236192',no:'#b4975a',ny:'#f58426',okc:'#007ac1',orl:'#0077c0',phi:'#006bb6',phx:'#e56020',por:'#e03a3e',sac:'#5a2d81',sa:'#a5acaf',tor:'#ce1141',utah:'#753bbd',wsh:'#e31837'};
-function renderMatchCharts(teams,a,b,windowDays,matchOdds){
- const area=$('#hub-match-charts');if(!area)return;area.replaceChildren();
- const colors=teams.map(t=>matchTeamPalette[matchTeamCodes[t]]||'#4388b9');
- const panel=$('#hub-match-analysis');if(panel){panel.style.setProperty('--match-team-a',colors[0]);panel.style.setProperty('--match-team-b',colors[1]);}
- const make=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
- const card=make('div','hub-match-chart-card bl-match-v2');
- const win=make('section','bl-match-v2-section');win.append(make('strong','bl-match-v2-heading','Probabilità di vittoria'));
- const validOdds=Array.isArray(matchOdds)&&matchOdds.length===2&&matchOdds.every(x=>Number.isFinite(Number(x))&&Number(x)>1);
- if(validOdds){
-  const implied=matchOdds.map(x=>1/Number(x)),total=implied[0]+implied[1],pct=implied.map(x=>100*x/total);
-  const labels=make('div','bl-match-v2-labels');
-  teams.forEach((team,i)=>{const side=make('div','bl-match-v2-side');side.append(make('b','',pct[i].toLocaleString('it-IT',{maximumFractionDigits:1})+'%'),make('small','',team));labels.append(side)});
-  const bar=make('div','bl-match-v2-split');bar.setAttribute('role','img');bar.setAttribute('aria-label',teams.map((t,i)=>t+': '+pct[i].toFixed(1)+'%').join(', '));
-  pct.forEach((n,i)=>{const seg=make('span','');seg.style.width=n+'%';seg.style.background=colors[i];bar.append(seg)});
-  win.append(labels,bar);
-  win.append(make('small','bl-match-v2-note','Probabilità implicite normalizzate dalle quote disponibili'));
- }else win.append(make('p','hub-match-win-unavailable','Quote vincente partita non disponibili'));
- card.append(win);
- const pts=make('section','bl-match-v2-section');pts.append(make('strong','bl-match-v2-heading','Media punti segnati'));
- const vals=[a,b].map(x=>Number(x.avg_points));const scale=Math.max(120,...vals.filter(Number.isFinite),1);
- teams.forEach((team,i)=>{const row=make('div','bl-match-v2-points-row');const name=make('small','',team);const track=make('div','bl-match-v2-track');const fill=make('span','');fill.style.width=Number.isFinite(vals[i])?Math.max(0,100*vals[i]/scale)+'%':'0%';fill.style.background=colors[i];track.append(fill);row.append(name,track,make('b','',Number.isFinite(vals[i])?displayNum(vals[i]):'—'));pts.append(row)});
- card.append(pts);area.append(card);
- const form=make('section','bl-match-v2-form');const formHead=make('div','bl-match-v2-form-head');formHead.append(make('strong','','Forma (ultime 5)'),make('small','',teams.map((t,i)=>t.split(' ').slice(-1)[0]+' '+[a,b][i].wins+'-'+[a,b][i].losses).join(' · ')));form.append(formHead);
- const streak=make('div','hub-match-form-streak bl-match-v2-streak');
- teams.forEach((team,i)=>{const group=make('div','');group.append(make('small','',team));const dots=make('div','hub-match-form-dots bl-match-v2-results');
- for(const game of [a,b][i].results||[]){const won=Number(game.scored)>Number(game.allowed);const chip=make('span',won?'won':'lost',won?'V':'P');chip.title=game.date+' · '+game.scored+'-'+game.allowed+' vs '+game.opponent;chip.setAttribute('aria-label',won?'Vittoria':'Sconfitta');dots.append(chip)}
- group.append(dots);streak.append(group)});form.append(streak);area.append(form);
-}
-function renderMatchH2H(teams,games){
- const facts=$('#hub-match-analysis .hub-match-facts');
- if(!facts)return;
- let widget=$('#hub-match-h2h-chart');
- if(!widget){widget=document.createElement('div');widget.id='hub-match-h2h-chart';widget.className='hub-match-h2h-chart';facts.insertAdjacentElement('afterend',widget)}
- widget.replaceChildren();
- const heading=document.createElement('strong');heading.textContent='Scontri diretti';widget.append(heading);
- if(!games.length){const empty=document.createElement('p');empty.textContent='Nessuno scontro diretto nel periodo esaminato';widget.append(empty);return}
- const wins=teams.map(team=>games.filter(game=>{const index=game.teams.indexOf(team);return index>=0&&Number(game.scores[index])>Number(game.scores[1-index])}).length);
- const names=document.createElement('div');names.className='hub-match-h2h-names';
- teams.forEach((team,i)=>{const side=document.createElement('span');side.textContent=team+' · '+wins[i];names.append(side)});widget.append(names);
- const bar=document.createElement('div');bar.className='hub-match-h2h-bar';
- const colors=teams.map(team=>matchTeamPalette[matchTeamCodes[team]]||'#4388b9');
- wins.forEach((count,i)=>{const segment=document.createElement('span');segment.style.width=(100*count/games.length)+'%';segment.style.background=colors[i];bar.append(segment)});widget.append(bar);
- const note=document.createElement('small');note.textContent=games.length+' '+(games.length===1?'partita':'partite')+' negli ultimi 21 giorni';widget.append(note);
-}
-const matchFormCache=new Map();
-const MATCH_FORM_TTL=5*60*1000;
-function getMatchFormData(date,teams){
- const key=JSON.stringify([date,...teams]);
- const cached=matchFormCache.get(key);
- if(cached&&cached.expires>Date.now())return cached.promise;
- const url='/api/match/form?date='+encodeURIComponent(date)+'&team_a='+encodeURIComponent(teams[0])+'&team_b='+encodeURIComponent(teams[1]);
- const entry={expires:Date.now()+MATCH_FORM_TTL,promise:null};
- entry.promise=fetch(url).then(r=>{if(!r.ok)throw new Error('ESPN temporaneamente non disponibile');return r.json()}).catch(error=>{if(matchFormCache.get(key)===entry)matchFormCache.delete(key);throw error});
- matchFormCache.set(key,entry);
- if(matchFormCache.size>40)matchFormCache.delete(matchFormCache.keys().next().value);
- return entry.promise;
-}
+const {renderMatchCharts,renderMatchH2H}=window.BasketLabMatchCharts(document,matchTeamCodes);
+const getMatchFormData=window.BasketLabMatchData((...args)=>fetch(...args));
 async function loadMatchForm(match){
  const request=++matchFormRequest;
  const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
@@ -471,7 +421,7 @@ function openFixtureDetails(match){
  const request=++pendingCalendarFixture;
  const dateChanged=!!(date&&target&&target!==current);
  // Open the analysis immediately; the quote feed must never block navigation.
- if(dateChanged)date.value=target;
+ if(dateChanged){if(![...date.options].some(o=>o.value===target))date.add(new Option(target,target));date.value=target;}
  const available=dateChanged?'':matchingFixtureOption(match);
  openMatchQuotes(available||match);
  if(dateChanged){
@@ -481,7 +431,7 @@ function openFixtureDetails(match){
    if(request!==pendingCalendarFixture||event.detail?.date!==target)return;
    document.removeEventListener('basketlab:quotes-loaded',onLoaded);
    pendingCalendarListener=null;
-   if(fixtureKey(activeMatch)!==fixtureKey(match))return;
+   if(!document.body.classList.contains('hub-match-open')||date?.value!==target||fixtureKey(activeMatch)!==fixtureKey(match))return;
    const resolved=matchingFixtureOption(match);
    if(resolved){
     const fixture=$('#finder-fixture');
@@ -512,7 +462,7 @@ let calendarWeekStart='';
 let calendarVisibleMonth='';
 function calendarIsoOffset(iso,days){const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)}
 function calendarMonday(iso){return calendarIsoOffset(iso,-((new Date(iso+'T12:00:00Z').getUTCDay()+6)%7))}
-function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=calendarIsoOffset(iso,-3);calendarVisibleMonth=iso.slice(0,7);renderCalendar()}
+function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=calendarIsoOffset(iso,-3);calendarVisibleMonth=iso.slice(0,7);renderCalendar();saveHubState();syncRoute()}
 
 let activeCalendarBoxscore=null;
 let calendarBoxscoreRequest=0;
@@ -885,7 +835,7 @@ if($('#picks'))new MutationObserver(()=>{featuredPicks();updateInsights();refres
 /* Restore the active section after a mobile pull-to-refresh, without changing prediction dates. */
 try{
  const saved=JSON.parse(sessionStorage.getItem(HUB_STATE_KEY)||'null');
- if(saved&&['home','calendar','picks','stats','finder','history','about'].includes(saved.view)){
+ if(location.pathname==='/'&&!location.hash&&saved&&['home','calendar','picks','stats','finder','history','about'].includes(saved.view)){
   if(/^\d{4}-\d{2}-\d{2}$/.test(saved.date||'')){calendarSelectedDate=saved.date;calendarWeekStart=calendarIsoOffset(saved.date,-3);calendarVisibleMonth=saved.date.slice(0,7)}
   if(saved.view==='calendar'){select('calendar');renderCalendar()}
   else if(saved.match&&saved.view==='finder'){openMatchQuotes(saved.match)}
@@ -894,5 +844,25 @@ try{
   if(Number.isFinite(saved.scrollY)&&saved.scrollY>0)setTimeout(()=>window.scrollTo(0,saved.scrollY),250);
  }
 }catch(_){}
+function applyRoute(){
+ const route=window.BasketLabRouter.read(location);
+ applyingRoute=true;
+ try{
+  if(route.date){calendarSelectedDate=route.date;calendarWeekStart=calendarIsoOffset(route.date,-3);calendarVisibleMonth=route.date.slice(0,7)}
+  if(route.match){
+   const picker=$('#date');
+   if(route.date&&picker&&![...picker.options].some(o=>o.value===route.date))picker.add(new Option(route.date,route.date));
+   openFixtureDetails(route.match);
+  }else{go[route.view]?.();select(route.view)}
+ }finally{applyingRoute=false}
+}
+if(window.BasketLabRouter){
+ routerReady=true;
+ window.addEventListener('popstate',applyRoute);
+ if(location.pathname!=='/')applyRoute();
+ // Explicit paths override session restoration. Existing hash links stay valid.
+ if(location.hash==='#archivio'){go.history();select('history')}
+ else if(location.hash==='#come-funziona'){go.about();select('about')}
+}
 refresh();featuredPicks();updateInsights();refreshShowcase();
 })();

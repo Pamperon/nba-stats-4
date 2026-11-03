@@ -1,5 +1,5 @@
-const CACHE = 'nba-stats-4-shell-v63';
-const ASSETS = ['/', '/static/style.css', '/static/app.js', '/static/features.js', '/static/icon.svg', '/static/icon-192.png', '/static/icon-512.png', '/static/icon-maskable-192.png', '/static/icon-maskable-512.png', '/static/favicon-32.png', '/static/favicon.ico', '/static/apple-touch-icon.png', '/static/manifest.webmanifest'];
+const CACHE = 'nba-stats-4-shell-v64';
+const ASSETS = ['/', '/static/style.css', '/static/app.js', '/static/features.js', '/static/hub-nav.js', '/static/modules/router.js', '/static/modules/match-charts.js', '/static/modules/match-data.js', '/static/icon.svg', '/static/icon-192.png', '/static/icon-512.png', '/static/icon-maskable-192.png', '/static/icon-maskable-512.png', '/static/favicon-32.png', '/static/favicon.ico', '/static/apple-touch-icon.png', '/static/manifest.webmanifest'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
@@ -16,6 +16,6 @@ self.addEventListener('fetch', event => {
       (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/'))) return;
   event.respondWith(fetch(event.request).catch(async () => {
     const cached = await caches.match(event.request, {ignoreSearch: true});
-    return cached || Response.error();
+    return cached || (event.request.mode==='navigate' ? await caches.match('/') : null) || Response.error();
   }));
 });
