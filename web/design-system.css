@@ -519,3 +519,34 @@ html {
 .nba-news-preview .nba-news-card:first-child a { grid-template-columns: minmax(0,1fr) 108px; background: #102735; border-radius: 12px; }
 .nba-news-preview .nba-news-card:first-child h3 { font-size: 18px; }
 .hub-editorial > .bl-back { margin-top: 12px; }
+
+.hub-editorial {
+  padding: 14px;
+  border: 1px solid #294758;
+  border-radius: 16px;
+  background: #0d2031;
+}
+.nba-news-preview .nba-news-card:first-child {
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+  background: #142e43;
+}
+.nba-news-preview .nba-news-card:first-child a {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+}
+.nba-news-preview .nba-news-card:first-child img {
+  aspect-ratio: 2.4;
+  border-radius: 0;
+}
+.nba-news-preview .nba-news-card:first-child a > div {
+  padding: 12px 14px;
+}
+.nba-news-card:not(:has(img)) a { grid-template-columns: minmax(0, 1fr); }
+.nba-news-card a:focus-visible { outline-offset: -3px; }
+.hub-editorial > .bl-back { display: block; text-align: center; }
