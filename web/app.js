@@ -812,7 +812,7 @@ async function openPickStats(row){
  document.querySelectorAll('.tab').forEach(tab=>tab.hidden=tab.id!=='player');
  $('quote-summary').hidden=true;
  playerStatsInitialized=true;setPlayerLoading(true);
- $('player-profile').hidden=true;$('chart').replaceChildren();$('player-summary').replaceChildren();
+ $('player-profile').hidden=true;$('chart').replaceChildren();$('player-summary').replaceChildren();clearPlayerVisual();
  $('player-status').textContent='Apertura statistiche di '+row.Giocatore+'…';
  const selection={id:String(row['ESPN ID']||''),team:row.Squadra,market:row.Mercato,line:Number(row.Linea),season:String(data?.season||'').slice(0,4),navigation};
  try{
@@ -847,6 +847,7 @@ async function initPlayers(selection=null){
  await changeTeam(selection);
  }catch(e){if(navigation!==pickNavigationRequest)return;playerStatsInitialized=false;setPlayerLoading(false);$('player-status').textContent='Statistiche non disponibili ('+e.message+'). Riprova dal pronostico o riapri la scheda.';}
 }
+function clearPlayerVisual(){const visual=$('player-visual');if(visual){visual.replaceChildren();visual.hidden=true;}}
 function setPlayerLoading(loading){
  $('player').classList.toggle('player-is-loading',loading);
  $('player-loading').hidden=!loading;
@@ -856,6 +857,7 @@ async function changeTeam(selection=null){
  ++playerRequest;
  const team=$('team').value;
  $('playername').innerHTML='';
+ clearPlayerVisual();
  $('player-profile').hidden=true;
  $('player-status').textContent='';
  if(!team){setPlayerLoading(false);return;}
@@ -919,7 +921,7 @@ async function changePlayer(selection=null,preserveLine=false){
  playerGames=[];
  $('player-summary').innerHTML='';$('player-trends').innerHTML='';
  $('chart').innerHTML='';
- $('player-visual')?.replaceChildren();
+ clearPlayerVisual();
  $('player-status').textContent='';
  if(!team||!id){$('player-profile').hidden=true;setPlayerLoading(false);return;}
  setPlayerLoading(true);
