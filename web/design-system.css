@@ -81,3 +81,41 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
 .app-header .brand-version {
   text-transform: none;
 }
+
+.app-header .brand {
+  width: auto;
+  justify-content: flex-start;
+  transform: none;
+}
+
+.hub-landing {
+  margin-bottom: 7px;
+}
+
+.hub-trust-strip {
+  gap: 4px;
+  margin: 0 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.hub-trust-strip span {
+  flex-direction: row;
+  gap: 4px;
+  min-height: 34px;
+  padding: 4px;
+  border: 1px solid #243d50;
+  border-radius: 8px;
+  background: #0d1c2c;
+}
+
+.hub-trust-strip span + span {
+  border-left-color: #243d50;
+}
+
+.hub-trust-strip i {
+  font-size: 13px;
+  font-style: normal;
+}
