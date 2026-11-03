@@ -8,7 +8,7 @@ function getMatchFormData(date,teams){
  if(cached&&cached.expires>Date.now())return cached.promise;
  const url='/api/match/form?date='+encodeURIComponent(date)+'&team_a='+encodeURIComponent(teams[0])+'&team_b='+encodeURIComponent(teams[1]);
  const entry={expires:Date.now()+MATCH_FORM_TTL,promise:null};
- entry.promise=fetch(url).then(r=>{if(!r.ok)throw new Error('ESPN temporaneamente non disponibile');return r.json()}).catch(error=>{if(matchFormCache.get(key)===entry)matchFormCache.delete(key);throw error});
+ entry.promise=fetch(url).then(r=>{if(!r.ok)throw new Error('ESPN temporaneamente non disponibile');return r.json()}).then(data=>{if(data.history_complete===false&&matchFormCache.get(key)===entry)matchFormCache.delete(key);return data;}).catch(error=>{if(matchFormCache.get(key)===entry)matchFormCache.delete(key);throw error});
  matchFormCache.set(key,entry);
  if(matchFormCache.size>40)matchFormCache.delete(matchFormCache.keys().next().value);
  return entry.promise;

@@ -45,3 +45,13 @@ Rollback: revert the relevant PR and let main auto-deploy. All changes are code-
 `NBA_STATS_ACCESS_TOKEN=offline-test-token ODDSPAPI_API_KEY=offline-test-key python -m unittest discover -s tests`
 
 Do not publish a speedup percentage unless the same cache state and measurement method have been compared. Separate time to visible screen from time to complete external data.
+
+## Backend and delivery changes
+
+* `match_history.py`: bounded daily/window caches and fixed-size locks. Simultaneous requests for the same 21-day window issue 21 daily requests in total, rather than 21 per visitor. A complete persisted window avoids all 21 ESPN requests after a process restart. Cache age remains 30 minutes; daily cache remains two hours.
+* Partial windows are not persisted, not entered in the match-form cache and not retained by the browser cache. A retry can recover missing days. Statistical processing and verified-final filtering stay in the existing endpoint.
+* One saved odds envelope now supplies both price and fixture metadata on cold and warm responses. Warm enrichment uses one database read rather than two. No paid quote calls.
+* Versioned static resources receive a one-day browser cache; unversioned files (including the service worker) revalidate. HTML always revalidates. API/admin data is never added to these caches.
+* Deterministic verification: 93 JS and 282 Python tests passed locally, including concurrent requests, persistent cache reuse, incomplete sample retry, exact cold/warm stats equality, one-envelope enrichment and static cache policy.
+
+These are request-count guarantees verified with controlled inputs, not measured mobile speedup percentages. The first request for a genuinely uncached historical window still depends on ESPN response time. No synthetic data substitutes for slow external data.

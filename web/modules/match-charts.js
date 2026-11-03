@@ -1,5 +1,5 @@
 /* Presentation only: existing chart formulas and visual identity. */
-window.BasketLabMatchCharts=function(document,matchTeamCodes){
+window.BasketLabMatchCharts=function(document,matchTeamCodes,displayNum){
 const $=s=>document.querySelector(s);
 const matchTeamPalette={atl:'#e03a3e',bos:'#007a33',bkn:'#c5c5c5',cha:'#1d8cab',chi:'#ce1141',cle:'#b58a43',dal:'#0053bc',den:'#fdb927',det:'#c8102e',gs:'#ffc72c',hou:'#ce1141',ind:'#fdbb30',lac:'#c8102e',lal:'#fdb927',mem:'#5d76a9',mia:'#98002e',mil:'#00471b',min:'#236192',no:'#b4975a',ny:'#f58426',okc:'#007ac1',orl:'#0077c0',phi:'#006bb6',phx:'#e56020',por:'#e03a3e',sac:'#5a2d81',sa:'#a5acaf',tor:'#ce1141',utah:'#753bbd',wsh:'#e31837'};
 function renderMatchCharts(teams,a,b,windowDays,matchOdds){
