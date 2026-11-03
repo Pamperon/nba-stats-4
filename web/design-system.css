@@ -154,3 +154,80 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
     font-size: 17px;
   }
 }
+
+.hub-home-banner .hub-live-metrics {
+  margin: 0 8px 4px;
+}
+.hub-performance .hub-performance-body {
+  display: block;
+}
+.bl-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.bl-results-card {
+  padding: 12px 8px;
+  border: 1px solid #294656;
+  border-radius: 12px;
+  background: #102735;
+  text-align: center;
+}
+.bl-results-card h3 {
+  margin: 0 0 10px;
+}
+.bl-results-ring {
+  display: grid;
+  place-items: center;
+  width: 86px;
+  aspect-ratio: 1;
+  margin: auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, #102735 57%, transparent 58%),
+    conic-gradient(#30ce88 var(--success), #38536a 0);
+}
+.bl-results-card dl {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+.bl-results-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.bl-results-card dd {
+  margin: 0;
+  font-weight: 700;
+}
+.bl-results-note {
+  margin: 10px 0 0;
+}
+
+#player .player-profile {
+  gap: 10px 14px;
+}
+#player .player-profile-body h3 {
+  margin: 4px 0;
+}
+#player .player-season-stats {
+  padding: 8px;
+  border-radius: 10px;
+  background: #07152280;
+}
+#player .bl-chart-caption {
+  font-size: 13px;
+}
+#player .bl-player-visual {
+  padding: 14px 12px;
+}
+@media (max-width: 600px) {
+  #player .player-avatar {
+    height: 94px;
+  }
+  #player .player-avatar img {
+    object-fit: cover;
+    object-position: top center;
+  }
+}

@@ -99,11 +99,19 @@ async function loadModelPerformance(){
   const response=await fetch('/api/history/performance',{headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('Performance unavailable');
   const stats=await response.json();
-  if(!stats.published){body.innerHTML='<div><strong>In attesa dei primi risultati ufficiali</strong><p>Le statistiche compariranno quando saranno disponibili selezioni Top 5 pubblicate.</p></div>';return}
-  const pct=stats.success_pct==null?'—':stats.success_pct.toLocaleString('it-IT',{maximumFractionDigits:1})+'%';
-  body.innerHTML='<div class="bl-perf-grid">'+[
-   ['Pubblicate',stats.published],['Verificate',stats.verified],['Centrate',stats.won],['Non centrate',stats.lost],['Da verificare',stats.pending],['Successo',pct]
-  ].map(([label,value])=>'<div class="bl-perf-item"><strong>'+value+'</strong><span>'+label+'</span></div>').join('')+'</div>';
+  const groups=[['Singola',stats.single],['Top 5',stats]];
+  const number=value=>Number.isFinite(value)?value.toLocaleString('it-IT'):'—';
+  body.innerHTML='<div class="bl-results-grid">'+groups.map(([label,group])=>{
+   const rate=Number.isFinite(group?.success_pct)?group.success_pct:null;
+   const sweep=Math.min(100,Math.max(0,rate??0));
+   return '<article class="bl-results-card"><h3>'+label+'</h3>'+
+    '<div class="bl-results-ring" style="--success:'+sweep+'%"><strong>'+
+    (rate===null?'—':number(rate)+'%')+'</strong></div>'+
+    '<p><strong>'+number(group?.published)+'</strong> analisi pubblicate</p>'+
+    '<dl><div><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
+    '<div><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
+    '<div><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
+  }).join('')+'</div><p class="bl-results-note">Ultime 30 giornate disponibili · Percentuale sulle analisi verificate.</p>';
  }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
 }
 if(!window.BasketLabSections)loadModelPerformance();
