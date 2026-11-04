@@ -798,7 +798,7 @@ function refreshShowcase(){
    const [primary,secondary]=palette[ownCode]||['#19334e','#436483'];
    hero.style.setProperty('--bl-team-primary',primary);hero.style.setProperty('--bl-team-secondary',secondary);
    const ownLogo=own?.querySelector('.team-logo img');
-   if(ownLogo){const watermark=ownLogo.cloneNode(true);watermark.removeAttribute('id');watermark.className='bl-team-watermark';watermark.alt='';watermark.setAttribute('aria-hidden','true');hero.insertBefore(watermark,photo);const emblem=ownLogo.cloneNode(true);emblem.removeAttribute('id');emblem.className='bl-team-emblem';emblem.alt='';emblem.setAttribute('aria-hidden','true');hero.append(emblem)}
+   if(ownLogo){const emblem=ownLogo.cloneNode(true);emblem.removeAttribute('id');emblem.className='bl-team-emblem';emblem.alt='';emblem.setAttribute('aria-hidden','true');hero.append(emblem)}
    intro.append(player,info);hero.append(intro);
    const market=document.createElement('div');market.className='bl-broadcast-line';
    const label=document.createElement('small');label.textContent='LINEA SELEZIONATA';
