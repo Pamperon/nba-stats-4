@@ -222,7 +222,7 @@ async function loadModelPerformance(){
     '<dl><div><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
     '<div><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
     '<div><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
-  }).join('')+'</div><p class="bl-results-note">Ultime 30 giornate disponibili · Percentuale sulle analisi verificate.</p>';
+  }).join('')+'</div><p class="bl-results-note">Dal 1° novembre 2026 · Percentuale sulle analisi verificate.</p>';
  }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
 }
 if(!window.BasketLabSections)loadModelPerformance();

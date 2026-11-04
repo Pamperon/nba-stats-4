@@ -1628,7 +1628,7 @@ def public_history_performance():
     import public_views
     import official_top5
     today = datetime.now(ZoneInfo('Europe/Rome')).date()
-    dates = public_views.history_dates(today)['dates'][:30]
+    dates = public_views.history_dates(today)['dates']
     top5_states = []
     single_states = []
     days = 0

@@ -21,7 +21,7 @@ def history_dates(today):
                 SELECT publication_date AS archive_date FROM nba_official_sessions
             ) days
             WHERE archive_date <= %s
-            ORDER BY archive_date DESC LIMIT 90
+            ORDER BY archive_date DESC
         """, (nba_session_picks.START, today)).fetchall()
     return {'dates': [{'date': day.isoformat()} for (day,) in rows],
             'odds_api_calls': 0}
