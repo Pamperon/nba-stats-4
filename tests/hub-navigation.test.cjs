@@ -398,7 +398,7 @@ test('brand link returns to home and closes the menu from another view',()=>{
  assert.equal(doc.querySelector('#hub-menu-drawer').hidden,true);
 });
 
-test('venue icons follow verified home and away teams even when pick order is reversed',async()=>{
+test('venue icons appear only in calendar cards and not in home or daily picks',async()=>{
  const {window,doc}=setup();
  await new Promise(r=>setImmediate(r));
  window.fetch=async()=>({ok:true,json:async()=>({games:[{away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,start_at:new Date(Date.now()+3600000).toISOString()}]})});
@@ -406,7 +406,12 @@ test('venue icons follow verified home and away teams even when pick order is re
  doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Singola del giorno"><article class="pick-selection"><button class="pick-player-link">Test Player</button><div class="pick-profile-info"><p>Atlanta Hawks</p></div><div class="pick-fixture" data-match="Atlanta Hawks - Boston Celtics">'+team('Atlanta Hawks')+team('Boston Celtics')+'</div></article></section>';
  await new Promise(r=>setImmediate(r));
  const sides=doc.querySelectorAll('.bl-game-team');
- assert.equal(sides[0].querySelector('.bl-venue-icon').getAttribute('aria-label'),'In casa');
- assert.equal(sides[1].querySelector('.bl-venue-icon').getAttribute('aria-label'),'In trasferta');
- assert.equal(doc.querySelectorAll('#hub-games-showcase .bl-venue-icon').length,2);
+ assert.equal(sides.length,2);
+ assert.equal(doc.querySelectorAll('.hub-single-section .bl-venue-icon, #hub-games-showcase .bl-venue-icon').length,0);
+ doc.querySelector('.hub-sidebar [data-hub=calendar]').click();
+ await new Promise(r=>setImmediate(r));
+ const icons=doc.querySelectorAll('.hub-calendar-match .bl-venue-icon');
+ assert.equal(icons.length,2);
+ assert.equal(icons[0].getAttribute('aria-label'),'In trasferta');
+ assert.equal(icons[1].getAttribute('aria-label'),'In casa');
 });
