@@ -752,3 +752,24 @@ body.player-personal-view #player .player-profile>.player-season-stats{width:cal
 .bl-chart-detail-metrics b{display:block;margin-top:4px;font-size:16px;line-height:1.3;color:#f1f7fb}
 .bl-chart-detail .bl-chart-detail-outcome{margin:13px 0 0;padding-top:10px;border-top:1px solid #34526a;font-size:13px;font-weight:650;color:#c2d8e8}
 .bl-chart-detail-outcome[data-result=over]{color:#70e5ab!important}.bl-chart-detail-outcome[data-result=under]{color:#efa0b2!important}
+
+/* Full-width source portrait, compact header and clear profile hierarchy. */
+body.player-personal-view #player .player-profile{grid-template-columns:220px minmax(0,1fr);padding-top:8px}
+body.player-personal-view #player .player-avatar{width:220px;height:170px}
+body.player-personal-view #player .player-avatar img{left:0;right:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+body.player-personal-view #player .player-profile-body{padding:10px 0 16px}
+body.player-personal-view #player .player-profile-body h3{margin-bottom:8px}
+body.player-personal-view #player .player-profile-body .player-profile-team{display:block;font-size:15px;color:#d7e7f2;line-height:1.4}
+body.player-personal-view #player .player-profile-body .player-profile-role{display:block;font-size:13px;color:#a6c5da;line-height:1.5;margin-top:5px}
+body.player-personal-view .bl-window-tabs button[data-hit-rate=low] small{color:#ff7b8d}
+body.player-personal-view .bl-window-tabs button[data-hit-rate=unknown] small{color:#a8c2d5}
+.pe-quotes .pe-quote-fixture{margin:12px 0 0}
+.pe-quotes .pe-quote-fixture .pick-fixture{display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:6px;align-items:center;background:#172d40;border:1px solid #3a566c;border-radius:10px;padding:10px 8px;margin:0 0 6px}
+.pe-quotes .pe-quote-fixture .fixture-team{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0}
+.pe-quotes .pe-quote-fixture .fixture-team-name{font-size:12px;font-weight:650;line-height:1.3;color:#f0f6fb;text-align:center;overflow-wrap:anywhere}
+.pe-quotes .pe-quote-fixture .fixture-name-short{display:none}
+.pe-quotes .pe-quote-fixture .fixture-vs{font-size:11px;font-weight:800;text-align:center;color:#ff9a45}
+.pe-quotes .pe-quote-fixture .team-logo{display:flex;position:relative;flex:0 0 24px;width:24px;height:24px;align-items:center;justify-content:center}
+.pe-quotes .pe-quote-fixture .team-logo img{position:absolute;inset:0;width:24px;height:24px;object-fit:contain}
+.pe-quotes .pe-quote-fixture .team-logo:has(img) span{visibility:hidden}
+@media(max-width:600px){body.player-personal-view #player .player-profile{grid-template-columns:52% minmax(0,1fr);column-gap:8px;padding-top:8px}body.player-personal-view #player .player-avatar{width:100%;height:148px}body.player-personal-view #player .player-profile-body h3{font-size:23px}body.player-personal-view #player .player-profile-body .player-profile-team{font-size:13px}body.player-personal-view #player .player-profile-body .player-profile-role{font-size:12px}.pe-quotes .pe-quote-fixture .fixture-team-name{font-size:11px}.pe-quotes .pe-quote-fixture .team-logo{flex-basis:21px;width:21px;height:21px}.pe-quotes .pe-quote-fixture .team-logo img{width:21px;height:21px}}

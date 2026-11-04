@@ -921,9 +921,11 @@ async function loadPlayerProfile(request,team,id){
  avatar.classList.remove('has-photo');
  oldPhoto.replaceWith(photo);
  photo.fetchPriority='high';
- photo.src='/api/players/headshot/'+encodeURIComponent(id);
+ photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png';
  const profile=activeRoster.find(p=>p.id===id);
- if(profile){$('player-meta').textContent=[$('team').selectedOptions[0]?.textContent,profile.position,profile.jersey?'#'+profile.jersey:'',profile.height].filter(Boolean).join(' · ')}
+ const teamLabel=document.createElement('span');teamLabel.className='player-profile-team';teamLabel.textContent=$('team').selectedOptions[0]?.textContent||'';
+ const roleLabel=document.createElement('span');roleLabel.className='player-profile-role';const positions={Forward:'Ala',Guard:'Guardia',Center:'Centro','Forward-Center':'Ala / Centro','Guard-Forward':'Guardia / Ala','Point Guard':'Playmaker','Shooting Guard':'Guardia','Small Forward':'Ala piccola','Power Forward':'Ala grande'};roleLabel.textContent=positions[profile?.position]||profile?.position||'';
+ $('player-meta').replaceChildren(teamLabel,roleLabel);
  renderPlayerSeason();
 }
 async function changePlayer(selection=null,preserveLine=false){
@@ -957,7 +959,7 @@ async function changePlayer(selection=null,preserveLine=false){
   if(request===playerRequest)setPlayerLoading(false);
  }
 }
-window.BasketLabPlayerEngine={open:openPickStats,directory:getPlayerDirectory};
+window.BasketLabPlayerEngine={open:openPickStats,directory:getPlayerDirectory,fixture:fixtureCard};
 function changeLine(preserveSelected=false){
  const selected=preserveSelected?$('line').value:null;
  const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);
