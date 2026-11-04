@@ -616,3 +616,5 @@ body.hub-match-open .hub-match-player-list>.hub-match-team-heading:first-child{m
 .hub-featured-list .bl-prob-track{display:block;width:100%;height:4px;margin-top:5px;border-radius:99px;background:#304b61;overflow:hidden}
 .hub-featured-list .bl-prob-track span{display:block;height:100%;border-radius:inherit;background:#66e6a6}
 @media(max-width:360px){.hub-featured-list .bl-data-prob{display:grid;grid-template-columns:auto auto;gap:3px 5px}.hub-featured-list .bl-prob-track{grid-column:1/-1;margin-top:0}}
+
+.app-header>a.brand{text-decoration:none;color:inherit;cursor:pointer}.app-header>a.brand:focus-visible{outline:2px solid #65d3f5;outline-offset:4px;border-radius:5px}

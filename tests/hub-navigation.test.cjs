@@ -384,3 +384,16 @@ test('invalid match odds range reports an error rather than displaying unfiltere
  assert.equal(doc.querySelector('#hub-match-filter-error').hidden,true);
  assert.equal(doc.querySelectorAll('.hub-match-player-card').length,1);
 });
+
+
+test('brand link returns to home and closes the menu from another view',()=>{
+ const {doc}=setup();
+ doc.querySelector('.hub-sidebar [data-hub="about"]').click();
+ doc.querySelector('.hub-menu-toggle').click();
+ const brand=doc.querySelector('.app-header a.brand');
+ assert.equal(brand.getAttribute('href'),'/');
+ brand.click();
+ assert.equal(doc.body.dataset.hubView,'home');
+ assert.equal(doc.querySelector('#extra-about').hidden,true);
+ assert.equal(doc.querySelector('#hub-menu-drawer').hidden,true);
+});
