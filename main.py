@@ -514,7 +514,7 @@ def session_picks(compact: bool = False):
             'official_top5':official,'official_top5_pending':official is None,
             'official_single':official['single'] if official else None,
             'official_single_pending':official is None,
-            'preliminary_top5':preliminary[:5] if official is None else [],
+            'preliminary_top5':preliminary[:10] if official is None else [],
             'preliminary_single':single if official is None else None,
             'fixture_count':len(manifest['games']),
             'player_count':player_count,
@@ -1010,7 +1010,7 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
             valid_rows = visible.get('results', [])
             # Reapply current quality thresholds to older saved snapshots.
             eligible = recommendations.select_daily(valid_rows).get('lines', [])
-            visible['preliminary_top5'] = eligible[:5]
+            visible['preliminary_top5'] = eligible[:10]
         else:
             visible['preliminary_top5'] = []
         visible['recommendations'] = {'policy': 'fixed-1800-v1',
@@ -1032,7 +1032,7 @@ def saved_latest(date: str | None = Query(default=None, pattern=r'^\d{4}-\d{2}-\
             visible['preliminary_top5'] = [
                 pick for pick in visible['preliminary_top5']
                 if str(pick.get('ESPN ID') or pick.get('Giocatore') or '').strip().casefold() != single_id
-            ][:5]
+            ][:10]
     if compact:
         import public_payload
         visible = {**visible, 'player_logs': public_payload.explanation_logs(visible)}

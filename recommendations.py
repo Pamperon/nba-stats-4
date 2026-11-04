@@ -241,3 +241,25 @@ def settle_snapshots(day):
                                  'actual': leg['actual']}), day, job_id))
         count += 1
     return count
+
+
+def expand_saved_picks(lines, single, payloads):
+    """Extend an existing set using only its original saved pregame snapshots."""
+    single_id = str((single or {}).get('ESPN ID') or (single or {}).get('Giocatore') or '').strip().casefold()
+    selected = list(lines)
+    used = {str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
+            for row in selected}
+    used.add(single_id)
+    fixtures = {str(row.get('Partita') or '').strip().casefold() for row in selected}
+    candidates = [row for payload in payloads for row in payload.get('results', [])
+                  if str(row.get('Partita') or '').strip().casefold() in fixtures]
+    for row in select_daily(candidates)['lines']:
+        player = str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
+        probability, odds = float(row['Prob. stimata %']), float(row['Quota'])
+        if player in used or probability - 100 / odds < 3:
+            continue
+        if len(selected) >= 10:
+            break
+        used.add(player)
+        selected.append(row)
+    return selected[:10]

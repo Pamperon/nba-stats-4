@@ -44,6 +44,19 @@ def get(day):
         row = conn.execute(
             "SELECT published_at,snapshot_job_id,selections FROM nba_official_daily_top5 WHERE scan_date=%s",
             (day,)).fetchone()
+    if row and len(row[2]) < 10:
+        import recommendations
+        with storage.connection() as conn:
+            snapshot = conn.execute(
+                "SELECT payload FROM nba_scan_snapshots WHERE job_id=%s AND created_at <= %s",
+                (row[1], row[0])).fetchone()
+            single_row = conn.execute(
+                "SELECT selection FROM nba_official_daily_singles WHERE scan_date=%s",
+                (day,)).fetchone()
+        if snapshot:
+            expanded = recommendations.expand_saved_picks(
+                row[2], single_row[0] if single_row else None, [snapshot[0]])
+            row = (row[0], row[1], expanded)
     return {'published_at': row[0].isoformat(), 'snapshot_job_id': row[1],
             'lines': row[2], 'policy': POLICY} if row else None
 
@@ -152,7 +165,7 @@ def publish(day, games, now=None):
                     continue
                 used.add(player)
                 selections.append(pick)
-                if len(selections) == 5:
+                if len(selections) == 10:
                     break
             conn.execute("""
                 INSERT INTO nba_official_daily_singles

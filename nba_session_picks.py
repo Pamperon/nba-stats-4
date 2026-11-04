@@ -44,6 +44,13 @@ def read(day):
         """, (day,)).fetchone()
     if row is None:
         return None
+    if len(row[2]) < 10:
+        with storage.connection() as conn:
+            snapshots = conn.execute(
+                "SELECT payload FROM nba_scan_snapshots WHERE job_id = ANY(%s) AND created_at <= %s",
+                (list(row[1].values()), row[0])).fetchall()
+        expanded = recommendations.expand_saved_picks(row[2], row[3], [item[0] for item in snapshots])
+        row = (row[0], row[1], expanded, row[3], row[4])
     return {'published_at': row[0].isoformat(), 'snapshot_job_ids': row[1],
             'lines': row[2], 'single': row[3], 'policy': row[4]}
 
@@ -126,7 +133,7 @@ def publish(day, games, now=None):
             selected = recommendations.select_daily(all_rows)['lines']
             single_id = str((single or {}).get('ESPN ID') or (single or {}).get('Giocatore') or '').strip().casefold()
             selections = [row for row in selected
-                          if str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold() != single_id][:5]
+                          if str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold() != single_id][:10]
             conn.execute("""
                 INSERT INTO nba_official_sessions
                   (publication_date,published_at,snapshot_job_ids,selections,single_selection,policy)
