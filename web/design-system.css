@@ -726,6 +726,6 @@ body.player-personal-view #player .player-profile>.player-season-stats{max-width
 /* One destination link per section, with publication status beside its heading. */
 .hub-featured>.hub-featured-heading{align-items:center;flex-wrap:wrap;gap:8px 12px}
 .hub-featured>.hub-featured-heading>#hub-choices-state{margin-left:auto}
-.hub-games-section .hub-premium-fixture .hub-premium-names{font-size:calc(16px + var(--bl-text-step,0px))!important;line-height:1.25}
+.hub-games-section .hub-premium-fixture .hub-premium-names{font-size:calc(18px + var(--bl-text-step,0px))!important;line-height:1.25}
 .hub-games-section .hub-premium-fixture .hub-premium-names .bl-fixture-name{color:#fff!important}
-.hub-games-section .hub-premium-fixture .hub-premium-names .bl-fixture-vs{color:#ff9a45!important;font-size:inherit;font-weight:800;white-space:nowrap}
+.hub-games-section .hub-premium-fixture .hub-premium-names .bl-fixture-vs{color:#ff9a45!important;font-size:.72em;font-weight:800;white-space:nowrap}
