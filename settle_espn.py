@@ -36,6 +36,21 @@ def final_events(scan_date, require_all_final=True):
         raise ValueError("Not all games on this ESPN date are final")
     return events
 
+def compact_summary(summary):
+    """Settlement never needs plays, videos, news feeds or team statistics."""
+    return {'boxscore': {'players': [
+        {'team': {'displayName': (team.get('team') or {}).get('displayName', '')},
+         'statistics': [
+             {'labels': group.get('labels', []), 'athletes': [
+                 {**{k: athlete[k] for k in ('stats', 'didNotPlay', 'ejected') if k in athlete},
+                  'athlete': {k: (athlete.get('athlete') or {})[k]
+                              for k in ('id', 'displayName') if k in (athlete.get('athlete') or {})}}
+                 for athlete in group.get('athletes', [])]}
+             for group in team.get('statistics', [])]}
+        for team in summary.get('boxscore', {}).get('players', [])]},
+        'article': {'story': (summary.get('article') or {}).get('story', '')}}
+
+
 def player_stats(summary):
     """Return (team, normalized athlete) -> PTS/AST/REB, only when played."""
     found = {}
@@ -131,7 +146,7 @@ def settle_completed_fixtures(snapshot, scan_date, evidence=None):
         summary_key = ('summary', event['id'])
         if summary_key not in evidence:
             try:
-                evidence[summary_key] = fetch(BASE + '/summary', event=event['id'])
+                evidence[summary_key] = compact_summary(fetch(BASE + '/summary', event=event['id']))
             except (requests.RequestException, ValueError):
                 continue
         try:
@@ -222,7 +237,7 @@ def settle_archive(snapshot, scan_date, evidence=None):
             raise ValueError("Snapshot saved after an archived game's tipoff")
         summary_key = ('summary', event['id'])
         if summary_key not in evidence:
-            evidence[summary_key] = fetch(BASE + "/summary", event=event["id"])
+            evidence[summary_key] = compact_summary(fetch(BASE + "/summary", event=event["id"]))
         summary = evidence[summary_key]
         stats = player_stats(summary)
         if not stats:

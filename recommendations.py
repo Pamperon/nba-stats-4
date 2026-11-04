@@ -178,7 +178,9 @@ def settle_snapshots(day):
     from psycopg.types.json import Jsonb
     with storage.connection() as conn:
         snapshots = conn.execute("""
-            SELECT s.job_id,s.payload,s.created_at,r.report
+            SELECT s.job_id,jsonb_build_object('recommendations',s.payload->'recommendations',
+                   'results',s.payload->'results',
+                   'scan_finished_at',s.payload->'scan_finished_at'),s.created_at,r.report
             FROM nba_scan_snapshots s
             LEFT JOIN nba_recommendation_results r ON r.snapshot_job_id=s.job_id
             WHERE s.scan_date=%s AND s.payload ? 'recommendations'

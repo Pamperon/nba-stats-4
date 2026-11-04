@@ -246,7 +246,9 @@ def recent_fixture_coverage(date, max_age_hours=24):
     return list(_cached_fixture_coverage(date, max_age_hours, bucket))
 
 
-@lru_cache(maxsize=32)
+# The time bucket is part of the key: retaining 32 buckets kept many copies of
+# the same thousands of quote rows alive for 24 minutes. Two cover active dates.
+@lru_cache(maxsize=2)
 def _cached_fixture_coverage(date, max_age_hours, _bucket):
     with connection() as conn:
         rows = conn.execute("""
