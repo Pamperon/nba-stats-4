@@ -11,12 +11,18 @@ LEG_FIELDS = ('Giocatore', 'ESPN ID', 'Squadra', 'Partita', 'Mercato', 'Scelta',
 
 
 def history_dates(today):
+    import nba_session_picks
     with storage.connection() as conn:
         rows = conn.execute("""
-            SELECT DISTINCT scan_date FROM nba_scan_snapshots
-            WHERE scan_date <= %s AND payload ? 'recommendations'
-            ORDER BY scan_date DESC LIMIT 90
-        """, (today,)).fetchall()
+            SELECT archive_date FROM (
+                SELECT DISTINCT scan_date AS archive_date FROM nba_scan_snapshots
+                WHERE scan_date < %s AND payload ? 'recommendations'
+                UNION
+                SELECT publication_date AS archive_date FROM nba_official_sessions
+            ) days
+            WHERE archive_date <= %s
+            ORDER BY archive_date DESC LIMIT 90
+        """, (nba_session_picks.START, today)).fetchall()
     return {'dates': [{'date': day.isoformat()} for (day,) in rows],
             'odds_api_calls': 0}
 

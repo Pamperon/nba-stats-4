@@ -1532,6 +1532,14 @@ def _published_history(date, result):
     # even if the NBA game starts after midnight on the next calendar date.
     import nba_session_picks
     if nba_session_picks.eligible(date):
+        # Session publication dates supersede the old calendar-date archive.
+        result['official_lines'] = []
+        result['official_summary'] = {status: 0 for status in ('won', 'lost', 'unresolved')}
+        result['has_daily_model'] = False
+        result['session_single_archive'] = {
+            'published': False, 'selection': None, 'outcome': None,
+            'status': 'not_published',
+        }
         session_official = nba_session_picks.read(date)
         if session_official:
             tomorrow = (day + timedelta(days=1)).isoformat()
