@@ -618,3 +618,16 @@ body.hub-match-open .hub-match-player-list>.hub-match-team-heading:first-child{m
 @media(max-width:360px){.hub-featured-list .bl-data-prob{display:grid;grid-template-columns:auto auto;gap:3px 5px}.hub-featured-list .bl-prob-track{grid-column:1/-1;margin-top:0}}
 
 .app-header>a.brand{text-decoration:none;color:inherit;cursor:pointer}.app-header>a.brand:focus-visible{outline:2px solid #65d3f5;outline-offset:4px;border-radius:5px}
+
+/* Compact secondary navigation, aligned with the blue controls. */
+.app-masthead .hub-menu-drawer{width:min(290px,calc(100vw - 24px));right:12px;padding:9px;border:1px solid #416a86;border-radius:15px;background:linear-gradient(145deg,#102b42,#0b2033);box-shadow:0 12px 28px #0006}
+.hub-menu-drawer nav{gap:5px}
+.hub-menu-drawer button{display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 13px;border:1px solid transparent;border-radius:10px;font-size:14px;font-weight:600;color:#d7e6f2}
+.hub-menu-drawer .hub-menu-icon{width:19px;height:19px;flex-shrink:0;color:#8cd8f4}
+.hub-menu-drawer button[aria-current="page"]{background:linear-gradient(120deg,#07549a,#006fc6);border-color:#50cef2;color:#fff}
+.hub-menu-drawer button[aria-current="page"] .hub-menu-icon{color:#fff}
+.hub-menu-drawer button[data-hub="about"]{border-top-color:#34536a;border-top-left-radius:0;border-top-right-radius:0;margin-top:4px;padding-top:15px}
+.hub-menu-drawer button:focus-visible{outline:2px solid #65d3f5;outline-offset:1px}
+.hub-menu-toggle[aria-expanded="true"]{border-color:#65d3f5;background:#123653;color:#d6f1ff}
+.hub-menu-toggle[aria-expanded="true"] span{font-size:30px;line-height:1}
+@media(max-width:760px){.hub-menu-drawer button.hub-menu-main{display:none}}
