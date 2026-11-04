@@ -932,6 +932,8 @@ test('homepage single renders before calendar dates and quote archive resolve',a
   await tick();await tick();
   assert.equal(w.__audit.getData(),null);
   assert.match(d.getElementById('hub-single-content').textContent,/Fast Player/i);
+  assert.equal(d.getElementById('hub-single-state').textContent,'Ufficiale');
+  assert.equal(d.getElementById('hub-single-state').dataset.state,'official');
   pending.get('/api/saved/dates')(response({dates:[{date:'2099-01-01'}],session_picks_enabled:true}));
   await tick();
   assert.equal(calls.filter(url=>url==='/api/picks/session?compact=true').length,1);
@@ -947,7 +949,9 @@ test('future session previews show the correct official publication day',async()
   for(const file of ['match-charts','match-data','calendar-data','boxscore-view','match-players'])dom.window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
   dom.window.eval(fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8'));
   await tick();await tick();
-  assert.match(dom.window.document.getElementById('hub-single-state').textContent,/Anteprima.*04\/11.*18:00/);
+  assert.equal(dom.window.document.getElementById('hub-single-state').textContent,'In anteprima');
+  assert.match(dom.window.document.getElementById('hub-single-state').title,/04\/11.*18:00/);
+  assert.equal(dom.window.document.getElementById('hub-single-state').dataset.state,'preview');
   assert.match(dom.window.document.querySelector('.hub-featured h2').textContent,/Le scelte del Lab/);
   assert.equal(dom.window.document.getElementById('hub-choices-state').textContent,'In anteprima');
   assert.equal(dom.window.document.getElementById('hub-choices-state').dataset.state,'preview');

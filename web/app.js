@@ -408,9 +408,11 @@ function render(){
       (preliminary.length?'<div class="pick-group-items">'+preliminary.map(pickCard).join('')+'</div>':'<p>Nessuna analisi preliminare idonea disponibile al momento.</p>')+'</section>'
     :'';
   const singlePick=pendingPublication?pickSource.preliminary_single:pickSource.official_single;
-  const singleHeading=pendingPublication?'Singola preliminare':'Singola del giorno';
+  const singleHeading='Singola del giorno';
+  const singleState=isFixed&&pickSource.official_top5_pending===false&&singlePick?'official':pendingPublication?'preview':'waiting';
+  const singleLabel={official:'Ufficiale',preview:'In anteprima',waiting:'In attesa'}[singleState];
   const publicationLabel='Anteprima · ufficiale il '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' alle 18:00';
-  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno" data-publication-label="'+esc(publicationLabel)+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2></div>'+
+  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno" data-publication-state="'+singleState+'" data-publication-label="'+esc(publicationLabel)+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2><span class="bl-publication-badge" data-state="'+singleState+'">'+singleLabel+'</span></div>'+
     (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00 del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+'.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
     (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna Singola idonea disponibile per questa giornata.</p>')+'</section>';
   pending.push(singlePick?[singlePick]:[]);
