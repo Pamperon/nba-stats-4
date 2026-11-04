@@ -671,3 +671,7 @@ body.player-personal-view #player .player-season-stats .season-stat:last-child{b
 body.player-personal-view #player .player-season-stats .season-stat small{font-size:10px;color:#9eb9cc}
 body.player-personal-view #player .player-season-stats .season-stat strong{font-size:22px;margin-top:4px}
 @media(max-width:600px){body.player-personal-view #player .player-profile{grid-template-columns:98px minmax(0,1fr);column-gap:13px}body.player-personal-view #player .player-avatar{width:98px;height:116px}body.player-personal-view #player .player-profile-body h3{font-size:23px}body.player-personal-view #player .player-profile-body p{font-size:11px}body.player-personal-view #player .player-profile>.player-season-stats{grid-template-columns:repeat(3,minmax(0,1fr))}body.player-personal-view #player .player-profile>.player-season-stats .season-stat:first-child{display:none}}
+body.player-personal-view #player .player-avatar{display:block;position:relative}
+body.player-personal-view #player .player-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+body.player-personal-view #player .player-avatar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+body.player-personal-view #player .player-profile>.player-season-stats{max-width:none}
