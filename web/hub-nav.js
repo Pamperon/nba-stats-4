@@ -152,6 +152,9 @@ window.addEventListener('pagehide',saveHubState);
 function mark(key){document.querySelectorAll('[data-hub]').forEach(el=>{if(el.dataset.hub===key)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')})}
 function display(){
  const view=document.body.dataset.hubView||'home';
+ const quoteDatePanel=$('#date-area .wheel-panel'),quoteDate=$('#date');
+ if(quoteDatePanel)quoteDatePanel.inert=view==='finder';
+ if(quoteDate)quoteDate.disabled=view==='finder';
  // The active route owns visibility, including transitions that bypass area tabs.
  for(const name of ['history','about']){const panel=$('#extra-'+name);if(panel)panel.hidden=view!==name;}
  const calendarPanel=$('#hub-calendar');if(calendarPanel)calendarPanel.hidden=!calendar;

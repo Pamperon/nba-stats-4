@@ -1,7 +1,7 @@
 /* Named local UI modules. One download per asset; failures remain retryable. */
 (function(root){
  'use strict';
- const files={'single-analysis':'single-analysis.js?v=1','archive-view':'archive-view.js?v=dnp-1','boxscore-view':'boxscore-view.js?v=1','match-players':'match-players.js?v=2'};
+ const files={'single-analysis':'single-analysis.js?v=2','archive-view':'archive-view.js?v=dnp-1','boxscore-view':'boxscore-view.js?v=1','match-players':'match-players.js?v=2'};
  const pending=new Map();
  function load(name){
   if(!Object.hasOwn(files,name))return Promise.reject(new Error('Unknown UI module'));
