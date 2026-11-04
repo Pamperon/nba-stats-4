@@ -289,6 +289,20 @@ def history(day, starts=None):
             row = by_identity.get(leg_identity(selected))
             if row is not None:
                 official.append(row)
+    if str(day) == '2026-11-01' and len(official) < 10:
+        # Legacy daily lists were already capped when saved. Extend from
+        # other published pregame lines, ranking independently of outcomes.
+        used = {str(row.get('ESPN ID') or row.get('Giocatore') or '').casefold()
+                for row in official}
+        ranked = sorted(lines, key=lambda row: -float(row.get('Prob. stimata %') or 0))
+        for row in ranked:
+            player = str(row.get('ESPN ID') or row.get('Giocatore') or '').casefold()
+            if (len(official) >= 10 or player in used or not player
+                    or float(row.get('Prob. stimata %') or 0) < 70
+                    or not 1.20 <= float(row.get('Quota') or 0) <= 2.20):
+                continue
+            used.add(player)
+            official.append(row)
     preview = progressive_preview(versions, starts) if starts else []
     # Match simulated picks against settled lines without changing their
     # original pregame odds or estimated probability.

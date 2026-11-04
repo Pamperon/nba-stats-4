@@ -1593,7 +1593,7 @@ def _published_history(date, result):
             single_record['status'] = 'unresolved'
     if result.get('session_single_archive'):
         result['single_archive'] = result['session_single_archive']
-    pending_history = [row for row in result.get('other_lines', [])
+    pending_history = [row for row in result.get('other_lines', []) + result.get('official_lines', [])
                        if row.get('status') == 'unresolved' and row.get('first_seen')]
     for saved_at in sorted({row['first_seen'] for row in pending_history}):
         try:
@@ -1604,6 +1604,12 @@ def _published_history(date, result):
             confirmed = {public_views.leg_identity(row): row for row in evidence}
             result['other_lines'] = [confirmed.get(public_views.leg_identity(row), row)
                                      for row in result.get('other_lines', [])]
+            result['official_lines'] = [confirmed.get(public_views.leg_identity(row), row)
+                                        for row in result.get('official_lines', [])]
+            result['official_summary'] = {
+                status: sum(row.get('status') == status for row in result['official_lines'])
+                for status in ('won', 'lost', 'unresolved')
+            }
         except Exception:
             logger.exception('Historical box-score settlement pending for %s', date)
     result['top5_archive'] = {
