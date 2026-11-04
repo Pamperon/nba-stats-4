@@ -354,3 +354,33 @@ test('single analysis has one stable route and hides other page panels',async()=
  assert.equal(doc.querySelector('#single-analysis-page').hidden,true);
  await new Promise(resolve=>window.queueMicrotask(resolve));
 });
+
+test('match filter reset restores market, search, team and default odds',()=>{
+ const {doc}=setup();
+ doc.querySelector('[data-market="AST"]').click();
+ doc.querySelector('#hub-match-search').value='Test';
+ doc.querySelector('#hub-match-odd-min').value='1.70';
+ doc.querySelector('#hub-match-odd-max').value='1.90';
+ doc.querySelector('#hub-match-filter-reset').click();
+ assert.equal(doc.querySelector('#hub-match-search').value,'');
+ assert.equal(doc.querySelector('#hub-match-odd-min').value,'1.20');
+ assert.equal(doc.querySelector('#hub-match-odd-max').value,'2.20');
+ assert.equal(doc.querySelector('[data-market="PTS"]').getAttribute('aria-pressed'),'true');
+ assert.equal(doc.querySelector('[data-market="AST"]').getAttribute('aria-pressed'),'false');
+});
+
+test('invalid match odds range reports an error rather than displaying unfiltered odds',()=>{
+ const {window,doc}=setup();
+ doc.body.classList.add('hub-match-open');
+ window.BasketLabMatchRows=()=>[{Squadra:'BOS',Giocatore:'Test',Mercato:'PTS',Linea:10.5,Quota:1.8}];
+ const render=window.BasketLabMatchPlayers(doc,()=>({activeMatch:'BOS - NYK',matchMarket:'PTS',matchTeamFilter:''}),s=>s,String);
+ doc.querySelector('#hub-match-odd-min').value='2.50';
+ render();
+ assert.equal(doc.querySelector('#hub-match-filter-error').hidden,false);
+ assert.equal(doc.querySelector('#hub-match-player-list').children.length,0);
+ assert.equal(doc.querySelector('#hub-match-odd-min').getAttribute('aria-invalid'),'true');
+ doc.querySelector('#hub-match-odd-min').value='1.20';
+ render();
+ assert.equal(doc.querySelector('#hub-match-filter-error').hidden,true);
+ assert.equal(doc.querySelectorAll('.hub-match-player-card').length,1);
+});

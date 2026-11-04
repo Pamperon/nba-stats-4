@@ -567,3 +567,20 @@ html {
 
 /* Quote exploration shows the snapshot date as a static label. */
 body[data-hub-view="finder"] #date-area .date-arrows{display:none}body[data-hub-view="finder"] #date-area .wheel-row{grid-template-columns:1fr}body[data-hub-view="finder"] #date-area .date-strip{grid-column:1;cursor:default}body[data-hub-view="finder"] #date-area .date-native-select{display:none}body[data-hub-view="finder"] #date-area #quote-coverage{grid-column:1/-1;width:100%;white-space:nowrap;font-size:clamp(10px,2.8vw,12px);margin:4px 0 0;text-align:center}
+
+/* Match player controls: consistent blue segments and clear filter hierarchy. */
+body.hub-match-open .hub-match-player-toolbar{display:grid;grid-template-columns:1fr;gap:10px}
+body.hub-match-open .hub-match-control-label,body.hub-match-open .hub-match-team-filter-label{font-size:12px;font-weight:650;color:#a9c5da}
+body.hub-match-open .hub-match-market-buttons,body.hub-match-open .hub-match-team-filter-row .hub-match-team-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border:1px solid #3b617c;border-radius:13px;background:#0b263d;width:100%;box-sizing:border-box}
+body.hub-match-open .hub-match-market-buttons button,body.hub-match-open .hub-match-team-filter-row .hub-match-team-quick button{min-width:0;min-height:44px;padding:9px 5px;border:1px solid transparent;border-radius:10px;background:transparent;color:#b8cede;font-size:13px;font-weight:650;cursor:pointer;overflow-wrap:anywhere}
+body.hub-match-open .hub-match-market-buttons button.active,body.hub-match-open .hub-match-team-filter-row .hub-match-team-quick button.active{background:linear-gradient(125deg,#07549a,#0072ce);border-color:#50cef2;color:#fff;box-shadow:inset 0 0 0 1px #ffffff12}
+body.hub-match-open .hub-match-team-filter-row{display:grid;gap:9px;margin:17px 0}
+body.hub-match-open .hub-match-filter-top{margin:0;padding-top:14px;border-top:1px solid #34536a;gap:8px}
+body.hub-match-open .hub-match-filter-top button{min-height:44px;border-radius:10px;background:#102e46;border-color:#426d8b;color:#bfe4fa;padding:9px 12px;font-size:12px}
+body.hub-match-open #hub-match-filter-panel .hub-match-extra-filters{margin:12px 0 0}
+body.hub-match-open .hub-match-filter-footer{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:10px 0 16px}
+body.hub-match-open #hub-match-filter-reset{background:transparent;border:0;color:#9ecded;font-size:12px;padding:8px 0;min-height:40px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+body.hub-match-open #hub-match-filter-error{font-size:12px;color:#ffbf9e;line-height:1.5;margin:0;flex:1}
+body.hub-match-open #hub-match-player-count{font-size:12px;color:#9ebbd0}
+body.hub-match-open #hub-match-player-section button:focus-visible,body.hub-match-open #hub-match-player-section input:focus-visible{outline:2px solid #50cef2;outline-offset:3px}
+body.hub-match-open #hub-match-player-section input[aria-invalid="true"]{border-color:#ffac80}

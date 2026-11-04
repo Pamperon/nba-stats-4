@@ -326,7 +326,7 @@ function openMatchQuotes(match){
  const meta=$('#hub-match-fixture-meta');if(meta){const selected=$('#date')?.value;meta.textContent=selected?selected.split('-').reverse().join('/'):'Partita NBA'}
  const oddMin=$('#hub-match-odd-min'),oddMax=$('#hub-match-odd-max');if(oddMin)oddMin.value='1.20';if(oddMax)oddMax.value='2.20';
  syncMatchQuickTeams();syncMatchOddsRange();
- matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.market==='PTS'));$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
+ matchMarket='PTS';document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>{const selected=b.dataset.market==='PTS';b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('#hub-match-search').value='';setMatchTab('analysis');renderMatchPlayers();
  saveHubState();syncRoute();
  panel?.scrollIntoView({block:'start',behavior:'smooth'});
 }
@@ -468,7 +468,13 @@ $('#hub-match-search')?.addEventListener('input',renderMatchPlayers);
  for(const id of ['hub-match-odd-min','hub-match-odd-max'])$('#'+id)?.addEventListener('change',()=>{syncMatchQuickTeams();syncMatchOddsRange();renderMatchPlayers()});
  $('#hub-match-filter-toggle')?.addEventListener('click',()=>{const panel=$('#hub-match-filter-panel'),button=$('#hub-match-filter-toggle');if(!panel||!button)return;panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));const arrow=$('#hub-match-filter-chevron');if(arrow)arrow.textContent=panel.hidden?'▾':'▴'});
 
-document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>b.classList.toggle('active',b===button));renderMatchPlayers()}));
+document.querySelectorAll('#hub-match-market-buttons button').forEach(button=>button.addEventListener('click',()=>{matchMarket=button.dataset.market;document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))});renderMatchPlayers()}));
+$('#hub-match-filter-reset')?.addEventListener('click',()=>{
+ matchTeamFilter='';matchMarket='PTS';$('#hub-match-search').value='';
+ $('#hub-match-odd-min').value='1.20';$('#hub-match-odd-max').value='2.20';
+ document.querySelectorAll('#hub-match-market-buttons button').forEach(b=>{const selected=b.dataset.market==='PTS';b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
+ syncMatchQuickTeams();syncMatchOddsRange();renderMatchPlayers();
+});
 $('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;if(calendarSelectedDate){go.calendar();select('calendar')}else{go.home();select('home')}});
 let calendarRefreshTimer=null;
 function scheduleCalendarRefresh(){

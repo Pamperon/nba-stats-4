@@ -13,6 +13,10 @@ return function renderMatchPlayers(){
  const oddMin=Number(($('#hub-match-odd-min')?.value||'1.20').replace(',','.'));
  const oddMax=Number(($('#hub-match-odd-max')?.value||'2.20').replace(',','.'));
  const rangeValid=Number.isFinite(oddMin)&&Number.isFinite(oddMax)&&oddMin>=1.01&&oddMax>=oddMin;
+ const error=$('#hub-match-filter-error');
+ if(error){error.hidden=rangeValid;error.textContent=rangeValid?'':'Inserisci quote valide: la minima deve essere almeno 1,01 e non superare la massima.';}
+ for(const id of ['hub-match-odd-min','hub-match-odd-max'])$('#'+id)?.setAttribute('aria-invalid',String(!rangeValid));
+ if(!rangeValid){list.replaceChildren();if(count)count.textContent='Intervallo quote da correggere';return;}
  for(const row of rows){
   if(teamFilter&&row.Squadra!==teamFilter)continue;
   if(q&&!cleanName(row.Giocatore).toLowerCase().includes(q)&&!String(row.Giocatore).toLowerCase().includes(q))continue;
