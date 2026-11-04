@@ -584,3 +584,13 @@ body.hub-match-open #hub-match-filter-error{font-size:12px;color:#ffbf9e;line-he
 body.hub-match-open #hub-match-player-count{font-size:12px;color:#9ebbd0}
 body.hub-match-open #hub-match-player-section button:focus-visible,body.hub-match-open #hub-match-player-section input:focus-visible{outline:2px solid #50cef2;outline-offset:3px}
 body.hub-match-open #hub-match-player-section input[aria-invalid="true"]{border-color:#ffac80}
+
+/* Team identity in match filters, with compact spacing before the results. */
+body.hub-match-open .hub-match-team-filter-row .hub-match-team-quick button.has-team-color{background:linear-gradient(120deg,color-mix(in srgb,var(--filter-team-color) 65%,#102638),#102638);border-color:color-mix(in srgb,var(--filter-team-color) 65%,#67839a);color:#fff}
+body.hub-match-open .hub-match-team-filter-row .hub-match-team-quick button.has-team-color.active{background:linear-gradient(120deg,var(--filter-team-color),color-mix(in srgb,var(--filter-team-color) 75%,#081d30));border-color:#c2e5f8;box-shadow:inset 0 -3px 0 var(--filter-team-accent);color:#fff}
+body.hub-match-open .hub-match-filter-actions{display:flex;align-items:center;gap:12px}
+body.hub-match-open .hub-match-filter-top{flex-wrap:wrap;margin-bottom:10px}
+body.hub-match-open .hub-match-filter-footer{margin:0;min-height:0}
+body.hub-match-open .hub-match-filter-footer:has([hidden]){display:none}
+body.hub-match-open .hub-match-player-list>.hub-match-team-heading:first-child{margin-top:4px}
+@media(max-width:480px){body.hub-match-open .hub-match-filter-actions{gap:8px}body.hub-match-open #hub-match-filter-reset{font-size:10px}body.hub-match-open .hub-match-filter-top button{padding:8px;font-size:11px}}
