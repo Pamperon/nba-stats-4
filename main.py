@@ -1593,6 +1593,19 @@ def _published_history(date, result):
             single_record['status'] = 'unresolved'
     if result.get('session_single_archive'):
         result['single_archive'] = result['session_single_archive']
+    pending_history = [row for row in result.get('other_lines', [])
+                       if row.get('status') == 'unresolved' and row.get('first_seen')]
+    for saved_at in sorted({row['first_seen'] for row in pending_history}):
+        try:
+            evidence = nba_session_picks.settled_lines(date, {
+                'lines': [row for row in pending_history if row['first_seen'] == saved_at],
+                'single': None, 'published_at': saved_at,
+            })
+            confirmed = {public_views.leg_identity(row): row for row in evidence}
+            result['other_lines'] = [confirmed.get(public_views.leg_identity(row), row)
+                                     for row in result.get('other_lines', [])]
+        except Exception:
+            logger.exception('Historical box-score settlement pending for %s', date)
     result['top5_archive'] = {
         'lines': result.get('official_lines', []),
         'summary': result.get('official_summary', {}),
@@ -1605,7 +1618,7 @@ def _performance_counts(states):
     lost = states.count('lost')
     verified = won + lost
     return {'published': len(states), 'verified': verified, 'won': won, 'lost': lost,
-            'pending': len(states) - verified,
+            'pending': sum(state not in {'won', 'lost', 'not_played'} for state in states),
             'success_pct': round(won * 100 / verified, 1) if verified else None}
 
 

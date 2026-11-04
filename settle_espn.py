@@ -127,6 +127,15 @@ def settle_completed_fixtures(snapshot, scan_date, evidence=None):
             matches = [stats[(t, player_key)] for t in fixture if (t, player_key) in stats]
             if len(matches) == 1:
                 actuals = matches[0]
+        if actuals is None and athlete_id.isdigit():
+            inactive = [athlete
+                        for group in evidence[summary_key].get('boxscore', {}).get('players', [])
+                        if engine.normalized_name((group.get('team') or {}).get('displayName', '')) in fixture
+                        for statistics in group.get('statistics', [])
+                        for athlete in statistics.get('athletes', [])
+                        if str((athlete.get('athlete') or {}).get('id') or '') == athlete_id]
+            if len(inactive) == 1 and inactive[0].get('didNotPlay') is True:
+                verified.append({**row, 'actual': None, 'played': False, 'status': 'not_played'})
         if actuals is None or row.get('Mercato') not in actuals:
             continue
         verified.append({**row, 'actual': actuals[row['Mercato']], 'played': True})

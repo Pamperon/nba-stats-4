@@ -187,6 +187,9 @@ def settled_lines(day, official):
             continue
     confirmed = {}
     for row in verified:
+        if row.get('status') == 'not_played':
+            confirmed[identity(row)] = {**row, 'win': None}
+            continue
         leg = recommendations.evaluate({'lines': [row]}, [row])['lines'][0]
         if leg['win'] is not None:
             confirmed[identity(row)] = {**row, 'actual': leg['actual'], 'win': leg['win'],
