@@ -556,6 +556,8 @@ html {
 
 .hub-single-state.bl-publication-badge{max-width:none;text-align:left;color:#b4c8d7}.hub-single-state.bl-publication-badge[data-state="preview"]{color:#8cddff}.hub-single-state.bl-publication-badge[data-state="official"]{color:#8be6b7}.pick-group[aria-label="Singola del giorno"] .pick-group-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}.pick-group[aria-label="Singola del giorno"] .pick-group-heading h2{margin:0}
 
-/* Compact page ending with the same blue action treatment as player stats. */
-.hub-shell>main{padding-bottom:0}.hub-shell>main>footer{padding:8px 0;margin:0;font-size:11px;line-height:1.4}.hub-shell .back-to-top{background:linear-gradient(135deg,#064c98,#0073d8);border:1px solid #42b8ec;color:#fff;border-radius:12px;box-shadow:0 3px 12px #020b1838}.hub-shell .back-to-top:hover{background:linear-gradient(135deg,#075eb8,#0786ec);border-color:#79d9ff}.hub-shell .back-to-top:focus-visible{outline:2px solid #79d9ff;outline-offset:3px}
+/* Compact page ending and outlined return action. */
+.hub-shell>main{padding-bottom:0}.hub-shell>main>footer{padding:8px 0;margin:0;font-size:11px;line-height:1.4}.hub-shell .back-to-top{background:#172c43;border:1px solid #73bddb;color:#d5effa;border-radius:24px;box-shadow:0 3px 12px #020b1838}.hub-shell .back-to-top:hover{background:#203d50;border-color:#a0e1fa;color:#fff}.hub-shell .back-to-top:focus-visible{outline:2px solid #79d9ff;outline-offset:3px}
 @media(max-width:760px){.hub-shell{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}.hub-shell .back-to-top{bottom:calc(82px + env(safe-area-inset-bottom,0px))}}
+
+.bl-footer-meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;color:#96adbd;font-size:10px}.bl-footer-meta strong{font-size:12px;color:#e6eef7;letter-spacing:-.2px}.bl-footer-meta strong span{color:#ff9438}.hub-shell>main>footer .bl-footer-note{margin:4px 0 0;color:#8da5b7;font-size:10px;line-height:1.4}
