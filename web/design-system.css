@@ -594,3 +594,19 @@ body.hub-match-open .hub-match-filter-footer{margin:0;min-height:0}
 body.hub-match-open .hub-match-filter-footer:has([hidden]){display:none}
 body.hub-match-open .hub-match-player-list>.hub-match-team-heading:first-child{margin-top:4px}
 @media(max-width:480px){body.hub-match-open .hub-match-filter-actions{gap:8px}body.hub-match-open #hub-match-filter-reset{font-size:10px}body.hub-match-open .hub-match-filter-top button{padding:8px;font-size:11px}}
+
+/* Lab choices: compact rows with distinct probability and odds. */
+.hub-featured-list .bl-datalab-card{grid-template-columns:16px 46px minmax(0,1fr) 10px;min-height:78px;padding:10px 11px;gap:9px;background:linear-gradient(110deg,#132e40,#102635);border-color:#29485d}
+.hub-featured-list .bl-rank{font-size:10px;font-weight:650;color:#7794aa}
+.hub-featured-list .bl-player-photo,.hub-featured-list .bl-player-photo img{width:46px;height:46px}
+.hub-featured-list .bl-data-name{font-size:14px;line-height:1.3}
+.hub-featured-list .bl-data-market{font-size:11px;line-height:1.4;color:#b8cede}
+.hub-featured-list .bl-data-stats{gap:10px}
+.hub-featured-list .bl-data-prob strong{color:#65d3f5}
+.hub-featured-list .bl-data-odd{background:#091e2d;border:1px solid #2c4b61;border-radius:9px;padding:7px 9px;text-align:center}
+.hub-featured-list .bl-data-stats small{font-size:8px;letter-spacing:.15px}
+.hub-featured-list .bl-data-stats strong{font-size:17px}
+.hub-featured-list .bl-datalab-card:hover{border-color:#4d819e}
+.hub-featured-list .bl-datalab-card:focus-visible{outline:2px solid #65d3f5;outline-offset:2px}
+@media(max-width:600px){.hub-featured-list .bl-datalab-card{grid-template-columns:12px 40px minmax(0,1fr) 8px;gap:6px;padding:9px 8px;min-height:78px}.hub-featured-list .bl-player-photo,.hub-featured-list .bl-player-photo img{width:40px;height:40px}.hub-featured-list .bl-data-body{column-gap:7px}.hub-featured-list .bl-data-name{font-size:13px}.hub-featured-list .bl-data-market{font-size:10px}.hub-featured-list .bl-data-stats{gap:7px}.hub-featured-list .bl-data-stats small{font-size:7px;letter-spacing:0}.hub-featured-list .bl-data-stats strong{font-size:16px}.hub-featured-list .bl-data-odd{padding:6px 7px}}
+@media(max-width:360px){.hub-featured-list .bl-data-body{grid-template-columns:1fr}.hub-featured-list .bl-data-stats{grid-column:1;grid-row:3;justify-content:flex-start}.hub-featured-list .bl-data-odd{display:flex;align-items:center;gap:6px;padding:3px 7px}.hub-featured-list .bl-data-prob{display:flex;align-items:center;gap:5px}}
