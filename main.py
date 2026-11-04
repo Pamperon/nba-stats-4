@@ -863,8 +863,16 @@ def _pianeta_basket_articles(html):
             self.url = None
             self.parts = []
             self.articles = {}
+            self.images = {}
 
         def handle_starttag(self, tag, attrs):
+            if tag == 'img' and self.url:
+                image = urljoin(origin, dict(attrs).get('src') or '')
+                parsed_image = urlsplit(image)
+                if (parsed_image.scheme == 'https' and parsed_image.hostname in {
+                        'r.testifier.nl', 's3-newsifier.ams3.digitaloceanspaces.com',
+                        'www.pianetabasket.com'}):
+                    self.images[self.url] = image
             if tag != 'a':
                 return
             parsed = urlsplit(urljoin(origin, dict(attrs).get('href') or ''))
@@ -891,7 +899,10 @@ def _pianeta_basket_articles(html):
     parser = Headlines()
     parser.feed(html)
     parser.close()
-    return list(parser.articles.values())[:24]
+    articles = list(parser.articles.values())[:24]
+    for article in articles:
+        article['image'] = parser.images.get(article['url'])
+    return articles
 
 
 @app.get('/api/nba/news')
