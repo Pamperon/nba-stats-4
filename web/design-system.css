@@ -706,3 +706,19 @@ body.player-personal-view #player .player-profile>.player-season-stats{max-width
 .bl-fixture-name{display:inline;white-space:nowrap}
 .hub-calendar-team .bl-venue-icon{margin-top:3px}
 .hub-single-content .bl-game-team .bl-venue-icon{flex:0 0 11px;width:11px;margin:0}
+
+/* Keep venue marks next to the team name and tighten fixture cards. */
+.bl-venue-icon{color:#fff!important;width:15px;height:15px;flex-basis:15px;opacity:1!important;filter:drop-shadow(0 1px 2px #0008)}
+.bl-venue-icon svg{width:15px!important;height:15px!important;stroke-width:2}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient{height:122px;min-height:122px;max-height:122px;padding:29px 10px 24px}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team{gap:3px}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team img{width:32px;height:32px;flex-basis:32px}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team>span{display:block;min-height:0;max-height:2.5em;line-height:1.25}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .bl-venue-icon{display:inline-flex!important;min-height:15px!important;max-height:15px!important;overflow:visible;margin:0 0 0 4px;vertical-align:-2px}
+.hub-calendar-games .hub-calendar-gradient .hub-calendar-match-arrow{bottom:5px}
+.hub-calendar-games .hub-calendar-gradient:has(.hub-calendar-final-score){padding-bottom:32px;height:130px;min-height:130px;max-height:130px}
+.hub-games-section .hub-games-showcase{gap:7px}
+.hub-games-section .hub-premium-fixture{min-height:50px}
+.hub-games-section .hub-premium-fixture .hub-premium-matchup{min-height:50px;padding:5px 10px;grid-template-columns:28px minmax(0,1fr) 28px 10px;gap:6px}
+.hub-games-section .hub-premium-fixture .hub-premium-logo img{width:28px;height:28px}
+.hub-games-section .hub-premium-fixture .hub-premium-center{gap:2px}

@@ -650,7 +650,7 @@ function renderCalendar(){
      const side=document.createElement('span');side.className='hub-calendar-team';
      const code=matchTeamCodes[team];
      if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';side.append(img)}
-     const label=document.createElement('span');label.textContent=team||'NBA';side.append(label,venueIcon(i===1));row.append(side)
+     const label=document.createElement('span');label.textContent=team||'NBA';label.append(venueIcon(i===1));side.append(label);row.append(side)
     });
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
     const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);
@@ -749,7 +749,7 @@ function renderCalendar(){
     const side=document.createElement('span');side.className='hub-calendar-team';
     const code=matchTeamCodes[team]||matchTeamCodes[team.replace(/^LA /,'Los Angeles ')];
     if(code){const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';logo.alt='';logo.loading='lazy';logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)}
-    const label=document.createElement('span');label.textContent=team;side.append(label);row.append(side);venueEntries.push([side,team])
+    const label=document.createElement('span');label.textContent=team;side.append(label);row.append(side);venueEntries.push([label,team])
    });
    markFixtureVenues(venueEntries,match,requestedDate||italyDay(new Date()),false);
   }else{const label=document.createElement('strong');label.textContent=match;row.append(label)}
