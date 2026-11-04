@@ -69,6 +69,28 @@ def player_stats(summary):
                     found[id_key] = nums
     return found
 
+def recap_confirms_absence(summary, athlete_id, team):
+    """Accept an explicit game-recap absence, never a missing boxscore alone."""
+    import re
+    from html import unescape
+    story = (summary.get('article') or {}).get('story') or ''
+    # Retain ESPN identities while removing markup before sentence matching.
+    story = re.sub(r'<a\b[^>]*href=[\"\'][^\"\']*/player/_/id/(\d+)/[^\"\']*[\"\'][^>]*>(.*?)</a>',
+                   lambda m: m.group(2) + ' [espn:' + m.group(1) + ']', story,
+                   flags=re.I | re.S)
+    text = unescape(re.sub(r'<[^>]+>', '', story))
+    names = [(group.get('team') or {}).get('displayName', '')
+             for group in summary.get('boxscore', {}).get('players', [])
+             if engine.normalized_name((group.get('team') or {}).get('displayName', '')) == team]
+    for name in names:
+        city = name.rsplit(' ', 1)[0]
+        for sentence in re.split(r'[.!?\n]+', text):
+            if re.match(r'^\s*(?:' + re.escape(name) + '|' + re.escape(city) + r')\s+(?:was|were) without\b', sentence, re.I):
+                if '[espn:' + athlete_id + ']' in sentence:
+                    return True
+    return False
+
+
 def settle_completed_fixtures(snapshot, scan_date, evidence=None):
     """Verify finalized fixtures independently; never guess missing results."""
     evidence = {} if evidence is None else evidence
@@ -134,7 +156,9 @@ def settle_completed_fixtures(snapshot, scan_date, evidence=None):
                         for statistics in group.get('statistics', [])
                         for athlete in statistics.get('athletes', [])
                         if str((athlete.get('athlete') or {}).get('id') or '') == athlete_id]
-            if len(inactive) == 1 and inactive[0].get('didNotPlay') is True:
+            if ((len(inactive) == 1 and inactive[0].get('didNotPlay') is True)
+                    or (not inactive and team in fixture and
+                        recap_confirms_absence(evidence[summary_key], athlete_id, team))):
                 verified.append({**row, 'actual': None, 'played': False, 'status': 'not_played'})
         if actuals is None or row.get('Mercato') not in actuals:
             continue
