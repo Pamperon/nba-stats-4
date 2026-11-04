@@ -1546,6 +1546,11 @@ def _published_history(date, result):
             next_history = public_views.history(tomorrow)
             all_scored = list(result.get('lines', [])) + list(next_history.get('lines', []))
             by_identity = {public_views.leg_identity(row): row for row in all_scored}
+            try:
+                verified_session = nba_session_picks.settled_lines(date, session_official)
+                by_identity.update({public_views.leg_identity(row): row for row in verified_session})
+            except Exception:
+                logger.exception('Session box-score settlement pending for %s', date)
             result['official_lines'] = [
                 by_identity.get(public_views.leg_identity(row), row)
                 for row in session_official['lines']

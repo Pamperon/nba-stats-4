@@ -147,3 +147,52 @@ def publish(day, games, now=None):
                   Jsonb(single) if single else None, POLICY))
             return {'published_at': now.isoformat(), 'snapshot_job_ids': job_ids,
                     'lines': selections, 'single': single, 'policy': POLICY}
+
+
+def settled_lines(day, official):
+    """Persist confirmed box-score evidence for the exact session selections."""
+    import json
+    import settle_espn
+
+    def identity(row):
+        return json.dumps([row.get(key) for key in
+                           ('Partita', 'ESPN ID', 'Giocatore', 'Mercato', 'Scelta', 'Linea', 'Quota')],
+                          ensure_ascii=True)
+
+    with storage.connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS nba_session_results (
+                publication_date DATE PRIMARY KEY,
+                results JSONB NOT NULL
+            )
+        """)
+        saved = conn.execute(
+            "SELECT results FROM nba_session_results WHERE publication_date=%s", (day,)).fetchone()
+    outcomes = saved[0] if saved else {}
+    picks = list(official['lines'])
+    if official.get('single'):
+        picks.append(official['single'])
+    missing = [row for row in picks if identity(row) not in outcomes]
+    if not missing:
+        return list(outcomes.values())
+    snapshot = {'results': missing, 'saved_at': official['published_at']}
+    evidence = {}
+    verified = []
+    for offset in (0, 1):
+        calendar_day = (date.fromisoformat(str(day)) + timedelta(days=offset)).isoformat()
+        verified.extend(settle_espn.settle_completed_fixtures(snapshot, calendar_day, evidence=evidence))
+    confirmed = {}
+    for row in verified:
+        leg = recommendations.evaluate({'lines': [row]}, [row])['lines'][0]
+        if leg['win'] is not None:
+            confirmed[identity(row)] = {**row, 'actual': leg['actual'], 'win': leg['win'],
+                                        'status': 'won' if leg['win'] else 'lost'}
+    if confirmed:
+        with storage.connection() as conn:
+            conn.execute("""
+                INSERT INTO nba_session_results(publication_date,results) VALUES (%s,%s)
+                ON CONFLICT(publication_date) DO UPDATE SET
+                  results=EXCLUDED.results || nba_session_results.results
+            """, (day, Jsonb(confirmed)))
+        outcomes.update(confirmed)
+    return list(outcomes.values())
