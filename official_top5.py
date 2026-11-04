@@ -56,6 +56,11 @@ def get(day):
         if snapshot:
             expanded = recommendations.expand_saved_picks(
                 row[2], single_row[0] if single_row else None, [snapshot[0]])
+            if len(expanded) > len(row[2]):
+                with storage.connection() as conn:
+                    conn.execute(
+                        "UPDATE nba_official_daily_top5 SET selections=%s WHERE scan_date=%s AND selections=%s",
+                        (Jsonb(expanded), day, Jsonb(row[2])))
             row = (row[0], row[1], expanded)
     return {'published_at': row[0].isoformat(), 'snapshot_job_id': row[1],
             'lines': row[2], 'policy': POLICY} if row else None

@@ -50,6 +50,11 @@ def read(day):
                 "SELECT payload FROM nba_scan_snapshots WHERE job_id = ANY(%s) AND created_at <= %s",
                 (list(row[1].values()), row[0])).fetchall()
         expanded = recommendations.expand_saved_picks(row[2], row[3], [item[0] for item in snapshots])
+        if len(expanded) > len(row[2]):
+            with storage.connection() as conn:
+                conn.execute(
+                    "UPDATE nba_official_sessions SET selections=%s WHERE publication_date=%s AND selections=%s",
+                    (Jsonb(expanded), day, Jsonb(row[2])))
         row = (row[0], row[1], expanded, row[3], row[4])
     return {'published_at': row[0].isoformat(), 'snapshot_job_ids': row[1],
             'lines': row[2], 'single': row[3], 'policy': row[4]}
