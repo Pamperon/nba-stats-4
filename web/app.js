@@ -410,7 +410,7 @@ function render(){
   const singlePick=pendingPublication?pickSource.preliminary_single:pickSource.official_single;
   const singleHeading='Singola del giorno';
   const singleState=isFixed&&pickSource.official_top5_pending===false&&singlePick?'official':pendingPublication?'preview':'waiting';
-  const singleLabel={official:'Ufficiale',preview:'In anteprima',waiting:'In attesa'}[singleState];
+  const singleLabel={official:'Ufficiale',preview:'Conferma alle 18:00',waiting:'In attesa'}[singleState];
   const publicationLabel='Anteprima · ufficiale il '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' alle 18:00';
   const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno" data-publication-state="'+singleState+'" data-publication-label="'+esc(publicationLabel)+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2><span class="bl-publication-badge" data-state="'+singleState+'">'+singleLabel+'</span></div>'+
     (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00 del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+'.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
@@ -419,7 +419,7 @@ function render(){
   pending.push(pendingPublication?featured:chosen);
 
   const choicesState=isFixed&&pickSource.official_top5_pending===false&&chosen.length?'official':pendingPublication?'preview':'waiting';
-  const choicesLabel={official:'Ufficiali',preview:'In anteprima',waiting:'In attesa'}[choicesState];
+  const choicesLabel={official:'Ufficiali',preview:'Conferma alle 18:00',waiting:'In attesa'}[choicesState];
   $('picks').innerHTML=singleSection+'<section id="pick-giorno" data-publication-state="'+choicesState+'" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le scelte del Lab</h2><span class="bl-publication-badge" data-state="'+choicesState+'">'+choicesLabel+'</span></div>'+
    (featured.length?'<p>'+(pendingPublication?'In aggiornamento: le selezioni possono cambiare fino alle 18:00.':'Le '+featured.length+' selezioni ufficiali sono bloccate e non cambiano dopo la pubblicazione.')+'</p><div class="pick-group-items">'+featured.map(pickCard).join('')+'</div>'+
    (remaining.length?'<details id="pick-more-lines"><summary>Mostra tutte le altre '+remaining.length+' previsioni idonee</summary><div class="pick-group-items">'+remaining.map(pickCard).join('')+'</div></details>':''):
