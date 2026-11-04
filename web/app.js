@@ -399,7 +399,7 @@ function render(){
   const isFixed=pickSource.recommendations.policy==='fixed-1800-v1';
   const pendingPublication=isFixed && pickSource.official_top5_pending;
   const targetDay=String(pickSource.date||$('date')?.value||'');
-  const publicationNotice='Le Top 10 ufficiali del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
+  const publicationNotice='Le scelte del Lab del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
   const featured=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,10):chosen.slice(0,10),remaining=pendingPublication?[]:chosen.slice(10);
   const preliminary=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,10):[];
   const preliminaryHtml=false
@@ -416,7 +416,9 @@ function render(){
   pending.push(singlePick?[singlePick]:[]);
   pending.push(pendingPublication?featured:chosen);
 
-  $('picks').innerHTML=singleSection+'<section id="pick-giorno" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>'+(pendingPublication?'Top 10 provvisoria':'Top 10 ufficiali del giorno')+'</h2></div>'+
+  const choicesState=isFixed&&pickSource.official_top5_pending===false&&chosen.length?'official':pendingPublication?'preview':'waiting';
+  const choicesLabel={official:'Ufficiali',preview:'In anteprima',waiting:'In attesa'}[choicesState];
+  $('picks').innerHTML=singleSection+'<section id="pick-giorno" data-publication-state="'+choicesState+'" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le scelte del Lab</h2><span class="bl-publication-badge" data-state="'+choicesState+'">'+choicesLabel+'</span></div>'+
    (featured.length?'<p>'+(pendingPublication?'In aggiornamento: le selezioni possono cambiare fino alle 18:00.':'Le '+featured.length+' selezioni ufficiali sono bloccate e non cambiano dopo la pubblicazione.')+'</p><div class="pick-group-items">'+featured.map(pickCard).join('')+'</div>'+
    (remaining.length?'<details id="pick-more-lines"><summary>Mostra tutte le altre '+remaining.length+' previsioni idonee</summary><div class="pick-group-items">'+remaining.map(pickCard).join('')+'</div></details>':''):
    (pendingPublication?'<p>'+publicationNotice+' Le analisi restano consultabili nella sezione Statistiche.</p>':'<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>'))+'</section>'+preliminaryHtml;

@@ -236,7 +236,9 @@ function hubCardPhoto(source){const image=source.querySelector('.pick-avatar img
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');if(!list||!picks)return;
  const heading=featured?.querySelector('h2');
- if(heading)heading.textContent=picks.querySelector('#pick-giorno h2')?.textContent?.includes('provvisoria')?'🔥 Top 10 analisi preliminari':'🔥 Top 10 analisi di oggi';
+ if(heading)heading.textContent='🔥 Le scelte del Lab';
+ const badge=$('#hub-choices-state'),publication=picks.querySelector('#pick-giorno')?.dataset.publicationState;
+ if(badge){badge.dataset.state=publication||'waiting';badge.textContent=publication==='official'?'Ufficiali':publication==='preview'?'In anteprima':'In attesa';}
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,10);
  const selected=sources.length||picks.querySelector('#pick-giorno')?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,10);
  list.replaceChildren();

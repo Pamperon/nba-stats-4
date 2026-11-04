@@ -550,3 +550,6 @@ html {
 .availability-status { flex-shrink: 0; border-radius: 999px; padding: .18rem .48rem; background: #392e27; color: #ffd19a; font-size: .72rem; font-weight: 650; }
 .availability-status:is([data-status="out"], [data-status="suspension"]) { background: #432b3a; color: #ffb4c5; }
 @media (min-width: 800px) { .availability-teams { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Publication status follows the saved selections, never the device clock. */
+.hub-choices-title{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-width:0}.hub-choices-title h2{margin:0}.bl-publication-badge{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;padding:5px 9px;border:1px solid #40596b;border-radius:999px;background:#132a3b;color:#b4c8d7;font-size:10px;font-weight:700;line-height:1.2;letter-spacing:.45px;text-transform:uppercase}.bl-publication-badge::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}.bl-publication-badge[data-state="preview"]{color:#8cddff;background:#102f46;border-color:#2b6685}.bl-publication-badge[data-state="official"]{color:#8be6b7;background:#10372e;border-color:#2e7259}#pick-giorno .pick-group-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}#pick-giorno .pick-group-heading h2{margin:0}

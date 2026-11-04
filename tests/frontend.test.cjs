@@ -948,7 +948,9 @@ test('future session previews show the correct official publication day',async()
   dom.window.eval(fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8'));
   await tick();await tick();
   assert.match(dom.window.document.getElementById('hub-single-state').textContent,/Anteprima.*04\/11.*18:00/);
-  assert.match(dom.window.document.querySelector('.hub-featured h2').textContent,/preliminari/);
+  assert.match(dom.window.document.querySelector('.hub-featured h2').textContent,/Le scelte del Lab/);
+  assert.equal(dom.window.document.getElementById('hub-choices-state').textContent,'In anteprima');
+  assert.equal(dom.window.document.getElementById('hub-choices-state').dataset.state,'preview');
  }finally{dom.window.close();}
 });
 
@@ -965,3 +967,18 @@ test('saved match quotes retain exact values when providers reverse team order',
   assert.equal(dom.window.BasketLabMatchRows('invalid').length,0);
  }finally{dom.window.close();}
 });
+
+for(const [pending,lines,state,label] of [[false,[{Giocatore:'Test',Squadra:'BOS',Partita:'Boston Celtics - Miami Heat',Mercato:'PTS',Scelta:'Over',Linea:10.5,Quota:1.8,'Prob. stimata %':75}],'official','Ufficiali'],[false,[],'waiting','In attesa']]){
+ test('Lab choices publication badge: '+state,async()=>{
+  const payload={date:'2026-11-04',publication_date:'2026-11-04',recommendations:{policy:'fixed-1800-v1',lines},official_top5_pending:pending};
+  const dom=browser(url=>url==='/api/picks/session?compact=true'?Promise.resolve(response(payload)):new Promise(()=>{}));
+  try{
+   for(const file of ['match-charts','match-data','calendar-data','boxscore-view','match-players'])dom.window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
+   dom.window.eval(fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8'));
+   await tick();await tick();
+   const d=dom.window.document;
+   assert.equal(d.querySelector('#pick-giorno').dataset.publicationState,state);
+   assert.equal(d.querySelector('#hub-choices-state').textContent,label);
+  }finally{dom.window.close()}
+ });
+}
