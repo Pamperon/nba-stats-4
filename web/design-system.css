@@ -729,3 +729,26 @@ body.player-personal-view #player .player-profile>.player-season-stats{max-width
 .hub-games-section .hub-premium-fixture .hub-premium-names{font-size:calc(18px + var(--bl-text-step,0px))!important;line-height:1.25}
 .hub-games-section .hub-premium-fixture .hub-premium-names .bl-fixture-name{color:#fff!important}
 .hub-games-section .hub-premium-fixture .hub-premium-names .bl-fixture-vs{color:#ff9a45!important;font-size:.72em;font-weight:800;white-space:nowrap}
+
+/* Team-inspired player identity with a larger, bottom-aligned portrait. */
+body.player-personal-view #player .player-profile{position:relative;isolation:isolate;grid-template-columns:174px minmax(0,1fr);gap:0 20px;padding:18px 20px 0;border:1px solid color-mix(in srgb,var(--player-team-color,#175c85) 65%,#86cceb);border-top:2px solid #70bada;background:radial-gradient(ellipse at 8% 10%,color-mix(in srgb,var(--player-team-color,#174b56) 85%,#3987b6),transparent 75%),linear-gradient(120deg,#142c43,#0b2032)}
+body.player-personal-view #player .player-profile::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(125deg,transparent 0 35px,#c1e9ff06 36px 37px);pointer-events:none}
+body.player-personal-view #player .player-profile::after{content:"";position:absolute;right:-25px;top:8px;width:210px;height:190px;background:var(--player-team-emblem,none) center/contain no-repeat;opacity:.12;z-index:-1;pointer-events:none}
+body.player-personal-view #player .player-avatar{width:174px;height:184px;grid-row:1;grid-column:1;align-self:end;overflow:hidden}
+body.player-personal-view #player .player-avatar img{width:150%;max-width:none;height:100%;left:-25%;right:auto;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 4px 12px #0004)}
+body.player-personal-view #player .player-profile-body{display:block;grid-column:2;grid-row:1;position:relative;align-self:center;padding:12px 0 22px}
+body.player-personal-view #player .player-profile-body h3{font-size:30px;line-height:1.1;margin:0 0 12px;text-shadow:0 2px 8px #0003}
+body.player-personal-view #player .player-profile-body p{color:#d1e2ef;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+body.player-personal-view #player .player-profile>.player-season-stats{width:calc(100% + 40px);margin:0 -20px;padding:14px 16px;background:#071a2bd9;backdrop-filter:blur(8px)}
+@media(max-width:600px){body.player-personal-view #player .player-profile{grid-template-columns:126px minmax(0,1fr);gap:0 12px;padding:12px 14px 0}body.player-personal-view #player .player-avatar{width:126px;height:162px}body.player-personal-view #player .player-profile-body h3{font-size:25px;letter-spacing:-.5px}body.player-personal-view #player .player-profile-body p{font-size:13px;line-height:1.5}body.player-personal-view #player .player-profile>.player-season-stats{width:calc(100% + 28px);margin:0 -14px}body.player-personal-view #player .player-profile::after{width:165px;height:155px;top:15px;right:-30px}}
+@media(max-width:360px){body.player-personal-view #player .player-profile{grid-template-columns:110px minmax(0,1fr);column-gap:9px}body.player-personal-view #player .player-avatar{width:110px;height:153px}body.player-personal-view #player .player-profile-body h3{font-size:23px}}
+.bl-chart-column[aria-pressed=true] .bl-chart-bar{outline:2px solid #e6f4ff;outline-offset:3px;filter:brightness(1.08)}
+.bl-chart-detail{color:#aec8da;font-size:14px;line-height:1.5}
+.bl-chart-detail.has-selection{padding:14px;margin:8px 0 0;border:1px solid #345b75;border-radius:12px;background:#091f31}
+.bl-chart-detail-date{display:block;color:#f0f7fc;font-size:16px}
+.bl-chart-detail .bl-chart-detail-fixture{margin:4px 0 13px;color:#b8d2e4;font-size:14px;line-height:1.5}
+.bl-chart-detail-metrics{display:grid;grid-template-columns:1.3fr 1fr .7fr;gap:8px}
+.bl-chart-detail-metrics small{display:block;font-size:11px;line-height:1.4;color:#97b8cf}
+.bl-chart-detail-metrics b{display:block;margin-top:4px;font-size:16px;line-height:1.3;color:#f1f7fb}
+.bl-chart-detail .bl-chart-detail-outcome{margin:13px 0 0;padding-top:10px;border-top:1px solid #34526a;font-size:13px;font-weight:650;color:#c2d8e8}
+.bl-chart-detail-outcome[data-result=over]{color:#70e5ab!important}.bl-chart-detail-outcome[data-result=under]{color:#efa0b2!important}
