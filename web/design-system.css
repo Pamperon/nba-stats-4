@@ -691,3 +691,18 @@ body.player-personal-view #player .player-profile>.player-season-stats{max-width
 .pe-chart-opponent{font-size:calc(9px + var(--bl-text-step,0px));line-height:17px;color:#a5c0d3}
 .bl-chart-scroll,body.player-personal-view .bl-chart-scroll{padding-bottom:50px}
 .hub-single-content .bl-broadcast-info{font-size:calc(11px + var(--bl-text-step,0px))!important;line-height:1.4}
+
+/* Compact trust labels and small refinements to the two homepage banners. */
+.hub-home-banner .hub-trust-strip>span{gap:5px;padding:9px 4px;min-width:0}
+.hub-home-banner .hub-trust-strip b{font-size:clamp(9px,2.65vw,12px);white-space:nowrap;line-height:1.25}
+.hub-home-banner .hub-trust-strip i{font-size:12px;flex-shrink:0}
+.hub-home-banner .hub-banner-title img{transform:translateY(-4px) scale(1.025);transform-origin:35% 50%}
+.hub-single-content .bl-broadcast-hero{min-height:93px!important;height:93px!important;padding-top:0!important}
+.hub-single-content .bl-broadcast-hero>.bl-player-photo{height:99px!important;position:absolute;bottom:0;left:10px;width:calc(31% - 6px)!important}
+.hub-single-content .bl-broadcast-intro{grid-column:2;align-self:center!important;padding-bottom:0!important}
+@media(max-width:390px){.hub-single-content .bl-broadcast-hero{min-height:88px!important;height:88px!important}.hub-single-content .bl-broadcast-hero>.bl-player-photo{height:94px!important}}
+.bl-venue-icon{display:inline-flex!important;align-items:center;justify-content:center;vertical-align:middle;flex:0 0 12px;width:12px;height:12px;color:#a8d6ec;line-height:1;margin:0 2px;white-space:nowrap}
+.bl-venue-icon svg{display:block;width:12px!important;height:12px!important;max-width:none!important;flex-shrink:0}
+.bl-fixture-name{display:inline;white-space:nowrap}
+.hub-calendar-team .bl-venue-icon{margin-top:3px}
+.hub-single-content .bl-game-team .bl-venue-icon{flex:0 0 11px;width:11px;margin:0}
