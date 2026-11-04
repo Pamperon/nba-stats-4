@@ -180,7 +180,11 @@ def settled_lines(day, official):
     verified = []
     for offset in (0, 1):
         calendar_day = (date.fromisoformat(str(day)) + timedelta(days=offset)).isoformat()
-        verified.extend(settle_espn.settle_completed_fixtures(snapshot, calendar_day, evidence=evidence))
+        try:
+            verified.extend(settle_espn.settle_completed_fixtures(snapshot, calendar_day, evidence=evidence))
+        except (ValueError, settle_espn.requests.RequestException):
+            # A session can have no games on its first calendar date.
+            continue
     confirmed = {}
     for row in verified:
         leg = recommendations.evaluate({'lines': [row]}, [row])['lines'][0]
