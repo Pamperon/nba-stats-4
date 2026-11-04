@@ -654,3 +654,20 @@ body.player-personal-view #player .player-avatar img{object-fit:cover;object-pos
 body.player-personal-view #player .player-profile{grid-template-columns:100px minmax(0,1fr)}
 body.player-personal-view #player .player-avatar{width:100px;height:112px}
 body.player-personal-view #pe-personal-heading{padding-top:8px}
+
+/* Compatible match/team filters and explicit statistics-only access. */
+.pe-controls .pe-all-players{display:flex;align-items:center;gap:9px;font-size:12px;color:#bed9eb;cursor:pointer}
+.pe-controls .pe-all-players input{width:17px;height:17px;min-height:0;margin:0;padding:0;accent-color:#0789d9;flex-shrink:0}
+.pe-unpriced-label{color:#96c8e2!important}.pe-quotes .pe-quote-fixture{margin:10px 0 0;color:#c0dbea;font-size:12px}
+body.player-personal-view #player .player-profile{grid-template-columns:110px minmax(0,1fr);gap:0 16px;min-height:0;padding:14px 16px 0;overflow:hidden;border-top:2px solid #466d88;background:linear-gradient(115deg,color-mix(in srgb,var(--player-team-color,#174b56) 55%,#102735),#102735 85%)}
+body.player-personal-view #player .player-avatar{grid-column:1;grid-row:1;align-self:end;width:110px;height:126px;margin:0;overflow:hidden}
+body.player-personal-view #player .player-avatar img{position:static;display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+body.player-personal-view #player .player-profile-body{grid-column:2;grid-row:1;align-self:center;padding:4px 0 14px}
+body.player-personal-view #player .player-profile-body h3{margin:0 0 10px;font-size:25px;line-height:1.15}
+body.player-personal-view #player .player-profile-body p{margin:0;color:#b9cede;line-height:1.6;font-size:12px}
+body.player-personal-view #player .player-profile>.player-season-stats{grid-column:1/-1;grid-row:2;width:calc(100% + 32px);box-sizing:border-box;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:0 -16px;padding:12px 16px 14px;border-radius:0;border-top:1px solid #42617b66;background:#081d2dcc;position:relative;z-index:2}
+body.player-personal-view #player .player-season-stats .season-stat{text-align:center;padding:0 7px;border:0;border-right:1px solid #3a536744;background:none}
+body.player-personal-view #player .player-season-stats .season-stat:last-child{border-right:0}
+body.player-personal-view #player .player-season-stats .season-stat small{font-size:10px;color:#9eb9cc}
+body.player-personal-view #player .player-season-stats .season-stat strong{font-size:22px;margin-top:4px}
+@media(max-width:600px){body.player-personal-view #player .player-profile{grid-template-columns:98px minmax(0,1fr);column-gap:13px}body.player-personal-view #player .player-avatar{width:98px;height:116px}body.player-personal-view #player .player-profile-body h3{font-size:23px}body.player-personal-view #player .player-profile-body p{font-size:11px}body.player-personal-view #player .player-profile>.player-season-stats{grid-template-columns:repeat(3,minmax(0,1fr))}body.player-personal-view #player .player-profile>.player-season-stats .season-stat:first-child{display:none}}
