@@ -894,7 +894,8 @@ function refreshShowcase(){
     const shortName=t=>nicknames[String(t||'').trim()]||String(t||'NBA').trim().split(' ').slice(-1)[0];
     const awayName=document.createElement('span');awayName.className='bl-fixture-name';awayName.textContent=shortName(game.away);
     const homeName=document.createElement('span');homeName.className='bl-fixture-name';homeName.textContent=shortName(game.home);
-    names.append(awayName,document.createTextNode(' vs '),homeName);
+    const versus=document.createElement('span');versus.className='bl-fixture-vs';versus.textContent=' VS ';
+    names.append(awayName,versus,homeName);
     const stamp=new Date(game.start_at);
     const dateTime=document.createElement('span');dateTime.className='hub-premium-timing';
     dateTime.textContent=new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(stamp);
@@ -906,15 +907,12 @@ function refreshShowcase(){
     games.append(row)
    }
    if(remaining>4){
-    const note=document.createElement('p');note.className='hub-games-more-note';
-    note.textContent='Stai visualizzando le prime 4 di '+remaining+' partite in programma';
-    games.append(note);
     const more=document.createElement('button');more.type='button';more.className='hub-games-more';
     more.textContent='Vedi altre '+(remaining-4)+' partite ›';
     more.addEventListener('click',()=>{go.calendar();select('calendar')});
     games.append(more);
    }
-  }).catch(()=>{if(homeToken===homeFixturesRequest)games.textContent='Calendario NBA temporaneamente non disponibile. Apri Tutte le partite per riprovare.'});
+  }).catch(()=>{if(homeToken===homeFixturesRequest)games.textContent='Calendario NBA temporaneamente non disponibile. Riprova dalla sezione Partite.'});
   games.replaceChildren();
   games.textContent='Caricamento delle prossime partite NBA…';
   return;
