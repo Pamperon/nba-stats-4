@@ -1634,7 +1634,7 @@ def public_history_performance():
     days = 0
     for entry in dates:
         date = entry['date']
-        if not official_top5.eligible_day(date):
+        if date < '2026-11-01':
             continue
         archive = _published_history(date, public_views.history(date))
         lines = archive['top5_archive']['lines']

@@ -285,7 +285,7 @@ def history(day, starts=None):
     official = []
     if first_daily is not None:
         by_identity = {leg_identity(row): row for row in lines}
-        for selected in first_daily['lines'][:5]:
+        for selected in first_daily['lines'][:10]:
             row = by_identity.get(leg_identity(selected))
             if row is not None:
                 official.append(row)
