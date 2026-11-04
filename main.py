@@ -521,6 +521,20 @@ def session_picks(compact: bool = False):
             'odds_api_calls':0}
 
 
+@app.get('/api/picks/single-analysis')
+def single_analysis(response: Response):
+    """Explain the current selection; never download odds or replace official picks."""
+    import single_analysis as analysis
+    response.headers['Cache-Control'] = 'no-store'
+    try:
+        return analysis.build(session_picks(compact=True))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('Single analysis unavailable')
+        raise HTTPException(503, 'Analisi della Singola temporaneamente non disponibile')
+
+
 _match_form_cache = TTLCache(maxsize=40, ttl=1800)
 _match_form_lock = threading.RLock()
 import match_history
@@ -1825,6 +1839,7 @@ app.mount('/static',VersionedStaticFiles(directory='web'),name='static')
 @app.get('/statistiche', include_in_schema=False)
 @app.get('/analisi-quote', include_in_schema=False)
 @app.get('/come-funziona', include_in_schema=False)
+@app.get('/analisi-singola', include_in_schema=False)
 def index():
     return FileResponse('web/index.html', headers={'Cache-Control': 'no-cache'})
 

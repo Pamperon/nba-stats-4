@@ -11,6 +11,13 @@ const picksPresentation=document.createElement('section');
 picksPresentation.id='picks-showcase';picksPresentation.hidden=true;
 picksPresentation.setAttribute('aria-label','Pronostici del giorno');
 $('#app')?.before(picksPresentation);
+const singleAnalysisPage=document.createElement('section');singleAnalysisPage.id='single-analysis-page';singleAnalysisPage.hidden=true;singleAnalysisPage.setAttribute('aria-label','Analisi della Singola');$('#app')?.before(singleAnalysisPage);
+let singleAnalysisReturn='picks';
+function loadSingleAnalysis(){
+ singleAnalysisPage.innerHTML='<p class="status">Caricamento dell’analisi…</p>';
+ return (window.BasketLabAssets?window.BasketLabAssets.load('single-analysis'):Promise.reject(new Error('Module unavailable'))).then(()=>window.BasketLabSingleAnalysis.open(singleAnalysisPage,()=>{go[singleAnalysisReturn]();select(singleAnalysisReturn);},singleAnalysisReturn==='home'?'← Torna alla Home':'← Torna ai pronostici')).catch(()=>{singleAnalysisPage.innerHTML='<p class="status">Analisi temporaneamente non disponibile.</p>';const retry=document.createElement('button');retry.type='button';retry.textContent='Riprova';retry.onclick=loadSingleAnalysis;singleAnalysisPage.append(retry);});
+}
+function openSingleAnalysis(){singleAnalysisReturn=document.body.dataset.hubView==='home'?'home':'picks';go.single();select('single');}
 
 const nbaUpdatesMatch=document.createElement('section');
 nbaUpdatesMatch.className='hub-nba-updates';
@@ -120,6 +127,7 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu()}
 document.addEventListener('click',event=>{if(menuDrawer&&!menuDrawer.hidden&&!event.target.closest('.hub-menu-drawer,.hub-menu-toggle'))closeMenu()});
 const tab=name=>$('[data-tab="'+name+'"]');
 const go={
+ single(){loadSingleAnalysis();window.scrollTo(0,0);},
  news(){loadNews(newsList,24);window.scrollTo(0,0);},
  home(){ $('#area-quotes')?.click();tab('dashboard')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  picks(){ $('#area-quotes')?.click();tab('dashboard')?.click();tab('dashboard')?.scrollIntoView({block:'start',behavior:'smooth'});},
@@ -148,6 +156,7 @@ function display(){
  for(const name of ['history','about']){const panel=$('#extra-'+name);if(panel)panel.hidden=view!==name;}
  const calendarPanel=$('#hub-calendar');if(calendarPanel)calendarPanel.hidden=!calendar;
  const extra=view==='history'||view==='about';
+ singleAnalysisPage.hidden=view!=='single';
  const picksView=document.body.dataset.hubView==='picks'&&!extra;
  picksPresentation.hidden=!picksView;
  if(picksView&&!picksPresentation.querySelector('.hub-picks-archive')){
@@ -164,7 +173,7 @@ function display(){
  }
  const newsView=document.body.dataset.hubView==='news';
  if(newsPage)newsPage.hidden=!newsView;
- const shell=$('#app');if(shell)shell.hidden=extra||calendar||picksView||newsView;
+ const shell=$('#app');if(shell)shell.hidden=extra||calendar||picksView||newsView||view==='single';
  landing.hidden=!home||extra;tiles.hidden=!home||extra;
  if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
  if(featured)featured.hidden=!(home||picksView)||extra;
@@ -175,7 +184,7 @@ function display(){
  const singleAction=singleShowcase?.querySelector('.bl-broadcast-action');
  if(singleAction)singleAction.textContent='Apri analisi →';
 }
-function select(key){if(key==='stats'&&!playerReturn){const back=$('#back-to-picks');if(back){back.hidden=false;back.textContent='← Torna alla Home';}}calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key);document.body.dataset.hubView=key;display();saveHubState();syncRoute();document.dispatchEvent(new CustomEvent('basketlab:view',{detail:{view:key}}));}
+function select(key){if(key==='stats'&&!playerReturn){const back=$('#back-to-picks');if(back){back.hidden=false;back.textContent='← Torna alla Home';}}calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key==='single'?'picks':key);document.body.dataset.hubView=key;display();saveHubState();syncRoute();document.dispatchEvent(new CustomEvent('basketlab:view',{detail:{view:key}}));}
 
 document.addEventListener('basketlab:player-open',()=>{
  playerReturn={view:document.body.dataset.hubView||'picks',match:document.body.classList.contains('hub-match-open')?activeMatch:'',date:$('#date')?.value||calendarSelectedDate};
@@ -816,7 +825,7 @@ function refreshShowcase(){
    const probabilityValue=hubCardMetric(pick,/stima|probabilit/i);const percentage=Number(probabilityValue.replace('%','').replace(',','.'));
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
-   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='Apri analisi →';action.addEventListener('click',()=>{pick.querySelector('.pick-stats-button')?.click();select('stats')});single.append(action);
+   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='Apri analisi →';action.addEventListener('click',openSingleAnalysis);single.append(action);
   }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
   if(state){const publication=group?.dataset.publicationState||'waiting';state.classList.add('bl-publication-badge');state.dataset.state=publication;state.textContent=publication==='official'?'Ufficiale':publication==='preview'?'Conferma alle 18:00':'In attesa';state.title=publication==='preview'?(group.dataset.publicationLabel||'Selezione provvisoria: non ancora ufficiale'):'Stato della selezione';state.setAttribute('aria-label',state.textContent+(publication==='preview'?'. '+state.title:''));}
  }

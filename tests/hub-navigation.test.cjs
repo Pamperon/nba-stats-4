@@ -195,8 +195,11 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  assert.equal(singlePanel.hidden,false);assert.equal(topPanel.hidden,false);
  assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/Apri analisi/);
  singlePanel.querySelector('.bl-broadcast-action').click();
+ assert.equal(doc.body.dataset.hubView,'single');
+ assert.equal(doc.querySelector('#single-analysis-page').hidden,false);
+ assert.equal(doc.querySelector('#picks-showcase').hidden,true);
  topPanel.querySelector('.bl-datalab-card').click();
- assert.equal(singleClicks,1);assert.equal(topClicks,1);
+ assert.equal(singleClicks,0);assert.equal(topClicks,1);
  assert.equal(doc.body.dataset.hubView,'stats');
  assert.equal(doc.querySelector('#app').hidden,false);
  assert.equal(doc.querySelector('#picks-showcase').hidden,true);
@@ -340,3 +343,14 @@ test('general quote route exits a match and browser Back restores its dedicated 
    await new Promise(resolve=>window.queueMicrotask(resolve));
   }
  });
+
+test('single analysis has one stable route and hides other page panels',async()=>{
+ const {window,doc}=setup('analisi-singola');
+ assert.equal(window.BasketLabRouter.url({view:'single'}),'/analisi-singola');
+ assert.equal(doc.body.dataset.hubView,'single');
+ assert.equal(doc.querySelector('#single-analysis-page').hidden,false);
+ assert.equal(doc.querySelector('#extra-about').hidden,true);
+ doc.querySelector('.hub-mobile-bar [data-hub="home"]').click();
+ assert.equal(doc.querySelector('#single-analysis-page').hidden,true);
+ await new Promise(resolve=>window.queueMicrotask(resolve));
+});
