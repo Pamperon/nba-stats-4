@@ -17,7 +17,7 @@ function setup(url='https://basketlab.it/giocatori',options={}){
 test('directory opens real player route, keeps exact line, and returns to filtered list',async()=>{const {dom,w,d,calls}=setup();try{
  for(let n=0;n<12;n++)await tick();
  assert.equal(d.querySelector('#app').hidden,true);assert.equal(d.querySelector('#players-explorer').hidden,false);
- assert.equal(d.querySelectorAll('.pe-player-row').length,1);assert.equal(d.querySelectorAll('.pe-spark i').length,2);
+ assert.equal(d.querySelectorAll('.pe-player-row').length,2);assert.equal(d.querySelectorAll('.pe-catalog-row').length,1);assert.equal(d.querySelector('#pe-include-unpriced'),null);assert.equal(d.querySelectorAll('.pe-spark i').length,2);
  d.querySelector('.pe-player-row').click();for(let n=0;n<15;n++)await tick();
  assert.match(w.location.pathname,/\/giocatori\/alex-test-22$/);assert.equal(d.querySelector('#line').value,'10.5');assert.equal(d.querySelector('#players-explorer').hidden,true);assert.equal(d.querySelector('#player').hidden,false);
  assert.equal(d.querySelectorAll('.pe-quote-option').length,1);assert.equal(d.querySelector('#player-season-stats').parentElement.id,'player-profile');assert.equal(d.querySelector('#player-profile').textContent.includes(row.Partita),false);assert.match(d.querySelector('.pe-quote-fixture').textContent,/Boston Celtics - Atlanta Hawks/);assert.match(d.querySelector('[data-player-window="5"]').textContent,/50%/);
@@ -32,16 +32,16 @@ test('player codec uses stable identity, filters and legacy statistics URL',()=>
 test('selecting a match clears an unrelated team and restricts choices to both participants',async()=>{
  const extra={...row,'ESPN ID':'44',Giocatore:'Player, Hornets',Squadra:'Charlotte Hornets',Partita:'Charlotte Hornets - Brooklyn Nets'};
  const {dom,w,d}=setup(undefined,{rows:[row,extra]});try{for(let n=0;n<10;n++)await tick();
- const team=d.querySelector('#pe-team'),match=d.querySelector('#pe-match');team.value='Charlotte Hornets';team.dispatchEvent(new w.Event('change'));
+ const team=d.querySelector('#pe-team'),match=d.querySelector('#pe-match');team.value='Charlotte Hornets';team.dispatchEvent(new w.Event('change'));await tick();
  assert.equal(d.querySelectorAll('.pe-player-row').length,1);
  match.value=row.Partita;match.dispatchEvent(new w.Event('change'));await tick();assert.equal(team.value,'');
  assert.deepEqual([...team.options].map(o=>o.value),['','Boston Celtics','Atlanta Hawks']);
- assert.equal(d.querySelectorAll('.pe-player-row').length,1);assert.match(d.querySelector('.pe-player-row').textContent,/Alex Test/);
+ assert.equal(d.querySelectorAll('.pe-player-row').length,2);assert.match(d.querySelector('.pe-player-row').textContent,/Alex Test/);
  }finally{dom.window.close();}
 });
-test('all-player mode works with no saved quotes and loads no player histories until selection',async()=>{
+test('default directory works with no saved quotes and loads no player histories until selection',async()=>{
  const {dom,w,d,calls}=setup(undefined,{rows:[]});try{for(let n=0;n<10;n++)await tick();
- const mode=d.querySelector('#pe-include-unpriced');mode.checked=true;mode.dispatchEvent(new w.Event('change'));for(let n=0;n<6;n++)await tick();
+ assert.equal(d.querySelector('#pe-include-unpriced'),null);
  assert.equal(d.querySelectorAll('.pe-catalog-row').length,2);assert.match(d.querySelector('#pe-status').textContent,/2 senza quota/);
  assert.equal(calls.some(u=>u.startsWith('/api/players/log?')),false);
  d.querySelectorAll('.pe-catalog-row')[1].click();for(let n=0;n<15;n++)await tick();assert.equal(d.querySelector('#playername').value,'33');d.querySelector('#line').value='10.5';d.querySelector('#line').dispatchEvent(new w.Event('change'));assert.match(d.querySelector('#player-summary').textContent,/1\/2/);
@@ -49,7 +49,7 @@ test('all-player mode works with no saved quotes and loads no player histories u
 });
 test('unavailable quote service does not block the statistics directory',async()=>{
  const {dom,d,calls}=setup(undefined,{quoteError:true});try{for(let n=0;n<12;n++)await tick();
- assert.equal(d.querySelector('#pe-include-unpriced').checked,true);assert.equal(d.querySelectorAll('.pe-catalog-row').length,2);
+ assert.equal(d.querySelector('#pe-include-unpriced'),null);assert.equal(d.querySelectorAll('.pe-catalog-row').length,2);
  assert.match(d.querySelector('#pe-status').textContent,/statistiche NBA accessibili/);assert.equal(calls.some(u=>u.startsWith('/api/players/log?')),false);
  }finally{dom.window.close();}
 });
