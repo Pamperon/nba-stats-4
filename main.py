@@ -1165,6 +1165,36 @@ def saved_dates():
         logger.exception('Cannot list saved dates')
         raise HTTPException(503, 'Archivio temporaneamente non disponibile')
 
+players_explorer_cache = TTLCache(maxsize=1, ttl=30)
+players_explorer_lock = threading.RLock()
+
+@app.get('/api/players/explorer')
+def players_explorer():
+    """Saved upcoming quotes plus ten-game previews; never launch a scan."""
+    with players_explorer_lock:
+        cached = players_explorer_cache.get('data')
+        if cached is not None:
+            return cached
+        result = _players_explorer_data()
+        players_explorer_cache['data'] = result
+        return result
+
+def _players_explorer_data():
+    import player_explorer
+    try:
+        snapshot = storage.latest()
+        if not snapshot:
+            return player_explorer.project({})
+        merged = storage.recent_fixture_coverage(snapshot['date'], max_age_hours=24)
+        if merged:
+            snapshot = {**snapshot, 'results': merged}
+        return player_explorer.project(visible_snapshot(snapshot))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('Player explorer unavailable')
+        raise HTTPException(503, 'Giocatori temporaneamente non disponibili')
+
 @app.get('/api/players/teams')
 def player_teams():
     try: return {'teams': player_stats.catalog(), 'odds_api_calls': 0}
@@ -1837,6 +1867,8 @@ app.mount('/static',VersionedStaticFiles(directory='web'),name='static')
 @app.get('/analisi-partita', include_in_schema=False)
 @app.get('/archivio', include_in_schema=False)
 @app.get('/statistiche', include_in_schema=False)
+@app.get('/giocatori', include_in_schema=False)
+@app.get('/giocatori/{player_slug}', include_in_schema=False)
 @app.get('/analisi-quote', include_in_schema=False)
 @app.get('/come-funziona', include_in_schema=False)
 @app.get('/analisi-singola', include_in_schema=False)

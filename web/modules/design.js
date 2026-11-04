@@ -28,7 +28,7 @@
    const value=Number(game[stat]),column=d.createElement('button');column.type='button';column.className='bl-chart-column';
    const bar=d.createElement('div');bar.className='bl-chart-bar'+(value>line?' is-over':value<line?' is-under':'');bar.style.height=(100*value/max)+'%';
    const number=d.createElement('b');number.textContent=value.toLocaleString('it-IT');bar.append(number);
-   const date=d.createElement('small');date.textContent=String(game.GAME_DATE).slice(5,10).split('-').reverse().join('/');
+   const date=d.createElement('small');date.textContent=String(game.GAME_DATE).slice(5,10).split('-').reverse().join('/');const opponent=d.createElement('span');opponent.className='pe-chart-opponent';opponent.textContent=game.MATCHUP||'';date.append(d.createElement('br'),opponent);
    column.addEventListener('click',()=>{
     const minutes=game.MIN==null||game.MIN===''?'Minuti n.d.':game.MIN+' min';
     detail.textContent=[date.textContent,game.MATCHUP||'Avversario n.d.',minutes,value+' '+stat].join(' · ');

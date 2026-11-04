@@ -131,7 +131,7 @@ const go={
  news(){loadNews(newsList,24);window.scrollTo(0,0);},
  home(){ $('#area-quotes')?.click();tab('dashboard')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  picks(){ $('#area-quotes')?.click();tab('dashboard')?.click();tab('dashboard')?.scrollIntoView({block:'start',behavior:'smooth'});},
- stats(){ playerReturn=null;$('#area-stats')?.click();window.scrollTo({top:0,behavior:'smooth'});},
+ stats(){playerReturn=null;if(window.BasketLabPlayers){window.BasketLabPlayers.show();}else{$('#area-stats')?.click();}window.scrollTo({top:0,behavior:'instant'});},
  finder(){ document.body.classList.remove('hub-match-open');const detail=$('#hub-match-detail');if(detail)detail.hidden=true;$('#area-quotes')?.click();tab('finder')?.click();$('#quote-tabs')?.scrollIntoView({block:'start',behavior:'smooth'});},
  history(){ $('[data-extra="history"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  about(){ $('[data-extra="about"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
@@ -141,7 +141,7 @@ let home=true;let calendar=false;let playerReturn=null;
 let routerReady=false,applyingRoute=false,routeQueued=false;
 function syncRoute(){
  if(!routerReady||applyingRoute||routeQueued||!window.BasketLabRouter)return;
- routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:''});});
+ routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',...(window.BasketLabPlayers?.detailOpen?window.BasketLabPlayers.route():{}),date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:''});});
 }
 const HUB_STATE_KEY='basketlab-hub-view-v1';
 function saveHubState(){
@@ -176,7 +176,10 @@ function display(){
  }
  const newsView=document.body.dataset.hubView==='news';
  if(newsPage)newsPage.hidden=!newsView;
- const shell=$('#app');if(shell)shell.hidden=extra||calendar||picksView||newsView||view==='single';
+ const playerDirectory=view==='stats'&&window.BasketLabPlayers&&!window.BasketLabPlayers.detailOpen;
+ const explorer=$('#players-explorer');if(explorer)explorer.hidden=!playerDirectory;
+ document.body.classList.toggle('player-personal-view',view==='stats'&&!playerDirectory);
+ const shell=$('#app');if(shell)shell.hidden=extra||calendar||picksView||newsView||view==='single'||!!playerDirectory;
  landing.hidden=!home||extra;tiles.hidden=!home||extra;
  if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
  if(featured)featured.hidden=!(home||picksView)||extra;
@@ -198,7 +201,7 @@ $('#back-to-picks')?.addEventListener('click',event=>{
  event.preventDefault();event.stopImmediatePropagation();
  const target=playerReturn;playerReturn=null;
  if(target.match){calendarSelectedDate=target.date;openFixtureDetails(target.match);}
- else{const key=target.view==='stats'?'home':target.view;go[key]?.();select(key);if(key==='finder')window.restoreQuotePosition?.('finder');}
+ else{const key=target.view;go[key]?.();select(key);if(key==='finder')window.restoreQuotePosition?.('finder');}
 },true);
 document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
@@ -915,13 +918,15 @@ function applyRoute(){
  applyingRoute=true;
  try{
   if(route.date){calendarSelectedDate=route.date;calendarWeekStart=calendarIsoOffset(route.date,-3);calendarVisibleMonth=route.date.slice(0,7)}
-  if(route.match){
+  if(route.player&&window.BasketLabPlayers){window.BasketLabPlayers.openRoute(route);select('stats');}
+  else if(route.match){
    const picker=$('#date');
    if(route.date&&picker&&![...picker.options].some(o=>o.value===route.date))picker.add(new Option(route.date,route.date));
    openFixtureDetails(route.match);
   }else{go[route.view]?.();select(route.view)}
  }finally{applyingRoute=false}
 }
+document.addEventListener('basketlab:player-route',syncRoute);
 if(window.BasketLabRouter){
  routerReady=true;
  window.addEventListener('popstate',applyRoute);

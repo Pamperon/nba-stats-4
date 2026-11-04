@@ -811,7 +811,7 @@ function preloadPlayerSeasons(team,id){
 
 const playerNum=x=>Number(x)||0;
 async function openPickStats(row){
- document.dispatchEvent(new CustomEvent('basketlab:player-open',{detail:{origin:returnOrigin}}));
+ document.dispatchEvent(new CustomEvent('basketlab:player-open',{detail:{origin:returnOrigin,row}}));
  const navigation=++pickNavigationRequest;
  rememberQuotePosition(document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab);
  syncArea('player');
@@ -942,7 +942,7 @@ async function changePlayer(selection=null,preserveLine=false){
   const payload=await fetchPlayerLog(team,id,season);
   if(request!==playerRequest)return;
   playerGames=payload.games||[];
-  preloadPlayerSeasons(team,id);
+  if(!window.BasketLabPlayers)preloadPlayerSeasons(team,id);
   renderPlayerSeason();
   changeLine(preserveLine);
   if(selection?.id===id&&selection.market===$('stat').value&&Number.isFinite(selection.line)){
@@ -957,6 +957,7 @@ async function changePlayer(selection=null,preserveLine=false){
   if(request===playerRequest)setPlayerLoading(false);
  }
 }
+window.BasketLabPlayerEngine={open:openPickStats,directory:getPlayerDirectory};
 function changeLine(preserveSelected=false){
  const selected=preserveSelected?$('line').value:null;
  const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);
@@ -1031,6 +1032,7 @@ function drawPlayer(){
   const ordered=games.slice().reverse();
   $('chart').querySelectorAll('.player-game').forEach((details,index)=>{details.addEventListener('toggle',()=>{if(details.open)loadPlayerGameResult(details,ordered[index]);});});
  }
+ document.dispatchEvent(new CustomEvent('basketlab:player-state',{detail:{id:$('playername').value,name:$('playername').selectedOptions[0]?.textContent||'',team:$('team').selectedOptions[0]?.textContent||'',windows:Object.fromEntries([5,10,20,'all'].map(n=>{const sample=n==='all'?dated:dated.slice(0,n);return [n,{hits:sample.filter(g=>Number(g[stat])>line).length,total:sample.length}]}))}}));
 }
 $('team').onchange=()=>{closePlayerPicker();++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;$('player-venue').onchange=drawPlayer;
 

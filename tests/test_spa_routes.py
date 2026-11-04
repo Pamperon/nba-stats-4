@@ -12,7 +12,7 @@ class SpaRoutesTests(unittest.TestCase):
         with patch.object(main.storage,'cache_read',side_effect=AssertionError('Shell must not read data')):
             client=TestClient(main.app)
             shell=client.get('/')
-            for route in ['pronostici','partite','analisi-partita','archivio','statistiche','analisi-quote','come-funziona']:
+            for route in ['pronostici','partite','analisi-partita','archivio','statistiche','giocatori','giocatori/alex-test-22','analisi-quote','come-funziona']:
                 response=client.get('/'+route)
                 self.assertEqual(response.status_code,200)
                 self.assertEqual(response.content,shell.content)
