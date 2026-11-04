@@ -773,3 +773,13 @@ body.player-personal-view .bl-window-tabs button[data-hit-rate=unknown] small{co
 .pe-quotes .pe-quote-fixture .team-logo img{position:absolute;inset:0;width:24px;height:24px;object-fit:contain}
 .pe-quotes .pe-quote-fixture .team-logo:has(img) span{visibility:hidden}
 @media(max-width:600px){body.player-personal-view #player .player-profile{grid-template-columns:52% minmax(0,1fr);column-gap:8px;padding-top:8px}body.player-personal-view #player .player-avatar{width:100%;height:148px}body.player-personal-view #player .player-profile-body h3{font-size:23px}body.player-personal-view #player .player-profile-body .player-profile-team{font-size:13px}body.player-personal-view #player .player-profile-body .player-profile-role{font-size:12px}.pe-quotes .pe-quote-fixture .fixture-team-name{font-size:11px}.pe-quotes .pe-quote-fixture .team-logo{flex-basis:21px;width:21px;height:21px}.pe-quotes .pe-quote-fixture .team-logo img{width:21px;height:21px}}
+
+/* Outside-aligned venue marks and breathing room above the quote scrollbar. */
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .bl-venue-icon:first-child{margin:0 4px 0 0}
+.pe-quotes .pe-quote-fixture .bl-venue-icon{width:14px;height:14px;min-width:14px;vertical-align:-2px;margin:0 0 0 4px}
+.pe-quotes .pe-quote-fixture .bl-venue-icon:first-child{margin:0 4px 0 0}
+.pe-quote-options{padding:14px 2px 16px;gap:9px;scroll-snap-type:x proximity;scroll-padding-inline:2px;overscroll-behavior-x:contain;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:#6aa6c8 #0a2031}
+.pe-quote-option{scroll-snap-align:start}
+.pe-quote-options::-webkit-scrollbar{height:6px}
+.pe-quote-options::-webkit-scrollbar-track{background:#0a2031;border-radius:8px}
+.pe-quote-options::-webkit-scrollbar-thumb{background:#6aa6c8;border-radius:8px}

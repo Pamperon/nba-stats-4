@@ -76,6 +76,10 @@ function renderQuotes(){
  const rows=playerRows.filter(r=>r.Mercato===$('stat').value);
  const fixtures=[...new Set(playerRows.map(r=>r.Partita))];
  quotes.innerHTML='<div class="pe-quotes-heading"><h3>Linee e quote Bet365</h3><small>'+(payload.saved_at?'Aggiornamento '+new Date(payload.saved_at).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'')+'</small></div>'+(fixtures.length?'<div class="pe-quote-fixture">'+fixtures.map(match=>w.BasketLabPlayerEngine.fixture(match)).join('')+'</div>':'');
+ for(const strip of quotes.querySelectorAll('.pick-fixture[data-match]')){
+  const entries=[...strip.querySelectorAll('.fixture-team-name')].map(node=>[node,node.querySelector('.fixture-name-full')?.textContent||node.textContent]);
+  w.BasketLabVenue?.mark(entries,strip.dataset.match,payload.date||new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),false);
+ }
  if(!rows.length){quotes.innerHTML+='<p>Nessuna quota disponibile per questo mercato nelle prossime partite. Puoi comunque analizzare lo storico.</p>';return;}
  const table=d.createElement('div');table.className='pe-quote-options';for(const row of [...rows].sort((a,b)=>Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)))){const button=d.createElement('button');button.type='button';const isOver=!/^under$/i.test(row.Scelta||'');button.className='pe-quote-option';button.setAttribute('aria-pressed',String(Number($('line').value)===Number(row.Linea)));button.innerHTML='<span>'+esc(row.Scelta)+' '+esc(row.Linea)+'</span><strong>'+Number(row.Quota).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>';button.onclick=()=>{const line=$('line'),val=String(row.Linea);if(![...line.options].some(o=>o.value===val))line.add(new Option(val,val));line.value=val;line.dispatchEvent(new Event('change',{bubbles:true}));};if(!isOver)button.title='Il grafico mostra il superamento della linea (Over).';table.append(button);}quotes.append(table);
 }

@@ -553,12 +553,13 @@ function markFixtureVenues(entries,match,date,session=true){
  // Odds feeds can reverse team order: resolve venue from ESPN rather than the label order.
  fetchNbaFixtures(date,session).then(fixtures=>{
   const game=fixtures.find(g=>fixtureKey(fixtureName(g))===fixtureKey(match));if(!game)return;
-  for(const [node,team] of entries){
+  for(const [index,[node,team]] of entries.entries()){
    const key=fixtureKey(team),home=key===fixtureKey(game.home),away=key===fixtureKey(game.away);
-   if((home||away)&&!node.querySelector('.bl-venue-icon'))node.append(venueIcon(home));
+   if((home||away)&&!node.querySelector('.bl-venue-icon')){const icon=venueIcon(home);if(index===0)node.prepend(icon);else node.append(icon);}
   }
  }).catch(()=>{});
 }
+window.BasketLabVenue={mark:markFixtureVenues};
 function fixtureName(game){return String(game.away||'')+' - '+String(game.home||'')}
 function fixtureTime(game){
  if(!game.start_at)return game.time||'';
@@ -650,7 +651,7 @@ function renderCalendar(){
      const side=document.createElement('span');side.className='hub-calendar-team';
      const code=matchTeamCodes[team];
      if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';side.append(img)}
-     const label=document.createElement('span');label.textContent=team||'NBA';label.append(venueIcon(i===1));side.append(label);row.append(side)
+     const label=document.createElement('span');label.textContent=team||'NBA';if(i===0)label.prepend(venueIcon(false));else label.append(venueIcon(true));side.append(label);row.append(side)
     });
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
     const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);

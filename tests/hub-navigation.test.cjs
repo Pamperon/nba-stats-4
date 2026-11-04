@@ -413,5 +413,7 @@ test('venue icons appear only in calendar cards and not in home or daily picks',
  const icons=doc.querySelectorAll('.hub-calendar-match .bl-venue-icon');
  assert.equal(icons.length,2);
  assert.equal(icons[0].getAttribute('aria-label'),'In trasferta');
+ assert.equal(icons[0].parentElement.firstChild,icons[0]);
+ assert.equal(icons[1].parentElement.lastChild,icons[1]);
  assert.equal(icons[1].getAttribute('aria-label'),'In casa');
 });

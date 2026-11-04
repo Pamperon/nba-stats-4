@@ -6,6 +6,7 @@ function setup(url='https://basketlab.it/giocatori',options={}){
  w.BasketLabSections={register(){},wants(){return false}};
  w.fetch=async u=>{calls.push(String(u));let p={};if(u==='/api/players/explorer'&&options.quoteError)throw Error('Quotes offline');if(u==='/api/players/explorer')p={date:'2026-11-05',rows:options.rows||[row],logs:{'Test, Alex':[{GAME_DATE:'2026-11-01',PTS:20},{GAME_DATE:'2026-10-30',PTS:8}]}};
  else if(u==='/api/players/directory')p={players:[{id:'22',name:'Alex Test',team:'Boston Celtics',team_id:'2'},{id:'33',name:'Other Player',team:'Boston Celtics',team_id:'2'}]};
+ else if(String(u).startsWith('/api/nba/fixtures'))p={games:[{home:'Boston Celtics',away:'Atlanta Hawks'}]};
  else if(u==='/api/players/teams')p={teams:[{id:'2',name:'Boston Celtics'}]};
  else if(String(u).startsWith('/api/players/roster'))p={players:[{id:'22',name:'Alex Test'},{id:'33',name:'Other Player'}]};
  else if(String(u).startsWith('/api/players/team-logs'))p={logs:{}};
@@ -20,7 +21,7 @@ test('directory opens real player route, keeps exact line, and returns to filter
  assert.equal(d.querySelectorAll('.pe-player-row').length,2);assert.equal(d.querySelectorAll('.pe-catalog-row').length,1);assert.equal(d.querySelector('#pe-include-unpriced'),null);assert.equal(d.querySelectorAll('.pe-spark i').length,2);
  d.querySelector('.pe-player-row').click();for(let n=0;n<15;n++)await tick();
  assert.match(w.location.pathname,/\/giocatori\/alex-test-22$/);assert.equal(d.querySelector('#line').value,'10.5');assert.equal(d.querySelector('#players-explorer').hidden,true);assert.equal(d.querySelector('#player').hidden,false);
- assert.equal(d.querySelectorAll('.pe-quote-option').length,1);assert.equal(d.querySelector('#player-season-stats').parentElement.id,'player-profile');assert.equal(d.querySelector('#player-profile').textContent.includes(row.Partita),false);assert.equal(d.querySelector('.pe-quote-fixture .pick-fixture').dataset.match,row.Partita);assert.equal(d.querySelectorAll('.pe-quote-fixture .team-logo img').length,2);assert.match(d.querySelector('[data-player-window="5"]').textContent,/50%/);
+ assert.equal(d.querySelectorAll('.pe-quote-option').length,1);assert.equal(d.querySelector('#player-season-stats').parentElement.id,'player-profile');assert.equal(d.querySelector('#player-profile').textContent.includes(row.Partita),false);assert.equal(d.querySelector('.pe-quote-fixture .pick-fixture').dataset.match,row.Partita);assert.equal(d.querySelectorAll('.pe-quote-fixture .team-logo img').length,2);const venues=d.querySelectorAll('.pe-quote-fixture .bl-venue-icon');assert.equal(venues.length,2);assert.equal(venues[0].getAttribute('aria-label'),'In casa');assert.equal(venues[0].parentElement.firstChild,venues[0]);assert.equal(venues[1].getAttribute('aria-label'),'In trasferta');assert.equal(venues[1].parentElement.lastChild,venues[1]);assert.match(d.querySelector('[data-player-window="5"]').textContent,/50%/);
  assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,1);
  d.querySelector('#pe-personal-heading [data-hub="stats"]').click();for(let n=0;n<5;n++)await tick();assert.equal(w.location.pathname,'/giocatori');assert.equal(d.querySelector('#players-explorer').hidden,false);
  }finally{dom.window.close();}});
