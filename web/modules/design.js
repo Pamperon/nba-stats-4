@@ -21,7 +21,7 @@
   const title=d.createElement('p');title.className='bl-chart-caption';title.textContent=games.length>20?'Ultime 20 mostrate · Tutte le partite nel dettaglio sotto':'Prestazioni per partita · '+({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'}[stat]||stat);area.append(title);
   const scroll=d.createElement('div');scroll.className='bl-chart-scroll';scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','Grafico prestazioni, scorri per vedere le partite');
   const plot=d.createElement('div');plot.className='bl-chart-plot';
-  const sample=games.slice(0,20).reverse();plot.style.minWidth=Math.max(280,sample.length*34)+'px';
+  const sample=games.slice(0,20).reverse();plot.style.minWidth=Math.max(280,sample.length*60)+'px';
   const threshold=d.createElement('div');threshold.className='bl-chart-threshold';threshold.style.bottom=(100*line/max)+'%';const label=d.createElement('span');label.textContent='Linea '+line.toLocaleString('it-IT');threshold.append(label);plot.append(threshold);
   const detail=d.createElement('p');detail.className='bl-chart-detail';detail.setAttribute('aria-live','polite');detail.textContent='Tocca una barra per vedere i dettagli.';
   for(const game of sample){

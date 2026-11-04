@@ -677,11 +677,17 @@ body.player-personal-view #player .player-avatar span{position:absolute;inset:0;
 body.player-personal-view #player .player-profile>.player-season-stats{max-width:none}
 
 /* Small-text reading step, with an extra floor for the tiniest mobile labels. */
-:root{--bl-text-step:1px;--bl-label-floor:0px}
+:root{--bl-text-step:2px;--bl-label-floor:0px}
 @media(max-width:760px){
- :root{--bl-text-step:1px;--bl-label-floor:9px}
+ :root{--bl-text-step:2px;--bl-label-floor:9px}
  body{font-size:17px}
  .hub-mobile-bar button{line-height:1.2}
  .hub-trust-strip>span{line-height:1.35}
  .hub-choices-title{flex-wrap:wrap}
 }
+
+/* Give two-line chart labels their own space below the baseline. */
+.bl-chart-column>small{top:calc(100% + 8px);bottom:auto;left:50%;transform:translateX(-50%);font-size:calc(10px + var(--bl-text-step,0px));line-height:17px;text-align:center}
+.pe-chart-opponent{font-size:calc(9px + var(--bl-text-step,0px));line-height:17px;color:#a5c0d3}
+.bl-chart-scroll,body.player-personal-view .bl-chart-scroll{padding-bottom:50px}
+.hub-single-content .bl-broadcast-info{font-size:calc(11px + var(--bl-text-step,0px))!important;line-height:1.4}
