@@ -631,3 +631,5 @@ body.hub-match-open .hub-match-player-list>.hub-match-team-heading:first-child{m
 .hub-menu-toggle[aria-expanded="true"]{border-color:#65d3f5;background:#123653;color:#d6f1ff}
 .hub-menu-toggle[aria-expanded="true"] span{font-size:30px;line-height:1}
 @media(max-width:760px){.hub-menu-drawer button.hub-menu-main{display:none}}
+
+.hub-mobile-bar .hub-nav-icon{display:block;width:22px;height:22px;flex-shrink:0}.hub-mobile-bar button:focus-visible{outline:2px solid #65d3f5;outline-offset:-2px}
