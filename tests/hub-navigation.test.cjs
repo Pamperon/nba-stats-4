@@ -325,3 +325,18 @@ test('general quote route exits a match and browser Back restores its dedicated 
  assert.ok(doc.body.classList.contains('hub-match-open'));
  assert.equal(doc.querySelector('#hub-match-detail').hidden,false);
 });
+
+ test('leaving About hides its content on every primary destination',async()=>{
+  const {window,doc}=setup();
+  window.fetch=async()=>({ok:true,json:async()=>({games:[],articles:[]})});
+  for(const destination of ['home','picks','stats','finder','calendar','news']){
+   doc.querySelector('.hub-menu-drawer [data-hub="about"]').click();
+   assert.equal(doc.querySelector('#extra-about').hidden,false);
+   assert.equal(doc.querySelector('#app').hidden,true);
+   doc.querySelector('.hub-menu-drawer [data-hub="'+destination+'"]').click();
+   assert.equal(doc.body.dataset.hubView,destination);
+   assert.equal(doc.querySelector('#extra-about').hidden,true,destination);
+   assert.equal(doc.querySelector('#extra-history').hidden,true,destination);
+   await new Promise(resolve=>window.queueMicrotask(resolve));
+  }
+ });

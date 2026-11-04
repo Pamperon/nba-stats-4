@@ -143,8 +143,11 @@ window.addEventListener('pagehide',saveHubState);
 
 function mark(key){document.querySelectorAll('[data-hub]').forEach(el=>{if(el.dataset.hub===key)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')})}
 function display(){
+ const view=document.body.dataset.hubView||'home';
+ // The active route owns visibility, including transitions that bypass area tabs.
+ for(const name of ['history','about']){const panel=$('#extra-'+name);if(panel)panel.hidden=view!==name;}
  const calendarPanel=$('#hub-calendar');if(calendarPanel)calendarPanel.hidden=!calendar;
- const extra=!!$('.extra-panel:not([hidden])');
+ const extra=view==='history'||view==='about';
  const picksView=document.body.dataset.hubView==='picks'&&!extra;
  picksPresentation.hidden=!picksView;
  if(picksView&&!picksPresentation.querySelector('.hub-picks-archive')){
@@ -161,7 +164,7 @@ function display(){
  }
  const newsView=document.body.dataset.hubView==='news';
  if(newsPage)newsPage.hidden=!newsView;
- const shell=$('#app');if(shell)shell.hidden=calendar||picksView||newsView;
+ const shell=$('#app');if(shell)shell.hidden=extra||calendar||picksView||newsView;
  landing.hidden=!home||extra;tiles.hidden=!home||extra;
  if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
  if(featured)featured.hidden=!(home||picksView)||extra;
