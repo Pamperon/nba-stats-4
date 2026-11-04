@@ -194,7 +194,7 @@ function select(key){if(key==='stats'&&!playerReturn){const back=$('#back-to-pic
 
 document.addEventListener('basketlab:player-open',()=>{
  playerReturn={view:document.body.dataset.hubView||'picks',match:document.body.classList.contains('hub-match-open')?activeMatch:'',date:$('#date')?.value||calendarSelectedDate};
- queueMicrotask(()=>{select('stats');const back=$('#back-to-picks');if(back){back.hidden=false;back.textContent=playerReturn?.match?'← Torna all’analisi':playerReturn?.view==='home'?'← Torna alla Home':playerReturn?.view==='finder'?'← Torna ad Analisi quote':'← Torna ai pronostici';}});
+ queueMicrotask(()=>{select('stats');const back=$('#back-to-picks');if(back){back.hidden=playerReturn?.view==='stats';back.textContent=playerReturn?.match?'← Torna all’analisi':playerReturn?.view==='home'?'← Torna alla Home':playerReturn?.view==='finder'?'← Torna ad Analisi quote':'← Torna ai pronostici';}});
 });
 $('#back-to-picks')?.addEventListener('click',event=>{
  if(!playerReturn){if(document.body.dataset.hubView==='stats'){event.preventDefault();event.stopImmediatePropagation();go.home();select('home');}return;}

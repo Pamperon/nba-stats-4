@@ -646,3 +646,11 @@ body.player-personal-view .bl-player-controls{display:contents}body.player-perso
 @media(max-width:600px){.pe-controls{padding:12px}.pe-player-row{grid-template-columns:40px minmax(0,1fr) 85px 8px;gap:8px;padding:11px 9px}.pe-player-face{width:40px;height:40px}.pe-player-info strong{font-size:13px}.pe-player-info>span{font-size:10px}.pe-spark{gap:2px;height:36px}.pe-spark-empty{font-size:9px}.pe-filter-row{gap:8px}body.player-personal-view #player .player-profile-body h3{font-size:22px}body.player-personal-view .bl-player-market .bl-segments button{font-size:12px}}
 
 body.player-personal-view .bl-window-tabs button{display:grid;gap:4px}body.player-personal-view .bl-window-tabs button small{font-size:14px;color:#6de2ad}body.player-personal-view #player-trends{display:none}
+
+body.player-personal-view #player .bl-player-controls{display:contents}
+body.player-personal-view #player .bl-player-controls>.filters{display:none}
+body.player-personal-view #player .bl-player-controls .bl-player-market{margin:12px 0}
+body.player-personal-view #player .player-avatar img{object-fit:cover;object-position:center top}
+body.player-personal-view #player .player-profile{grid-template-columns:100px minmax(0,1fr)}
+body.player-personal-view #player .player-avatar{width:100px;height:112px}
+body.player-personal-view #pe-personal-heading{padding-top:8px}
