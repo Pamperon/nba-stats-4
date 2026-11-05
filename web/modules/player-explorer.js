@@ -46,12 +46,12 @@ function previewLogs(player){
  const key=previewSeason()+':'+player.id,cached=previewCache.get(key);if(cached&&Date.now()-cached.at<1800000)return Promise.resolve(cached.games);
  if(previewPending.has(key))return previewPending.get(key);
  const task=w.fetch('/api/players/log?team_id='+encodeURIComponent(player.team)+'&athlete_id='+encodeURIComponent(player.id)+'&season='+previewSeason()).then(r=>{if(!r.ok)throw Error('Preview unavailable');return r.json();}).then(data=>{
-  const games=(data.games||[]).filter(g=>g.GAME_DATE).sort((a,b)=>String(b.GAME_DATE).localeCompare(String(a.GAME_DATE))).slice(0,10).map(g=>({GAME_DATE:g.GAME_DATE,PTS:g.PTS,REB:g.REB,AST:g.AST}));previewCache.set(key,{at:Date.now(),games});if(previewCache.size>80)previewCache.delete(previewCache.keys().next().value);return games;
+  const games=(data.games||[]).filter(g=>g.GAME_DATE).sort((a,b)=>String(b.GAME_DATE).localeCompare(String(a.GAME_DATE))).map(g=>({GAME_DATE:g.GAME_DATE,PTS:g.PTS,REB:g.REB,AST:g.AST}));previewCache.set(key,{at:Date.now(),games});if(previewCache.size>80)previewCache.delete(previewCache.keys().next().value);return games;
  }).finally(()=>previewPending.delete(key));previewPending.set(key,task);return task;
 }
 function runPreviewQueue(){
  while(previewActive<2&&previewQueue.length){const link=previewQueue.shift();if(!link.isConnected||api.detailOpen)continue;previewActive++;
-  previewLogs({id:link.dataset.previewId,team:link.dataset.previewTeam}).then(games=>{if(!link.isConnected)return;const slot=link.querySelector('.pe-spark-slot');if(slot)slot.outerHTML=spark(games,null);}).catch(()=>{const slot=link.querySelector('.pe-spark-slot');if(slot)slot.textContent='Storico nella scheda';}).finally(()=>{previewActive--;runPreviewQueue();});
+  previewLogs({id:link.dataset.previewId,team:link.dataset.previewTeam}).then(games=>{if(!link.isConnected)return;const slot=link.querySelector('.pe-spark-slot');if(slot){const values=games.map(g=>g[market]).filter(v=>v!=null&&v!==''&&Number.isFinite(Number(v))).map(Number).sort((a,b)=>a-b),max=market==='PTS'?79:market==='REB'?39:29;const line=values.length?Math.min(max+.5,Math.max(.5,Math.floor(values[Math.floor(values.length/2)])+.5)):null;slot.outerHTML=spark(games,line,true);}}).catch(()=>{const slot=link.querySelector('.pe-spark-slot');if(slot)slot.textContent='Storico nella scheda';}).finally(()=>{previewActive--;runPreviewQueue();});
  }
 }
 function observePreviews(list){
@@ -60,7 +60,7 @@ function observePreviews(list){
  previewObserver=new w.IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){previewObserver.unobserve(entry.target);previewQueue.push(entry.target);}runPreviewQueue();},{rootMargin:'120px'});
  for(const link of list.querySelectorAll('[data-preview-id]'))previewObserver.observe(link);
 }
-function spark(games,line){const values=(games||[]).filter(g=>g[market]!=null&&g[market]!==''&&Number.isFinite(Number(g[market]))).slice(0,10).reverse();if(!values.length)return '<span class="pe-spark-empty">Storico nella scheda ›</span>';const max=Math.max(1,line,...values.map(g=>Number(g[market])));const neutral=line==null;return '<span class="pe-spark'+(neutral?' is-neutral':'')+'" role="img" aria-label="Ultime '+values.length+' partite: '+values.map(g=>Number(g[market])).join(', ')+'">'+(neutral?'':'<span class="pe-spark-line" style="bottom:'+Math.min(100,line/max*100)+'%"></span>')+values.map(g=>'<i class="'+(neutral?'neutral':Number(g[market])>line?'over':Number(g[market])===line?'equal':'under')+'" style="height:'+Math.max(2,Number(g[market])/max*100)+'%"></i>').join('')+'</span>';}
+function spark(games,line,reference=false){const values=(games||[]).filter(g=>g[market]!=null&&g[market]!==''&&Number.isFinite(Number(g[market]))).slice(0,10).reverse();if(!values.length)return '<span class="pe-spark-empty">Storico nella scheda ›</span>';const max=Math.max(1,line,...values.map(g=>Number(g[market])));const neutral=line==null;return '<span class="pe-spark'+(neutral?' is-neutral':'')+'" role="img"'+(reference?' title="Linea di riferimento '+line.toLocaleString('it-IT')+' · senza quota"':'')+' aria-label="Ultime '+values.length+' partite: '+values.map(g=>Number(g[market])).join(', ')+'">'+(neutral?'':'<span class="pe-spark-line" style="bottom:'+Math.min(100,line/max*100)+'%"></span>')+values.map(g=>'<i class="'+(neutral?'neutral':Number(g[market])>line?'over':Number(g[market])===line?'equal':'under')+'" style="height:'+Math.max(2,Number(g[market])/max*100)+'%"></i>').join('')+'</span>';}
 async function render(){
  const token=++request,q=norm($('pe-search').value.trim()),team=$('pe-team').value,fixture=$('pe-match').value;let unpricedCount=0;
  if(!payload)return;

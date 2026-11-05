@@ -65,12 +65,13 @@ test('period hit rates use red below fifty and keep missing samples neutral',asy
  assert.equal(d.querySelector('[data-player-window="5"] small').textContent,'40%');
 }finally{dom.window.close();}});
 
-test('unpriced directory cards show neutral real history and reuse it across markets',async()=>{const {dom,w,d,calls}=setup('https://basketlab.it/giocatori',{rows:[],previews:true});try{
+test('unpriced directory cards show standard-line real history and reuse it across markets',async()=>{const {dom,w,d,calls}=setup('https://basketlab.it/giocatori',{rows:[],previews:true});try{
  for(let n=0;n<25;n++)await tick();
  assert.equal(d.querySelectorAll('.pe-catalog-row').length,2);
- assert.equal(d.querySelectorAll('.pe-spark.is-neutral').length,2);
- assert.equal(d.querySelectorAll('.pe-spark.is-neutral i.neutral').length,4);
- assert.equal(d.querySelectorAll('.pe-spark-line').length,0);
+ assert.equal(d.querySelectorAll('.pe-spark.is-neutral').length,0);
+ assert.equal(d.querySelectorAll('.pe-spark i.over,.pe-spark i.under').length,4);
+ assert.equal(d.querySelectorAll('.pe-spark-line').length,2);
+ assert.match(d.querySelector('.pe-spark').title,/Linea di riferimento/);
  assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,2);
  d.querySelector('[data-pe-market=REB]').click();for(let n=0;n<15;n++)await tick();
  assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,2);
