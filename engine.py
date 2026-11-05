@@ -263,6 +263,21 @@ def fixture_is_upcoming(fixture, now=None):
 def get_odds(fixture_id, refresh_version=0):
     return get_json("odds", fixtureId=fixture_id, bookmakers="bet365.it", verbosity=3)
 
+def _fresh_active_quote(player, now=None):
+    """Resolve contradictory market flags only with a recent active outcome."""
+    if player.get("active") is not True:
+        return False
+    price = player.get("price")
+    if isinstance(price, bool) or not isinstance(price, (int, float)) or not 1 < price < float("inf"):
+        return False
+    try:
+        changed = datetime.fromisoformat(str(player.get("changedAt") or "").replace("Z", "+00:00"))
+        current = now or datetime.now(timezone.utc)
+        return changed.tzinfo is not None and 0 <= (current - changed).total_seconds() <= 3 * 3600
+    except (TypeError, ValueError):
+        return False
+
+
 def parse_odds(data, catalog, market_label):
     bookmaker = (data.get("bookmakerOdds") or {}).get("bet365.it") or {}
     if not bookmaker.get("bookmakerIsActive", False) or bookmaker.get("suspended", False):
@@ -284,10 +299,6 @@ def parse_odds(data, catalog, market_label):
         active_market = market_data.get("marketActive") is True
         diag["Mercati alternativi (+)"] += 1
         diag["Mercati alternativi attivi" if active_market else "Mercati alternativi inattivi"] += 1
-        if not active_market:
-            diag.setdefault("Mercati inattivi esclusi", 0)
-            diag["Mercati inattivi esclusi"] += 1
-            continue
         names = {str(o.get("outcomeId")): str(o.get("outcomeName", "")) for o in definition.get("outcomes", [])}
         for outcome_id, outcome in (market_data.get("outcomes") or {}).items():
             name = names.get(str(outcome_id), "")
@@ -299,8 +310,13 @@ def parse_odds(data, catalog, market_label):
                 if not player.get("active") or not player.get("playerName"):
                     continue
                 price = player.get("price")
-                if not isinstance(price, (int, float)) or price <= 1:
+                if isinstance(price, bool) or not isinstance(price, (int, float)) or not 1 < price < float("inf"):
                     continue
+                if not active_market:
+                    if not _fresh_active_quote(player):
+                        diag["Quote inattive o non recenti escluse"] = diag.get("Quote inattive o non recenti escluse", 0) + 1
+                        continue
+                    diag["Quote attive con stato mercato incoerente"] = diag.get("Quote attive con stato mercato incoerente", 0) + 1
                 key = (str(player_id), line)
                 rows[key] = {"Giocatore": player["playerName"], "Linea": line,
                              "Over": float(price), "Tipo": "Soglia +",
