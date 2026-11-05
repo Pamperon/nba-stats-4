@@ -202,6 +202,7 @@ def settle_snapshots(day):
         snapshots = conn.execute("""
             SELECT s.job_id,jsonb_build_object('recommendations',s.payload->'recommendations',
                    'results',s.payload->'results',
+                   'model_shadow',s.payload->'model_shadow',
                    'scan_finished_at',s.payload->'scan_finished_at'),s.created_at,r.report
             FROM nba_scan_snapshots s
             LEFT JOIN nba_recommendation_results r ON r.snapshot_job_id=s.job_id
