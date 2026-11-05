@@ -30,9 +30,27 @@
   if(state.match){const teams=state.match.split(/\s+-\s+|\s+vs\.?\s+/i);if(teams.length===2){path='/analisi-partita';params.set('trasferta',teams[0]);params.set('casa',teams[1]);}}
   return path+(params.size?'?'+params:'');
  }
+ let metadataPath=root.location.pathname;
+ function updateMetadata(){
+  const document=root.document,config=document?.getElementById('bl-seo-routes');
+  if(!config||metadataPath===root.location.pathname)return;
+  metadataPath=root.location.pathname;
+  let pages;try{pages=JSON.parse(config.textContent)}catch{return}
+  const path=root.location.pathname.replace(/\/$/,'')||'/';
+  let info=pages[path],canonical='https://basketlab.it'+path,robots='index,follow';
+  const player=path.match(/^\/giocatori\/([a-z0-9-]+)-[0-9]{1,12}$/);
+  if(player){const name=player[1].split('-').map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(' ');info=[name+': statistiche NBA e grafici | Basket Lab','Statistiche NBA di '+name+': punti, rimbalzi, assist, medie e grafici delle ultime partite. Consulta le linee disponibili e le frequenze osservate.']}
+  if(!info){info=['Analisi partita NBA | Basket Lab','Statistiche e analisi delle partite NBA.'];canonical='https://basketlab.it/partite';robots='noindex,follow'}
+  document.title=info[0];
+  const values={'meta[name="description"]':['content',info[1]],'link[rel="canonical"]':['href',canonical],'meta[property="og:title"]':['content',info[0]],'meta[property="og:description"]':['content',info[1]],'meta[property="og:url"]':['content',canonical],'meta[name="twitter:title"]':['content',info[0]],'meta[name="twitter:description"]':['content',info[1]],'meta[name="robots"]':['content',robots]};
+  for(const [selector,[attribute,value]] of Object.entries(values))document.querySelector(selector)?.setAttribute(attribute,value);
+  const schema=document.getElementById('bl-page-schema');
+  if(schema){try{const page=JSON.parse(schema.textContent);Object.assign(page,{'@id':canonical+'#webpage',url:canonical,name:info[0],description:info[1]});schema.textContent=JSON.stringify(page)}catch{}}
+ }
+ root.addEventListener('popstate',updateMetadata);
  function write(state,replace=false){
   const next=url(state);
-  if(next!==root.location.pathname+root.location.search+root.location.hash)root.history[replace?'replaceState':'pushState']({basketlab:true},'',next);
+  if(next!==root.location.pathname+root.location.search+root.location.hash){root.history[replace?'replaceState':'pushState']({basketlab:true},'',next);updateMetadata();}
  }
  root.BasketLabRouter={read,url,write,paths};
 })(window);

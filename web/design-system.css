@@ -11,7 +11,7 @@ body{background:var(--bl-bg);color:var(--bl-text)}
 .hub-sidebar{background:#0d202e;border-color:#243d50;box-shadow:none;min-height:0;padding-bottom:24px}
 .hub-link{min-height:46px;border-radius:11px}.hub-link[aria-current=page]{background:#ff9438;color:#101b26}
 .hub-mobile-bar{background:#091b29;border-top:1px solid #2a4254;box-shadow:none;padding-bottom:env(safe-area-inset-bottom,0px)}
-.hub-mobile-bar button{min-height:56px}.hub-mobile-bar [aria-current=page]{color:var(--bl-accent)}
+.hub-mobile-bar :is(button,a[data-hub]){min-height:56px}.hub-mobile-bar [aria-current=page]{color:var(--bl-accent)}
 .hub-landing{min-height:0;border:0;border-radius:0;background:none;box-shadow:none;margin-bottom:18px}
 .hub-landing::before,.hub-landing::after,.hub-hero-art,.hub-quick{display:none}
 .hub-landing-inner{padding:8px 0 0;max-width:none}.hub-landing h1{max-width:none;font-size:clamp(26px,3.8vw,42px);letter-spacing:-1px;line-height:1.12;margin:10px 0}
@@ -622,17 +622,17 @@ body.hub-match-open .hub-match-player-list>.hub-match-team-heading:first-child{m
 /* Compact secondary navigation, aligned with the blue controls. */
 .app-masthead .hub-menu-drawer{width:min(290px,calc(100vw - 24px));right:12px;padding:9px;border:1px solid #416a86;border-radius:15px;background:linear-gradient(145deg,#102b42,#0b2033);box-shadow:0 12px 28px #0006}
 .hub-menu-drawer nav{gap:5px}
-.hub-menu-drawer button{display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 13px;border:1px solid transparent;border-radius:10px;font-size:calc(14px + var(--bl-text-step,0px));font-weight:600;color:#d7e6f2}
+.hub-menu-drawer :is(button,a[data-hub]){display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 13px;border:1px solid transparent;border-radius:10px;font-size:calc(14px + var(--bl-text-step,0px));font-weight:600;color:#d7e6f2}
 .hub-menu-drawer .hub-menu-icon{width:19px;height:19px;flex-shrink:0;color:#8cd8f4}
-.hub-menu-drawer button[aria-current="page"]{background:linear-gradient(120deg,#07549a,#006fc6);border-color:#50cef2;color:#fff}
-.hub-menu-drawer button[aria-current="page"] .hub-menu-icon{color:#fff}
-.hub-menu-drawer button[data-hub="about"]{border-top-color:#34536a;border-top-left-radius:0;border-top-right-radius:0;margin-top:4px;padding-top:15px}
-.hub-menu-drawer button:focus-visible{outline:2px solid #65d3f5;outline-offset:1px}
+.hub-menu-drawer :is(button,a[data-hub])[aria-current="page"]{background:linear-gradient(120deg,#07549a,#006fc6);border-color:#50cef2;color:#fff}
+.hub-menu-drawer :is(button,a[data-hub])[aria-current="page"] .hub-menu-icon{color:#fff}
+.hub-menu-drawer :is(button,a[data-hub])[data-hub="about"]{border-top-color:#34536a;border-top-left-radius:0;border-top-right-radius:0;margin-top:4px;padding-top:15px}
+.hub-menu-drawer :is(button,a[data-hub]):focus-visible{outline:2px solid #65d3f5;outline-offset:1px}
 .hub-menu-toggle[aria-expanded="true"]{border-color:#65d3f5;background:#123653;color:#d6f1ff}
 .hub-menu-toggle[aria-expanded="true"] span{font-size:30px;line-height:1}
-@media(max-width:760px){.hub-menu-drawer button.hub-menu-main{display:none}}
+@media(max-width:760px){.hub-menu-drawer :is(button,a[data-hub]).hub-menu-main{display:none}}
 
-.hub-mobile-bar .hub-nav-icon{display:block;width:22px;height:22px;flex-shrink:0}.hub-mobile-bar button:focus-visible{outline:2px solid #65d3f5;outline-offset:-2px}
+.hub-mobile-bar .hub-nav-icon{display:block;width:22px;height:22px;flex-shrink:0}.hub-mobile-bar :is(button,a[data-hub]):focus-visible{outline:2px solid #65d3f5;outline-offset:-2px}
 
 /* Player explorer and personal pages: one clear analysis flow. */
 #players-explorer{max-width:1100px;margin:0 auto 24px}#players-explorer[hidden]{display:none}
@@ -681,7 +681,7 @@ body.player-personal-view #player .player-profile>.player-season-stats{max-width
 @media(max-width:760px){
  :root{--bl-text-step:2px;--bl-label-floor:9px}
  body{font-size:17px}
- .hub-mobile-bar button{line-height:1.2}
+ .hub-mobile-bar :is(button,a[data-hub]){line-height:1.2}
  .hub-trust-strip>span{line-height:1.35}
  .hub-choices-title{flex-wrap:wrap}
 }
@@ -827,3 +827,6 @@ body.player-personal-view #player .player-avatar{width:240px;height:164px}
 
 /* Matched game samples: playing time and probability review. */
 .bl-minutes-heading{margin:62px 0 14px;color:#b8d0df;font-size:13px;line-height:1.6}.bl-minutes-plot{height:74px;display:flex;gap:8px;align-items:flex-end;border-bottom:1px solid #527086}.bl-minutes-cell{flex:1;height:100%;min-width:0;position:relative;display:flex;align-items:flex-end;justify-content:center}.bl-minutes-cell i{display:block;width:100%;max-width:38px;background:#5596b6;border-radius:4px 4px 0 0}.bl-minutes-cell span{position:absolute;bottom:3px;color:white;font-size:12px;text-shadow:0 1px 3px #071624}.bl-probability-review{margin-top:18px;border-top:1px solid #34556b;padding-top:16px}.bl-probability-review summary{cursor:pointer;color:#e3f0f8;font-size:16px;font-weight:600}.bl-probability-review p{font-size:14px;line-height:1.6;color:#abc3d3}.bl-review-scroll{overflow-x:auto}.bl-probability-review table{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap}.bl-probability-review th,.bl-probability-review td{padding:10px 8px;text-align:left;border-bottom:1px solid #34556b}.bl-probability-review th{color:#a9c9de}
+
+/* Native links preserve navigation appearance and open-in-new-tab support. */
+.hub-menu-drawer a[data-hub],.hub-mobile-bar a[data-hub]{text-decoration:none;box-sizing:border-box;font-family:inherit}

@@ -1,0 +1,70 @@
+import html
+import importlib
+import json
+import os
+import re
+import unittest
+import xml.etree.ElementTree as ET
+from unittest.mock import patch
+from fastapi.testclient import TestClient
+import seo
+
+
+class SeoPagesTests(unittest.TestCase):
+    def test_each_page_has_its_own_metadata_and_native_navigation(self):
+        with patch.object(seo, 'saved_players', side_effect=AssertionError('Static pages must not read data')):
+            for path, (title, description) in seo.PAGES.items():
+                document = seo.render(path)
+                self.assertIn('<title>' + html.escape(title) + '</title>', document)
+                self.assertIn('rel="canonical" href="https://basketlab.it' + path + '"', document)
+                self.assertIn('<a href="/pronostici"', document)
+                self.assertIn('<a href="/giocatori"', document)
+                self.assertEqual(document.count('rel="canonical"'), 1)
+                self.assertEqual(document.count('name="description"'), 1)
+                self.assertIn('google-adsense-account', document)
+                self.assertIn('google-site-verification', document)
+
+    def test_sitemap_contains_real_player_urls_without_filter_duplicates(self):
+        players = [{'id':'22', 'name':'Álex Test'}, {'id':'22','name':'Álex Test'}]
+        tree = ET.fromstring(seo.sitemap(players))
+        urls = [e.text for e in tree.iter('{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
+        self.assertIn('https://basketlab.it/giocatori/alex-test-22', urls)
+        self.assertEqual(len(urls), len(set(urls)))
+        self.assertTrue(all('?' not in u and '#' not in u for u in urls))
+
+    def test_metadata_is_escaped_and_transient_match_pages_not_indexed(self):
+        document = seo.render('/giocatori/alex-test-22', [{'id':'22','name':'Alex </script><script>bad</script>'}])
+        self.assertNotIn('<script>bad</script>', document)
+        page = json.loads(re.search(r'id="bl-page-schema">(.*?)</script>', document)[1])
+        self.assertIn('Alex', page['name'])
+        self.assertIn('noindex,follow', seo.render('/analisi-partita'))
+
+    def test_http_routes_aliases_queries_and_unknown_ids(self):
+        with patch.dict(os.environ, {'NBA_STATS_ACCESS_TOKEN':'offline-test-token','ODDSPAPI_API_KEY':'offline-test-key'}):
+            main = importlib.import_module('main')
+        client = TestClient(main.app)
+        try:
+            with patch.object(main.storage, 'cache_read', side_effect=AssertionError('No database access for static pages')):
+                for path in seo.PAGES:
+                    response = client.get(path + '?utm_source=test')
+                    self.assertEqual(response.status_code, 200)
+                    self.assertIn('href="https://basketlab.it' + path + '"', response.text)
+                    self.assertEqual(response.headers['cache-control'], 'no-cache')
+            alias = client.get('/statistiche?mercato=PTS', follow_redirects=False)
+            self.assertEqual(alias.status_code, 301)
+            self.assertEqual(alias.headers['location'], '/giocatori?mercato=PTS')
+            with patch.object(seo, 'saved_players', return_value=({'id':'22','name':'Alex Test'},)):
+                self.assertEqual(client.get('/giocatori/alex-test-22').status_code, 200)
+                self.assertEqual(client.get('/giocatori/missing-23').status_code, 404)
+                self.assertEqual(client.get('/giocatori/invalid').status_code, 404)
+                self.assertIn('/giocatori/alex-test-22', client.get('/sitemap.xml').text)
+            for path in ('/api/missing', '/static/missing.js', '/missing'):
+                self.assertEqual(client.get(path).status_code, 404)
+            self.assertEqual(client.get('/static/modules/router.js?v=seo-pages-1').headers['cache-control'], 'public, max-age=86400')
+            self.assertEqual(client.get('/static/sw.js').headers['cache-control'], 'no-cache')
+        finally:
+            client.close()
+
+
+if __name__ == '__main__':
+    unittest.main()

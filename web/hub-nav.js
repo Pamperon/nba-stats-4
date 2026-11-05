@@ -203,7 +203,7 @@ $('#back-to-picks')?.addEventListener('click',event=>{
  if(target.match){calendarSelectedDate=target.date;openFixtureDetails(target.match);}
  else{const key=target.view;go[key]?.();select(key);if(key==='finder')window.restoreQuotePosition?.('finder');}
 },true);
-document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
+document.addEventListener('click',event=>{const b=event.target.closest('[data-hub]');if(!b||!go[b.dataset.hub])return;if(b.tagName==='A'&&(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button>0))return;event.preventDefault();go[b.dataset.hub]();select(b.dataset.hub);closeMenu()});
 $('#quote-tabs')?.addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(!button)return;const key=button.dataset.tab==='finder'?'finder':button.dataset.tab==='player'?'stats':'picks';select(key)});
 $('#area-stats')?.addEventListener('click',()=>select('stats'));
 document.querySelectorAll('[data-extra]').forEach(el=>el.addEventListener('click',()=>select(el.dataset.extra==='history'?'history':'about')));

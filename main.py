@@ -1868,10 +1868,9 @@ def robots_txt():
 
 @app.get('/sitemap.xml', include_in_schema=False)
 def sitemap_xml():
-    return Response(content='<?xml version="1.0" encoding="UTF-8"?>\n'
-                    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-                    '<url><loc>https://basketlab.it/</loc></url></urlset>',
-                    media_type='application/xml')
+    import seo
+    return Response(content=seo.sitemap(seo.saved_players()), media_type='application/xml',
+                    headers={'Cache-Control': 'public, max-age=300'})
 
 app.mount('/static',VersionedStaticFiles(directory='web'),name='static')
 @app.get('/')
@@ -1886,6 +1885,20 @@ app.mount('/static',VersionedStaticFiles(directory='web'),name='static')
 @app.get('/analisi-quote', include_in_schema=False)
 @app.get('/come-funziona', include_in_schema=False)
 @app.get('/analisi-singola', include_in_schema=False)
-def index():
-    return FileResponse('web/index.html', headers={'Cache-Control': 'no-cache'})
+def index(request: Request):
+    import re
+    import seo
+    from fastapi.responses import HTMLResponse, RedirectResponse
+    path = request.url.path
+    if path == '/statistiche':
+        return RedirectResponse('/giocatori' + ('?' + request.url.query if request.url.query else ''), status_code=301)
+    players = None
+    if path.startswith('/giocatori/'):
+        match = re.fullmatch(r'/giocatori/[a-z0-9-]+-([0-9]{1,12})', path)
+        if not match:
+            raise HTTPException(404, 'Giocatore non trovato')
+        players = seo.saved_players()
+        if players and not any(str(p['id']) == match[1] for p in players):
+            raise HTTPException(404, 'Giocatore non trovato')
+    return HTMLResponse(seo.render(path, players), headers={'Cache-Control': 'no-cache'})
 
