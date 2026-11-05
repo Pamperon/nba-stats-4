@@ -46,7 +46,14 @@
    });
    column.setAttribute('aria-label',String(game.GAME_DATE).slice(0,10)+': '+value+' '+stat);column.append(bar,date);plot.append(column);
   }
-  scroll.append(plot);area.append(scroll,detail);
+  scroll.append(plot);
+  const minuteValue=g=>g.MIN==null||g.MIN===''||!Number.isFinite(Number(g.MIN))?null:Number(g.MIN);
+  const known=games.map(minuteValue).filter(v=>v!==null),recent=games.slice(0,5).map(minuteValue).filter(v=>v!==null);
+  const minuteHeading=d.createElement('p');minuteHeading.className='bl-minutes-heading';minuteHeading.textContent='Minuti giocati · '+(known.length?'media '+(known.reduce((a,b)=>a+b,0)/known.length).toLocaleString('it-IT',{maximumFractionDigits:1})+' ('+known.length+' partite)':'non disponibili')+(recent.length?' · ultime 5: '+(recent.reduce((a,b)=>a+b,0)/recent.length).toLocaleString('it-IT',{maximumFractionDigits:1})+' ('+recent.length+' partite)':'');
+  const minutePlot=d.createElement('div');minutePlot.className='bl-minutes-plot';minutePlot.style.minWidth=plot.style.minWidth;
+  const minuteMax=Math.max(48,...known);
+  for(const game of sample){const value=minuteValue(game),cell=d.createElement('div');cell.className='bl-minutes-cell';const bar=d.createElement('i');bar.style.height=(value===null?0:100*value/minuteMax)+'%';const label=d.createElement('span');label.textContent=value===null?'—':value.toLocaleString('it-IT',{maximumFractionDigits:1});cell.setAttribute('aria-label',String(game.GAME_DATE).slice(0,10)+': '+(value===null?'minuti non disponibili':value+' minuti'));cell.append(bar,label);minutePlot.append(cell);}
+  scroll.append(minuteHeading,minutePlot);area.append(scroll,detail);
  }
  function playerTheme(code){const colors={BOS:'#006c40',ATL:'#812335',LAL:'#452a70',PHX:'#56301b',PHI:'#164f78',DET:'#66314b',NYK:'#234d76',GSW:'#1b4978',MIL:'#135343',DEN:'#203f63',CLE:'#683541',MIA:'#722c42',DAL:'#164f67',OKC:'#185478',SAS:'#35434c',SAC:'#4e326b',POR:'#702b3d',TOR:'#6c2839',MEM:'#314e70',MIN:'#1a4c66',NOP:'#344c56',UTA:'#3a3c60',WAS:'#344f6e',CHA:'#1e5863',CHI:'#702b3a',BKN:'#354454',IND:'#374a69',ORL:'#214f73',LAC:'#6c314c',HOU:'#742638'};const profile=byId('player-profile');if(!profile)return;profile.style.setProperty('--player-team-color',colors[code]||'#174b56');const secondary={ATL:'#fdb927',BOS:'#ba9653',BKN:'#808080',CHA:'#00788c',CHI:'#101820',CLE:'#ffb81c',DAL:'#8fbded',DEN:'#fec524',DET:'#1d42ba',GSW:'#ffc72c',HOU:'#aaaaaa',IND:'#fdbb30',LAC:'#1d428a',LAL:'#fdb927',MEM:'#7dbce8',MIA:'#f9a01b',MIL:'#eee1c6',MIN:'#78be20',NOP:'#c8102e',NYK:'#f58426',OKC:'#ef3b24',ORL:'#c4ced4',PHI:'#ed174c',PHX:'#e56020',POR:'#aaaaaa',SAC:'#a9a9b1',SAS:'#c4ced4',TOR:'#ce1141',UTA:'#6cace4',WAS:'#e31837'};profile.style.setProperty('--player-team-secondary',secondary[code]||'#347f9c');const aliases={GSW:'gs',NOP:'no',NYK:'ny',SAS:'sa',UTA:'utah',WAS:'wsh'};profile.style.setProperty('--player-team-emblem',colors[code]?'url("https://a.espncdn.com/i/teamlogos/nba/500/'+(aliases[code]||code.toLowerCase())+'.png")':'none');}
  root.BasketLabDesign={playerChart,syncMarket,playerTheme};

@@ -30,3 +30,13 @@ test('selected chart game has a readable date, expanded opponent and separate re
   assert.equal(d.querySelector('.bl-chart-detail-outcome').textContent,'Linea superata');
  }finally{dom.window.close();}
 });
+
+test('minutes chart aligns games and does not treat missing minutes as zero',()=>{
+ const dom=new JSDOM('<div id="player-visual"></div>',{runScripts:'outside-only'});
+ try{const w=dom.window;w.eval(fs.readFileSync('web/modules/design.js','utf8'));
+ w.BasketLabDesign.playerChart([{GAME_DATE:'2026-11-03',PTS:20,MIN:30},{GAME_DATE:'2026-11-02',PTS:10,MIN:null},{GAME_DATE:'2026-11-01',PTS:0,MIN:0}],'PTS',15.5,25);
+ const d=w.document;assert.deepEqual([...d.querySelectorAll('.bl-minutes-cell span')].map(n=>n.textContent),['0','—','30']);
+ assert.match(d.querySelector('.bl-minutes-heading').textContent,/media 15 \(2 partite\)/);
+ assert.equal(d.querySelector('.bl-minutes-plot').style.minWidth,d.querySelector('.bl-chart-plot').style.minWidth);
+ }finally{dom.window.close();}
+});

@@ -1681,6 +1681,8 @@ def public_history_performance():
     dates = public_views.history_dates(today)['dates']
     top5_states = []
     single_states = []
+    review_top = []
+    review_single = []
     days = 0
     for entry in dates:
         date = entry['date']
@@ -1689,11 +1691,15 @@ def public_history_performance():
         archive = _published_history(date, public_views.history(date))
         lines = archive['top5_archive']['lines']
         top5_states.extend(line.get('status') for line in lines)
+        review_top.extend(lines)
         days += bool(lines)
         single = archive['single_archive']
         if single.get('published'):
             single_states.append((single.get('outcome') or {}).get('status'))
+            review_single.append({**(single.get('selection') or {}), 'status': (single.get('outcome') or {}).get('status')})
+    from probability_review import summarize
     return {**_performance_counts(top5_states), 'single': _performance_counts(single_states),
+            'probability_review': {'top10': summarize(review_top), 'single': summarize(review_single)},
             'days': days, 'odds_api_calls': 0}
 
 
