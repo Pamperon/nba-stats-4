@@ -386,6 +386,7 @@ function render(){
  }
 
  if(!data&&!sessionPicksData){
+  $('picks').dataset.emptyState='waiting-odds';
   $('quote-updated').textContent='Dati non disponibili';
   $('picks').innerHTML='<div class="panel"><h2>Pronostici</h2><p>Nessuna quota ancora disponibile per la data selezionata.</p></div>';
   $('rows').innerHTML='';$('finder-cards').innerHTML='';$('finder-count').textContent='';return;
@@ -393,11 +394,13 @@ function render(){
  const rows=data?.results||[];
 
  const pickSource=sessionPicksData||data;
+ $('picks').dataset.emptyState='waiting-data';
  const pending=[];
  if(Array.isArray(pickSource.recommendations?.lines)){
   const chosen=pickSource.recommendations.lines; // Official picks are frozen at publication.
   const isFixed=pickSource.recommendations.policy==='fixed-1800-v1';
   const pendingPublication=isFixed && pickSource.official_top5_pending;
+  $('picks').dataset.emptyState=pendingPublication?((pickSource.quote_count??(pickSource.results||[]).length)>0?'waiting-data':'waiting-odds'):'no-selection';
   const targetDay=String(pickSource.date||$('date')?.value||'');
   const publicationNotice='Le scelte del Lab del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
   const featured=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,10):chosen.slice(0,10),remaining=pendingPublication?[]:chosen.slice(10);

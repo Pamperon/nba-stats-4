@@ -802,6 +802,17 @@ $('#hub-calendar-next')?.addEventListener('click',()=>shiftCalendarWeek(1));
 const calendarWeekStrip=$('#hub-calendar-dates');let calendarTouchStart=null;
 calendarWeekStrip?.addEventListener('touchstart',event=>{calendarTouchStart={x:event.changedTouches[0].clientX,y:event.changedTouches[0].clientY}},{passive:true});
 calendarWeekStrip?.addEventListener('touchend',event=>{if(!calendarTouchStart)return;const dx=event.changedTouches[0].clientX-calendarTouchStart.x,dy=event.changedTouches[0].clientY-calendarTouchStart.y;calendarTouchStart=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)shiftCalendarWeek(dx<0?1:-1)},{passive:true});
+function emptyPicksCard(unified,status){
+ const card=document.createElement('div');card.className='bl-picks-empty';
+ const final=status==='no-selection',quotes=status==='waiting-odds';
+ const badge=final?'ANALISI COMPLETATA':quotes?'IN ATTESA DI QUOTE':'IN ATTESA';
+ const title=final?(unified?'Nessuna selezione idonea':'Nessuna Singola idonea'):unified?'Le prossime selezioni saranno pubblicate qui':'La Singola del giorno apparirà qui';
+ const description=final?'Le linee analizzate non soddisfano i criteri del modello.':quotes?'Aspettiamo le quote delle prossime partite per valutare le selezioni.':'Le anteprime appariranno quando saranno disponibili quote e dati sufficienti.';
+ if(!unified){card.classList.add('is-partial');card.innerHTML='<h3>Singola del giorno</h3><p>'+(final?'Nessuna Singola soddisfa i criteri del modello.':'La Singola apparirà qui quando sarà disponibile una selezione idonea.')+'</p>';return card;}
+ card.innerHTML='<div class="bl-picks-empty-heading"><span class="bl-picks-empty-icon" aria-hidden="true">◎</span><span>Le selezioni del Lab</span><small>'+badge+'</small></div><h3>'+title+'</h3><p>'+description+'</p>'+(!final?'<div class="bl-picks-empty-time"><span aria-hidden="true">◷</span> Conferma delle selezioni alle <strong>18:00</strong></div>':'')+'<div class="bl-picks-empty-actions"><button type="button" data-empty-view="stats">Esplora i giocatori →</button><button type="button" data-empty-view="history">Archivio esiti →</button></div>';
+ for(const button of card.querySelectorAll('[data-empty-view]'))button.onclick=()=>{const view=button.dataset.emptyView;go[view]();select(view);};
+ return card;
+}
 let homeFixturesRequest=0;
 function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
@@ -809,6 +820,11 @@ function refreshShowcase(){
  if(single){
   const group=picks.querySelector('.pick-group[aria-label="Singola del giorno"]');
   const pick=group?.querySelector('.pick-selection');
+  const hasChoices=!!picks.querySelector('#pick-giorno .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-selection');
+  singleShowcase?.classList.toggle('is-empty',!pick);
+  singleShowcase?.classList.toggle('is-unified-empty',!pick&&!hasChoices);
+  featured?.classList.toggle('is-suppressed',!pick&&!hasChoices);
+  const more=featured?.querySelector('.hub-featured-more');if(more)more.hidden=!hasChoices;
   single.replaceChildren();
   if(pick){
    const broadcast=document.createElement('div');broadcast.className='bl-broadcast';
@@ -857,7 +873,7 @@ function refreshShowcase(){
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
    const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='Apri analisi →';action.addEventListener('click',openSingleAnalysis);single.append(action);
-  }else{const empty=document.createElement('p');empty.textContent=group?.querySelector('p:last-child')?.textContent||'Nessuna Singola idonea disponibile per questa giornata.';single.append(empty)}
+  }else{single.append(emptyPicksCard(!hasChoices,picks.dataset.emptyState||'waiting-data'))}
   if(state){const publication=group?.dataset.publicationState||'waiting';state.classList.add('bl-publication-badge');state.dataset.state=publication;state.textContent=publication==='official'?'Ufficiale':publication==='preview'?'Conferma alle 18:00':'In attesa';state.title=publication==='preview'?(group.dataset.publicationLabel||'Selezione provvisoria: non ancora ufficiale'):'Stato della selezione';state.setAttribute('aria-label',state.textContent+(publication==='preview'?'. '+state.title:''));}
  }
  if(games&&(!window.BasketLabSections||window.BasketLabSections.wants('home'))){

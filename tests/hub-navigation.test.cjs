@@ -417,3 +417,21 @@ test('venue icons appear only in calendar cards and not in home or daily picks',
  assert.equal(icons[1].parentElement.lastChild,icons[1]);
  assert.equal(icons[1].getAttribute('aria-label'),'In casa');
 });
+
+test('missing picks share a compact state across Home and Pronostici and restore real cards',async()=>{
+ const {window,doc}=setup();
+ const picks=doc.querySelector('#picks');picks.dataset.emptyState='waiting-odds';picks.innerHTML='<section class="pick-group" aria-label="Singola del giorno" data-publication-state="preview"><p>Nessuna Singola</p></section><section id="pick-giorno" data-publication-state="preview"></section>';
+ await new Promise(r=>setImmediate(r));
+ assert.equal(doc.querySelectorAll('.bl-picks-empty').length,1);
+ assert.match(doc.querySelector('.bl-picks-empty').textContent,/IN ATTESA DI QUOTE/);
+ assert.match(doc.querySelector('.bl-picks-empty').textContent,/18:00/);
+ assert.ok(doc.querySelector('.hub-featured').classList.contains('is-suppressed'));
+ assert.equal(doc.querySelector('.hub-featured-more').hidden,true);
+ doc.querySelector('.hub-sidebar [data-hub=picks]').click();
+ assert.equal(doc.querySelector('.bl-picks-empty').closest('#picks-showcase')?.id,'picks-showcase');
+ doc.querySelector('[data-empty-view=history]').click();assert.equal(doc.body.dataset.hubView,'history');
+ picks.dataset.emptyState='no-selection';picks.innerHTML='<section class="pick-group" aria-label="Singola del giorno"></section><section id="pick-giorno"></section>';
+ await new Promise(r=>setImmediate(r));assert.match(doc.querySelector('.bl-picks-empty').textContent,/Nessuna selezione idonea/);assert.equal(doc.querySelector('.bl-picks-empty-time'),null);
+ picks.innerHTML='<section class="pick-group" aria-label="Singola del giorno"></section><section id="pick-giorno"><div class="pick-group-items"><article class="pick-selection"><button class="pick-player-link">Test Player</button></article></div></section>';
+ await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('.hub-featured').classList.contains('is-suppressed'),false);assert.equal(doc.querySelector('.hub-featured-more').hidden,false);assert.ok(doc.querySelector('.bl-picks-empty.is-partial'));
+});
