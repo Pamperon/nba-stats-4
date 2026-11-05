@@ -4,6 +4,7 @@ const row={'ESPN ID':'22',Giocatore:'Test, Alex',Squadra:'Boston Celtics',Partit
 function setup(url='https://basketlab.it/giocatori',options={}){
  const dom=new JSDOM(html,{url,runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,d=w.document,calls=[];w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
  w.BasketLabSections={register(){},wants(){return false}};
+ if(options.previews)w.IntersectionObserver=class{constructor(cb){this.cb=cb;}observe(target){Promise.resolve().then(()=>this.cb([{isIntersecting:true,target}]));}unobserve(){}disconnect(){}};
  w.fetch=async u=>{calls.push(String(u));let p={};if(u==='/api/players/explorer'&&options.quoteError)throw Error('Quotes offline');if(u==='/api/players/explorer')p={date:'2026-11-05',rows:options.rows||[row],logs:{'Test, Alex':[{GAME_DATE:'2026-11-01',PTS:20},{GAME_DATE:'2026-10-30',PTS:8}]}};
  else if(u==='/api/players/directory')p={players:[{id:'22',name:'Alex Test',team:'Boston Celtics',team_id:'2'},{id:'33',name:'Other Player',team:'Boston Celtics',team_id:'2'}]};
  else if(String(u).startsWith('/api/nba/fixtures'))p={games:[{home:'Boston Celtics',away:'Atlanta Hawks'}]};
@@ -62,4 +63,16 @@ test('period hit rates use red below fifty and keep missing samples neutral',asy
  assert.equal(d.querySelector('[data-player-window="10"]').dataset.hitRate,'high');
  assert.equal(d.querySelector('[data-player-window="20"]').dataset.hitRate,'unknown');
  assert.equal(d.querySelector('[data-player-window="5"] small').textContent,'40%');
+}finally{dom.window.close();}});
+
+test('unpriced directory cards show neutral real history and reuse it across markets',async()=>{const {dom,w,d,calls}=setup('https://basketlab.it/giocatori',{rows:[],previews:true});try{
+ for(let n=0;n<25;n++)await tick();
+ assert.equal(d.querySelectorAll('.pe-catalog-row').length,2);
+ assert.equal(d.querySelectorAll('.pe-spark.is-neutral').length,2);
+ assert.equal(d.querySelectorAll('.pe-spark.is-neutral i.neutral').length,4);
+ assert.equal(d.querySelectorAll('.pe-spark-line').length,0);
+ assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,2);
+ d.querySelector('[data-pe-market=REB]').click();for(let n=0;n<15;n++)await tick();
+ assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,2);
+ assert.match(d.querySelector('.pe-spark').getAttribute('aria-label'),/3, 5/);
 }finally{dom.window.close();}});

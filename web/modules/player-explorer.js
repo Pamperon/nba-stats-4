@@ -40,7 +40,27 @@ async function showDirectory(){
  catch{if(token!==request)return;quotesUnavailable=true;payload=payload||{rows:[],logs:{}};updateOptions();await render();}
 }
 function chooseRow(rows){return [...rows].sort((a,b)=>Math.abs(Number(a.Quota)-1.9)-Math.abs(Number(b.Quota)-1.9)||Number(a.Linea)-Number(b.Linea))[0];}
-function spark(games,line){const values=(games||[]).filter(g=>g[market]!=null&&g[market]!==''&&Number.isFinite(Number(g[market]))).slice(0,10).reverse();if(!values.length)return '<span class="pe-spark-empty">Storico nella scheda ›</span>';const max=Math.max(1,line,...values.map(g=>Number(g[market])));return '<span class="pe-spark" role="img" aria-label="Ultime '+values.length+' partite: '+values.map(g=>Number(g[market])).join(', ')+'"><span class="pe-spark-line" style="bottom:'+Math.min(100,line/max*100)+'%"></span>'+values.map(g=>'<i class="'+(Number(g[market])>line?'over':Number(g[market])===line?'equal':'under')+'" style="height:'+Math.max(2,Number(g[market])/max*100)+'%"></i>').join('')+'</span>';}
+const previewCache=new Map(),previewPending=new Map();let previewObserver=null,previewQueue=[],previewActive=0;
+function previewSeason(){const now=new Date(),year=Number(new Intl.DateTimeFormat('en',{timeZone:'Europe/Rome',year:'numeric'}).format(now)),month=Number(new Intl.DateTimeFormat('en',{timeZone:'Europe/Rome',month:'numeric'}).format(now));return String(month>=10?year:year-1);}
+function previewLogs(player){
+ const key=previewSeason()+':'+player.id,cached=previewCache.get(key);if(cached&&Date.now()-cached.at<1800000)return Promise.resolve(cached.games);
+ if(previewPending.has(key))return previewPending.get(key);
+ const task=w.fetch('/api/players/log?team_id='+encodeURIComponent(player.team)+'&athlete_id='+encodeURIComponent(player.id)+'&season='+previewSeason()).then(r=>{if(!r.ok)throw Error('Preview unavailable');return r.json();}).then(data=>{
+  const games=(data.games||[]).filter(g=>g.GAME_DATE).sort((a,b)=>String(b.GAME_DATE).localeCompare(String(a.GAME_DATE))).slice(0,10).map(g=>({GAME_DATE:g.GAME_DATE,PTS:g.PTS,REB:g.REB,AST:g.AST}));previewCache.set(key,{at:Date.now(),games});if(previewCache.size>80)previewCache.delete(previewCache.keys().next().value);return games;
+ }).finally(()=>previewPending.delete(key));previewPending.set(key,task);return task;
+}
+function runPreviewQueue(){
+ while(previewActive<2&&previewQueue.length){const link=previewQueue.shift();if(!link.isConnected||api.detailOpen)continue;previewActive++;
+  previewLogs({id:link.dataset.previewId,team:link.dataset.previewTeam}).then(games=>{if(!link.isConnected)return;const slot=link.querySelector('.pe-spark-slot');if(slot)slot.outerHTML=spark(games,null);}).catch(()=>{const slot=link.querySelector('.pe-spark-slot');if(slot)slot.textContent='Storico nella scheda';}).finally(()=>{previewActive--;runPreviewQueue();});
+ }
+}
+function observePreviews(list){
+ previewObserver?.disconnect();previewQueue=[];
+ if(!w.IntersectionObserver)return;
+ previewObserver=new w.IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){previewObserver.unobserve(entry.target);previewQueue.push(entry.target);}runPreviewQueue();},{rootMargin:'120px'});
+ for(const link of list.querySelectorAll('[data-preview-id]'))previewObserver.observe(link);
+}
+function spark(games,line){const values=(games||[]).filter(g=>g[market]!=null&&g[market]!==''&&Number.isFinite(Number(g[market]))).slice(0,10).reverse();if(!values.length)return '<span class="pe-spark-empty">Storico nella scheda ›</span>';const max=Math.max(1,line,...values.map(g=>Number(g[market])));const neutral=line==null;return '<span class="pe-spark'+(neutral?' is-neutral':'')+'" role="img" aria-label="Ultime '+values.length+' partite: '+values.map(g=>Number(g[market])).join(', ')+'">'+(neutral?'':'<span class="pe-spark-line" style="bottom:'+Math.min(100,line/max*100)+'%"></span>')+values.map(g=>'<i class="'+(neutral?'neutral':Number(g[market])>line?'over':Number(g[market])===line?'equal':'under')+'" style="height:'+Math.max(2,Number(g[market])/max*100)+'%"></i>').join('')+'</span>';}
 async function render(){
  const token=++request,q=norm($('pe-search').value.trim()),team=$('pe-team').value,fixture=$('pe-match').value;let unpricedCount=0;
  if(!payload)return;
@@ -57,7 +77,8 @@ async function render(){
    unpricedCount=other.length;
    for(const p of other){
     const link=d.createElement('a');link.className='pe-player-row pe-catalog-row';link.href='/giocatori/'+slug(p.name,p.id);
-    const id=String(p.id);link.innerHTML='<div class="pe-player-face">'+(/^\d+$/.test(id)?'<img src="/api/players/headshot/'+id+'" alt="" loading="lazy">':'')+'</div><div class="pe-player-info"><strong>'+esc(p.name)+'</strong><small>'+esc(p.team)+'</small><span class="pe-unpriced-label">Statistiche disponibili · Senza quota</span></div><span class="pe-spark-empty">Apri statistiche</span><span class="pe-row-arrow">›</span>';
+    const id=String(p.id);link.innerHTML='<div class="pe-player-face">'+(/^\d+$/.test(id)?'<img src="/api/players/headshot/'+id+'" alt="" loading="lazy">':'')+'</div><div class="pe-player-info"><strong>'+esc(p.name)+'</strong><small>'+esc(p.team)+'</small><span class="pe-unpriced-label">Statistiche disponibili · Senza quota</span></div><span class="pe-spark-empty pe-spark-slot">Caricamento storico…</span><span class="pe-row-arrow">›</span>';
+    link.dataset.previewId=String(p.id);link.dataset.previewTeam=String(p.team_id);
     link.onclick=e=>{if(e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();directoryScroll=w.scrollY;w.BasketLabPlayerEngine.open({'ESPN ID':p.id,Giocatore:p.name,Squadra:p.team,Mercato:market});};cards.push(link);
    }
   }catch{if(token!==request)return;showCards(list,cards);$('pe-status').textContent='Catalogo NBA temporaneamente non disponibile. Puoi riprovare la ricerca.';return;}
@@ -68,7 +89,7 @@ async function render(){
 }
 function showCards(list,cards){
  cards.sort((a,b)=>(a.querySelector('.pe-player-info strong')?.textContent||'').localeCompare(b.querySelector('.pe-player-info strong')?.textContent||'','it'));
- list.replaceChildren(...cards.slice(0,limit));
+ list.replaceChildren(...cards.slice(0,limit));observePreviews(list);
 }
 function renderQuotes(){
  if(!api.detailOpen||!selected||!payload)return;

@@ -818,3 +818,9 @@ body.player-personal-view .bl-window-tabs button[data-hit-rate=unknown] small{co
 
 #picks-showcase:has(.is-unified-empty)>.hub-picks-archive{display:none}
 body[data-hub-view=picks] .bl-picks-empty-actions button[data-empty-view=history]{order:-1}
+
+/* Neutral history previews never imply a bookmaker line where none exists. */
+.pe-spark.is-neutral i.neutral{background:linear-gradient(#70c4ee,#3283b2)}
+body.player-personal-view #player .player-profile{grid-template-columns:240px minmax(0,1fr);padding-top:5px;background:linear-gradient(112deg,color-mix(in srgb,var(--player-team-color,#174b56) 85%,#17344a) 0%,#132b40 48%,color-mix(in srgb,var(--player-team-secondary,#347f9c) 48%,#102539) 100%)}
+body.player-personal-view #player .player-avatar{width:240px;height:164px}
+@media(max-width:600px){body.player-personal-view #player .player-profile{grid-template-columns:55% minmax(0,1fr);column-gap:6px;padding-top:4px}body.player-personal-view #player .player-avatar{width:100%;height:140px}body.player-personal-view #player .player-profile-body{padding:8px 0 12px}body.player-personal-view #player .player-profile-body h3{font-size:22px}}
