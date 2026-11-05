@@ -5,6 +5,7 @@ Parallel evaluation only: never promotes a candidate or edits public estimates.
 import math
 import model_candidates as models
 import recommendations
+import selection_audit_shadow
 
 CONFIGS = (
     ('baseline', models.BASELINE, 'probability'),
@@ -88,6 +89,7 @@ def choose_panel(rows):
 
 def capture(rows):
     """Called during a scan: consume internal candidates, leaving public rows intact."""
+    daily_audit = selection_audit_shadow.capture(rows)
     prepared = []
     for row in rows:
         predictions = row.pop('_shadow_probabilities', None)
@@ -100,6 +102,7 @@ def capture(rows):
         prepared.append({**row, '_models': probabilities})
     fields = ('Partita','Squadra','ESPN ID','Giocatore','Mercato','Scelta','Linea','Quota','Prob. stimata %','_models')
     return {'version': models.VERSION, 'mode': 'shadow', 'promotion_allowed': False,
+            'daily_selection_audit': daily_audit,
             'covered_lines': len(prepared),
             'probability_panel': [{key: row.get(key) for key in fields} for row in choose_panel(prepared)],
             'tickets': {name: policy_select(prepared, model, policy) for name, model, policy in CONFIGS}}
@@ -111,6 +114,7 @@ def evaluate(saved, verified):
     panel = saved.get('probability_panel', [])
     paired = [{**row, 'actual': lookup[line_key(row)]['actual']} for row in panel if line_key(row) in lookup]
     return {'version': saved.get('version'), 'mode': 'shadow', 'promotion_allowed': False,
+            'daily_selection_audit': selection_audit_shadow.evaluate(saved.get('daily_selection_audit', {}), verified),
             'panel_selected': len(panel), 'panel_verified': len(paired),
             'models': {model: score(paired, model) for model in models.MODELS + ('live_control',)},
             'tickets': {name: recommendations.evaluate(ticket, verified)
