@@ -37,6 +37,7 @@ async def database_pool_unavailable(request: Request, exc: Exception):
 # Explicit release gate: collecting results must not activate live calibration.
 # Change only after a separate review of the accumulated NBA evidence.
 LIVE_CALIBRATION_ENABLED = False
+PROBABILITY_MODEL_V3_ENABLED = True
 TOKEN = os.getenv('NBA_STATS_ACCESS_TOKEN', '')
 if not TOKEN:
     raise RuntimeError('Set NBA_STATS_ACCESS_TOKEN before starting the server')
@@ -490,8 +491,9 @@ def session_picks(compact: bool = False):
                 continue
             seen.add(key)
             results.append(row)
-    single = official['single'] if official else recommendations.select_single(results)
-    preliminary = [] if official else recommendations.select_daily(results)['lines']
+    forecast_rows = [r for r in results if day < '2026-11-05' or r.get('Modello probabilità') == 'minutes-role-calibrated-v3']
+    single = official['single'] if official else recommendations.select_single(forecast_rows)
+    preliminary = [] if official else recommendations.select_daily(forecast_rows)['lines']
     if single:
         sid = str(single.get('ESPN ID') or single.get('Giocatore') or '').strip().casefold()
         preliminary = [p for p in preliminary if str(p.get('ESPN ID') or p.get('Giocatore') or '').strip().casefold()!=sid]
@@ -732,6 +734,11 @@ def do_scan(job_id, date):
         import availability
         import recommendations
         rows, availability_status = availability.check(rows)
+        probability_model_status = None
+        if PROBABILITY_MODEL_V3_ENABLED and date >= '2026-11-06':
+            import probability_model_v3
+            rows, probability_model_status = probability_model_v3.apply_rows(
+                rows, logs, season, date, scan_started_at)
         model_shadow = None
         try:
             import shadow_study
@@ -759,6 +766,7 @@ def do_scan(job_id, date):
         minutes_audit = minutes_shadow.audit(rows)
         snapshot = {
             'model_shadow': model_shadow,
+            'probability_model': probability_model_status,
             'recommendations': saved_recommendations,
             'availability': availability_status,
             'minutes_audit': minutes_audit,

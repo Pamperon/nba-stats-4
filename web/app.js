@@ -255,14 +255,21 @@ function pickRejectionReasons(row){
  if(row['Stato analisi']!=='Valutabile (stima empirica)')reasons.push('analisi non valutabile');
  if(!Number.isFinite(p)||p<=0||p>=100)reasons.push('stima non valida');
  if(!Number.isFinite(odd)||odd<=1)reasons.push('quota non valida');
+ const modern=row['Modello probabilità']==='minutes-role-calibrated-v3';
+ if(modern){
+  if(!['Partite ruolo attuale','Minuti attesi','Campione effettivo','Limite prudente %','Variabilità minuti'].every(k=>Number.isFinite(Number(row[k]||0))))reasons.push('dati modello incompleti');
+  if(row['Ruolo stabile']!==true||Number(row['Partite ruolo attuale']||0)<5||Number(row['Minuti attesi']||0)<15)reasons.push('ruolo o minutaggio non stabile');
+  if(row['Calibrazione supportata']!==true||Number(row['Campione effettivo']||0)<10||Number(row['Limite prudente %']||0)<55)reasons.push('probabilità non sufficientemente supportata');
+ }else{
  if(!Number.isFinite(games)||games<10)reasons.push('meno di 10 partite');
  if(!Number.isFinite(season)||season<50)reasons.push('frequenza stagionale insufficiente');
  if(!Number.isFinite(minutes)||minutes<15)reasons.push('minuti medi insufficienti');
  if(!Number.isFinite(recent)||recent<0.65*minutes)reasons.push('minuti recenti in calo');
  if(games>=15&&recent<0.75*minutes&&minutes-recent>=5)reasons.push('forte calo del minutaggio');
+ }
  if(['out','doubtful','questionable','day-to-day','suspension'].includes(row['Disponibilità ESPN']))reasons.push('assenza o disponibilità incerta segnalata');
  if(row['Disponibilità ESPN']==='unknown')reasons.push('disponibilità non verificata');
- if(Number.isFinite(p)&&Number.isFinite(odd)&&odd>1&&p-100/odd<3)reasons.push('value insufficiente');
+ if(Number.isFinite(p)&&Number.isFinite(odd)&&odd>1&&p-100/odd<(modern?0:3))reasons.push('value insufficiente');
  return reasons;
 }
 function reliablePick(row){return pickRejectionReasons(row).length===0;}
@@ -311,6 +318,8 @@ function pickExplanation(row){
   else if(season!==null&&games>0)message+=' Storico: <strong>'+display(season)+'% su '+games+' partite</strong>.';
   sections.push('<p class="pick-detail-row"><b><span aria-hidden="true">📊</span> Ultime partite</b><span>'+message+'</span></p>');
  }
+ const expectedMin=num(row['Minuti attesi']);
+ if(expectedMin!==null)sections.push('<p class="pick-detail-row"><b>Minuti attesi</b><span>Il modello considera <strong>'+display(expectedMin)+' minuti</strong> e la stabilità del ruolo recente.</span></p>');
  const avg=num(row['Minuti medi']),recentMin=num(row['Minuti ultime 5']);
  if(avg!==null&&recentMin!==null){
   sections.push('<p class="pick-detail-row"><b><span aria-hidden="true">⏱️</span> Minuti</b><span>Ha giocato in media <strong>'+display(recentMin)+' minuti nelle ultime 5</strong>, rispetto ai <strong>'+display(avg)+' minuti</strong> della media storica.</span></p>');

@@ -25,11 +25,27 @@ def rejection_reasons(row, screen_risks=True):
         reasons.append("analisi non valutabile")
     if not 0 < p < 100 or price <= 1:
         return reasons + ["stima o quota non valida"]
-    if games < 10 or season < 50 or minutes < 15:
-        reasons.append("storico insufficiente")
-    if recent < 0.65 * minutes or (screen_risks and minutes_shadow.assess(row) == "watch"):
-        reasons.append("minutaggio in calo")
-    if p - 100 / price < 3:
+    modern = row.get('Modello probabilità') == 'minutes-role-calibrated-v3'
+    if modern:
+        try:
+            evidence = [float(row.get(k) or 0) for k in ('Partite ruolo attuale','Minuti attesi','Campione effettivo','Limite prudente %','Variabilità minuti')]
+            if not all(math.isfinite(v) for v in evidence):
+                reasons.append('dati modello incompleti')
+            if (row.get('Ruolo stabile') is not True or float(row.get('Partite ruolo attuale') or 0) < 5
+                    or float(row.get('Minuti attesi') or 0) < 15):
+                reasons.append('ruolo o minutaggio non stabile')
+            if (row.get('Calibrazione supportata') is not True
+                    or float(row.get('Campione effettivo') or 0) < 10
+                    or float(row.get('Limite prudente %') or 0) < 55):
+                reasons.append('probabilità non sufficientemente supportata')
+        except (TypeError, ValueError):
+            reasons.append('dati modello incompleti')
+    else:
+        if games < 10 or season < 50 or minutes < 15:
+            reasons.append("storico insufficiente")
+        if recent < 0.65 * minutes or (screen_risks and minutes_shadow.assess(row) == "watch"):
+            reasons.append("minutaggio in calo")
+    if p - 100 / price < (0 if modern else 3):
         reasons.append("value insufficiente")
     availability = row.get("Disponibilità ESPN")
     if screen_risks and availability in BLOCKED:
@@ -83,7 +99,9 @@ def select_daily(rows, screen_risks=True):
         if probability < DAILY_MIN_PROBABILITY:
             continue
         eligible.append((probability, probability * price - 1, row))
-    eligible.sort(key=lambda item: (-item[0], -item[1],
+    eligible.sort(key=lambda item: (-item[0],
+                                    float(item[2].get('Variabilità minuti') or 0),
+                                    -float(item[2].get('Campione effettivo') or 0), -item[1],
                                     str(item[2].get("Giocatore") or ""),
                                     str(item[2].get("Mercato") or ""),
                                     str(item[2].get("Linea") or "")))
@@ -113,8 +131,12 @@ def select_single(rows):
         if not (1.70 <= price <= 1.90 and probability > 70
                 and probability - 100 / price >= 5):
             continue
-        candidates.append((probability * price / 100 - 1, probability, row))
+        modern = row.get('Modello probabilità') == 'minutes-role-calibrated-v3'
+        primary = probability / 100 if modern else probability * price / 100 - 1
+        candidates.append((primary, probability, row))
     candidates.sort(key=lambda item: (-item[0], -item[1],
+                                      float(item[2].get('Variabilità minuti') or 0),
+                                      -float(item[2].get('Campione effettivo') or 0),
                                       str(item[2].get('Giocatore') or ''),
                                       str(item[2].get('Mercato') or '')))
     return dict(candidates[0][2]) if candidates else None

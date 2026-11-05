@@ -44,7 +44,7 @@ def get(day):
         row = conn.execute(
             "SELECT published_at,snapshot_job_id,selections FROM nba_official_daily_top5 WHERE scan_date=%s",
             (day,)).fetchone()
-    if row and len(row[2]) < 10:
+    if row and len(row[2]) < 10 and str(day) < '2026-11-05':
         import recommendations
         with storage.connection() as conn:
             snapshot = conn.execute(
@@ -141,6 +141,8 @@ def publish(day, games, now=None):
             saved_recommendations = payload.get('recommendations') or {}
             valid_rows = []
             for candidate in payload.get('results', []):
+                if str(day) >= '2026-11-06' and candidate.get('Modello probabilità') != 'minutes-role-calibrated-v3':
+                    continue
                 parts = str(candidate.get('Partita') or '').split(' - ')
                 if len(parts) != 2:
                     continue
@@ -153,6 +155,8 @@ def publish(day, games, now=None):
             selections = []
             used = {single_id} if single_id else set()
             for pick in saved_recommendations.get('lines', []):
+                if str(day) >= '2026-11-06' and (pick.get('Modello probabilità') != 'minutes-role-calibrated-v3' or recommendations.rejection_reasons(pick)):
+                    continue
                 parts = str(pick.get('Partita') or '').split(' - ')
                 if len(parts) != 2:
                     continue
@@ -164,7 +168,7 @@ def publish(day, games, now=None):
                     continue
                 try:
                     p, odds = float(pick['Prob. stimata %']), float(pick['Quota'])
-                    if p < 70 or not 1.20 <= odds <= 2.20 or p - 100 / odds < 3:
+                    if p < 70 or not 1.20 <= odds <= 2.20 or p - 100 / odds < (0 if pick.get('Modello probabilità') == 'minutes-role-calibrated-v3' else 3):
                         continue
                 except (KeyError, TypeError, ValueError):
                     continue

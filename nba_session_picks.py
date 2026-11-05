@@ -10,7 +10,7 @@ import storage
 import recommendations
 
 ROME = ZoneInfo("Europe/Rome")
-POLICY = "nba-evening-session-v1"
+POLICY = "nba-evening-session-v2-probability-first"
 START = date(2026, 11, 2)
 
 
@@ -44,7 +44,7 @@ def read(day):
         """, (day,)).fetchone()
     if row is None:
         return None
-    if len(row[2]) < 10:
+    if len(row[2]) < 10 and str(day) < '2026-11-05':
         with storage.connection() as conn:
             snapshots = conn.execute(
                 "SELECT payload FROM nba_scan_snapshots WHERE job_id = ANY(%s) AND created_at <= %s",
@@ -67,6 +67,8 @@ def _fixture_key(name):
 def _valid_rows(payload, eligible_games, earliest):
     rows = []
     for row in payload.get('results', []):
+        if earliest.astimezone(ROME).date().isoformat() >= '2026-11-05' and row.get('Modello probabilità') != 'minutes-role-calibrated-v3':
+            continue
         start = eligible_games.get(_fixture_key(row.get('Partita')))
         if start is not None and start >= earliest:
             rows.append(row)

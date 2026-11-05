@@ -1,0 +1,121 @@
+{
+  "new": {
+    "n": 27,
+    "brier": 0.213468,
+    "predicted_pct": 78.46666666666667,
+    "observed_pct": 70.37037037037037
+  },
+  "legacy_same_days": {
+    "n": 35,
+    "brier": 0.2470132857142857,
+    "predicted_pct": 86.16857142857143,
+    "observed_pct": 68.57142857142857
+  },
+  "daily": [
+    {
+      "day": "2026-10-23",
+      "new_count": 0,
+      "new_wins": 0,
+      "old_count": 0,
+      "old_wins": 0,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-24",
+      "new_count": 0,
+      "new_wins": 0,
+      "old_count": 0,
+      "old_wins": 0,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-25",
+      "new_count": 0,
+      "new_wins": 0,
+      "old_count": 6,
+      "old_wins": 4,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-26",
+      "new_count": 0,
+      "new_wins": 0,
+      "old_count": 10,
+      "old_wins": 6,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-27",
+      "new_count": 0,
+      "new_wins": 0,
+      "old_count": 10,
+      "old_wins": 9,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-28",
+      "new_count": 0,
+      "new_wins": 0,
+      "old_count": 10,
+      "old_wins": 6,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-29",
+      "new_count": 0,
+      "new_wins": 0,
+      "old_count": 10,
+      "old_wins": 7,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-30",
+      "new_count": 2,
+      "new_wins": 2,
+      "old_count": 10,
+      "old_wins": 8,
+      "single_count": 0
+    },
+    {
+      "day": "2026-10-31",
+      "new_count": 2,
+      "new_wins": 1,
+      "old_count": 0,
+      "old_wins": 0,
+      "single_count": 0
+    },
+    {
+      "day": "2026-11-01",
+      "new_count": 1,
+      "new_wins": 0,
+      "old_count": 3,
+      "old_wins": 1,
+      "single_count": 1
+    },
+    {
+      "day": "2026-11-02",
+      "new_count": 2,
+      "new_wins": 2,
+      "old_count": 2,
+      "old_wins": 1,
+      "single_count": 0
+    },
+    {
+      "day": "2026-11-03",
+      "new_count": 10,
+      "new_wins": 7,
+      "old_count": 10,
+      "old_wins": 7,
+      "single_count": 1
+    },
+    {
+      "day": "2026-11-05",
+      "new_count": 10,
+      "new_wins": 7,
+      "old_count": 10,
+      "old_wins": 7,
+      "single_count": 1
+    }
+  ],
+  "note": "Retrospective chronological replay. No independently untouched prospective validation yet. New and legacy portfolios have different sizes."
+}

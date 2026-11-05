@@ -1,0 +1,543 @@
+{
+  "model_version": "minutes-role-calibrated-v3",
+  "days": 13,
+  "trained_through": "2026-11-05",
+  "markets": {
+    "PTS": [
+      {
+        "bin": 0,
+        "effective_n": 0.0,
+        "days": 0,
+        "probability": 0.04824433270450283
+      },
+      {
+        "bin": 1,
+        "effective_n": 182.43650793650662,
+        "days": 7,
+        "probability": 0.04824433270450283
+      },
+      {
+        "bin": 2,
+        "effective_n": 218.1682539682519,
+        "days": 11,
+        "probability": 0.10567451335065568
+      },
+      {
+        "bin": 3,
+        "effective_n": 183.11507936507832,
+        "days": 13,
+        "probability": 0.19146384255285803
+      },
+      {
+        "bin": 4,
+        "effective_n": 68.54880952380972,
+        "days": 13,
+        "probability": 0.4134195662026987
+      },
+      {
+        "bin": 5,
+        "effective_n": 65.46825396825412,
+        "days": 13,
+        "probability": 0.5045722241105389
+      },
+      {
+        "bin": 6,
+        "effective_n": 98.74523809523835,
+        "days": 13,
+        "probability": 0.6842203747957176
+      },
+      {
+        "bin": 7,
+        "effective_n": 86.07619047619072,
+        "days": 11,
+        "probability": 0.7988042312519402
+      },
+      {
+        "bin": 8,
+        "effective_n": 39.441666666666706,
+        "days": 7,
+        "probability": 0.8651615902159387
+      },
+      {
+        "bin": 9,
+        "effective_n": 0.0,
+        "days": 0,
+        "probability": 0.95
+      }
+    ],
+    "REB": [
+      {
+        "bin": 0,
+        "effective_n": 0.0,
+        "days": 0,
+        "probability": 0.05
+      },
+      {
+        "bin": 1,
+        "effective_n": 105.3333333333332,
+        "days": 7,
+        "probability": 0.08105490925149736
+      },
+      {
+        "bin": 2,
+        "effective_n": 170.16666666666674,
+        "days": 11,
+        "probability": 0.12659328293324074
+      },
+      {
+        "bin": 3,
+        "effective_n": 189.74999999999994,
+        "days": 13,
+        "probability": 0.2326168657424813
+      },
+      {
+        "bin": 4,
+        "effective_n": 97.24999999999994,
+        "days": 13,
+        "probability": 0.4210792876274848
+      },
+      {
+        "bin": 5,
+        "effective_n": 94.58333333333329,
+        "days": 13,
+        "probability": 0.5369574218427843
+      },
+      {
+        "bin": 6,
+        "effective_n": 136.3333333333332,
+        "days": 13,
+        "probability": 0.701295632261635
+      },
+      {
+        "bin": 7,
+        "effective_n": 102.66666666666663,
+        "days": 11,
+        "probability": 0.7885282472511722
+      },
+      {
+        "bin": 8,
+        "effective_n": 45.916666666666664,
+        "days": 7,
+        "probability": 0.8747469279020001
+      },
+      {
+        "bin": 9,
+        "effective_n": 0.0,
+        "days": 0,
+        "probability": 0.95
+      }
+    ],
+    "AST": [
+      {
+        "bin": 0,
+        "effective_n": 0.0,
+        "days": 0,
+        "probability": 0.047140127707026296
+      },
+      {
+        "bin": 1,
+        "effective_n": 219.6833333333337,
+        "days": 7,
+        "probability": 0.047140127707026296
+      },
+      {
+        "bin": 2,
+        "effective_n": 265.6666666666655,
+        "days": 11,
+        "probability": 0.09401447358870357
+      },
+      {
+        "bin": 3,
+        "effective_n": 231.26666666666577,
+        "days": 13,
+        "probability": 0.17959586989380164
+      },
+      {
+        "bin": 4,
+        "effective_n": 73.10000000000011,
+        "days": 13,
+        "probability": 0.3839386887017286
+      },
+      {
+        "bin": 5,
+        "effective_n": 48.600000000000044,
+        "days": 13,
+        "probability": 0.4753686967630412
+      },
+      {
+        "bin": 6,
+        "effective_n": 53.06666666666664,
+        "days": 13,
+        "probability": 0.6832626168026665
+      },
+      {
+        "bin": 7,
+        "effective_n": 37.71666666666672,
+        "days": 11,
+        "probability": 0.774721309692937
+      },
+      {
+        "bin": 8,
+        "effective_n": 12.899999999999988,
+        "days": 7,
+        "probability": 0.8241181439568934
+      },
+      {
+        "bin": 9,
+        "effective_n": 0.0,
+        "days": 0,
+        "probability": 0.95
+      }
+    ]
+  },
+  "weighting": "one total unit per athlete-market-fixture-day",
+  "validation": {
+    "method": "chronological earlier days only",
+    "retrospective": true,
+    "daily": [
+      {
+        "day": "2026-10-23",
+        "training_days": 0,
+        "old": {
+          "n": 228,
+          "brier": 0.11130539912280703,
+          "predicted_pct": 32.98991228070175,
+          "observed_pct": 32.89473684210526
+        },
+        "new_raw": {
+          "n": 228,
+          "brier": 0.1781303864349755,
+          "predicted_pct": 42.17559537331884,
+          "observed_pct": 32.89473684210526
+        },
+        "new_calibrated": {
+          "n": 228,
+          "brier": 0.1781303864349755,
+          "predicted_pct": 42.17559537331884,
+          "observed_pct": 32.89473684210526
+        },
+        "eligible": {
+          "n": 0
+        }
+      },
+      {
+        "day": "2026-10-24",
+        "training_days": 1,
+        "old": {
+          "n": 2155,
+          "brier": 0.118743056612529,
+          "predicted_pct": 33.96394431554525,
+          "observed_pct": 29.605568445475637
+        },
+        "new_raw": {
+          "n": 2155,
+          "brier": 0.17752979029164118,
+          "predicted_pct": 43.89163131308238,
+          "observed_pct": 29.605568445475637
+        },
+        "new_calibrated": {
+          "n": 2155,
+          "brier": 0.16329591782764422,
+          "predicted_pct": 39.70419878710883,
+          "observed_pct": 29.605568445475637
+        },
+        "eligible": {
+          "n": 0
+        }
+      },
+      {
+        "day": "2026-10-25",
+        "training_days": 2,
+        "old": {
+          "n": 280,
+          "brier": 0.13719658214285715,
+          "predicted_pct": 35.026071428571434,
+          "observed_pct": 30.357142857142858
+        },
+        "new_raw": {
+          "n": 280,
+          "brier": 0.16921059302246041,
+          "predicted_pct": 43.82064113075763,
+          "observed_pct": 30.357142857142858
+        },
+        "new_calibrated": {
+          "n": 280,
+          "brier": 0.14642997912222416,
+          "predicted_pct": 36.137716973594756,
+          "observed_pct": 30.357142857142858
+        },
+        "eligible": {
+          "n": 0
+        }
+      },
+      {
+        "day": "2026-10-26",
+        "training_days": 3,
+        "old": {
+          "n": 835,
+          "brier": 0.12722092814371258,
+          "predicted_pct": 31.31293413173653,
+          "observed_pct": 30.538922155688624
+        },
+        "new_raw": {
+          "n": 835,
+          "brier": 0.15630377579399438,
+          "predicted_pct": 41.0530549362137,
+          "observed_pct": 30.538922155688624
+        },
+        "new_calibrated": {
+          "n": 835,
+          "brier": 0.14568117302962033,
+          "predicted_pct": 34.11189107475305,
+          "observed_pct": 30.538922155688624
+        },
+        "eligible": {
+          "n": 0
+        }
+      },
+      {
+        "day": "2026-10-27",
+        "training_days": 4,
+        "old": {
+          "n": 1453,
+          "brier": 0.12243249621472815,
+          "predicted_pct": 35.00805230557467,
+          "observed_pct": 32.20922229869236
+        },
+        "new_raw": {
+          "n": 1453,
+          "brier": 0.1476089733119833,
+          "predicted_pct": 40.4681842438694,
+          "observed_pct": 32.20922229869236
+        },
+        "new_calibrated": {
+          "n": 1453,
+          "brier": 0.1387392695017736,
+          "predicted_pct": 33.173238586576794,
+          "observed_pct": 32.20922229869236
+        },
+        "eligible": {
+          "n": 0
+        }
+      },
+      {
+        "day": "2026-10-28",
+        "training_days": 5,
+        "old": {
+          "n": 677,
+          "brier": 0.12220691137370752,
+          "predicted_pct": 35.21964549483013,
+          "observed_pct": 33.82570162481536
+        },
+        "new_raw": {
+          "n": 677,
+          "brier": 0.13916671829970767,
+          "predicted_pct": 40.69899511687442,
+          "observed_pct": 33.82570162481536
+        },
+        "new_calibrated": {
+          "n": 677,
+          "brier": 0.12876590423315376,
+          "predicted_pct": 32.15586155045986,
+          "observed_pct": 33.82570162481536
+        },
+        "eligible": {
+          "n": 0
+        }
+      },
+      {
+        "day": "2026-10-29",
+        "training_days": 6,
+        "old": {
+          "n": 1927,
+          "brier": 0.12508362169174883,
+          "predicted_pct": 34.01385573430202,
+          "observed_pct": 30.773222625843278
+        },
+        "new_raw": {
+          "n": 1927,
+          "brier": 0.1429324557407135,
+          "predicted_pct": 38.820691542469234,
+          "observed_pct": 30.773222625843278
+        },
+        "new_calibrated": {
+          "n": 1927,
+          "brier": 0.13497189649406446,
+          "predicted_pct": 30.869578538415443,
+          "observed_pct": 30.773222625843278
+        },
+        "eligible": {
+          "n": 0
+        }
+      },
+      {
+        "day": "2026-10-30",
+        "training_days": 7,
+        "old": {
+          "n": 428,
+          "brier": 0.12750160981308412,
+          "predicted_pct": 35.76892523364486,
+          "observed_pct": 31.074766355140188
+        },
+        "new_raw": {
+          "n": 428,
+          "brier": 0.1429993957556032,
+          "predicted_pct": 39.50745512598162,
+          "observed_pct": 31.074766355140188
+        },
+        "new_calibrated": {
+          "n": 428,
+          "brier": 0.13460106608123165,
+          "predicted_pct": 31.99355276627841,
+          "observed_pct": 31.074766355140188
+        },
+        "eligible": {
+          "n": 8,
+          "brier": 0.12204863971820719,
+          "predicted_pct": 75.37220700799796,
+          "observed_pct": 87.5
+        }
+      },
+      {
+        "day": "2026-10-31",
+        "training_days": 8,
+        "old": {
+          "n": 262,
+          "brier": 0.11380598091603054,
+          "predicted_pct": 34.72022900763359,
+          "observed_pct": 25.19083969465649
+        },
+        "new_raw": {
+          "n": 262,
+          "brier": 0.12300017450501854,
+          "predicted_pct": 39.06466820689826,
+          "observed_pct": 25.19083969465649
+        },
+        "new_calibrated": {
+          "n": 262,
+          "brier": 0.1078974144771753,
+          "predicted_pct": 32.1817457647488,
+          "observed_pct": 25.19083969465649
+        },
+        "eligible": {
+          "n": 10,
+          "brier": 0.15978679860887687,
+          "predicted_pct": 75.4591592024625,
+          "observed_pct": 80.0
+        }
+      },
+      {
+        "day": "2026-11-01",
+        "training_days": 9,
+        "old": {
+          "n": 315,
+          "brier": 0.13283748571428572,
+          "predicted_pct": 30.687619047619048,
+          "observed_pct": 32.06349206349206
+        },
+        "new_raw": {
+          "n": 315,
+          "brier": 0.13090012460169467,
+          "predicted_pct": 36.225757263859194,
+          "observed_pct": 32.06349206349206
+        },
+        "new_calibrated": {
+          "n": 315,
+          "brier": 0.13073039919137655,
+          "predicted_pct": 28.76725160718431,
+          "observed_pct": 32.06349206349206
+        },
+        "eligible": {
+          "n": 20,
+          "brier": 0.13969622110020583,
+          "predicted_pct": 74.39607337607433,
+          "observed_pct": 85.0
+        }
+      },
+      {
+        "day": "2026-11-02",
+        "training_days": 10,
+        "old": {
+          "n": 233,
+          "brier": 0.11779016738197426,
+          "predicted_pct": 29.558369098712443,
+          "observed_pct": 34.76394849785408
+        },
+        "new_raw": {
+          "n": 233,
+          "brier": 0.12170683637593559,
+          "predicted_pct": 37.544003885109205,
+          "observed_pct": 34.76394849785408
+        },
+        "new_calibrated": {
+          "n": 233,
+          "brier": 0.11840908924830083,
+          "predicted_pct": 30.404628994435868,
+          "observed_pct": 34.76394849785408
+        },
+        "eligible": {
+          "n": 22,
+          "brier": 0.11119794145471103,
+          "predicted_pct": 74.15328087430224,
+          "observed_pct": 90.9090909090909
+        }
+      },
+      {
+        "day": "2026-11-03",
+        "training_days": 11,
+        "old": {
+          "n": 2312,
+          "brier": 0.12319204714532872,
+          "predicted_pct": 34.43663494809689,
+          "observed_pct": 31.833910034602077
+        },
+        "new_raw": {
+          "n": 2312,
+          "brier": 0.13036603651972015,
+          "predicted_pct": 38.038393906302325,
+          "observed_pct": 31.833910034602077
+        },
+        "new_calibrated": {
+          "n": 2312,
+          "brier": 0.12545568165409407,
+          "predicted_pct": 30.88090533794562,
+          "observed_pct": 31.833910034602077
+        },
+        "eligible": {
+          "n": 160,
+          "brier": 0.14351776012208506,
+          "predicted_pct": 74.73636829240021,
+          "observed_pct": 83.125
+        }
+      },
+      {
+        "day": "2026-11-05",
+        "training_days": 12,
+        "old": {
+          "n": 2087,
+          "brier": 0.12383398945855294,
+          "predicted_pct": 34.639961667465265,
+          "observed_pct": 32.82223287014854
+        },
+        "new_raw": {
+          "n": 2087,
+          "brier": 0.1306283074258535,
+          "predicted_pct": 38.631660845578025,
+          "observed_pct": 32.82223287014854
+        },
+        "new_calibrated": {
+          "n": 2087,
+          "brier": 0.12562852959912194,
+          "predicted_pct": 31.346371300067855,
+          "observed_pct": 32.82223287014854
+        },
+        "eligible": {
+          "n": 329,
+          "brier": 0.1364910882440796,
+          "predicted_pct": 79.66183329465682,
+          "observed_pct": 83.58662613981762
+        }
+      }
+    ]
+  }
+}
