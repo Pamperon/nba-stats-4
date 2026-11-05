@@ -2,7 +2,7 @@
 import math
 import recommendations
 
-VERSION = 'daily-selection-audit-v1'
+VERSION = 'daily-selection-audit-v2-ten-days'
 
 def athlete(row):
     return str(row.get('ESPN ID') or row.get('Giocatore') or '').strip().casefold()
@@ -11,15 +11,19 @@ def identity(row):
     return (str(row.get('Partita') or '').strip().casefold(), athlete(row),
             row.get('Mercato'), str(row.get('Scelta') or '').casefold(), float(row['Linea']))
 
-def capture(rows):
+def capture(rows, single_mode=False):
     rows = [{k: v for k, v in r.items() if k not in ('_models', '_shadow_probabilities')} for r in rows]
     single = recommendations.select_single(rows)
-    excluded = athlete(single or {})
+    excluded = '' if single_mode else athlete(single or {})
     pool = [r for r in rows if athlete(r) != excluded
             and not recommendations.rejection_reasons(r)
-            and 1.20 <= float(r['Quota']) <= 2.20 and float(r['Prob. stimata %']) >= 70]
+            and (1.70 if single_mode else 1.20) <= float(r['Quota']) <= (1.90 if single_mode else 2.20) and float(r['Prob. stimata %']) >= 70
+            and (not single_mode or float(r['Prob. stimata %']) > 70 and float(r['Prob. stimata %'])-100/float(r['Quota']) >= 5)]
     variants = {}
     for name in ('current', 'minutes90', 'price_benchmark', 'recent10'):
+        if name == 'current':
+            variants[name] = ([single] if single else []) if single_mode else recommendations.select_daily(pool)['lines'][:10]
+            continue
         candidates = [r for r in pool if name != 'minutes90'
                       or float(r['Minuti ultime 5']) >= .90 * float(r['Minuti medi'])]
         def rank(r):
@@ -40,11 +44,13 @@ def capture(rows):
                 continue
             seen.add(key)
             selected.append(row)
-            if len(selected) == 10:
+            if len(selected) == (1 if single_mode else 10):
                 break
         variants[name] = selected
     return {'version': VERSION, 'promotion_allowed': False,
-            'single_excluded_id': excluded, 'variants': variants}
+            'single_excluded_id': excluded, 'variants': variants,
+            'protocol': {'target_game_days':10,'start_date':'2026-11-06','automatic_promotion':False},
+            **({'singles': capture(rows, True)} if not single_mode else {})}
 
 def evaluate(saved, verified):
     evidence = {identity(r): r for r in verified if r.get('played') is True}
@@ -68,5 +74,7 @@ def evaluate(saved, verified):
                         'wins': sum(x[0] for x in results),
                         'mean_predicted': sum(x[1] for x in results)/n if n else None,
                         'brier': sum((p-y)**2 for y,p,_ in results)/n if n else None,
-                        'flat_stake_roi': sum(y*q-1 for y,_,q in results)/n if n else None}
-    return {'version': saved.get('version'), 'promotion_allowed': False, 'variants': output}
+                        'flat_stake_roi': sum(y*q-1 for y,_,q in results)/n if n else None,
+                        'success_pct': 100*sum(y for y,_,_ in results)/n if n else None}
+    return {'version': saved.get('version'), 'promotion_allowed': False, 'variants': output,
+            **({'singles':evaluate(saved['singles'],verified)} if saved.get('singles') else {})}
