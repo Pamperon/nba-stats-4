@@ -467,33 +467,40 @@ def session_picks(compact: bool = False):
     # Publish on demand only when due; no paid API calls.
     if official is None and nba_session_picks.eligible(day) and now >= nba_session_picks.cutoff_for(day):
         official = nba_session_picks.publish(day, manifest['games'], now=now)
-    allowed = {frozenset((g['home'].casefold().strip(),g['away'].casefold().strip())): g
-               for g in manifest['games']}
+    upcoming = set()
+    for game in manifest['games']:
+        if not game.get('upcoming'):
+            continue
+        try:
+            tipoff = datetime.fromisoformat(game['start_at'])
+        except (ValueError, TypeError):
+            continue
+        if tipoff > now:
+            upcoming.add(frozenset(game[side].casefold().strip() for side in ('home', 'away')))
     results, seen = [], set()
     for calendar_date in (day, (datetime.strptime(day,'%Y-%m-%d')+timedelta(days=1)).strftime('%Y-%m-%d')):
+        if not upcoming:
+            break
         # Merge recent scans by fixture: partial updates must not hide games
         # that had valid odds in an earlier scan. Official picks stay immutable.
         for row in storage.recent_fixture_coverage(calendar_date, max_age_hours=24):
             parts = str(row.get('Partita') or '').split(' - ')
             if len(parts) != 2:
                 continue
-            game = allowed.get(frozenset(x.casefold().strip() for x in parts))
-            if not game or not game.get('upcoming'):
-                continue
-            try:
-                tipoff = datetime.fromisoformat(game['start_at'])
-            except (ValueError, TypeError):
-                continue
-            if tipoff <= now:
+            if frozenset(x.casefold().strip() for x in parts) not in upcoming:
                 continue
             key = (row.get('Partita'),row.get('Giocatore'),row.get('Mercato'),row.get('Linea'),row.get('Scelta'))
             if key in seen:
                 continue
             seen.add(key)
             results.append(row)
-    forecast_rows = [r for r in results if day < '2026-11-05' or r.get('Modello probabilità') == 'minutes-role-calibrated-v3']
-    single = official['single'] if official else recommendations.select_single(forecast_rows)
-    preliminary = [] if official else recommendations.select_daily(forecast_rows)['lines']
+    if official:
+        single = official['single']
+        preliminary = []
+    else:
+        forecast_rows = [r for r in results if day < '2026-11-05' or r.get('Modello probabilità') == 'minutes-role-calibrated-v3']
+        single = recommendations.select_single(forecast_rows)
+        preliminary = recommendations.select_daily(forecast_rows)['lines']
     if single:
         sid = str(single.get('ESPN ID') or single.get('Giocatore') or '').strip().casefold()
         preliminary = [p for p in preliminary if str(p.get('ESPN ID') or p.get('Giocatore') or '').strip().casefold()!=sid]
@@ -1900,5 +1907,8 @@ def index(request: Request):
         players = seo.saved_players()
         if players and not any(str(p['id']) == match[1] for p in players):
             raise HTTPException(404, 'Giocatore non trovato')
-    return HTMLResponse(seo.render(path, players), headers={'Cache-Control': 'no-cache'})
+    headers = {'Cache-Control': 'no-cache'}
+    if path in ('/', '/pronostici'):
+        headers['Link'] = '</api/picks/session?compact=true>; rel=preload; as=fetch; crossorigin=anonymous'
+    return HTMLResponse(seo.render(path, players), headers=headers)
 
