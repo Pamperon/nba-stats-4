@@ -444,8 +444,25 @@ def publication_session(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$'), 
     return nba_publication_session(date)
 
 
+_compact_picks_cache = TTLCache(maxsize=1, ttl=20)
+_compact_picks_lock = threading.RLock()
+
+
 @app.get('/api/picks/session')
 def session_picks(compact: bool = False):
+    """Reuse only the small public response; full quote reads stay uncached here."""
+    if not compact:
+        return _build_session_picks(False)[0]
+    with _compact_picks_lock:
+        cached = _compact_picks_cache.get('session')
+        if cached and time.time() < cached[1]:
+            return cached[0]
+        payload, valid_until = _build_session_picks(True)
+        _compact_picks_cache['session'] = (payload, valid_until)
+        return payload
+
+
+def _build_session_picks(compact):
     """One publication date and one immutable official set, regardless of tipoff date."""
     import nba_session_picks
     import recommendations
@@ -468,6 +485,13 @@ def session_picks(compact: bool = False):
     if official is None and nba_session_picks.eligible(day) and now >= nba_session_picks.cutoff_for(day):
         official = nba_session_picks.publish(day, manifest['games'], now=now)
     upcoming = set()
+    cutoff = nba_session_picks.cutoff_for(day)
+    next_day = datetime.combine(today + timedelta(days=1), datetime.min.time(), now.tzinfo)
+    transitions = [next_day.timestamp()]
+    if now < cutoff:
+        transitions.append(cutoff.timestamp())
+    if now.hour < 12:
+        transitions.append(now.replace(hour=12, minute=0, second=0, microsecond=0).timestamp())
     for game in manifest['games']:
         if not game.get('upcoming'):
             continue
@@ -476,6 +500,7 @@ def session_picks(compact: bool = False):
         except (ValueError, TypeError):
             continue
         if tipoff > now:
+            transitions.append(tipoff.timestamp())
             upcoming.add(frozenset(game[side].casefold().strip() for side in ('home', 'away')))
     results, seen = [], set()
     for calendar_date in (day, (datetime.strptime(day,'%Y-%m-%d')+timedelta(days=1)).strftime('%Y-%m-%d')):
@@ -516,7 +541,7 @@ def session_picks(compact: bool = False):
         saved_at = None
     # The forecast page already has every selected row in its frozen picks.
     # Quote exploration uses saved/latest, so compact clients need only counts.
-    return {'date':day,'publication_date':day,'saved_at':saved_at,'session_start_at':manifest['start_at'],
+    payload = {'date':day,'publication_date':day,'saved_at':saved_at,'session_start_at':manifest['start_at'],
             'session_end_at':manifest['end_at'],'results':[] if compact else results,
             'quote_count': quote_count, 'publication_cutoff_at': nba_session_picks.cutoff_for(day).isoformat(),
             'recommendations':{'policy':'fixed-1800-v1','lines':official['lines'] if official else []},
@@ -528,6 +553,7 @@ def session_picks(compact: bool = False):
             'fixture_count':len(manifest['games']),
             'player_count':player_count,
             'odds_api_calls':0}
+    return payload, min(transitions + [now.timestamp() + 20])
 
 
 @app.get('/api/picks/single-analysis')
@@ -802,6 +828,8 @@ def do_scan(job_id, date):
             if not storage.configured():
                 raise RuntimeError('DATABASE_URL non configurato')
             storage.save(job_id, snapshot)
+            with _compact_picks_lock:
+                _compact_picks_cache.clear()
         except Exception:
             logger.exception('Scan %s completed but cloud persistence failed', job_id)
             with lock:
@@ -1687,11 +1715,21 @@ def _performance_counts(states):
             'success_pct': round(won * 100 / verified, 1) if verified else None}
 
 
+_performance_cache = TTLCache(maxsize=1, ttl=120)
+_performance_lock = threading.Lock()
+
+
 @app.get('/api/history/performance')
 def public_history_performance():
-    """Summarize published selections from the public archive."""
+    """Reuse the small aggregate rather than settling the archive for every visitor."""
+    with _performance_lock:
+        if 'summary' not in _performance_cache:
+            _performance_cache['summary'] = _build_history_performance()
+        return _performance_cache['summary']
+
+
+def _build_history_performance():
     import public_views
-    import official_top5
     today = datetime.now(ZoneInfo('Europe/Rome')).date()
     dates = public_views.history_dates(today)['dates']
     top5_states = []
@@ -1909,6 +1947,20 @@ def index(request: Request):
             raise HTTPException(404, 'Giocatore non trovato')
     headers = {'Cache-Control': 'no-cache'}
     if path in ('/', '/pronostici'):
-        headers['Link'] = '</api/picks/session?compact=true>; rel=preload; as=fetch; crossorigin=anonymous'
+        links = ['</api/picks/session?compact=true>; rel=preload; as=fetch; crossorigin=anonymous']
+        if path == '/':
+            links.append('</api/history/performance>; rel=preload; as=fetch; crossorigin=anonymous')
+        # Never block the HTML behind a cold picks computation.
+        if _compact_picks_lock.acquire(blocking=False):
+            try:
+                cached = _compact_picks_cache.get('session')
+                if cached and time.time() < cached[1]:
+                    single = cached[0].get('official_single') or cached[0].get('preliminary_single') or {}
+                    athlete_id = str(single.get('ESPN ID') or '')
+                    if re.fullmatch(r'[0-9]{1,12}', athlete_id):
+                        links.append(f'</api/players/headshot/{athlete_id}>; rel=preload; as=image')
+            finally:
+                _compact_picks_lock.release()
+        headers['Link'] = ', '.join(links)
     return HTMLResponse(seo.render(path, players), headers=headers)
 
