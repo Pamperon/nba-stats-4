@@ -1,6 +1,7 @@
 """Public NBA roster and independent ESPN player statistics. No OddsPapi calls."""
 import logging
 import math
+import sys
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from cachetools import TTLCache
@@ -11,8 +12,28 @@ import storage
 
 logger = logging.getLogger(__name__)
 
-_memory_cache = TTLCache(maxsize=250, ttl=1800)
-_historical_cache = TTLCache(maxsize=160, ttl=86400)
+def _payload_size(value):
+    size = sys.getsizeof(value)
+    if isinstance(value, dict):
+        return size + sum(sys.getsizeof(key) + _payload_size(item)
+                          for key, item in value.items())
+    if isinstance(value, (list, tuple)):
+        return size + sum(_payload_size(item) for item in value)
+    return size
+
+
+# Entries may be single logs or entire rosters. Bound retained payload bytes.
+_memory_cache = TTLCache(maxsize=12 * 1024**2, ttl=1800, getsizeof=_payload_size)
+_historical_cache = TTLCache(maxsize=8 * 1024**2, ttl=86400, getsizeof=_payload_size)
+
+
+def _remember(cache, key, payload):
+    try:
+        cache[key] = payload
+    except ValueError:
+        # Oversized data remains usable and can still be persisted in Supabase.
+        pass
+
 _memory_lock = threading.RLock()
 _pending = {}
 
@@ -55,7 +76,7 @@ def cached(key, hours, loader):
             hit = None
         result = hit if hit is not None else loader()
         with _memory_lock:
-            memory[key] = result
+            _remember(memory, key, result)
         if hit is None:
             persist_cache(key, result)
         pending.set_result(result)
@@ -182,10 +203,10 @@ def team_cached_logs(team_id, season):
         with _memory_lock:
             for key, payload in saved.items():
                 if key in keys:
-                    memory[key] = payload
+                    _remember(memory, key, payload)
                     logs[keys[key]] = payload
             if logs:
-                memory[batch_key] = logs
+                _remember(memory, batch_key, logs)
     except Exception:
         # Optional acceleration: individual log requests still work on failure.
         logger.warning("Team log cache unavailable", exc_info=True)
