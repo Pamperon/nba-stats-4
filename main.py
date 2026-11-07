@@ -49,7 +49,8 @@ lock = threading.Lock()
 headshot_cache = TTLCache(maxsize=80, ttl=86400)
 headshot_lock = threading.RLock()
 
-RUNTIME_ID = uuid.uuid4().hex
+RENDER_INSTANCE_ID = os.getenv("RENDER_INSTANCE_ID")
+RUNTIME_ID = f"{RENDER_INSTANCE_ID}/{uuid.uuid4().hex}" if RENDER_INSTANCE_ID else uuid.uuid4().hex
 shutdown_event = threading.Event()
 scan_threads = {}
 tracking_ready = False
@@ -742,7 +743,9 @@ def do_scan(job_id, date):
         analysis_started = time.monotonic()
         def progress(p, label):
             with lock: jobs[job_id].update(progress=round(p*100),stage=label)
-        rows, issues, odds_count, player_count, raw, filtered, logs, fixture_reports = engine.finder_scan(fixtures,catalog,season,15,1.01,20.,-100,progress,odds_batch=odds_batch)
+        rows, issues, odds_count, player_count, _, _, logs, fixture_reports = engine.finder_scan(
+            fixtures, catalog, season, 15, 1.01, 20., -100, progress,
+            odds_batch=odds_batch, collect_audit=False)
         # Apply calibration only after independent walk-forward validation on
         # previously settled days. Never block the scan on a calibration error.
         calibration_status = {'active': False, 'adjusted': 0}
