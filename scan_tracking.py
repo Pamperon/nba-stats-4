@@ -78,18 +78,22 @@ def release_deploy_guard(instance_id):
 
 
 def deployment_blockers(instance_id):
+    # A replaced process on the same Render instance cannot finish its lease.
+    render_instance = instance_id.split("/", 1)[0] if "/" in instance_id else None
     with storage.connection() as conn:
         active = conn.execute("""
             SELECT COUNT(*) FROM nba_scan_attempts WHERE instance_id<>%s
+                AND split_part(instance_id, '/', 1) IS DISTINCT FROM %s
                 AND state IN ('queued','running') AND heartbeat_at>NOW()-INTERVAL '2 minutes'
                 AND NOT EXISTS (SELECT 1 FROM nba_scan_snapshots saved WHERE saved.job_id=nba_scan_attempts.job_id)
-        """, (instance_id,)).fetchone()[0]
+        """, (instance_id, render_instance)).fetchone()[0]
         # Keep an already claimed two-date batch alive between its individual jobs.
         # A dead caller's lease expires; it must not block cold starts indefinitely.
         batches = conn.execute("""
             SELECT COUNT(*) FROM nba_scan_slots WHERE status='running'
+                AND (%s::text IS NULL OR split_part(instance_id, '/', 1) IS DISTINCT FROM %s)
                 AND heartbeat_at>NOW()-INTERVAL '2 minutes'
-        """).fetchone()[0]
+        """, (render_instance, render_instance)).fetchone()[0]
     return active + batches
 
 
