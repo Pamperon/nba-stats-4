@@ -978,8 +978,21 @@ def finder_detailed_stats(log, stat, line):
             "Minuti medi": round(float(minutes.mean()), 1) if minutes.notna().any() else None,
             "Minuti ultime 5": round(float(minutes.head(5).mean()), 1) if minutes.head(5).notna().any() else None}
 
+def _bounded_player_loads(pool, load_player, player_items):
+    from collections import deque
+    from itertools import islice
+
+    items = iter(player_items)
+    pending = deque(pool.submit(load_player, item) for item in islice(items, 2))
+    for item in items:
+        yield pending.popleft().result()
+        pending.append(pool.submit(load_player, item))
+    while pending:
+        yield pending.popleft().result()
+
+
 def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
-                min_value, progress_callback=None, odds_batch=None):
+                min_value, progress_callback=None, odds_batch=None, *, collect_audit=True):
     """Esporta tutte le linee alternative attive ricevute, incluse non valutabili.
 
     Le scansioni automatiche riusano la risposta collettiva NBA per tutte le partite.
@@ -1019,7 +1032,8 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             report["origine"] = source if source != "none" else "api"
             report["diagnostica"] = _odds_diagnostics(odds, catalog)
             # Cache only validated, successfully parsed fixtures (after processing).
-            raw_audit.extend(odds_source_audit(odds, catalog, match_name))
+            if collect_audit:
+                raw_audit.extend(odds_source_audit(odds, catalog, match_name))
             for market_label in MARKETS:
                 parsed, _ = parse_odds(odds, catalog, market_label)
                 grouped = {}
@@ -1038,7 +1052,7 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                             reason = "Quote incoerenti tra soglie: verificare su Bet365"
                         else:
                             reason = ""
-                        if reason:
+                        if reason and collect_audit:
                             filter_audit.append({"Partita": match_name, "Giocatore": player_name,
                                                  "Mercato": STATS[market_label], "Linea": line,
                                                  "Motivo": reason})
@@ -1128,9 +1142,9 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
                 games = None
         return athlete, games, error
 
-    # Concurrent ESPN I/O, but preserve deterministic result and progress order.
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        player_data = pool.map(load_player, player_items)
+    # Limit concurrent nested ESPN requests and queued game logs on the web instance.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        player_data = _bounded_player_loads(pool, load_player, player_items)
         for idx, ((player_name, props), (athlete, games, error)) in enumerate(zip(player_items, player_data)):
             shadow_context = None
             if games is not None and not games.empty:
