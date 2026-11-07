@@ -17,8 +17,12 @@ def cached_payload(key, max_age_seconds, loader, *, empty_max_age_seconds=None):
         # Logical identity still forces a fresh download for every new slot.
         envelope = _MEMORY.get(persistent_key)
         if (envelope is None or envelope.get('identity', key) != key
-                or not 0 <= time.time() - envelope.get('fetched_at', 0) < max_age_seconds) and storage.configured():
-            envelope = storage.cache_read(persistent_key, max_age_hours=48)
+                or not 0 <= time.time() - envelope.get('fetched_at', 0) < max_age_seconds):
+            # Release the previous bulk feed before decoding its replacement.
+            _MEMORY.pop(persistent_key, None)
+            envelope = None
+            if storage.configured():
+                envelope = storage.cache_read(persistent_key, max_age_hours=48)
         if isinstance(envelope, dict) and envelope.get("identity", key) == key:
             age = time.time() - envelope.get("fetched_at", 0)
             allowed_age = (empty_max_age_seconds if empty_max_age_seconds is not None
