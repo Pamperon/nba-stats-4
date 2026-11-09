@@ -22,7 +22,7 @@ def cached_payload(key, max_age_seconds, loader, *, empty_max_age_seconds=None):
             _MEMORY.pop(persistent_key, None)
             envelope = None
             if storage.configured():
-                envelope = storage.cache_read(persistent_key, max_age_hours=48)
+                envelope = storage.cache_read(persistent_key, max_age_hours=48, identity=key)
         if isinstance(envelope, dict) and envelope.get("identity", key) == key:
             age = time.time() - envelope.get("fetched_at", 0)
             allowed_age = (empty_max_age_seconds if empty_max_age_seconds is not None
@@ -30,6 +30,7 @@ def cached_payload(key, max_age_seconds, loader, *, empty_max_age_seconds=None):
             if 0 <= age < allowed_age and "data" in envelope:
                 _MEMORY[persistent_key] = envelope
                 return {**envelope, "source": "cache"}
+        envelope = None  # Release any expired payload before decoding a new one.
         data = loader()  # Validators run inside the loader before persistence.
         envelope = {"data": data, "fetched_at": time.time(), "identity": key}
         if storage.configured():

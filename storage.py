@@ -140,14 +140,15 @@ def touch_slot(slot_key):
         conn.execute("UPDATE nba_scan_slots SET heartbeat_at=NOW() WHERE slot_key=%s AND status='running'", (slot_key,))
 
 
-def cache_read(key, max_age_hours):
+def cache_read(key, max_age_hours, *, identity=None):
     if not configured():
         return None
     with connection() as conn:
         row = conn.execute("""
             SELECT payload FROM nba_player_cache
             WHERE cache_key=%s AND updated_at >= NOW() - (%s * INTERVAL '1 hour')
-        """, (key, max_age_hours)).fetchone()
+              AND (%s::text IS NULL OR COALESCE(payload->>'identity', %s) = %s)
+        """, (key, max_age_hours, identity, identity, identity)).fetchone()
     return row[0] if row else None
 
 
@@ -280,16 +281,19 @@ def earliest_completed(date):
     if not configured():
         return None
     with connection() as conn:
-        rows = conn.execute("""
+        row = conn.execute("""
             SELECT job_id,payload,created_at
             FROM nba_scan_snapshots
             WHERE scan_date=%s AND state='done'
-            ORDER BY created_at ASC
-        """, (date,)).fetchall()
-    for job_id,payload,created_at in rows:
-        if payload.get("results"):
-            return {"job_id":job_id,"saved_at":created_at.isoformat(),**payload}
-    return None
+              AND CASE WHEN jsonb_typeof(payload->'results') = 'array'
+                       THEN jsonb_array_length(payload->'results') > 0
+                       ELSE FALSE END
+            ORDER BY created_at ASC LIMIT 1
+        """, (date,)).fetchone()
+    if row is None:
+        return None
+    job_id, payload, created_at = row
+    return {"job_id":job_id,"saved_at":created_at.isoformat(),**payload}
 
 
 def by_job_id(job_id):

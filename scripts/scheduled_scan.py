@@ -143,13 +143,8 @@ def execute_scan(now, slot, manual, source, schedules=None):
         print("Archive cleanup:", cleanup, flush=True)
     except Exception as exc:
         print("Archive cleanup failed (scans continue):", exc, flush=True)
-    # Settle older predictions from free ESPN box scores before scanning new odds.
-    # Fail open: a settlement outage must never block scheduled scans.
-    try:
-        report = call("/api/calibration/settle", method="POST", timeout=180)
-        print("Incremental calibration:", report, flush=True)
-    except Exception as exc:
-        print("Calibration deferred (scan continues):", exc, flush=True)
+    # Archive verification and the calibration workflow run independently.
+    # Loading historical snapshots here leaves less RAM for the fresh feed.
     for date, schedule in schedules:
         print("Checking", date, flush=True)
         upcoming = [g for g in schedule.get("games", []) if g.get("upcoming")]
