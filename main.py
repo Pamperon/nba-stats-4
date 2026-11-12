@@ -21,6 +21,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title='BasketLab', docs_url=None, redoc_url=None)
+from nba_hub import router as nba_hub_router
+app.include_router(nba_hub_router)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=4)
 from api_timing import ApiTimingMiddleware
 app.add_middleware(ApiTimingMiddleware)
@@ -1964,6 +1966,9 @@ app.mount('/static',VersionedStaticFiles(directory='web'),name='static')
 @app.get('/notizie', include_in_schema=False)
 @app.get('/pronostici', include_in_schema=False)
 @app.get('/partite', include_in_schema=False)
+@app.get('/nba', include_in_schema=False)
+@app.get('/nba/classifica', include_in_schema=False)
+@app.get('/squadre/{team_slug}', include_in_schema=False)
 @app.get('/analisi-partita', include_in_schema=False)
 @app.get('/archivio', include_in_schema=False)
 @app.get('/statistiche', include_in_schema=False)
@@ -1979,6 +1984,11 @@ def index(request: Request):
     path = request.url.path
     if path == '/statistiche':
         return RedirectResponse('/giocatori' + ('?' + request.url.query if request.url.query else ''), status_code=301)
+    if path.startswith('/squadre/'):
+        import nba_teams
+        match = re.fullmatch(r'/squadre/[a-z0-9-]+-([0-9]{1,8})', path)
+        if not match or match[1] not in nba_teams.TEAMS:
+            raise HTTPException(404, 'Squadra NBA non trovata')
     players = None
     if path.startswith('/giocatori/'):
         match = re.fullmatch(r'/giocatori/[a-z0-9-]+-([0-9]{1,12})', path)

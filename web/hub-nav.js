@@ -135,13 +135,13 @@ const go={
  finder(){ document.body.classList.remove('hub-match-open');const detail=$('#hub-match-detail');if(detail)detail.hidden=true;$('#area-quotes')?.click();tab('finder')?.click();$('#quote-tabs')?.scrollIntoView({block:'start',behavior:'smooth'});},
  history(){ $('[data-extra="history"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
  about(){ $('[data-extra="about"]')?.click();window.scrollTo({top:0,behavior:'smooth'});},
- calendar(){renderCalendar();window.scrollTo({top:0,behavior:'smooth'});}
+ calendar(){if(window.BasketLabNBA)window.BasketLabNBA.show();else renderCalendar();window.scrollTo({top:0,behavior:'smooth'});}
 };
 let home=true;let calendar=false;let playerReturn=null;
 let routerReady=false,applyingRoute=false,routeQueued=false;
 function syncRoute(){
  if(!routerReady||applyingRoute||routeQueued||!window.BasketLabRouter)return;
- routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',...(window.BasketLabPlayers?.detailOpen?window.BasketLabPlayers.route():{}),date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:''});});
+ routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',...(document.body.dataset.hubView==='calendar'?window.BasketLabNBA?.route():{}),...(window.BasketLabPlayers?.detailOpen?window.BasketLabPlayers.route():{}),date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:''});});
 }
 const HUB_STATE_KEY='basketlab-hub-view-v1';
 function saveHubState(){
@@ -483,7 +483,7 @@ $('#hub-match-filter-reset')?.addEventListener('click',()=>{
 $('#hub-match-back')?.addEventListener('click',()=>{document.body.classList.remove('hub-match-open');$('#hub-match-detail').hidden=true;if(calendarSelectedDate){go.calendar();select('calendar')}else{go.home();select('home')}});
 let calendarRefreshTimer=null;
 function scheduleCalendarRefresh(){
- if(!calendar)return;
+ if(!calendar||window.BasketLabNBA?.route().nbaTab==='standings')return;
  clearTimeout(calendarRefreshTimer);
  calendarRefreshTimer=setTimeout(()=>{if(calendar)renderCalendar()},100);
 }
@@ -763,7 +763,7 @@ function renderCalendar(){
 }
 // Refresh the visible calendar without changing the prediction date or OddsPapi data.
 const calendarLiveTimer=setInterval(()=>{
- if(!calendar||document.hidden||document.body.dataset.hubView!=='calendar')return;
+ if(!calendar||document.hidden||document.body.dataset.hubView!=='calendar'||window.BasketLabNBA?.route().nbaTab==='standings')return;
  if(activeCalendarBoxscore){if(activeCalendarBoxscore.state==='in')openCalendarBoxscore(activeCalendarBoxscore,true);return}
  const selected=calendarSelectedDate||$('#date')?.value||italyDay(new Date());
  const cached=nbaFixtureCache.get('date:'+selected);
@@ -950,10 +950,12 @@ try{
   if(Number.isFinite(saved.scrollY)&&saved.scrollY>0)setTimeout(()=>window.scrollTo(0,saved.scrollY),250);
  }
 }catch(_){}
+window.BasketLabNBA?.init({calendar:renderCalendar,select(){select('calendar');syncRoute();},fixture(game){calendarSelectedDate=game.calendar_date;window.BasketLabNBA.resetCalendar();if(game.upcoming){openFixtureDetails(game.away+' - '+game.home);}else{select('calendar');openCalendarBoxscore(game);}syncRoute();window.scrollTo(0,0);}});
 function applyRoute(){
  const route=window.BasketLabRouter.read(location);
  applyingRoute=true;
  try{
+  if(route.view==='calendar')window.BasketLabNBA?.apply(route);
   if(route.date){calendarSelectedDate=route.date;calendarWeekStart=calendarIsoOffset(route.date,-3);calendarVisibleMonth=route.date.slice(0,7)}
   if(route.player&&window.BasketLabPlayers){window.BasketLabPlayers.openRoute(route);select('stats');}
   else if(route.match){

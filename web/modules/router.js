@@ -1,7 +1,7 @@
 /* URL codec and History API. No data, model or DOM dependencies. */
 (function(root){
  'use strict';
- const paths={home:'/',picks:'/pronostici',calendar:'/partite',finder:'/analisi-quote',stats:'/giocatori',history:'/archivio',about:'/come-funziona',news:'/notizie',single:'/analisi-singola'};
+ const paths={home:'/',picks:'/pronostici',calendar:'/nba',finder:'/analisi-quote',stats:'/giocatori',history:'/archivio',about:'/come-funziona',news:'/notizie',single:'/analisi-singola'};
  function validDay(value){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';
   const day=new Date(value+'T12:00:00Z');
@@ -11,10 +11,12 @@
   const path=location.pathname.replace(/\/$/,'')||'/';
   const query=new URLSearchParams(location.search);
   const player=path.match(/^\/giocatori\/([a-z0-9-]+-\d{1,12})$/);
-  const view=player||path==='/statistiche'?'stats':path==='/analisi-partita'?'finder':Object.keys(paths).find(k=>paths[k]===path)||'home';
+  const team=path.match(/^\/squadre\/([a-z0-9-]+-\d{1,8})$/);
+  const view=team||path==='/partite'||path==='/nba/classifica'?'calendar':player||path==='/statistiche'?'stats':path==='/analisi-partita'?'finder':Object.keys(paths).find(k=>paths[k]===path)||'home';
   const date=validDay(query.get('data'));
   const a=query.get('trasferta'),b=query.get('casa');
   const result={view,date,match:path==='/analisi-partita'&&date&&a&&b&&a.length<=80&&b.length<=80?a+' - '+b:''};
+  if(view==='calendar'){result.nbaTab=team||path==='/nba/classifica'?'standings':'calendar';result.team=team?team[1]:'';}
   if(player){result.player=player[1];result.filters={market:query.get('mercato'),line:query.get('linea'),window:query.get('periodo'),season:query.get('stagione'),venue:query.get('campo'),mode:query.get('competizione')};}
   return result;
  }
@@ -22,6 +24,7 @@
   const params=new URLSearchParams();
   if(state.date&&(state.view==='calendar'||state.match))params.set('data',state.date);
   let path=paths[state.view]||'/';
+  if(state.view==='calendar'){if(state.team&&/^[a-z0-9-]+-\d{1,8}$/.test(state.team)){path='/squadre/'+state.team;params.delete('data');}else if(state.nbaTab==='standings'){path='/nba/classifica';params.delete('data');}}
   if(state.view==='stats'&&/^[a-z0-9-]+-\d{1,12}$/.test(state.player||'')){
    path='/giocatori/'+state.player;
    const keys={market:'mercato',line:'linea',window:'periodo',season:'stagione',venue:'campo',mode:'competizione'};
@@ -40,6 +43,8 @@
   let info=pages[path],canonical='https://basketlab.it'+path,robots='index,follow';
   const player=path.match(/^\/giocatori\/([a-z0-9-]+)-[0-9]{1,12}$/);
   if(player){const name=player[1].split('-').map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(' ');info=[name+': statistiche NBA e grafici | Basket Lab','Statistiche NBA di '+name+': punti, rimbalzi, assist, medie e grafici delle ultime partite. Consulta le linee disponibili e le frequenze osservate.']}
+  const team=path.match(/^\/squadre\/([a-z0-9-]+)-[0-9]{1,8}$/);
+  if(team){const name=team[1].split('-').map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(' ');info=[name+': rosa, calendario e statistiche NBA | Basket Lab','Classifica, prossime partite, risultati e rosa dei '+name+'.'];}
   if(!info){info=['Analisi partita NBA | Basket Lab','Statistiche e analisi delle partite NBA.'];canonical='https://basketlab.it/partite';robots='noindex,follow'}
   document.title=info[0];
   const values={'meta[name="description"]':['content',info[1]],'link[rel="canonical"]':['href',canonical],'meta[property="og:title"]':['content',info[0]],'meta[property="og:description"]':['content',info[1]],'meta[property="og:url"]':['content',canonical],'meta[name="twitter:title"]':['content',info[0]],'meta[name="twitter:description"]':['content',info[1]],'meta[name="robots"]':['content',robots]};

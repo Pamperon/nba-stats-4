@@ -13,6 +13,8 @@ SITE = 'https://basketlab.it'
 PAGES = {
     '/': ('Basket Lab | Statistiche e analisi NBA', 'Statistiche NBA, analisi dei giocatori, quote e pronostici basati sui dati delle partite.'),
     '/giocatori': ('Statistiche giocatori NBA: punti, rimbalzi e assist | Basket Lab', 'Esplora i giocatori NBA: statistiche, medie, grafici delle prestazioni e frequenze su punti, rimbalzi e assist, anche senza quote disponibili.'),
+    '/nba': ('NBA: calendario, risultati e classifiche | Basket Lab', 'Calendario e classifiche NBA, risultati delle partite e schede delle squadre con rose e statistiche.'),
+    '/nba/classifica': ('Classifica NBA: Eastern e Western Conference | Basket Lab', 'Classifiche NBA aggiornate: vittorie, sconfitte, percentuali e schede di tutte le squadre.'),
     '/partite': ('Calendario e risultati NBA | Basket Lab', 'Consulta il calendario NBA, gli orari italiani, i risultati e le analisi delle partite con i dati delle squadre e dei giocatori.'),
     '/pronostici': ('Pronostici NBA e Scelte del Lab | Basket Lab', 'Le Scelte del Lab e la Singola del giorno: analisi delle statistiche NBA, probabilità stimate e selezioni ufficializzate alle 18.'),
     '/analisi-quote': ('Quote giocatori NBA: punti, rimbalzi e assist | Basket Lab', 'Esplora linee e quote dei giocatori NBA per punti, rimbalzi e assist, con filtri per partita, giocatore e mercato.'),
@@ -21,7 +23,7 @@ PAGES = {
     '/come-funziona': ('Come funziona il modello statistico NBA | Basket Lab', 'Scopri il metodo Basket Lab: dati utilizzati, stime di probabilità, criteri di selezione, pubblicazione e verifica degli esiti.'),
     '/analisi-singola': ('Analisi della Singola del giorno NBA | Basket Lab', 'Approfondisci la Singola del giorno con statistiche del giocatore, grafici delle prestazioni e motivazioni della selezione.'),
 }
-NAV_PATHS = dict(home='/', picks='/pronostici', calendar='/partite', finder='/analisi-quote', stats='/giocatori', history='/archivio', about='/come-funziona', news='/notizie', single='/analisi-singola')
+NAV_PATHS = dict(home='/', picks='/pronostici', calendar='/nba', finder='/analisi-quote', stats='/giocatori', history='/archivio', about='/come-funziona', news='/notizie', single='/analisi-singola')
 
 
 def player_slug(name, identifier):
@@ -51,6 +53,12 @@ def metadata(path, players=()):
     path = path.rstrip('/') or '/'
     if path in PAGES:
         return (*PAGES[path], SITE + path, 'index,follow')
+    team_match = re.fullmatch(r'/squadre/[a-z0-9-]+-(\d{1,8})', path)
+    if team_match:
+        from nba_teams import TEAMS
+        name = TEAMS.get(team_match[1])
+        if name:
+            return name + ': rosa, calendario e statistiche NBA | Basket Lab', 'Classifica, prossime partite, risultati e rosa dei ' + name + '.', SITE + '/squadre/' + player_slug(name, team_match[1]), 'index,follow'
     match = re.fullmatch(r'/giocatori/([a-z0-9-]+)-(\d{1,12})', path)
     if match:
         player = next((p for p in players if str(p['id']) == match[2]), None)
@@ -112,6 +120,8 @@ def render(path, players=None):
 
 def sitemap(players=()):
     paths = [p for p in PAGES if p != '/analisi-singola']
+    from nba_teams import TEAMS
+    paths += ['/squadre/' + player_slug(name, tid) for tid, name in TEAMS.items()]
     paths += ['/giocatori/' + player_slug(p['name'], p['id']) for p in players]
     urls = ''.join('<url><loc>' + html.escape(SITE + p) + '</loc></url>' for p in dict.fromkeys(paths))
     return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + '</urlset>'
