@@ -438,3 +438,13 @@ test('completed game URL restores its boxscore and contextual back removes only 
  for(let n=0;n<6;n++)await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('#hub-calendar-boxscore').hidden,false);assert.equal(doc.querySelector('.hub-boxscore-player-link').getAttribute('href'),'/giocatori/alex-test-22');assert.equal(new URLSearchParams(window.location.search).get('partita'),'123456');
  doc.querySelector('.hub-boxscore-back').click();await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('#hub-calendar-boxscore').hidden,true);assert.equal(new URLSearchParams(window.location.search).has('partita'),false);assert.equal(new URLSearchParams(window.location.search).get('data'),'2026-11-12');
 });
+test('team result returns to its team instead of the calendar and preserves origin in its URL',async()=>{
+ const {window,doc}=setup();await new Promise(r=>setImmediate(r));
+ const game={event_id:'123456',away:'Boston Celtics',home:'Atlanta Hawks',state:'post',upcoming:false,start_at:'2026-11-12T01:00:00Z',calendar_date:'2026-11-12',away_score:110,home_score:100};
+ window.fetch=async url=>({ok:true,json:async()=>String(url).includes('/teams/2')?{team:{id:'2',name:'Boston Celtics',color:'008348'},upcoming:[],recent:[game]}:String(url).includes('/standings')?{conferences:[]}:String(url).includes('/roster')?{players:[]}:String(url).includes('boxscore')?{teams:[]}:{games:[game],fixtures:[]}});
+ window.history.pushState(null,'','/squadre/boston-celtics-2');window.dispatchEvent(new window.PopStateEvent('popstate'));for(let n=0;n<6;n++)await new Promise(r=>setImmediate(r));
+ doc.querySelector('#nba-team-recent button').click();for(let n=0;n<4;n++)await new Promise(r=>setImmediate(r));
+ assert.equal(new URLSearchParams(window.location.search).get('squadra'),'boston-celtics-2');assert.match(doc.querySelector('.hub-boxscore-back').textContent,/Torna alla squadra/);assert.equal(doc.querySelector('.nba-tabs').hidden,false);
+ doc.querySelector('.hub-boxscore-back').click();for(let n=0;n<4;n++)await new Promise(r=>setImmediate(r));assert.equal(window.location.pathname,'/squadre/boston-celtics-2');assert.match(doc.querySelector('#nba-team-hero').textContent,/Boston Celtics/);assert.equal(doc.querySelector('.nba-tabs').hidden,true);
+ doc.querySelector('[data-nba-back]').click();for(let n=0;n<4;n++)await new Promise(r=>setImmediate(r));assert.equal(window.location.pathname,'/nba/classifica');assert.equal(doc.querySelector('.nba-tabs').hidden,false);
+});

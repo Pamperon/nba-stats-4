@@ -142,7 +142,7 @@ let routerReady=false,applyingRoute=false,routeQueued=false;
 function syncRoute(replace=false){
  const replaceEntry=replace===true||window.BasketLabPlayers?.restoring===true;
  if(!routerReady||applyingRoute||routeQueued||!window.BasketLabRouter)return;
- routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',...(document.body.dataset.hubView==='calendar'?window.BasketLabNBA?.route():{}),...(window.BasketLabPlayers?.detailOpen?window.BasketLabPlayers.route():{}),date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:'',boxscore:document.body.classList.contains('hub-boxscore-open')?activeCalendarBoxscore?.event_id:''},replaceEntry);});
+ routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',...(document.body.dataset.hubView==='calendar'?window.BasketLabNBA?.route():{}),...(window.BasketLabPlayers?.detailOpen?window.BasketLabPlayers.route():{}),date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:'',boxscore:document.body.classList.contains('hub-boxscore-open')?activeCalendarBoxscore?.event_id:'',returnTeam:document.body.classList.contains('hub-boxscore-open')?boxscoreReturnTeam:''},replaceEntry);});
 }
 const HUB_STATE_KEY='basketlab-hub-view-v1';
 function saveHubState(){
@@ -578,15 +578,16 @@ function calendarMonday(iso){return calendarIsoOffset(iso,-((new Date(iso+'T12:0
 function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=calendarIsoOffset(iso,-3);calendarVisibleMonth=iso.slice(0,7);renderCalendar();saveHubState();syncRoute()}
 
 let activeCalendarBoxscore=null;
+let boxscoreReturnTeam='';
 let calendarBoxscoreRequest=0;
-async function openCalendarBoxscore(game,refresh=false){
- if(!refresh){activeCalendarBoxscore=game;document.body.classList.add('hub-boxscore-open');saveHubState();syncRoute();}
+async function openCalendarBoxscore(game,refresh=false,returnTeam=''){
+ if(!refresh){boxscoreReturnTeam=returnTeam;activeCalendarBoxscore=game;document.body.classList.add('hub-boxscore-open');saveHubState();syncRoute();}
  const request=++calendarBoxscoreRequest;
  const panel=$('#hub-calendar-boxscore'),games=$('#hub-calendar-games');
  if(!panel||!games)return;
  games.hidden=true;panel.hidden=false;panel.replaceChildren();
- const back=document.createElement('button');back.type='button';back.className='hub-boxscore-back';back.textContent='‹ Torna alle partite';
- back.onclick=()=>{activeCalendarBoxscore=null;calendarBoxscoreRequest++;document.body.classList.remove('hub-boxscore-open');panel.hidden=true;games.hidden=false;panel.replaceChildren();renderCalendar();saveHubState();syncRoute();};
+ const back=document.createElement('button');back.type='button';back.className='hub-boxscore-back';back.textContent=boxscoreReturnTeam?'‹ Torna alla squadra':'‹ Torna alle partite';
+ back.onclick=()=>{const team=boxscoreReturnTeam;boxscoreReturnTeam='';activeCalendarBoxscore=null;calendarBoxscoreRequest++;document.body.classList.remove('hub-boxscore-open');panel.hidden=true;games.hidden=false;panel.replaceChildren();if(team)window.BasketLabNBA?.apply({nbaTab:'standings',team});else window.BasketLabNBA?.resetCalendar();go.calendar();select('calendar');saveHubState();syncRoute();};
  panel.append(back);
  const header=document.createElement('div');header.className='hub-boxscore-match-header';
  const matchup=document.createElement('div');matchup.className='hub-boxscore-matchup';
@@ -950,7 +951,7 @@ try{
   if(Number.isFinite(saved.scrollY)&&saved.scrollY>0)setTimeout(()=>window.scrollTo(0,saved.scrollY),250);
  }
 }catch(_){}
-window.BasketLabNBA?.init({calendar:renderCalendar,select(){select('calendar');syncRoute();},fixture(game){calendarSelectedDate=game.calendar_date;window.BasketLabNBA.resetCalendar();if(game.upcoming){openFixtureDetails(game.away+' - '+game.home);}else{select('calendar');openCalendarBoxscore(game);}syncRoute();window.scrollTo(0,0);}});
+window.BasketLabNBA?.init({calendar:renderCalendar,select(){select('calendar');syncRoute();},fixture(game){const returnTeam=window.BasketLabNBA.route().team;calendarSelectedDate=game.calendar_date;window.BasketLabNBA.resetCalendar();if(game.upcoming){openFixtureDetails(game.away+' - '+game.home);}else{select('calendar');openCalendarBoxscore(game,false,returnTeam);}syncRoute();window.scrollTo(0,0);}});
 function applyRoute(){
  const route=window.BasketLabRouter.read(location);
  applyingRoute=true;
@@ -963,7 +964,7 @@ function applyRoute(){
    if(route.date&&picker&&![...picker.options].some(o=>o.value===route.date))picker.add(new Option(route.date,route.date));
    openFixtureDetails(route.match);
   }else{go[route.view]?.();select(route.view);if(route.boxscore&&route.date){
-   fetchNbaFixtures(route.date).then(games=>{if(document.body.dataset.hubView!=='calendar'||window.BasketLabRouter.read(location).boxscore!==route.boxscore)return;const game=games.find(g=>String(g.event_id)===route.boxscore);if(game)openCalendarBoxscore(game);}).catch(()=>{});
+   fetchNbaFixtures(route.date).then(games=>{if(document.body.dataset.hubView!=='calendar'||window.BasketLabRouter.read(location).boxscore!==route.boxscore)return;const game=games.find(g=>String(g.event_id)===route.boxscore);if(game)openCalendarBoxscore(game,false,route.returnTeam||'');}).catch(()=>{});
   }}
  }finally{applyingRoute=false}
 }
