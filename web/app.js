@@ -411,28 +411,28 @@ function render(){
   const pendingPublication=isFixed && pickSource.official_top5_pending;
   $('picks').dataset.emptyState=pendingPublication?((pickSource.quote_count??(pickSource.results||[]).length)>0?'waiting-data':'waiting-odds'):'no-selection';
   const targetDay=String(pickSource.date||$('date')?.value||'');
-  const publicationNotice='Le scelte del Lab del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
+  const publicationNotice='Le migliori 10 del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
   const featured=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,10):chosen.slice(0,10),remaining=pendingPublication?[]:chosen.slice(10);
   const preliminary=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,10):[];
   const preliminaryHtml=false
     ?'<section class="panel pick-group pick-group-daily" aria-label="Analisi preliminari"><div class="pick-group-heading"><h2>Analisi preliminari</h2></div>'+
-      '<p>In valutazione · aggiornate all’ultima scansione. Possono cambiare e non sono Top 10 ufficiali.</p>'+
+      '<p>In valutazione · aggiornate all’ultima scansione. Possono cambiare e non sono Le migliori 10 ufficiali.</p>'+
       (preliminary.length?'<div class="pick-group-items">'+preliminary.map(pickCard).join('')+'</div>':'<p>Nessuna analisi preliminare idonea disponibile al momento.</p>')+'</section>'
     :'';
   const singlePick=pendingPublication?pickSource.preliminary_single:pickSource.official_single;
-  const singleHeading='Singola del giorno';
+  const singleHeading='Scelta del giorno';
   const singleState=isFixed&&pickSource.official_top5_pending===false&&singlePick?'official':pendingPublication?'preview':'waiting';
   const singleLabel={official:'Ufficiale',preview:'Conferma alle 18:00',waiting:'In attesa'}[singleState];
   const publicationLabel='Anteprima · ufficiale il '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' alle 18:00';
-  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Singola del giorno" data-publication-state="'+singleState+'" data-publication-label="'+esc(publicationLabel)+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2><span class="bl-publication-badge" data-state="'+singleState+'">'+singleLabel+'</span></div>'+
+  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Scelta del giorno" data-publication-state="'+singleState+'" data-publication-label="'+esc(publicationLabel)+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2><span class="bl-publication-badge" data-state="'+singleState+'">'+singleLabel+'</span></div>'+
     (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00 del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+'.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
-    (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna Singola idonea disponibile per questa giornata.</p>')+'</section>';
+    (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna scelta idonea disponibile per questa giornata.</p>')+'</section>';
   pending.push(singlePick?[singlePick]:[]);
   pending.push(pendingPublication?featured:chosen);
 
   const choicesState=isFixed&&pickSource.official_top5_pending===false&&chosen.length?'official':pendingPublication?'preview':'waiting';
   const choicesLabel={official:'Ufficiali',preview:'Conferma alle 18:00',waiting:'In attesa'}[choicesState];
-  $('picks').innerHTML=singleSection+'<section id="pick-giorno" data-publication-state="'+choicesState+'" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le scelte del Lab</h2><span class="bl-publication-badge" data-state="'+choicesState+'">'+choicesLabel+'</span></div>'+
+  $('picks').innerHTML=singleSection+'<section id="pick-giorno" data-publication-state="'+choicesState+'" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le migliori 10</h2><span class="bl-publication-badge" data-state="'+choicesState+'">'+choicesLabel+'</span></div>'+
    (featured.length?'<p>'+(pendingPublication?'In aggiornamento: le selezioni possono cambiare fino alle 18:00.':'Le '+featured.length+' selezioni ufficiali sono bloccate e non cambiano dopo la pubblicazione.')+'</p><div class="pick-group-items">'+featured.map(pickCard).join('')+'</div>'+
    (remaining.length?'<details id="pick-more-lines"><summary>Mostra tutte le altre '+remaining.length+' previsioni idonee</summary><div class="pick-group-items">'+remaining.map(pickCard).join('')+'</div></details>':''):
    (pendingPublication?'<p>'+publicationNotice+' Le analisi restano consultabili nella sezione Statistiche.</p>':'<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>'))+'</section>'+preliminaryHtml;

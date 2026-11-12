@@ -11,7 +11,7 @@ const picksPresentation=document.createElement('section');
 picksPresentation.id='picks-showcase';picksPresentation.hidden=true;
 picksPresentation.setAttribute('aria-label','Pronostici del giorno');
 $('#app')?.before(picksPresentation);
-const singleAnalysisPage=document.createElement('section');singleAnalysisPage.id='single-analysis-page';singleAnalysisPage.hidden=true;singleAnalysisPage.setAttribute('aria-label','Analisi della Singola');$('#app')?.before(singleAnalysisPage);
+const singleAnalysisPage=document.createElement('section');singleAnalysisPage.id='single-analysis-page';singleAnalysisPage.hidden=true;singleAnalysisPage.setAttribute('aria-label','Analisi della Scelta del giorno');$('#app')?.before(singleAnalysisPage);
 let singleAnalysisReturn='picks';
 function loadSingleAnalysis(){
  singleAnalysisPage.innerHTML='<p class="status">Caricamento dell’analisi…</p>';
@@ -228,7 +228,7 @@ async function loadModelPerformance(){
   const response=await fetch('/api/history/performance',{headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('Performance unavailable');
   const stats=await response.json();
-  const groups=[['Singola',stats.single],['Top 10',stats]];
+  const groups=[['Scelta del giorno',stats.single],['Le migliori 10',stats]];
   const number=value=>Number.isFinite(value)?value.toLocaleString('it-IT'):'—';
   body.innerHTML='<div class="bl-results-grid">'+groups.map(([label,group])=>{
    const rate=Number.isFinite(group?.success_pct)?group.success_pct:null;
@@ -241,7 +241,7 @@ async function loadModelPerformance(){
     '<div><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
     '<div><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+
     '<div><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
-  }).join('')+'</div><p class="bl-results-note">Dal 1° novembre 2026 · Percentuale sulle analisi verificate.</p>';
+  }).join('')+'</div>';
 
  }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
 }
@@ -256,7 +256,7 @@ function hubCardPhoto(source){const image=source.querySelector('.pick-avatar img
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');if(!list||!picks)return;
  const heading=featured?.querySelector('h2');
- if(heading)heading.textContent='🔥 Le scelte del Lab';
+ if(heading)heading.textContent='Le migliori 10';
  const badge=$('#hub-choices-state'),publication=picks.querySelector('#pick-giorno')?.dataset.publicationState;
  if(badge){badge.dataset.state=publication||'waiting';badge.textContent=publication==='official'?'Ufficiali':publication==='preview'?'Conferma alle 18:00':'In attesa';}
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,10);
@@ -808,9 +808,9 @@ function emptyPicksCard(unified,status){
  const card=document.createElement('div');card.className='bl-picks-empty';
  const final=status==='no-selection',quotes=status==='waiting-odds';
  const badge=final?'ANALISI COMPLETATA':quotes?'IN ATTESA DI QUOTE':'IN ATTESA';
- const title=final?(unified?'Nessuna selezione idonea':'Nessuna Singola idonea'):unified?'Le prossime selezioni saranno pubblicate qui':'La Singola del giorno apparirà qui';
+ const title=final?(unified?'Nessuna selezione idonea':'Nessuna scelta idonea'):unified?'Le prossime selezioni saranno pubblicate qui':'La Scelta del giorno apparirà qui';
  const description=final?'Le linee analizzate non soddisfano i criteri del modello.':quotes?'Aspettiamo le quote delle prossime partite per valutare le selezioni.':'Le anteprime appariranno quando saranno disponibili quote e dati sufficienti.';
- if(!unified){card.classList.add('is-partial');card.innerHTML='<h3>Singola del giorno</h3><p>'+(final?'Nessuna Singola soddisfa i criteri del modello.':'La Singola apparirà qui quando sarà disponibile una selezione idonea.')+'</p>';return card;}
+ if(!unified){card.classList.add('is-partial');card.innerHTML='<h3>Scelta del giorno</h3><p>'+(final?'Nessuna scelta soddisfa i criteri del modello.':'La Scelta del giorno apparirà qui quando sarà disponibile una selezione idonea.')+'</p>';return card;}
  card.innerHTML='<div class="bl-picks-empty-heading"><span class="bl-picks-empty-icon" aria-hidden="true">◎</span><span>Le selezioni del Lab</span><small>'+badge+'</small></div><h3>'+title+'</h3><p>'+description+'</p>'+(!final?'<div class="bl-picks-empty-time"><span aria-hidden="true">◷</span> Conferma delle selezioni alle <strong>18:00</strong></div>':'')+'<div class="bl-picks-empty-actions"><button type="button" data-empty-view="stats">Esplora i giocatori →</button><button type="button" data-empty-view="history">Archivio esiti →</button></div>';
  for(const button of card.querySelectorAll('[data-empty-view]'))button.onclick=()=>{const view=button.dataset.emptyView;go[view]();select(view);};
  return card;
@@ -820,7 +820,7 @@ function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
  if(!picks)return;
  if(single){
-  const group=picks.querySelector('.pick-group[aria-label="Singola del giorno"]');
+  const group=picks.querySelector('.pick-group[aria-label="Scelta del giorno"]');
   const pick=group?.querySelector('.pick-selection');
   const hasChoices=!!picks.querySelector('#pick-giorno .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-selection');
   singleShowcase?.classList.toggle('is-empty',!pick);

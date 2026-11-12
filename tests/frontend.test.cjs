@@ -952,7 +952,7 @@ test('future session previews show the correct official publication day',async()
   assert.equal(dom.window.document.getElementById('hub-single-state').textContent,'Conferma alle 18:00');
   assert.match(dom.window.document.getElementById('hub-single-state').title,/04\/11.*18:00/);
   assert.equal(dom.window.document.getElementById('hub-single-state').dataset.state,'preview');
-  assert.match(dom.window.document.querySelector('.hub-featured h2').textContent,/Le scelte del Lab/);
+  assert.match(dom.window.document.querySelector('.hub-featured h2').textContent,/Le migliori 10/);
   assert.equal(dom.window.document.getElementById('hub-choices-state').textContent,'Conferma alle 18:00');
   assert.equal(dom.window.document.getElementById('hub-choices-state').dataset.state,'preview');
  }finally{dom.window.close();}

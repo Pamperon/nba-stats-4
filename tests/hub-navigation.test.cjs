@@ -180,7 +180,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  const singlePanel=doc.querySelector('.hub-single-section'),topPanel=doc.querySelector('.hub-featured');
  const homeParent=singlePanel.parentElement;
  const source=(name)=>'<article class="pick-selection"><div class="pick-profile"><div class="pick-avatar"><span>NBA</span></div><button class="pick-player-link">'+name+'</button></div><div class="pick-market">OVER 4.5 REB</div><div class="pick-values"><div><small>QUOTA</small><strong>1,80</strong></div><div><small>STIMA DEL MODELLO</small><strong>75%</strong></div></div><button class="pick-stats-button">Statistiche</button></article>';
- doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Singola del giorno"><h2>Singola del giorno</h2><div class="pick-group-items">'+source('Single Player')+'</div></section><section id="pick-giorno"><div class="pick-group-items">'+source('Top Player')+'</div></section>';
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Scelta del giorno"><h2>Scelta del giorno</h2><div class="pick-group-items">'+source('Single Player')+'</div></section><section id="pick-giorno"><div class="pick-group-items">'+source('Top Player')+'</div></section>';
  let singleClicks=0,topClicks=0;
  const actions=doc.querySelectorAll('#picks .pick-stats-button');
  actions[0].onclick=()=>singleClicks++;actions[1].onclick=()=>topClicks++;
@@ -217,7 +217,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
 
 test('an empty Top 5 does not repeat the Single as a ranked analysis',async()=>{
  const {doc}=setup();
- doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Singola del giorno"><article class="pick-selection"><button class="pick-player-link">Only Single</button></article></section><section id="pick-giorno"><div class="pick-group-items"></div></section>';
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Scelta del giorno"><article class="pick-selection"><button class="pick-player-link">Only Single</button></article></section><section id="pick-giorno"><div class="pick-group-items"></div></section>';
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(doc.querySelectorAll('#hub-featured-list .bl-datalab-card').length,0);
  assert.match(doc.querySelector('#hub-featured-list').textContent,/Nessuna analisi/);
@@ -403,7 +403,7 @@ test('venue icons appear only in calendar cards and not in home or daily picks',
  await new Promise(r=>setImmediate(r));
  window.fetch=async()=>({ok:true,json:async()=>({games:[{away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,start_at:new Date(Date.now()+3600000).toISOString()}]})});
  const team=name=>'<span class="fixture-team"><span class="fixture-team-name"><span class="fixture-name-full">'+name+'</span></span></span>';
- doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Singola del giorno"><article class="pick-selection"><button class="pick-player-link">Test Player</button><div class="pick-profile-info"><p>Atlanta Hawks</p></div><div class="pick-fixture" data-match="Atlanta Hawks - Boston Celtics">'+team('Atlanta Hawks')+team('Boston Celtics')+'</div></article></section>';
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Scelta del giorno"><article class="pick-selection"><button class="pick-player-link">Test Player</button><div class="pick-profile-info"><p>Atlanta Hawks</p></div><div class="pick-fixture" data-match="Atlanta Hawks - Boston Celtics">'+team('Atlanta Hawks')+team('Boston Celtics')+'</div></article></section>';
  await new Promise(r=>setImmediate(r));
  const sides=doc.querySelectorAll('.bl-game-team');
  assert.equal(sides.length,2);
@@ -420,7 +420,7 @@ test('venue icons appear only in calendar cards and not in home or daily picks',
 
 test('missing picks share a compact state across Home and Pronostici and restore real cards',async()=>{
  const {window,doc}=setup();
- const picks=doc.querySelector('#picks');picks.dataset.emptyState='waiting-odds';picks.innerHTML='<section class="pick-group" aria-label="Singola del giorno" data-publication-state="preview"><p>Nessuna Singola</p></section><section id="pick-giorno" data-publication-state="preview"></section>';
+ const picks=doc.querySelector('#picks');picks.dataset.emptyState='waiting-odds';picks.innerHTML='<section class="pick-group" aria-label="Scelta del giorno" data-publication-state="preview"><p>Nessuna Singola</p></section><section id="pick-giorno" data-publication-state="preview"></section>';
  await new Promise(r=>setImmediate(r));
  assert.equal(doc.querySelectorAll('.bl-picks-empty').length,1);
  assert.match(doc.querySelector('.bl-picks-empty').textContent,/IN ATTESA DI QUOTE/);
@@ -430,8 +430,8 @@ test('missing picks share a compact state across Home and Pronostici and restore
  doc.querySelector('.hub-sidebar [data-hub=picks]').click();
  assert.equal(doc.querySelector('.bl-picks-empty').closest('#picks-showcase')?.id,'picks-showcase');
  doc.querySelector('[data-empty-view=history]').click();assert.equal(doc.body.dataset.hubView,'history');
- picks.dataset.emptyState='no-selection';picks.innerHTML='<section class="pick-group" aria-label="Singola del giorno"></section><section id="pick-giorno"></section>';
+ picks.dataset.emptyState='no-selection';picks.innerHTML='<section class="pick-group" aria-label="Scelta del giorno"></section><section id="pick-giorno"></section>';
  await new Promise(r=>setImmediate(r));assert.match(doc.querySelector('.bl-picks-empty').textContent,/Nessuna selezione idonea/);assert.equal(doc.querySelector('.bl-picks-empty-time'),null);
- picks.innerHTML='<section class="pick-group" aria-label="Singola del giorno"></section><section id="pick-giorno"><div class="pick-group-items"><article class="pick-selection"><button class="pick-player-link">Test Player</button></article></div></section>';
+ picks.innerHTML='<section class="pick-group" aria-label="Scelta del giorno"></section><section id="pick-giorno"><div class="pick-group-items"><article class="pick-selection"><button class="pick-player-link">Test Player</button></article></div></section>';
  await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('.hub-featured').classList.contains('is-suppressed'),false);assert.equal(doc.querySelector('.hub-featured-more').hidden,false);assert.ok(doc.querySelector('.bl-picks-empty.is-partial'));
 });
