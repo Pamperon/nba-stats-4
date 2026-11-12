@@ -6,3 +6,4 @@ cachetools>=5.5,<7
 psycopg[binary]>=3.2,<4
 psycopg_pool==3.3.3
 Pillow>=11,<13
+ijson>=3.3,<4

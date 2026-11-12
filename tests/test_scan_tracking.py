@@ -117,7 +117,7 @@ class MeteredRequestTests(unittest.TestCase):
 
     def test_bounded_429_retry_records_both_requests(self):
         self.start.side_effect = ['first','second']
-        self.http.side_effect = [Mock(status_code=429, ok=False, headers={'Retry-After':'2'}), Mock(status_code=200,ok=True,json=lambda:[]) ]
+        self.http.side_effect = [Mock(status_code=429, ok=False, headers={'Retry-After':'2'}), Mock(status_code=200,ok=True,raw=io.BytesIO(b'[]')) ]
         self.assertEqual(engine.get_json('markets'), [])
         self.assertEqual(self.start.call_count, 2)
         self.assertEqual(self.http.call_count, 2)

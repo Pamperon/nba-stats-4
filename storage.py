@@ -105,11 +105,12 @@ def initialize():
         """)
         conn.execute("ALTER TABLE nba_scan_slots ADD COLUMN IF NOT EXISTS heartbeat_at TIMESTAMPTZ")
         conn.execute("ALTER TABLE nba_scan_slots ADD COLUMN IF NOT EXISTS instance_id TEXT")
+        conn.execute("ALTER TABLE nba_scan_slots ADD COLUMN IF NOT EXISTS recovery_count INTEGER NOT NULL DEFAULT 0")
     return True
 
 
 def claim_slot(slot_key, instance_id=None):
-    """Atomic at-most-once reservation across GitHub and Render schedulers."""
+    """Atomic reservation with one bounded recovery after a dead/failed batch."""
     if not configured():
         raise RuntimeError("Database required for scan deduplication")
     with connection() as conn:
@@ -119,9 +120,18 @@ def claim_slot(slot_key, instance_id=None):
         row = conn.execute("""
             INSERT INTO nba_scan_slots(slot_key, status, heartbeat_at, instance_id)
             VALUES (%s, 'running', NOW(), %s)
-            -- Never replay a slot automatically: a failed/timed-out caller may
-            -- already have consumed paid API calls or left a server job running.
-            ON CONFLICT(slot_key) DO NOTHING
+            ON CONFLICT(slot_key) DO UPDATE SET status='running',
+                claimed_at=NOW(), heartbeat_at=NOW(), finished_at=NULL,
+                instance_id=EXCLUDED.instance_id,
+                recovery_count=nba_scan_slots.recovery_count+1
+            WHERE nba_scan_slots.status IN ('running','failed')
+              AND nba_scan_slots.recovery_count < 1
+              AND COALESCE(nba_scan_slots.heartbeat_at,nba_scan_slots.claimed_at)<NOW()-INTERVAL '2 minutes'
+              AND NOT EXISTS (
+                SELECT 1 FROM nba_scan_attempts a
+                WHERE a.slot_key=nba_scan_slots.slot_key AND a.state IN ('queued','running')
+                  AND a.heartbeat_at>NOW()-INTERVAL '2 minutes'
+              )
             RETURNING slot_key
         """, (slot_key, instance_id)).fetchone()
     return bool(row)

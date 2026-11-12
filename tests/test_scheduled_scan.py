@@ -116,7 +116,7 @@ class SchedulerTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     scheduler.load_schedules(dt.date(2026, 10, 25))
 
-    def test_database_claim_never_replays_failed_or_stale_slot(self):
+    def test_database_claim_bounds_recovery_and_excludes_live_or_completed_batches(self):
         tree = ast.parse((ROOT / 'storage.py').read_text())
         node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'claim_slot')
         connection = Mock()
@@ -129,8 +129,9 @@ class SchedulerTests(unittest.TestCase):
             conn.execute.return_value.fetchone.return_value = row
             self.assertEqual(namespace['claim_slot']('2026-10-25T12:00'), expected)
         sql = conn.execute.call_args.args[0]
-        self.assertIn('ON CONFLICT(slot_key) DO NOTHING', sql)
-        self.assertNotIn('DO UPDATE', sql)
+        self.assertIn('recovery_count < 1', sql)
+        self.assertIn("status IN ('running','failed')", sql)
+        self.assertIn("a.heartbeat_at>NOW()-INTERVAL '2 minutes'", sql)
 
 
     def test_half_hour_slot_preserves_minutes_and_recovers_only_within_two_hours(self):

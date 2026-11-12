@@ -79,6 +79,7 @@ def init_storage():
     threading.Thread(target=_render_scheduler_loop, daemon=True, name='nba-render-scheduler').start()
     threading.Thread(target=_official_publication_loop, daemon=True, name='nba-official-publisher').start()
     threading.Thread(target=_archive_settlement_loop, daemon=True, name='nba-archive-verifier').start()
+    threading.Thread(target=_homepage_warm_loop, daemon=True, name='nba-homepage-warmup').start()
     from match_prewarm import run as warm_match_history
     threading.Thread(target=warm_match_history, args=(shutdown_event, schedule),
                      daemon=True, name='nba-match-history-warmup').start()
@@ -445,8 +446,43 @@ def publication_session(date: str = Query(..., pattern=r'^\d{4}-\d{2}-\d{2}$'), 
     return nba_publication_session(date)
 
 
-_compact_picks_cache = TTLCache(maxsize=1, ttl=20)
+_compact_picks_cache = TTLCache(maxsize=1, ttl=180)
 _compact_picks_lock = threading.RLock()
+_compact_picks_generation = 0
+
+
+def _homepage_warm_loop():
+    """Compute small homepage responses before visitors arrive, one at a time."""
+    if shutdown_event.wait(5):
+        return
+    last_performance = 0
+    while not shutdown_event.is_set():
+        with lock:
+            scanning = any(job['state'] in ('queued', 'running') for job in jobs.values())
+        if scanning:
+            if shutdown_event.wait(15):
+                return
+            continue
+        try:
+            with _compact_picks_lock:
+                generation = _compact_picks_generation
+            payload, valid_until = _build_session_picks(True)
+            with _compact_picks_lock:
+                # A scan finishing during computation invalidates this result.
+                if generation == _compact_picks_generation:
+                    _compact_picks_cache['session'] = (payload, valid_until)
+        except Exception:
+            logger.exception('Homepage picks warmup failed')
+        if time.monotonic() - last_performance >= 120:
+            try:
+                summary = _build_history_performance()
+                with _performance_lock:
+                    _performance_cache['summary'] = summary
+                last_performance = time.monotonic()
+            except Exception:
+                logger.exception('Homepage performance warmup failed')
+        if shutdown_event.wait(30):
+            return
 
 
 @app.get('/api/picks/session')
@@ -554,7 +590,7 @@ def _build_session_picks(compact):
             'fixture_count':len(manifest['games']),
             'player_count':player_count,
             'odds_api_calls':0}
-    return payload, min(transitions + [now.timestamp() + 20])
+    return payload, min(transitions + [now.timestamp() + 120])
 
 
 @app.get('/api/picks/single-analysis')
@@ -722,6 +758,7 @@ def fixtures(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$')):
         raise HTTPException(502,'Calendario temporaneamente non disponibile')
 
 def do_scan(job_id, date):
+    global _compact_picks_generation
     with lock: jobs[job_id]['state']='running'
     engine.set_odds_request_job(job_id)
     heartbeat_stop = threading.Event()
@@ -832,6 +869,7 @@ def do_scan(job_id, date):
                 raise RuntimeError('DATABASE_URL non configurato')
             storage.save(job_id, snapshot)
             with _compact_picks_lock:
+                _compact_picks_generation += 1
                 _compact_picks_cache.clear()
         except Exception:
             logger.exception('Scan %s completed but cloud persistence failed', job_id)
@@ -1718,7 +1756,7 @@ def _performance_counts(states):
             'success_pct': round(won * 100 / verified, 1) if verified else None}
 
 
-_performance_cache = TTLCache(maxsize=1, ttl=120)
+_performance_cache = TTLCache(maxsize=1, ttl=3600)
 _performance_lock = threading.Lock()
 
 

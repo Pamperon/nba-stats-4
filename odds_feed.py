@@ -4,6 +4,32 @@ import time
 from cachetools import TTLCache
 import storage
 
+
+def stream_tournament(raw, market_ids):
+    """Discard unwanted markets while parsing, before allocating their objects."""
+    import ijson
+    from ijson.common import ObjectBuilder
+    builder = ObjectBuilder()
+    skipping = False
+    depth = 0
+    for prefix, event, value in ijson.parse(raw, use_float=True):
+        if skipping:
+            if event in ('start_map', 'start_array'):
+                depth += 1
+            elif event in ('end_map', 'end_array'):
+                depth -= 1
+            if depth == 0:
+                skipping = False
+            continue
+        if event == 'map_key' and (
+            (prefix.endswith('bookmakerOdds') and value != 'bet365.it') or
+            (prefix.endswith('bookmakerOdds.bet365.it.markets') and str(value) not in market_ids)
+        ):
+            skipping = True
+            continue
+        builder.event(event, value)
+    return builder.value
+
 _LOCK = threading.RLock()
 _MEMORY = TTLCache(maxsize=12, ttl=48 * 3600)
 

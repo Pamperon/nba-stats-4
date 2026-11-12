@@ -122,7 +122,7 @@ def _record_response(request_id, http_status=None):
         logger.exception("Cannot finalize metered HTTP attempt %s", request_id)
 
 
-def get_json(path, **params):
+def get_json(path, *, _market_ids=None, **params):
     if not API_KEY:
         raise RuntimeError("Chiave OddsPapi assente nella configurazione del servizio.")
     global _ODDS_API_NEXT_AT
@@ -144,6 +144,7 @@ def get_json(path, **params):
                     f"{BASE}/{path}",
                     params={**params, "apiKey": API_KEY, "language": "en"},
                     timeout=40,
+                    stream=path in ('markets', 'odds-by-tournaments'),
                 )
             except requests.RequestException:
                 _record_response(request_id)
@@ -151,6 +152,7 @@ def get_json(path, **params):
             _record_response(request_id, resp.status_code)
             if resp.status_code == 429 and attempt == 0:
                 header = resp.headers.get("Retry-After", "")
+                resp.close()
                 try:
                     delay = max(2.0, min(float(header), 30.0))
                 except (TypeError, ValueError):
@@ -161,11 +163,21 @@ def get_json(path, **params):
                 _ODDS_API_NEXT_AT = max(_ODDS_API_NEXT_AT, time.monotonic() + delay)
                 continue
             if not resp.ok:
+                resp.close()
                 raise RuntimeError(f"OddsPapi: errore HTTP {resp.status_code}.")
             try:
+                if path in ('markets', 'odds-by-tournaments'):
+                    import ijson
+                    resp.raw.decode_content = True
+                    if path == 'markets':
+                        return [m for m in ijson.items(resp.raw, 'item', use_float=True)
+                                if str(m.get('sportId')) == '11']
+                    return odds_feed.stream_tournament(resp.raw, _market_ids or set())
                 return resp.json()
             except ValueError:
                 raise RuntimeError("OddsPapi: risposta JSON non valida.") from None
+            finally:
+                resp.close()
     raise RuntimeError("OddsPapi: HTTP 429 dopo il tentativo controllato.")
 
 def get_markets():
@@ -238,7 +250,7 @@ def get_tournament_odds(slot_key=None, catalog=None):
     key = slot_key or datetime.now(ROME_TZ).strftime("%Y-%m-%dT%H:manual")
     def download():
         payload = get_json("odds-by-tournaments", tournamentIds="132",
-                           bookmakers="bet365.it", verbosity=3)
+                           bookmakers="bet365.it", verbosity=3, _market_ids=market_ids)
         return odds_feed.slim_tournament(payload, market_ids)
     return odds_feed.cached_payload("odds:nba:bet365.it:v1:" + key,
                                     ODDS_CACHE_TTL_SECONDS, download)

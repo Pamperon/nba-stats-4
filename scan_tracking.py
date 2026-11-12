@@ -134,6 +134,15 @@ def begin_attempt(job_id, date, instance_id, source, slot_key=None):
         """).fetchone()
         if active:
             return {'job_id': active[0], 'date': active[1].isoformat(), 'reused': True}
+        if slot_key:
+            saved = conn.execute("""
+                SELECT a.job_id FROM nba_scan_attempts a
+                JOIN nba_scan_snapshots s ON s.job_id=a.job_id
+                WHERE a.slot_key=%s AND a.scan_date=%s
+                ORDER BY a.created_at DESC LIMIT 1
+            """, (slot_key, date)).fetchone()
+            if saved:
+                return {'job_id': saved[0], 'date': date, 'reused': True}
         conn.execute("""
             INSERT INTO nba_scan_attempts(job_id,scan_date,instance_id,source,slot_key,state)
             VALUES(%s,%s,%s,%s,%s,'queued')
