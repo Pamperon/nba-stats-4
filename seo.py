@@ -1,5 +1,6 @@
 """Public page metadata and sitemap. Never calls an external data provider."""
 import html
+import hashlib
 import json
 import logging
 import re
@@ -76,6 +77,11 @@ def crawlable_navigation(document):
     return document
 
 
+@lru_cache(maxsize=128)
+def _asset_version(asset, modified, size):
+    return hashlib.sha256((Path('web') / asset).read_bytes()).hexdigest()[:12]
+
+
 def render(path, players=None):
     if players is None:
         players = saved_players() if path.startswith('/giocatori/') else ()
@@ -93,8 +99,14 @@ def render(path, players=None):
     extra = '<meta name="robots" content="' + robots + '"><script type="application/ld+json" id="bl-page-schema">' + safe_json(page) + '</script><script type="application/json" id="bl-seo-routes">' + safe_json(PAGES) + '</script>'
     document = document.replace('</head>', extra + '</head>', 1)
     document = crawlable_navigation(document)
-    for asset in ('hub.css', 'design-system.css', 'modules/router.js', 'hub-nav.js'):
-        document = re.sub(re.escape('/static/' + asset) + r'\?v=[^"\s]+', '/static/' + asset + '?v=seo-pages-1', document)
+    def versioned(match):
+        asset = match[2]
+        file = Path('web') / asset
+        if not file.is_file():
+            return match[0]
+        stat = file.stat()
+        return match[1] + '?v=' + _asset_version(asset, stat.st_mtime_ns, stat.st_size)
+    document = re.sub(r'(/static/([^"?\s]+\.(?:css|js)))\?v=[^"\s]+', versioned, document)
     return document
 
 
