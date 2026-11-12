@@ -233,20 +233,16 @@ async function loadModelPerformance(){
   body.innerHTML='<div class="bl-results-grid">'+groups.map(([label,group])=>{
    const rate=Number.isFinite(group?.success_pct)?group.success_pct:null;
    const sweep=Math.min(100,Math.max(0,rate??0));
-   return '<article class="bl-results-card"><h3>'+label+'</h3>'+
+   return '<article class="bl-results-card">'+
     '<div class="bl-results-ring" style="--success:'+sweep+'%"><strong>'+
     (rate===null?'—':number(rate)+'%')+'</strong></div>'+
-    '<p><strong>'+number(group?.published)+'</strong> analisi pubblicate</p>'+
+    '<div class="bl-results-heading"><h3>'+label+'</h3><p><strong>'+number(group?.published)+'</strong> analisi pubblicate</p></div>'+
     '<dl><div><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
     '<div><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
     '<div><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+
     '<div><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
   }).join('')+'</div><p class="bl-results-note">Dal 1° novembre 2026 · Percentuale sulle analisi verificate.</p>';
-  if(stats.probability_review){
-   const review=document.createElement('details');review.className='bl-probability-review';
-   review.innerHTML='<summary>Quanto sono precise le probabilità?</summary><p>Confronto tra stime pubblicate ed esiti verificati. Le analisi senza esito e i giocatori che non hanno giocato sono esclusi.</p>'+[['Singola',stats.probability_review.single],['Top 10',stats.probability_review.top10]].map(([label,g])=>'<section><h4>'+label+'</h4>'+(g?.n?'<div class="bl-review-scroll"><table><thead><tr><th>Fascia</th><th>Analisi</th><th>Stima media</th><th>Centrate</th></tr></thead><tbody>'+g.bins.map(b=>'<tr><td>'+b.label+'</td><td>'+b.n+'</td><td>'+number(b.estimated_pct)+'%</td><td>'+number(b.observed_pct)+'%</td></tr>').join('')+'</tbody></table></div>':'<p>Nessuna analisi verificata con probabilità disponibile.</p>')+'</section>').join('')+'<p>Campione ancora limitato: più selezioni sulla stessa partita possono essere correlate. Questo confronto descrive i risultati raccolti e non modifica il modello.</p>';
-   body.append(review);
-  }
+
  }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
 }
 if(!window.BasketLabSections)loadModelPerformance();
