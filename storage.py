@@ -175,6 +175,30 @@ def cache_read_many(keys, max_age_hours):
     return dict(rows)
 
 
+def cached_player_previews(keys, max_age_hours):
+    """Project ten games inside PostgreSQL instead of downloading full seasons."""
+    if not configured() or not keys:
+        return {}
+    with connection() as conn:
+        rows = conn.execute("""
+            SELECT c.cache_key, COALESCE((
+                SELECT jsonb_agg(recent.game ORDER BY recent.day DESC)
+                FROM (
+                    SELECT g->>'GAME_DATE' AS day,
+                        jsonb_build_object('GAME_DATE',g->>'GAME_DATE',
+                            'PTS',g->'PTS','REB',g->'REB','AST',g->'AST') AS game
+                    FROM jsonb_array_elements(CASE WHEN jsonb_typeof(c.payload->'games')='array'
+                        THEN c.payload->'games' ELSE '[]'::jsonb END) g
+                    WHERE g->>'GAME_DATE' IS NOT NULL
+                    ORDER BY g->>'GAME_DATE' DESC LIMIT 10
+                ) recent
+            ), '[]'::jsonb)
+            FROM nba_player_cache c WHERE c.cache_key=ANY(%s)
+                AND c.updated_at>=NOW()-(%s * INTERVAL '1 hour')
+        """, (list(keys), max_age_hours)).fetchall()
+    return dict(rows)
+
+
 def cache_write(key, payload):
     if not configured():
         return

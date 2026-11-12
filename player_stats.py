@@ -136,6 +136,31 @@ def validate_season(season):
         raise ValueError("Stagione fuori intervallo")
     return year, current
 
+
+_directory_previews = TTLCache(maxsize=1, ttl=60)
+_directory_preview_lock = threading.Lock()
+
+
+def directory_with_previews():
+    """Attach saved compact charts in one DB round trip; never fetch ESPN logs."""
+    players = directory()
+    now = datetime.now(ZoneInfo('Europe/Rome'))
+    season = str(now.year if now.month >= 10 else now.year - 1)
+    with _directory_preview_lock:
+        saved = _directory_previews.get(season)
+        if saved is None:
+            keys = {'nba:log:final-v4:' + p['team_id'] + ':' + p['id'] + ':' + season: p['id']
+                    for p in players}
+            try:
+                previews = storage.cached_player_previews(keys, 6)
+                saved = {keys[key]: games for key, games in previews.items() if key in keys}
+                _directory_previews[season] = saved
+            except Exception:
+                logger.warning('Directory previews unavailable', exc_info=True)
+                saved = {}
+    return [{**player, **({'preview_games': saved[player['id']]} if player['id'] in saved else {})}
+            for player in players]
+
 def log_cache_hours(year):
     now = datetime.now(ZoneInfo('Europe/Rome'))
     current_start = now.year if now.month >= 10 else now.year - 1

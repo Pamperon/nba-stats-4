@@ -6,7 +6,7 @@ function setup(url='https://basketlab.it/giocatori',options={}){
  w.BasketLabSections={register(){},wants(){return false}};
  if(options.previews)w.IntersectionObserver=class{constructor(cb){this.cb=cb;}observe(target){Promise.resolve().then(()=>this.cb([{isIntersecting:true,target}]));}unobserve(){}disconnect(){}};
  w.fetch=async u=>{calls.push(String(u));let p={};if(u==='/api/players/explorer'&&options.quoteError)throw Error('Quotes offline');if(u==='/api/players/explorer')p={date:'2026-11-05',rows:options.rows||[row],logs:{'Test, Alex':[{GAME_DATE:'2026-11-01',PTS:20},{GAME_DATE:'2026-10-30',PTS:8}]}};
- else if(u==='/api/players/directory')p={players:[{id:'22',name:'Alex Test',team:'Boston Celtics',team_id:'2'},{id:'33',name:'Other Player',team:'Boston Celtics',team_id:'2'}]};
+ else if(u==='/api/players/directory')p={players:options.players||[{id:'22',name:'Alex Test',team:'Boston Celtics',team_id:'2'},{id:'33',name:'Other Player',team:'Boston Celtics',team_id:'2'}]};
  else if(String(u).startsWith('/api/nba/fixtures'))p={games:[{home:'Boston Celtics',away:'Atlanta Hawks'}]};
  else if(u==='/api/players/teams')p={teams:[{id:'2',name:'Boston Celtics'}]};
  else if(String(u).startsWith('/api/players/roster'))p={players:[{id:'22',name:'Alex Test'},{id:'33',name:'Other Player'}]};
@@ -77,3 +77,10 @@ test('unpriced directory cards show standard-line real history and reuse it acro
  assert.equal(calls.filter(x=>x.startsWith('/api/players/log?')).length,2);
  assert.match(d.querySelector('.pe-spark').getAttribute('aria-label'),/3, 5/);
 }finally{dom.window.close();}});
+
+test('prepared directory charts need no individual history requests',async()=>{
+ const {dom,w,d,calls}=setup('https://basketlab.it/giocatori',{rows:[],previews:true,players:[{id:'22',name:'Alex Test',team:'Boston Celtics',team_id:'2',preview_games:[{GAME_DATE:'2026-11-01',PTS:20,REB:5,AST:2}]}]});
+ try{for(let n=0;n<15;n++)await tick();assert.equal(d.querySelectorAll('.pe-spark i').length,1);assert.equal(calls.some(u=>u.startsWith('/api/players/log?')),false);
+ d.querySelector('[data-pe-market=REB]').click();for(let n=0;n<10;n++)await tick();assert.equal(d.querySelectorAll('.pe-spark i').length,1);assert.equal(calls.some(u=>u.startsWith('/api/players/log?')),false);
+ }finally{dom.window.close();}
+});

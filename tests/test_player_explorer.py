@@ -4,6 +4,25 @@ from unittest.mock import patch
 import player_explorer
 
 class PlayerExplorerTests(unittest.TestCase):
+    def test_previews_use_one_saved_batch_and_never_fetch_individual_logs(self):
+        import player_stats
+        player_stats._directory_previews.clear()
+        self.addCleanup(player_stats._directory_previews.clear)
+        players=[{'id':'22','team_id':'2','name':'Alex','team':'Boston'}]
+        games=[{'GAME_DATE':'2026-11-01','PTS':20,'REB':5,'AST':2}]
+        def saved(keys, hours):
+            self.assertEqual(hours,6)
+            return {next(iter(keys)):games}
+        with patch.object(player_stats,'directory',return_value=players), \
+             patch.object(player_stats.storage,'cached_player_previews',side_effect=saved) as read, \
+             patch.object(player_stats,'player_log',side_effect=AssertionError('No ESPN fetch')):
+            first=player_stats.directory_with_previews()
+            second=player_stats.directory_with_previews()
+        self.assertEqual(first[0]['preview_games'],games)
+        self.assertEqual(first,second)
+        self.assertEqual(read.call_count,1)
+        self.assertNotIn('preview_games',players[0])
+
     def test_projection_preserves_prices_and_only_keeps_ten_saved_games(self):
         row={'ESPN ID':'22','Giocatore':'Test, Alex','Squadra':'Boston Celtics','Mercato':'PTS','Linea':10.5,'Quota':1.9,'Scelta':'Over','Partita':'A - B','Prob. stimata %':75,'private':'no'}
         source={'date':'2026-11-05','results':[row], 'player_logs':{'Test, Alex':[{'GAME_DATE':f'2026-10-{n:02d}','PTS':n,'private':'no'} for n in range(1,22)],'Other':[{'GAME_DATE':'2026-10-01','PTS':99}]}}

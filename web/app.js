@@ -680,7 +680,7 @@ async function fetchPlayerLog(team,id,season){
 
 // Catalog and roster revisits need no round trip while their cache is fresh.
 async function playerCatalog(path){
- const key='nba-player-catalog:'+path,now=Date.now();
+ const key='nba-player-catalog-v2:'+path,now=Date.now();
  let item=rosterCache.get(path);
  if(!item){try{item=JSON.parse(sessionStorage.getItem(key))}catch(e){}}
  if(item&&Number.isFinite(item.at)&&now>=item.at&&now-item.at<PLAYER_CACHE_TTL){
@@ -971,7 +971,7 @@ async function changePlayer(selection=null,preserveLine=false){
   if(request===playerRequest)setPlayerLoading(false);
  }
 }
-window.BasketLabPlayerEngine={open:openPickStats,directory:getPlayerDirectory,fixture:fixtureCard};
+window.BasketLabPlayerEngine={open:openPickStats,directory:getPlayerDirectory,fixture:fixtureCard,log:fetchPlayerLog};
 function changeLine(preserveSelected=false){
  const selected=preserveSelected?$('line').value:null;
  const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);

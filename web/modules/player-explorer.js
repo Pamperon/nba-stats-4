@@ -46,17 +46,21 @@ async function showDirectory(){
 }
 function chooseRow(rows){return [...rows].sort((a,b)=>Math.abs(Number(a.Quota)-1.9)-Math.abs(Number(b.Quota)-1.9)||Number(a.Linea)-Number(b.Linea))[0];}
 const previewCache=new Map(),previewPending=new Map();let previewObserver=null,previewQueue=[],previewActive=0;
+try{const saved=JSON.parse(sessionStorage.getItem('nba-mini-previews-v1')||'[]');for(const [key,item] of saved.slice(-80))if(item&&Array.isArray(item.games)&&Date.now()-item.at>=0&&Date.now()-item.at<900000)previewCache.set(key,item);}catch(_){}
 function previewSeason(){const now=new Date(),year=Number(new Intl.DateTimeFormat('en',{timeZone:'Europe/Rome',year:'numeric'}).format(now)),month=Number(new Intl.DateTimeFormat('en',{timeZone:'Europe/Rome',month:'numeric'}).format(now));return String(month>=10?year:year-1);}
+function savedPreview(id){const item=previewCache.get(previewSeason()+':'+id);return item&&Date.now()-item.at>=0&&Date.now()-item.at<900000?item.games:null;}
+function rememberPreview(id,games){previewCache.set(previewSeason()+':'+id,{at:Date.now(),games:games.slice(0,10)});if(previewCache.size>80)previewCache.delete(previewCache.keys().next().value);try{sessionStorage.setItem('nba-mini-previews-v1',JSON.stringify([...previewCache]));}catch(_){}return games;}
+function previewSpark(games){const values=games.map(g=>g[market]).filter(v=>v!=null&&v!==''&&Number.isFinite(Number(v))).map(Number).sort((a,b)=>a-b),max=market==='PTS'?79:market==='REB'?39:29;const line=values.length?Math.min(max+.5,Math.max(.5,Math.floor(values[Math.floor(values.length/2)])+.5)):null;return spark(games,line,true);}
 function previewLogs(player){
- const key=previewSeason()+':'+player.id,cached=previewCache.get(key);if(cached&&Date.now()-cached.at<1800000)return Promise.resolve(cached.games);
+ const key=previewSeason()+':'+player.id,cached=savedPreview(player.id);if(cached!==null)return Promise.resolve(cached);
  if(previewPending.has(key))return previewPending.get(key);
- const task=w.fetch('/api/players/log?team_id='+encodeURIComponent(player.team)+'&athlete_id='+encodeURIComponent(player.id)+'&season='+previewSeason()).then(r=>{if(!r.ok)throw Error('Preview unavailable');return r.json();}).then(data=>{
-  const games=(data.games||[]).filter(g=>g.GAME_DATE).sort((a,b)=>String(b.GAME_DATE).localeCompare(String(a.GAME_DATE))).map(g=>({GAME_DATE:g.GAME_DATE,PTS:g.PTS,REB:g.REB,AST:g.AST}));previewCache.set(key,{at:Date.now(),games});if(previewCache.size>80)previewCache.delete(previewCache.keys().next().value);return games;
+ const task=w.BasketLabPlayerEngine.log(player.team,player.id,previewSeason()).then(data=>{
+  const games=(data.games||[]).filter(g=>g.GAME_DATE).sort((a,b)=>String(b.GAME_DATE).localeCompare(String(a.GAME_DATE))).slice(0,10).map(g=>({GAME_DATE:g.GAME_DATE,PTS:g.PTS,REB:g.REB,AST:g.AST}));return rememberPreview(player.id,games);
  }).finally(()=>previewPending.delete(key));previewPending.set(key,task);return task;
 }
 function runPreviewQueue(){
- while(previewActive<2&&previewQueue.length){const link=previewQueue.shift();if(!link.isConnected||api.detailOpen)continue;previewActive++;
-  previewLogs({id:link.dataset.previewId,team:link.dataset.previewTeam}).then(games=>{if(!link.isConnected)return;const slot=link.querySelector('.pe-spark-slot');if(slot){const values=games.map(g=>g[market]).filter(v=>v!=null&&v!==''&&Number.isFinite(Number(v))).map(Number).sort((a,b)=>a-b),max=market==='PTS'?79:market==='REB'?39:29;const line=values.length?Math.min(max+.5,Math.max(.5,Math.floor(values[Math.floor(values.length/2)])+.5)):null;slot.outerHTML=spark(games,line,true);}}).catch(()=>{const slot=link.querySelector('.pe-spark-slot');if(slot)slot.textContent='Storico nella scheda';}).finally(()=>{previewActive--;runPreviewQueue();});
+ while(previewActive<4&&previewQueue.length){const link=previewQueue.shift();if(!link.isConnected||api.detailOpen)continue;previewActive++;
+  previewLogs({id:link.dataset.previewId,team:link.dataset.previewTeam}).then(games=>{if(!link.isConnected)return;const slot=link.querySelector('.pe-spark-slot');if(slot)slot.outerHTML=previewSpark(games);}).catch(()=>{const slot=link.querySelector('.pe-spark-slot');if(slot)slot.textContent='Storico nella scheda';}).finally(()=>{previewActive--;runPreviewQueue();});
  }
 }
 function observePreviews(list){
@@ -83,7 +87,9 @@ async function render(){
    for(const p of other){
     const link=d.createElement('a');link.className='pe-player-row pe-catalog-row';link.href='/giocatori/'+slug(p.name,p.id);
     const id=String(p.id);link.innerHTML='<div class="pe-player-face">'+(/^\d+$/.test(id)?'<img src="/api/players/headshot/'+id+'" alt="" loading="lazy">':'')+'</div><div class="pe-player-info"><strong>'+esc(p.name)+'</strong><small>'+esc(p.team)+'</small><span class="pe-unpriced-label">Statistiche disponibili · Senza quota</span></div><span class="pe-spark-empty pe-spark-slot">Caricamento storico…</span><span class="pe-row-arrow">›</span>';
-    link.dataset.previewId=String(p.id);link.dataset.previewTeam=String(p.team_id);
+    const prepared=savedPreview(p.id)??p.preview_games;
+    if(Array.isArray(prepared)){rememberPreview(p.id,prepared);link.querySelector('.pe-spark-slot').outerHTML=previewSpark(prepared);}
+    else{link.dataset.previewId=String(p.id);link.dataset.previewTeam=String(p.team_id);}
     link.onclick=e=>{if(e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();directoryScroll=w.scrollY;w.BasketLabPlayerEngine.open({'ESPN ID':p.id,Giocatore:p.name,Squadra:p.team,Mercato:market});};cards.push(link);
    }
   }catch{if(token!==request)return;showCards(list,cards);$('pe-status').textContent='Catalogo NBA temporaneamente non disponibile. Puoi riprovare la ricerca.';return;}
