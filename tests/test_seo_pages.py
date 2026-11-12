@@ -12,7 +12,7 @@ import seo
 
 class SeoPagesTests(unittest.TestCase):
     def test_each_page_has_its_own_metadata_and_native_navigation(self):
-        with patch.object(seo, 'saved_players', side_effect=AssertionError('Static pages must not read data')):
+        with patch.object(seo, 'saved_players', return_value=()):
             for path, (title, description) in seo.PAGES.items():
                 document = seo.render(path)
                 self.assertIn('<title>' + html.escape(title) + '</title>', document)
@@ -38,6 +38,18 @@ class SeoPagesTests(unittest.TestCase):
         page = json.loads(re.search(r'id="bl-page-schema">(.*?)</script>', document)[1])
         self.assertIn('Alex', page['name'])
         self.assertIn('noindex,follow', seo.render('/analisi-partita'))
+
+    def test_progressive_content_links_rosters_and_escaped_saved_stats(self):
+        players = [{'id':'22', 'name':'Alex Test', 'team_id':'2', 'team':'Boston Celtics'}]
+        with patch.object(seo, '_saved_log', return_value=[{'GAME_DATE':'2026-11-10', 'MATCHUP':'BOS < NY', 'PTS':25, 'REB':8, 'AST':4}]):
+            document = seo.render('/giocatori/alex-test-22', players)
+        self.assertIn('BOS &lt; NY', document)
+        self.assertIn('<td>25</td>', document)
+        self.assertIn('href="/squadre/boston-celtics-2"', document)
+        team = seo.render('/squadre/boston-celtics-2', players)
+        self.assertIn('href="/giocatori/alex-test-22"', team)
+        self.assertIn('id="bl-initial-content"', team)
+        self.assertNotIn('id="bl-initial-content"', seo.render('/', ()))
 
     def test_http_routes_aliases_queries_and_unknown_ids(self):
         with patch.dict(os.environ, {'NBA_STATS_ACCESS_TOKEN':'offline-test-token','ODDSPAPI_API_KEY':'offline-test-key'}):

@@ -978,5 +978,7 @@ if(window.BasketLabRouter){
  else if(location.hash==='#come-funziona'){go.about();select('about')}
 }
 if(window.BasketLabSections)window.BasketLabSections.register('home',()=>{loadModelPerformance();refreshShowcase();});
+document.getElementById('bl-initial-content')?.remove();
+document.getElementById('bl-initial-style')?.remove();
 refresh();featuredPicks();updateInsights();refreshShowcase();
 })();

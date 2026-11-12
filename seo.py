@@ -90,9 +90,67 @@ def _asset_version(asset, modified, size):
     return hashlib.sha256((Path('web') / asset).read_bytes()).hexdigest()[:12]
 
 
+@lru_cache(maxsize=128)
+def _saved_log(team_id, athlete_id, season, bucket):
+    try:
+        import storage
+        payload = storage.cache_read('nba:log:final-v4:' + team_id + ':' + athlete_id + ':' + season, max_age_hours=24)
+        return payload.get('games', []) if isinstance(payload, dict) else []
+    except Exception:
+        return []
+
+
+def initial_content(path, players):
+    """Progressive HTML for people and crawlers; no remote provider requests."""
+    from nba_teams import TEAMS
+    esc = lambda value: html.escape(str(value), quote=True)
+    link = lambda url, label: '<a href="' + esc(url) + '">' + esc(label) + '</a>'
+    team_links = lambda: '<ul>' + ''.join('<li>' + link('/squadre/' + player_slug(name, tid), name) + '</li>' for tid, name in sorted(TEAMS.items(), key=lambda item: item[1])) + '</ul>'
+    title, description, _, _ = metadata(path, players)
+    body = '<h1>' + esc(title.split(' | ')[0]) + '</h1><p>' + esc(description) + '</p>'
+    match = re.fullmatch(r'/giocatori/[a-z0-9-]+-(\d{1,12})', path)
+    player = next((p for p in players if str(p['id']) == match[1]), None) if match else None
+    team_match = re.fullmatch(r'/squadre/[a-z0-9-]+-(\d{1,8})', path)
+    if player:
+        tid = str(player.get('team_id', ''))
+        if tid in TEAMS:
+            body += '<p>Squadra: ' + link('/squadre/' + player_slug(TEAMS[tid], tid), TEAMS[tid]) + '</p>'
+        body += '<p>Confronta punti, rimbalzi e assist nelle ultime 5, 10, 20 e 30 partite. I grafici permettono di distinguere le prestazioni recenti dalle medie su un periodo più ampio.</p>'
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo('Europe/Rome'))
+        season = str(now.year if now.month >= 10 else now.year - 1)
+        games = _saved_log(tid, str(player['id']), season, int(time.time() // 300)) if tid in TEAMS else []
+        if games:
+            body += '<h2>Ultime prestazioni disponibili</h2><table><caption>Stagione ' + season + '/' + str(int(season) + 1)[-2:] + ' · Dati ESPN salvati</caption><thead><tr><th>Data</th><th>Partita</th><th>Punti</th><th>Rimbalzi</th><th>Assist</th></tr></thead><tbody>'
+            for game in sorted(games, key=lambda g: str(g.get('GAME_DATE', '')), reverse=True)[:10]:
+                body += '<tr>' + ''.join('<td>' + esc(game.get(key, '—')) + '</td>' for key in ('GAME_DATE', 'MATCHUP', 'PTS', 'REB', 'AST')) + '</tr>'
+            body += '</tbody></table>'
+        body += '<p>' + link('/giocatori', 'Tutti i giocatori NBA') + '</p>'
+    elif team_match:
+        tid = team_match[1]
+        roster = [p for p in players if str(p.get('team_id', '')) == tid]
+        if roster:
+            body += '<h2>Giocatori dei ' + esc(TEAMS[tid]) + '</h2><ul>' + ''.join('<li>' + link('/giocatori/' + player_slug(p['name'], p['id']), p['name']) + '</li>' for p in roster) + '</ul>'
+        body += '<p>' + link('/nba/classifica', 'Classifica NBA') + ' · ' + link('/nba', 'Calendario e risultati NBA') + '</p>'
+    elif path == '/giocatori':
+        body += '<p>Scegli un giocatore per consultare punti, rimbalzi, assist e andamento delle prestazioni. I filtri consentono di confrontare periodi diversi e partite in casa o in trasferta.</p><ul>'
+        body += ''.join('<li>' + link('/giocatori/' + player_slug(p['name'], p['id']), p['name']) + ' — ' + esc(p.get('team', '')) + '</li>' for p in players) + '</ul>'
+    elif path in ('/nba', '/nba/classifica', '/partite'):
+        body += '<p>Il calendario mostra le date e gli orari italiani delle partite. Le classifiche separano Eastern e Western Conference; ogni squadra ha una scheda con prossimi incontri, risultati recenti e rosa.</p><p>' + link('/nba', 'Calendario NBA') + ' · ' + link('/nba/classifica', 'Classifica NBA') + '</p><h2>Le 30 squadre NBA</h2>' + team_links()
+    elif path == '/pronostici':
+        body += '<p>Le selezioni sono in anteprima prima delle 18 e diventano ufficiali alla pubblicazione serale. Le probabilità sono stime del modello, non garanzie di risultato.</p><p>' + link('/archivio', 'Verifica gli esiti delle selezioni precedenti') + ' · ' + link('/come-funziona', 'Scopri il metodo del Lab') + '</p>'
+    elif path == '/archivio':
+        body += '<p>Consulta le selezioni per giornata e confronta Singola e Top 10. Gli esiti distinguono le scelte centrate, non centrate, i giocatori che non hanno giocato e i risultati ancora da verificare.</p>'
+    elif path == '/come-funziona':
+        body += '<p>Basket Lab confronta le prestazioni NBA attraverso punti, rimbalzi, assist e minuti giocati. Le frequenze storiche descrivono ciò che è accaduto nel campione selezionato; le probabilità del modello sono stime e possono differire dai risultati futuri.</p>'
+    body += '<nav aria-label="Approfondimenti NBA">' + link('/giocatori', 'Statistiche giocatori') + ' · ' + link('/nba/classifica', 'Squadre e classifica') + ' · ' + link('/come-funziona', 'Come funziona Basket Lab') + '</nav>'
+    return '<section id="bl-initial-content" class="bl-panel" aria-label="Contenuti della pagina">' + body + '</section>'
+
+
 def render(path, players=None):
     if players is None:
-        players = saved_players() if path.startswith('/giocatori/') else ()
+        players = saved_players() if path.startswith(('/giocatori', '/squadre/')) else ()
     title, description, canonical, robots = metadata(path, players)
     document = Path('web/index.html').read_text()
     document = re.sub(r'<title>.*?</title>', '<title>' + html.escape(title) + '</title>', document, count=1)
@@ -107,6 +165,11 @@ def render(path, players=None):
     extra = '<meta name="robots" content="' + robots + '"><script type="application/ld+json" id="bl-page-schema">' + safe_json(page) + '</script><script type="application/json" id="bl-seo-routes">' + safe_json(PAGES) + '</script>'
     document = document.replace('</head>', extra + '</head>', 1)
     document = crawlable_navigation(document)
+    if path != '/':
+        document = document.replace('<main>', '<main>' + initial_content(path, players), 1)
+        # The same fallback is served to all visitors, and replaced by the app
+        # once navigation initializes. It remains usable if JavaScript fails.
+        document = document.replace('</head>', '<style id="bl-initial-style">main > :not(#bl-initial-content){display:none!important}#bl-initial-content{padding:24px}#bl-initial-content a{color:inherit}</style></head>', 1)
     def versioned(match):
         asset = match[2]
         file = Path('web') / asset
