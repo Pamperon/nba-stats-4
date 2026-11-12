@@ -3,6 +3,11 @@
 'use strict';
 const d=w.document,$=id=>d.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={PTS:'Punti',REB:'Rimbalzi',AST:'Assist'},norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),slug=(name,id)=>norm(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+id;
+// Editorial discovery order: familiar NBA names first, independent of saved odds.
+const featuredNames=['LeBron James','Stephen Curry','Kevin Durant','Luka Doncic','Giannis Antetokounmpo','Nikola Jokic','Victor Wembanyama','Anthony Edwards','Jayson Tatum','Shai Gilgeous-Alexander','James Harden','Joel Embiid','Kyrie Irving','Anthony Davis','Devin Booker','Donovan Mitchell','Jalen Brunson','Ja Morant','Kawhi Leonard','Damian Lillard','Jimmy Butler','Jaylen Brown','Karl-Anthony Towns','Trae Young','Paolo Banchero','Cade Cunningham','LaMelo Ball','Zion Williamson','Tyrese Haliburton','Tyrese Maxey','Cooper Flagg','Alperen Sengun','Domantas Sabonis','De\'Aaron Fox','Bam Adebayo','Jalen Williams','Pascal Siakam','Jamal Murray','Brandon Ingram','Scottie Barnes','Evan Mobley','Jaren Jackson Jr.','Franz Wagner','Darius Garland','Julius Randle','DeMar DeRozan','Zach LaVine','Kristaps Porzingis','Rudy Gobert','Austin Reaves'];
+const fameKey=name=>norm(name).replace(/[^a-z0-9]/g,''),featuredRank=new Map(featuredNames.map((name,index)=>[fameKey(name),index]));
+featuredRank.set(fameKey('Steph Curry'),featuredRank.get(fameKey('Stephen Curry')));
+function discoveryRank(card){return featuredRank.get(fameKey(card.querySelector('.pe-player-info strong')?.textContent))??featuredNames.length;}
 const panel=d.createElement('section');panel.id='players-explorer';panel.hidden=true;
 panel.innerHTML='<header class="pe-heading"><div><p class="pe-eyebrow">BASKET LAB</p><h1>Giocatori</h1><p>Statistiche, linee e quote NBA</p></div></header><div class="pe-controls"><label class="pe-search">Cerca un giocatore<input id="pe-search" type="search" placeholder="Nome del giocatore…" autocomplete="off"></label><div class="bl-segments" role="group" aria-label="Mercato giocatori">'+Object.entries(labels).map(([k,v])=>'<button type="button" data-pe-market="'+k+'" aria-pressed="'+(k==='PTS')+'">'+v+'</button>').join('')+'</div><div class="pe-filter-row"><label>Partita<select id="pe-match"><option value="">Tutte le partite</option></select></label><label>Squadra<select id="pe-team"><option value="">Tutte le squadre</option></select></label></div></div><div class="pe-list-heading"><p id="pe-status" role="status"></p><button id="pe-reset" type="button">Ripristina</button></div><div id="pe-list"></div><button id="pe-more" type="button" hidden>Mostra altri giocatori</button>';
 $('app')?.before(panel);
@@ -88,7 +93,7 @@ async function render(){
  if(!list.children.length)list.innerHTML='<p class="pe-empty">Nessun giocatore per questi filtri. Cerca un nome oppure cambia mercato.</p>';
 }
 function showCards(list,cards){
- cards.sort((a,b)=>(a.querySelector('.pe-player-info strong')?.textContent||'').localeCompare(b.querySelector('.pe-player-info strong')?.textContent||'','it'));
+ cards.sort((a,b)=>discoveryRank(a)-discoveryRank(b)||(a.querySelector('.pe-player-info strong')?.textContent||'').localeCompare(b.querySelector('.pe-player-info strong')?.textContent||'','it'));
  list.replaceChildren(...cards.slice(0,limit));observePreviews(list);
 }
 function renderQuotes(){
