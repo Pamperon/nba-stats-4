@@ -237,10 +237,10 @@ async function loadModelPerformance(){
     '<div class="bl-results-ring" style="--success:'+sweep+'%"><strong>'+
     (rate===null?'—':number(rate)+'%')+'</strong></div>'+
     '<div class="bl-results-heading"><h3>'+label+'</h3><p><strong>'+number(group?.published)+'</strong> analisi pubblicate</p></div>'+
-    '<dl><div><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
-    '<div><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
-    '<div><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+
-    '<div><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
+    '<dl><div data-outcome="won"><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
+    '<div data-outcome="lost"><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
+    '<div data-outcome="not-played"><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+
+    '<div data-outcome="pending"><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
   }).join('')+'</div>';
 
  }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}

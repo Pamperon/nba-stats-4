@@ -203,6 +203,16 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
 .bl-results-card dl div {display:flex;justify-content:space-between;gap:5px;min-width:0}
 .bl-results-card dt {color:#b3c9d8}
 .bl-results-card dd {margin:0;font-weight:700;color:#f2f7fb}
+.bl-results-card [data-outcome=won]{--outcome-color:#51e0a0}
+.bl-results-card [data-outcome=lost]{--outcome-color:#ff8b91}
+.bl-results-card [data-outcome=not-played]{--outcome-color:#adb8c6}
+.bl-results-card [data-outcome=pending]{--outcome-color:#f4d46c}
+.bl-results-card [data-outcome] dt{color:var(--outcome-color)}
+.bl-results-card [data-outcome] dd{color:var(--outcome-color);font-variant-numeric:tabular-nums;min-width:20px;text-align:center;border-radius:5px;background:color-mix(in srgb,var(--outcome-color) 10%,transparent)}
+.bl-results-card{box-shadow:inset 0 1px 0 #ffffff09,0 4px 14px #020d1720}
+.bl-results-heading h3{font-weight:650}
+.bl-results-ring{box-shadow:0 0 18px #30ce8809}
+.bl-results-card .bl-results-ring strong{font-variant-numeric:tabular-nums}
 .hub-performance{background:radial-gradient(ellipse at top right,#19394e66,transparent 70%),#0b2030;border-color:#355064}
 .hub-performance .hub-featured-heading {margin-bottom:15px}
 .hub-performance .hub-featured-heading h2{display:flex;align-items:center;gap:10px;font-size:20px;letter-spacing:-.5px;margin:0}
