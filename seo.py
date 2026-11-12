@@ -11,7 +11,7 @@ from pathlib import Path
 
 SITE = 'https://basketlab.it'
 PAGES = {
-    '/': ('Basket Lab | Statistiche e analisi NBA', 'Statistiche NBA, analisi dei giocatori, quote e pronostici basati sui dati delle partite.'),
+    '/': ('Basket Lab | Statistiche e analisi NBA', 'Statistiche NBA, calendario, risultati e classifiche. Esplora squadre e giocatori, confronta punti, rimbalzi e assist con grafici e dati delle partite. Scopri le analisi, i pronostici e le scelte quotidiane di Basket Lab.'),
     '/giocatori': ('Statistiche giocatori NBA: punti, rimbalzi e assist | Basket Lab', 'Esplora i giocatori NBA: statistiche, medie, grafici delle prestazioni e frequenze su punti, rimbalzi e assist, anche senza quote disponibili.'),
     '/nba': ('NBA: calendario, risultati e classifiche | Basket Lab', 'Calendario e classifiche NBA, risultati delle partite e schede delle squadre con rose e statistiche.'),
     '/nba/classifica': ('Classifica NBA: Eastern e Western Conference | Basket Lab', 'Classifiche NBA aggiornate: vittorie, sconfitte, percentuali e schede di tutte le squadre.'),
