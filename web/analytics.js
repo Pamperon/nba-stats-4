@@ -1,7 +1,7 @@
 /* Optional GA4 measurement. No Google requests before analytics consent. */
 (() => {
  'use strict';
- const id='G-8P9MREP1M0',key='bl-analytics-consent-v1';
+ const id='G-ZV8770T2E7',key='bl-analytics-consent-v1';
  let enabled=false,loaded=false,lastPath='',banner;
  const blocked=navigator.doNotTrack==='1'||navigator.globalPrivacyControl;
  window.dataLayer=window.dataLayer||[];
@@ -20,7 +20,7 @@
   gtag('consent','update',{analytics_storage:'granted'});
   if(!loaded){
    loaded=true;gtag('js',new Date());
-   gtag('config',id,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,ignore_referrer:false});
+   gtag('config',id,{send_page_view:false,page_location:cleanURL(),allow_google_signals:false,allow_ad_personalization_signals:false,ignore_referrer:false});
    const tag=document.createElement('script');tag.async=true;tag.src='https://www.googletagmanager.com/gtag/js?id='+id;document.head.append(tag);
   }
   lastPath='';page();
