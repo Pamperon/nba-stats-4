@@ -6,9 +6,9 @@ test('standings, team links, independent roster failure and calendar return',asy
  const dom=new JSDOM('<section id="hub-calendar"><div id="existing-calendar">Calendar</div></section>',{url:'https://basketlab.it/nba/classifica',runScripts:'outside-only'}),w=dom.window;w.scrollTo=()=>{};
  w.fetch=async url=>({ok:!url.includes('roster'),json:async()=>url.includes('standings')?standings:{team:{id:'2',name:'Boston Celtics',color:'008348',record:'10-2',season:'2026-27'},upcoming:[],recent:[]}});
  w.eval(script);let selects=0,calendars=0;w.BasketLabNBA.init({select(){selects++},calendar(){calendars++}});w.BasketLabNBA.apply({nbaTab:'standings'});await w.BasketLabNBA.show();
- assert.match(w.document.querySelector('.nba-standings').textContent,/Boston Celtics/);assert.equal(w.document.querySelector('[data-nba-team]').getAttribute('href'),'/squadre/boston-celtics-2');
- w.document.querySelector('[data-nba-team]').click();await settle();assert.match(w.document.querySelector('h1').textContent,/Boston/);assert.match(w.document.querySelector('#nba-team-roster').textContent,/temporaneamente/);assert.match(w.document.querySelector('#nba-team-next').textContent,/Nessuna prossima/);
- w.document.querySelector('[data-nba-tab=calendar]').click();assert.equal(w.document.querySelector('#nba-calendar-content').hidden,false);assert.equal(calendars,1);assert.equal(selects,2);dom.window.close();
+ assert.equal(w.document.querySelector('.nba-section-heading'),null);assert.match(w.document.querySelector('.nba-standings').textContent,/Boston Celtics/);assert.equal(w.document.querySelector('[data-nba-team]').getAttribute('href'),'/squadre/boston-celtics-2');
+ w.document.querySelector('[data-nba-team]').click();await settle();assert.equal(w.document.querySelector('.nba-tabs').hidden,true);assert.match(w.document.querySelector('h1').textContent,/Boston/);assert.match(w.document.querySelector('#nba-team-roster').textContent,/temporaneamente/);assert.match(w.document.querySelector('#nba-team-next').textContent,/Nessuna prossima/);
+ w.document.querySelector('[data-nba-tab=calendar]').click();assert.equal(w.document.querySelector('#nba-calendar-content').hidden,false);assert.equal(w.document.querySelector('.nba-tabs').hidden,false);assert.equal(calendars,1);assert.equal(selects,2);dom.window.close();
 });
 test('roster contains real player URL and team route round trips',async()=>{
  const dom=new JSDOM('<section id="hub-calendar"></section>',{url:'https://basketlab.it/squadre/boston-celtics-2',runScripts:'outside-only'}),w=dom.window;w.scrollTo=()=>{};

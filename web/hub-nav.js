@@ -183,7 +183,7 @@ function display(){
  landing.hidden=!home||extra;tiles.hidden=!home||extra;
  if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
  if(featured)featured.hidden=!(home||picksView)||extra;
- if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra;
+ if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra||(home&&!$('#picks .pick-group[aria-label="Scelta del giorno"] .pick-selection'));
  if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;
  if(nbaUpdatesPanel)nbaUpdatesPanel.hidden=!home||extra;
  if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;
@@ -627,6 +627,8 @@ function renderCalendar(){
  const requestedDate=calendarSelectedDate||options[index]?.value||selectedValue;
  const compactDate=$('#hub-calendar-compact-date');if(compactDate&&requestedDate){const d=new Date(requestedDate+'T12:00:00Z');compactDate.textContent=new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(d)}
  if(requestedDate)calendarSelectedDate=requestedDate;
+ const relativeToday=italyDay(new Date());
+ for(const [id,offset] of [['hub-calendar-yesterday',-1],['hub-calendar-today',0],['hub-calendar-tomorrow',1]]){const button=$('#'+id);if(button){const active=requestedDate===calendarIsoOffset(relativeToday,offset);button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}
  if(!calendarWeekStart&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarWeekStart=calendarIsoOffset(requestedDate,-3);
  if(!calendarVisibleMonth&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarVisibleMonth=requestedDate.slice(0,7);
  const calendarToken=++calendarRequest;
@@ -804,17 +806,13 @@ $('#hub-calendar-next')?.addEventListener('click',()=>shiftCalendarWeek(1));
 const calendarWeekStrip=$('#hub-calendar-dates');let calendarTouchStart=null;
 calendarWeekStrip?.addEventListener('touchstart',event=>{calendarTouchStart={x:event.changedTouches[0].clientX,y:event.changedTouches[0].clientY}},{passive:true});
 calendarWeekStrip?.addEventListener('touchend',event=>{if(!calendarTouchStart)return;const dx=event.changedTouches[0].clientX-calendarTouchStart.x,dy=event.changedTouches[0].clientY-calendarTouchStart.y;calendarTouchStart=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)shiftCalendarWeek(dx<0?1:-1)},{passive:true});
-function emptyPicksCard(unified,status){
- const card=document.createElement('div');card.className='bl-picks-empty';
- const final=status==='no-selection',quotes=status==='waiting-odds';
- const badge=final?'ANALISI COMPLETATA':quotes?'IN ATTESA DI QUOTE':'IN ATTESA';
- const title=final?(unified?'Nessuna selezione idonea':'Nessuna scelta idonea'):unified?'Le prossime selezioni saranno pubblicate qui':'La Scelta del giorno apparirà qui';
- const description=final?'Le linee analizzate non soddisfano i criteri del modello.':quotes?'Aspettiamo le quote delle prossime partite per valutare le selezioni.':'Le anteprime appariranno quando saranno disponibili quote e dati sufficienti.';
- if(!unified){card.classList.add('is-partial');card.innerHTML='<h3>Scelta del giorno</h3><p>'+(final?'Nessuna scelta soddisfa i criteri del modello.':'La Scelta del giorno apparirà qui quando sarà disponibile una selezione idonea.')+'</p>';return card;}
- card.innerHTML='<div class="bl-picks-empty-heading"><span class="bl-picks-empty-icon" aria-hidden="true">◎</span><span>Le selezioni del Lab</span><small>'+badge+'</small></div><h3>'+title+'</h3><p>'+description+'</p>'+(!final?'<div class="bl-picks-empty-time"><span aria-hidden="true">◷</span> Conferma delle selezioni alle <strong>18:00</strong></div>':'')+'<div class="bl-picks-empty-actions"><button type="button" data-empty-view="stats">Esplora i giocatori →</button><button type="button" data-empty-view="history">Archivio esiti →</button></div>';
- for(const button of card.querySelectorAll('[data-empty-view]'))button.onclick=()=>{const view=button.dataset.emptyView;go[view]();select(view);};
+function emptyPicksCard(){
+ const card=document.createElement('div');card.className='bl-picks-empty is-partial';
+ const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',hour:'2-digit',hourCycle:'h23'}).format(new Date()));
+ card.innerHTML='<h3>Scelta del giorno</h3><p>Nessuna scelta del giorno disponibile per oggi. '+(hour<18?'Attendi le 18:00 per la pubblicazione ufficiale.':'Al momento nessuna selezione soddisfa i criteri del modello.')+'</p>';
  return card;
 }
+
 let homeFixturesRequest=0;
 function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
@@ -824,6 +822,7 @@ function refreshShowcase(){
   const pick=group?.querySelector('.pick-selection');
   const hasChoices=!!picks.querySelector('#pick-giorno .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-selection');
   singleShowcase?.classList.toggle('is-empty',!pick);
+  if(singleShowcase)singleShowcase.hidden=!(document.body.dataset.hubView==='picks'||(document.body.dataset.hubView==='home'&&!!pick));
   singleShowcase?.classList.toggle('is-unified-empty',!pick&&!hasChoices);
   featured?.classList.toggle('is-suppressed',!pick&&!hasChoices);
   const more=featured?.querySelector('.hub-featured-more');if(more)more.hidden=!hasChoices;
@@ -875,7 +874,7 @@ function refreshShowcase(){
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
    const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='Apri analisi →';action.addEventListener('click',openSingleAnalysis);single.append(action);
-  }else{single.append(emptyPicksCard(!hasChoices,picks.dataset.emptyState||'waiting-data'))}
+  }else{single.append(emptyPicksCard())}
   if(state){const publication=group?.dataset.publicationState||'waiting';state.classList.add('bl-publication-badge');state.dataset.state=publication;state.textContent=publication==='official'?'Ufficiale':publication==='preview'?'Conferma alle 18:00':'In attesa';state.title=publication==='preview'?(group.dataset.publicationLabel||'Selezione provvisoria: non ancora ufficiale'):'Stato della selezione';state.setAttribute('aria-label',state.textContent+(publication==='preview'?'. '+state.title:''));}
  }
  if(games&&(!window.BasketLabSections||window.BasketLabSections.wants('home'))){
