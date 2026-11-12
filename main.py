@@ -1752,6 +1752,7 @@ def _performance_counts(states):
     lost = states.count('lost')
     verified = won + lost
     return {'published': len(states), 'verified': verified, 'won': won, 'lost': lost,
+            'not_played': states.count('not_played'),
             'pending': sum(state not in {'won', 'lost', 'not_played'} for state in states),
             'success_pct': round(won * 100 / verified, 1) if verified else None}
 

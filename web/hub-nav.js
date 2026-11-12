@@ -239,6 +239,7 @@ async function loadModelPerformance(){
     '<p><strong>'+number(group?.published)+'</strong> analisi pubblicate</p>'+
     '<dl><div><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
     '<div><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
+    '<div><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+
     '<div><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
   }).join('')+'</div><p class="bl-results-note">Dal 1° novembre 2026 · Percentuale sulle analisi verificate.</p>';
   if(stats.probability_review){

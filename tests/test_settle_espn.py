@@ -3,6 +3,32 @@ import unittest
 from unittest.mock import patch
 import settle_espn
 
+
+class RecapDNPTests(unittest.TestCase):
+    def test_linked_player_rest_confirmed_only_for_exact_team_and_athlete(self):
+        recap={'boxscore':{'players':[{'team':{'displayName':'New Orleans Pelicans'},'statistics':[]}]},
+               'article':{'story':'New Orleans rested Zion Williamson and '
+                   '<a href="https://www.espn.com/nba/player/_/id/4397688/trey-murphy-iii">Trey Murphy III</a>'
+                   ' also sat out to manage his troublesome knees after he scored 26 on Sunday.'}}
+        team=settle_espn.engine.normalized_name('New Orleans Pelicans')
+        self.assertTrue(settle_espn.recap_confirms_absence(recap,'4397688',team))
+        self.assertFalse(settle_espn.recap_confirms_absence(recap,'123',team))
+        self.assertFalse(settle_espn.recap_confirms_absence(recap,'4397688','golden state warriors'))
+        recap['article']['story']=recap['article']['story'].replace('also sat out to','will sit out to')
+        self.assertFalse(settle_espn.recap_confirms_absence(recap,'4397688',team))
+
+    def test_verified_rest_becomes_dnp_without_inventing_a_statistic(self):
+        row={'ESPN ID':'4397688','Giocatore':'Murphy III, Trey','Squadra':'New Orleans Pelicans',
+             'Partita':'Golden State Warriors - New Orleans Pelicans','Mercato':'AST','Linea':2.5,'Scelta':'Over'}
+        game=event('Golden State Warriors','New Orleans Pelicans')
+        recap={'boxscore':{'players':[{'team':{'displayName':'New Orleans Pelicans'},'statistics':[]}]},
+               'article':{'story':'New Orleans rested Zion and <a href="https://www.espn.com/nba/player/_/id/4397688/trey-murphy-iii">Trey Murphy III</a> also sat out to rest.'}}
+        with patch.object(settle_espn,'final_events',return_value=[game]),patch.object(settle_espn,'fetch',return_value=recap):
+            result=settle_espn.settle_completed_fixtures({'results':[row],'saved_at':'2026-10-24T12:00:00Z'},'2026-10-24')
+        self.assertEqual(result[0]['status'],'not_played')
+        self.assertIsNone(result[0]['actual'])
+        self.assertFalse(result[0]['played'])
+
 def event(team_a="Boston Celtics",team_b="New York Knicks"):
     return {"id":"100","date":"2026-10-24T19:00:00Z","status":{"type":{"completed":True}},
             "competitions":[{"competitors":[{"team":{"displayName":team_a}},

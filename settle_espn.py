@@ -103,6 +103,13 @@ def recap_confirms_absence(summary, athlete_id, team):
             if re.match(r'^\s*(?:' + re.escape(name) + '|' + re.escape(city) + r')\s+(?:was|were) without\b', sentence, re.I):
                 if '[espn:' + athlete_id + ']' in sentence:
                     return True
+            # Some recaps omit inactive players from the box score and say
+            # "New Orleans rested X and Trey Murphy III also sat out to ...".
+            # Require this team's clause and the exact linked athlete as subject.
+            if re.match(r'^\s*(?:' + re.escape(name) + '|' + re.escape(city) + r')\s+rested\b', sentence, re.I):
+                if re.search(re.escape('[espn:' + athlete_id + ']') +
+                             r'\s+(?:also\s+)?sat out to\b', sentence, re.I):
+                    return True
     return False
 
 
