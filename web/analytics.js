@@ -5,7 +5,7 @@
  let enabled=false,loaded=false,lastPath='',banner;
  const blocked=navigator.doNotTrack==='1'||navigator.globalPrivacyControl;
  window.dataLayer=window.dataLayer||[];
- const gtag=(...args)=>window.dataLayer.push(args);
+ function gtag(){window.dataLayer.push(arguments);}
  window.gtag=gtag;
  gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
  function cleanURL(){return location.origin+location.pathname;}
