@@ -139,9 +139,10 @@ const go={
 };
 let home=true;let calendar=false;let playerReturn=null;
 let routerReady=false,applyingRoute=false,routeQueued=false;
-function syncRoute(){
+function syncRoute(replace=false){
+ const replaceEntry=replace===true||window.BasketLabPlayers?.restoring===true;
  if(!routerReady||applyingRoute||routeQueued||!window.BasketLabRouter)return;
- routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',...(document.body.dataset.hubView==='calendar'?window.BasketLabNBA?.route():{}),...(window.BasketLabPlayers?.detailOpen?window.BasketLabPlayers.route():{}),date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:''});});
+ routeQueued=true;queueMicrotask(()=>{routeQueued=false;if(applyingRoute)return;window.BasketLabRouter.write({view:document.body.dataset.hubView||'home',...(document.body.dataset.hubView==='calendar'?window.BasketLabNBA?.route():{}),...(window.BasketLabPlayers?.detailOpen?window.BasketLabPlayers.route():{}),date:calendarSelectedDate,match:document.body.classList.contains('hub-match-open')?activeMatch:'',boxscore:document.body.classList.contains('hub-boxscore-open')?activeCalendarBoxscore?.event_id:''},replaceEntry);});
 }
 const HUB_STATE_KEY='basketlab-hub-view-v1';
 function saveHubState(){
@@ -579,13 +580,13 @@ function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=cale
 let activeCalendarBoxscore=null;
 let calendarBoxscoreRequest=0;
 async function openCalendarBoxscore(game,refresh=false){
- if(!refresh){activeCalendarBoxscore=game;document.body.classList.add('hub-boxscore-open')}
+ if(!refresh){activeCalendarBoxscore=game;document.body.classList.add('hub-boxscore-open');saveHubState();syncRoute();}
  const request=++calendarBoxscoreRequest;
  const panel=$('#hub-calendar-boxscore'),games=$('#hub-calendar-games');
  if(!panel||!games)return;
  games.hidden=true;panel.hidden=false;panel.replaceChildren();
  const back=document.createElement('button');back.type='button';back.className='hub-boxscore-back';back.textContent='‹ Torna alle partite';
- back.onclick=()=>{activeCalendarBoxscore=null;calendarBoxscoreRequest++;document.body.classList.remove('hub-boxscore-open');panel.hidden=true;games.hidden=false;panel.replaceChildren();renderCalendar()};
+ back.onclick=()=>{activeCalendarBoxscore=null;calendarBoxscoreRequest++;document.body.classList.remove('hub-boxscore-open');panel.hidden=true;games.hidden=false;panel.replaceChildren();renderCalendar();saveHubState();syncRoute();};
  panel.append(back);
  const header=document.createElement('div');header.className='hub-boxscore-match-header';
  const matchup=document.createElement('div');matchup.className='hub-boxscore-matchup';
@@ -927,7 +928,7 @@ function refreshShowcase(){
    if(remaining>4){
     const more=document.createElement('button');more.type='button';more.className='hub-games-more';
     more.textContent='Vedi altre '+(remaining-4)+' partite ›';
-    more.addEventListener('click',()=>{go.calendar();select('calendar')});
+    more.addEventListener('click',()=>{window.BasketLabNBA?.resetCalendar();go.calendar();select('calendar')});
     games.append(more);
    }
   }).catch(()=>{if(homeToken===homeFixturesRequest)games.textContent='Calendario NBA temporaneamente non disponibile. Riprova dalla sezione Partite.'});
@@ -961,10 +962,12 @@ function applyRoute(){
    const picker=$('#date');
    if(route.date&&picker&&![...picker.options].some(o=>o.value===route.date))picker.add(new Option(route.date,route.date));
    openFixtureDetails(route.match);
-  }else{go[route.view]?.();select(route.view)}
+  }else{go[route.view]?.();select(route.view);if(route.boxscore&&route.date){
+   fetchNbaFixtures(route.date).then(games=>{if(document.body.dataset.hubView!=='calendar'||window.BasketLabRouter.read(location).boxscore!==route.boxscore)return;const game=games.find(g=>String(g.event_id)===route.boxscore);if(game)openCalendarBoxscore(game);}).catch(()=>{});
+  }}
  }finally{applyingRoute=false}
 }
-document.addEventListener('basketlab:player-route',syncRoute);
+document.addEventListener('basketlab:player-route',event=>syncRoute(event.detail?.replace===true));
 if(window.BasketLabRouter){
  routerReady=true;
  window.addEventListener('popstate',applyRoute);

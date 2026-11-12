@@ -25,7 +25,14 @@ window.BasketLabBoxscoreView=function(document,panel,game,data){
    const head=document.createElement('thead'),tr=document.createElement('tr');
    ['Giocatore','MIN','PTS','REB','AST'].forEach(label=>{const th=document.createElement('th');th.textContent=label;tr.append(th)});head.append(tr);table.append(head);
    const body=document.createElement('tbody');
-   for(const player of team.players){const line=document.createElement('tr');[player.name,player.minutes,player.points,player.rebounds,player.assists].forEach(value=>{const cell=document.createElement('td');cell.textContent=value??'—';line.append(cell)});body.append(line)}
+   for(const player of team.players){
+    const line=document.createElement('tr'),name=document.createElement('td');
+    if(/^\d{1,12}$/.test(String(player.id||''))){
+     const link=document.createElement('a');const slug=String(player.name||'giocatore').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'giocatore';
+     link.href='/giocatori/'+slug+'-'+player.id;link.className='hub-boxscore-player-link';link.textContent=player.name||'Giocatore';link.setAttribute('aria-label','Statistiche di '+(player.name||'questo giocatore'));name.append(link);
+    }else name.textContent=player.name||'—';
+    line.append(name);[player.minutes,player.points,player.rebounds,player.assists].forEach(value=>{const cell=document.createElement('td');cell.textContent=value??'—';line.append(cell)});body.append(line);
+   }
    table.append(body);scroll.append(table);section.append(scroll);panel.append(section);
   }
 };

@@ -431,3 +431,10 @@ test('relative calendar day highlights follow yesterday, today, tomorrow and oth
  for(const id of ['yesterday','today','tomorrow']){doc.querySelector('#hub-calendar-'+id).click();for(const other of ['yesterday','today','tomorrow'])assert.equal(doc.querySelector('#hub-calendar-'+other).getAttribute('aria-pressed'),String(id===other));}
  doc.querySelector('#hub-calendar-next').click();assert.equal(doc.querySelectorAll('.hub-calendar-quick-days button.active').length,0);await new Promise(r=>setImmediate(r));
 });
+test('completed game URL restores its boxscore and contextual back removes only the game parameter',async()=>{
+ const {window,doc}=setup();await new Promise(r=>setImmediate(r));
+ window.fetch=async url=>({ok:true,json:async()=>String(url).includes('boxscore')?{teams:[{team:'Boston Celtics',players:[{id:'22',name:'Alex Test',points:25}]}]}:{games:[{event_id:'123456',away:'Boston Celtics',home:'Atlanta Hawks',state:'post',upcoming:false,start_at:'2026-11-12T01:00:00Z',away_score:110,home_score:100}],fixtures:[]}});
+ window.history.pushState(null,'','/nba?data=2026-11-12&partita=123456');window.dispatchEvent(new window.PopStateEvent('popstate'));
+ for(let n=0;n<6;n++)await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('#hub-calendar-boxscore').hidden,false);assert.equal(doc.querySelector('.hub-boxscore-player-link').getAttribute('href'),'/giocatori/alex-test-22');assert.equal(new URLSearchParams(window.location.search).get('partita'),'123456');
+ doc.querySelector('.hub-boxscore-back').click();await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('#hub-calendar-boxscore').hidden,true);assert.equal(new URLSearchParams(window.location.search).has('partita'),false);assert.equal(new URLSearchParams(window.location.search).get('data'),'2026-11-12');
+});

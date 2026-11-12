@@ -21,3 +21,7 @@ test('calendar module shares requests and retries failures instead of caching th
   assert.equal(calls,2);assert.deepEqual(await a,await b);
  }finally{dom.window.close();}
 });
+test('boxscore players link by ESPN identity without inventing missing identities',()=>{
+ const dom=new JSDOM('<div id="panel"></div>',{url:'https://basketlab.it/nba',runScripts:'outside-only'}),w=dom.window;
+ try{w.eval(fs.readFileSync('web/modules/boxscore-view.js','utf8'));const panel=w.document.getElementById('panel');w.BasketLabBoxscoreView(w.document,panel,{}, {teams:[{team:'A',players:[{id:'22',name:'Álex Test',points:0},{name:'Missing Identity',points:5}]}]});assert.equal(panel.querySelector('a').getAttribute('href'),'/giocatori/alex-test-22');assert.equal(panel.querySelectorAll('a').length,1);assert.match(panel.textContent,/Missing Identity/);assert.match(panel.querySelector('a').getAttribute('aria-label'),/Statistiche/);}finally{w.close();}
+});

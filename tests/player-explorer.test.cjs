@@ -84,3 +84,6 @@ test('prepared directory charts need no individual history requests',async()=>{
  d.querySelector('[data-pe-market=REB]').click();for(let n=0;n<10;n++)await tick();assert.equal(d.querySelectorAll('.pe-spark i').length,1);assert.equal(calls.some(u=>u.startsWith('/api/players/log?')),false);
  }finally{dom.window.close();}
 });
+test('opening a direct player URL replaces default filters without trapping browser Back',async()=>{
+ const {dom,w,d}=setup('https://basketlab.it/giocatori/alex-test-22');try{const before=w.history.length;for(let n=0;n<18;n++)await tick();assert.equal(w.history.length,before);assert.equal(w.location.pathname,'/giocatori/alex-test-22');assert.equal(d.querySelector('#pe-share').textContent,'Condividi');assert.equal(d.querySelector('#pe-share').hasAttribute('data-share-page'),true);}finally{dom.window.close();}
+});

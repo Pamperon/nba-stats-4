@@ -11,7 +11,7 @@ function discoveryRank(card){return featuredRank.get(fameKey(card.querySelector(
 const panel=d.createElement('section');panel.id='players-explorer';panel.hidden=true;
 panel.innerHTML='<header class="pe-heading"><div><p class="pe-eyebrow">BASKET LAB</p><h1>Giocatori</h1><p>Statistiche, linee e quote NBA</p></div></header><div class="pe-controls"><label class="pe-search">Cerca un giocatore<input id="pe-search" type="search" placeholder="Nome del giocatore…" autocomplete="off"></label><div class="bl-segments" role="group" aria-label="Mercato giocatori">'+Object.entries(labels).map(([k,v])=>'<button type="button" data-pe-market="'+k+'" aria-pressed="'+(k==='PTS')+'">'+v+'</button>').join('')+'</div><div class="pe-filter-row"><label>Partita<select id="pe-match"><option value="">Tutte le partite</option></select></label><label>Squadra<select id="pe-team"><option value="">Tutte le squadre</option></select></label></div></div><div class="pe-list-heading"><p id="pe-status" role="status"></p><button id="pe-reset" type="button">Ripristina</button></div><div id="pe-list"></div><button id="pe-more" type="button" hidden>Mostra altri giocatori</button>';
 $('app')?.before(panel);
-const personal=d.createElement('div');personal.id='pe-personal-heading';personal.innerHTML='<a href="/giocatori" data-hub="stats" class="bl-back">‹ Tutti i giocatori</a><button id="pe-share" type="button" class="bl-back">Copia link</button><p id="pe-share-status" role="status"></p>';
+const personal=d.createElement('div');personal.id='pe-personal-heading';personal.innerHTML='<a href="/giocatori" data-hub="stats" class="bl-back">‹ Tutti i giocatori</a><button id="pe-share" type="button" class="bl-back" data-share-page>Condividi</button><p id="pe-share-status" role="status"></p>';
 $('player')?.prepend(personal);
 const quotes=d.createElement('section');quotes.id='pe-player-quotes';quotes.className='pe-quotes';quotes.setAttribute('aria-label','Quote del giocatore');
 $('player-visual')?.after(quotes);
@@ -20,9 +20,9 @@ const periods=d.querySelector('.bl-window-tabs'),advanced=d.querySelector('.bl-p
 if(periods&&advanced){$('player-visual').after(periods);periods.after(advanced);advanced.after(quotes);}
 
 let payload=null,pending=null,loadedAt=0,market='PTS',limit=30,request=0,selected=null,restoring=false,directoryScroll=0,catalog=null,quotesUnavailable=false;
-const api={detailOpen:false,route:()=>selected?{player:slug(selected.name,selected.id),filters:filters()}: {},show:showDirectory,openRoute};w.BasketLabPlayers=api;
+const api={detailOpen:false,get restoring(){return restoring;},route:()=>selected?{player:slug(selected.name,selected.id),filters:filters()}: {},show:showDirectory,openRoute};w.BasketLabPlayers=api;
 function filters(){return {market:$('stat')?.value,line:$('line')?.value,window:$('playerwindow')?.value,season:$('playerseason')?.value,venue:$('player-venue')?.value,mode:$('playermode')?.value};}
-function changed(){d.dispatchEvent(new CustomEvent('basketlab:player-route'));}
+function changed(replace=false){d.dispatchEvent(new CustomEvent('basketlab:player-route',{detail:{replace}}));}
 async function load(){
  if(payload&&Date.now()-loadedAt<60000)return payload;
  if(!pending)pending=fetch('/api/players/explorer').then(r=>{if(!r.ok)throw Error('Quote non disponibili');return r.json()}).then(p=>{if(!Array.isArray(p.rows))throw Error('Dati non validi');payload=p;quotesUnavailable=false;loadedAt=Date.now();updateOptions();renderQuotes();return p;}).finally(()=>pending=null);
@@ -128,10 +128,10 @@ async function openRoute(route){
  if(selected?.id!==id)return;
  for(const [key,control] of [['season','playerseason'],['window','playerwindow'],['venue','player-venue'],['mode','playermode']]){const node=$(control);if(f[key]&&[...node.options].some(o=>o.value===f[key])){node.value=f[key];node.dispatchEvent(new Event('change',{bubbles:true}));}}
  }catch(error){$('player-status').textContent=error.message||'Scheda non disponibile';}
- finally{restoring=false;changed();}
+ finally{restoring=false;if(token===request&&api.detailOpen&&d.body.dataset.hubView==='stats')changed(true);}
 }
 $('pe-search').oninput=()=>{limit=30;render();};$('pe-team').onchange=()=>{limit=30;render();};$('pe-match').onchange=()=>{limit=30;updateOptions();render();};
 for(const b of panel.querySelectorAll('[data-pe-market]'))b.onclick=()=>{market=b.dataset.peMarket;limit=30;for(const x of panel.querySelectorAll('[data-pe-market]'))x.setAttribute('aria-pressed',String(x===b));render();};
 $('pe-reset').onclick=()=>{$('pe-search').value='';$('pe-team').value='';$('pe-match').value='';limit=30;updateOptions();render();};$('pe-more').onclick=()=>{limit+=30;render();};
-$('pe-share').onclick=async()=>{try{await navigator.clipboard.writeText(w.location.href);$('pe-share-status').textContent='Link copiato';}catch{$('pe-share-status').textContent='Puoi copiare l’indirizzo dalla barra del browser.';}};
+
 })(window);

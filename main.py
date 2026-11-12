@@ -404,7 +404,8 @@ def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
                                 return str(stats[idx]) if idx < len(stats) else '—'
                         return '—'
                     athlete = entry.get('athlete') or {}
-                    players.append({'name': athlete.get('displayName', ''),
+                    players.append({'id': str(athlete.get('id', '')),
+                                    'name': athlete.get('displayName', ''),
                                     'minutes': value('MIN'), 'points': value('PTS'),
                                     'rebounds': value('REB'), 'assists': value('AST')})
             teams.append({'team': team, 'players': players})

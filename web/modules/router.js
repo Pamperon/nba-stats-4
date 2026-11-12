@@ -16,7 +16,7 @@
   const date=validDay(query.get('data'));
   const a=query.get('trasferta'),b=query.get('casa');
   const result={view,date,match:path==='/analisi-partita'&&date&&a&&b&&a.length<=80&&b.length<=80?a+' - '+b:''};
-  if(view==='calendar'){result.nbaTab=team||path==='/nba/classifica'?'standings':'calendar';result.team=team?team[1]:'';}
+  if(view==='calendar'){const boxscore=query.get('partita');result.boxscore=/^\d{1,12}$/.test(boxscore||'')?boxscore:'';result.nbaTab=team||path==='/nba/classifica'?'standings':'calendar';result.team=team?team[1]:'';}
   if(player){result.player=player[1];result.filters={market:query.get('mercato'),line:query.get('linea'),window:query.get('periodo'),season:query.get('stagione'),venue:query.get('campo'),mode:query.get('competizione')};}
   return result;
  }
@@ -25,6 +25,7 @@
   if(state.date&&(state.view==='calendar'||state.match))params.set('data',state.date);
   let path=paths[state.view]||'/';
   if(state.view==='calendar'){if(state.team&&/^[a-z0-9-]+-\d{1,8}$/.test(state.team)){path='/squadre/'+state.team;params.delete('data');}else if(state.nbaTab==='standings'){path='/nba/classifica';params.delete('data');}}
+  if(state.view==='calendar'&&state.boxscore&&/^\d{1,12}$/.test(state.boxscore)&&params.has('data')&&!state.team&&state.nbaTab!=='standings')params.set('partita',state.boxscore);
   if(state.view==='stats'&&/^[a-z0-9-]+-\d{1,12}$/.test(state.player||'')){
    path='/giocatori/'+state.player;
    const keys={market:'mercato',line:'linea',window:'periodo',season:'stagione',venue:'campo',mode:'competizione'};
