@@ -1,0 +1,27 @@
+{
+  "site-core.css": [
+    "style.css",
+    "hub.css",
+    "archive-redesign.css",
+    "design-system.css"
+  ],
+  "site-app.js": [
+    "modules/router.js",
+    "modules/assets.js",
+    "modules/sections.js",
+    "modules/design.js",
+    "app.js",
+    "features.js",
+    "audience.js",
+    "modules/insights.js",
+    "modules/match-charts.js",
+    "modules/match-data.js",
+    "modules/calendar-data.js",
+    "modules/player-explorer.js",
+    "modules/nba-hub.js",
+    "hub-nav.js",
+    "analytics.js",
+    "modules/share.js",
+    "modules/team-links.js"
+  ]
+}
