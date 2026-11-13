@@ -1,4 +1,4 @@
-const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
+const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),{gzipSync}=require('node:zlib');
 const root=path.resolve(process.env.WEB_ROOT||'web');
 const row={Giocatore:'Browser Fixture',Squadra:'BOS',Partita:'Atlanta Hawks - Boston Celtics',Mercato:'PTS',Scelta:'Over',Linea:19.5,Quota:1.8,'Prob. stimata %':75,'ESPN ID':'123','Stato analisi':'Valutabile (stima empirica)'};
 const game={calendar_date:'2026-11-05',event_id:'123',away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,state:'pre',start_at:new Date(Date.now()+2*86400000).toISOString(),status:'Scheduled'};
@@ -31,5 +31,7 @@ http.createServer((req,res)=>{
  }
  const file=url.pathname.startsWith('/static/')?url.pathname.slice(8):'index.html';
  const target=path.resolve(root,file);if(!target.startsWith(root+path.sep)){res.writeHead(403);return res.end();}
- fs.readFile(target,(error,data)=>{if(error){res.writeHead(404);return res.end();}const type={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'}[path.extname(target)]||'application/octet-stream';res.writeHead(200,{'Content-Type':type});res.end(data);});
+ fs.readFile(target,(error,data)=>{if(error){res.writeHead(404);return res.end();}const type={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'}[path.extname(target)]||'application/octet-stream';// Match production GZipMiddleware for both baseline and candidate assets.
+ const compressed=data.length>=1000&&/\bgzip\b/.test(req.headers['accept-encoding']||'');
+ res.writeHead(200,{'Content-Type':type,'Vary':'Accept-Encoding',...(compressed?{'Content-Encoding':'gzip'}:{})});res.end(compressed?gzipSync(data,{level:4}):data);});
 }).listen(4173,'127.0.0.1');
