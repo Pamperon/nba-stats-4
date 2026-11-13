@@ -7,6 +7,7 @@ const payload=url=>{
  if(url.pathname==='/api/saved/dates')return {dates:[{date:'2026-11-05'}],default_date:'2026-11-05',session_picks_enabled:true};
  if(url.pathname==='/api/saved/latest')return {date:url.searchParams.get('date'),results:[row],recommendations:{lines:[]},saved_at:'2026-11-03T13:00:00Z'};
  if(url.pathname==='/api/saved/status')return {state:'waiting',fixture_reports:[]};
+ if(url.pathname==='/api/picks/single-analysis')return {state:'preview',date:'2026-11-03',selection:row,games:payload(new URL('/api/players/log','http://localhost')).games};
  if(url.pathname==='/api/picks/session')return {date:'2026-11-03',publication_date:'2026-11-03',saved_at:'2026-11-03T13:00:00Z',results:[],recommendations:{policy:'fixed-1800-v1',lines:[]},preliminary_top5:[],preliminary_single:row,official_top5_pending:true,fixture_count:1,player_count:1,quote_count:1};
  if(url.pathname==='/api/nba/fixtures'||url.pathname==='/api/nba/publication-session')return {date:'2026-11-05',games:[game],source:'ESPN',odds_api_calls:0};
  if(url.pathname==='/api/nba/quote-coverage')return {fixtures:[row.Partita]};
