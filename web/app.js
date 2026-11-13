@@ -1083,9 +1083,10 @@ async function refreshSessionPicks(){
  const timeout=setTimeout(()=>controller.abort(),20000);
  const pending=(async()=>{
  try{
-  const response=await api('/api/picks/session?compact=true',{signal:controller.signal});
-  if(!response.ok)throw new Error('Session picks unavailable');
-  const payload=await response.json();
+  // Reuse the early Home request once; later refreshes retain cancellation and freshness.
+  const initial=window.BasketLabInitialPicks;
+  window.BasketLabInitialPicks=null;
+  const payload=initial?await initial:await (await api('/api/picks/session?compact=true',{signal:controller.signal})).json();
   if(request!==sessionPicksRequest)return;
   if(!payload||!Array.isArray(payload.recommendations?.lines)||!payload.publication_date)throw new Error('Invalid session payload');
   sessionPicksData=payload;

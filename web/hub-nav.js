@@ -245,7 +245,7 @@ async function loadModelPerformance(){
     '<div data-outcome="pending"><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
   }).join('')+'</div>';
 
- }catch(_){body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
+ }catch(_){body.setAttribute('aria-busy','false');body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
 }
 if(!window.BasketLabSections)loadModelPerformance();
 if(metricTarget){new MutationObserver(refresh).observe(metricTarget,{childList:true,subtree:true,characterData:true})}

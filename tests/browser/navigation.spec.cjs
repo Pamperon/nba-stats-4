@@ -49,7 +49,7 @@ for(let sample=0;sample<3;sample++)test('measure mobile/desktop loading and API 
  if(!process.env.BASKETLAB_BASELINE&&metrics.cls>0.1)console.log('BASKETLAB_LAYOUT_SHIFTS '+JSON.stringify(await page.evaluate(()=>window.__shifts)));
  await testInfo.attach('performance',{body:JSON.stringify(record,null,2),contentType:'application/json'});
  expect(picksReady).toBeLessThan(10000);expect(metrics.cls).toBeLessThan(0.3);
- if(!process.env.BASKETLAB_BASELINE){expect(api).not.toContain('/api/saved/latest');expect(api).not.toContain('/api/saved/dates');expect(api).not.toContain('/api/players/teams');}
+ if(!process.env.BASKETLAB_BASELINE){expect(api.filter(path=>path==='/api/picks/session')).toHaveLength(1);expect(api).not.toContain('/api/saved/latest');expect(api).not.toContain('/api/saved/dates');expect(api).not.toContain('/api/players/teams');}
 });
 
 test('approved coordinated design: player charts, contextual back and responsive screens',async({page},testInfo)=>{
