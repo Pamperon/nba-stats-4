@@ -17,7 +17,7 @@ function setup(hash=''){
  for(const b of doc.querySelectorAll('#quote-tabs [data-tab]'))b.addEventListener('click',()=>{for(const x of doc.querySelectorAll('#quote-tabs [data-tab]'))x.classList.toggle('active',x===b)});
  for(const b of doc.querySelectorAll('[data-extra]'))b.addEventListener('click',()=>{doc.querySelector('#app').hidden=true;doc.querySelector('#extra-history').hidden=b.dataset.extra!=='history';doc.querySelector('#extra-about').hidden=b.dataset.extra!=='about'});
  window.eval(fs.readFileSync(path.join(root,'web/modules/router.js'),'utf8'));
- for(const file of ['match-charts','match-data','calendar-data','boxscore-view','match-players','nba-hub'])window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
+ for(const file of ['insights','match-charts','match-data','calendar-data','boxscore-view','match-players','nba-hub'])window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
  window.eval(script);
  return {window,doc};
 }
@@ -284,7 +284,7 @@ test('match request cache shares in-flight loads and retries incomplete historie
 
 test('successful match data renders charts and summary through extracted module',async()=>{
  const {window,doc}=setup('analisi-partita?data=2026-11-05&trasferta=Boston+Celtics&casa=Atlanta+Hawks');
- const team=(name,wins,points)=>({team:name,games:5,wins,losses:5-wins,avg_points:points,results:[{date:'2026-11-01',scored:110,allowed:100,opponent:'Other'}]});
+ const team=(name,wins,points)=>({team:name,games:5,wins,losses:5-wins,avg_points:points,results:['2026-11-01','2026-11-02','2026-11-03'].map(date=>({date,scored:points,allowed:100,opponent:'Other'}))});
  window.fetch=async url=>({ok:true,json:async()=>url.includes('/match/form')?{teams:[team('Boston Celtics',4,110),team('Atlanta Hawks',2,100)],window_days:21,moneyline_odds:[1.8,2.1],h2h:[]}:{games:[]}});
  doc.querySelector('[data-match-tab="analysis"]').click();
  await new Promise(r=>setImmediate(r));
@@ -292,6 +292,9 @@ test('successful match data renders charts and summary through extracted module'
  assert.match(doc.querySelector('#hub-match-charts').textContent,/110/);
  assert.match(doc.querySelector('.hub-match-summary p').textContent,/bilancio recente migliore/);
  assert.match(doc.querySelector('#hub-match-h2h-chart').textContent,/Nessuno scontro diretto/);
+ assert.equal(doc.querySelectorAll('#hub-match-insights article').length,3);
+ assert.match(doc.querySelector('#hub-match-insights').textContent,/Le chiavi della partita/);
+ assert.match(doc.querySelector('#hub-match-insights').textContent,/05\/11\/2026/);
 });
 
 test('invalid URL dates cannot crash calendar or open a match under a different day',()=>{

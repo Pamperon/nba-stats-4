@@ -351,6 +351,7 @@ async function loadMatchForm(match){
  const boxes=panel.querySelectorAll('.hub-match-data-block');
  const facts=panel.querySelectorAll('.hub-match-facts>div');
  const summary=panel.querySelector('.hub-match-summary p');
+ let insights=$('#hub-match-insights');if(!insights){insights=document.createElement('section');insights.id='hub-match-insights';$('#hub-match-charts')?.insertAdjacentElement('beforebegin',insights);}insights.hidden=true;insights.replaceChildren();
  const chart=$('#hub-match-charts');if(chart)chart.textContent='Caricamento delle statistiche verificate…';
  $('#hub-match-h2h-chart')?.replaceChildren();
  for(const block of boxes){block.querySelector('strong').textContent='Caricamento…';block.querySelector('p').textContent='Consultazione risultati ESPN verificati'}
@@ -370,6 +371,7 @@ async function loadMatchForm(match){
   const [a,b]=data.teams||[];
   if(!a||!b)throw new Error('Dati incompleti');
   renderMatchCharts(teams,a,b,data.window_days,data.moneyline_odds);
+  if(window.BasketLabInsights){insights.hidden=false;window.BasketLabInsights.render(insights,'Le chiavi della partita',window.BasketLabInsights.match(teams,data,date),'Dati ESPN precedenti alla data selezionata · '+(data.history_complete===false?'Storico parziale · ':'')+'Confronti descrittivi, non previsioni.');}
   panel.dataset.historyComplete=String(data.history_complete!==false);
   boxes[0].querySelector('small').textContent='Forma recente · ultime 5 disponibili';
   boxes[0].querySelector('strong').textContent=teams[0]+': '+a.wins+'V / '+a.losses+'P';
