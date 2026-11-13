@@ -954,6 +954,11 @@ try{
  }
 }catch(_){}
 window.BasketLabNBA?.init({calendar:renderCalendar,select(){select('calendar');syncRoute();},fixture(game){const returnTeam=window.BasketLabNBA.route().team;calendarSelectedDate=game.calendar_date;window.BasketLabNBA.resetCalendar();if(game.upcoming){openFixtureDetails(game.away+' - '+game.home);}else{select('calendar');openCalendarBoxscore(game,false,returnTeam);}syncRoute();window.scrollTo(0,0);}});
+window.BasketLabOpenTeam=team=>{
+ if(!/^[a-z0-9-]+-\d{1,8}$/.test(team))return;
+ activeCalendarBoxscore=null;calendarBoxscoreRequest++;matchFormRequest++;boxscoreReturnTeam='';document.body.classList.remove('hub-boxscore-open','hub-match-open');
+ window.BasketLabNBA?.apply({nbaTab:'standings',team});select('calendar');go.calendar();closeMenu();window.scrollTo({top:0,behavior:'instant'});
+};
 function applyRoute(){
  const route=window.BasketLabRouter.read(location);
  applyingRoute=true;

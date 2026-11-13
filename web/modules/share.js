@@ -2,7 +2,6 @@
 (function(w){
  'use strict';
  const d=w.document;
- const footer=d.querySelector('footer');if(footer){const share=d.createElement('button');share.type='button';share.className='bl-back bl-footer-share';share.setAttribute('data-share-page','');share.textContent='Condividi questa pagina';footer.append(share);}
  function shareURL(){const url=new URL(w.location.href);url.hash='';for(const key of [...url.searchParams.keys()])if(!['data','partita','squadra','trasferta','casa','mercato','linea','periodo','stagione','campo','competizione'].includes(key))url.searchParams.delete(key);return url.href;}
  function close(){d.getElementById('bl-share-menu')?.remove();}
  function menu(button){

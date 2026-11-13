@@ -19,6 +19,7 @@ function setup(hash=''){
  window.eval(fs.readFileSync(path.join(root,'web/modules/router.js'),'utf8'));
  for(const file of ['insights','match-charts','match-data','calendar-data','boxscore-view','match-players','nba-hub'])window.eval(fs.readFileSync(path.join(root,'web/modules/'+file+'.js'),'utf8'));
  window.eval(script);
+ window.eval(fs.readFileSync(path.join(root,'web/modules/team-links.js'),'utf8'));
  return {window,doc};
 }
 test('desktop and mobile navigation are present',()=>{
@@ -451,3 +452,11 @@ test('team result returns to its team instead of the calendar and preserves orig
  doc.querySelector('.hub-boxscore-back').click();for(let n=0;n<4;n++)await new Promise(r=>setImmediate(r));assert.equal(window.location.pathname,'/squadre/boston-celtics-2');assert.match(doc.querySelector('#nba-team-hero').textContent,/Boston Celtics/);assert.equal(doc.querySelector('.nba-tabs').hidden,true);
  doc.querySelector('[data-nba-back]').click();for(let n=0;n<4;n++)await new Promise(r=>setImmediate(r));assert.equal(window.location.pathname,'/nba/classifica');assert.equal(doc.querySelector('.nba-tabs').hidden,false);
 });
+
+ test('team name navigation clears match state and browser Back restores its match URL',async()=>{
+ const {window,doc}=setup('analisi-partita?data=2026-11-05&trasferta=Boston+Celtics&casa=Atlanta+Hawks');
+ window.fetch=async()=>({ok:true,json:async()=>({conferences:[],players:[],team:{name:'Boston Celtics',color:'008348'},upcoming:[],recent:[],teams:[]})});
+ const node=doc.createElement('span');node.className='player-profile-team';node.textContent='Boston Celtics';doc.querySelector('main').append(node);window.BasketLabTeamLinks.enhance(node);node.querySelector('a').click();await new Promise(r=>setImmediate(r));
+ assert.equal(window.location.pathname,'/squadre/boston-celtics-2');assert.equal(doc.body.dataset.hubView,'calendar');assert.equal(doc.body.classList.contains('hub-match-open'),false);
+ window.history.back();await new Promise(r=>setTimeout(r,25));assert.equal(window.location.pathname,'/analisi-partita');assert.equal(doc.body.classList.contains('hub-match-open'),true);
+ });
