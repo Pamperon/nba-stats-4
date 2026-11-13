@@ -229,6 +229,7 @@ async function loadModelPerformance(){
   const response=await fetch('/api/history/performance',{headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('Performance unavailable');
   const stats=await response.json();
+  body.setAttribute('aria-busy','false');
   const groups=[['Scelta del giorno',stats.single],['Le migliori 10',stats]];
   const number=value=>Number.isFinite(value)?value.toLocaleString('it-IT'):'—';
   body.innerHTML='<div class="bl-results-grid">'+groups.map(([label,group])=>{
