@@ -18,9 +18,10 @@
   box.addEventListener('click',e=>{if(e.target.closest('.bl-team-link'))return;old.onclick?.call(old,e);});old.replaceWith(box);
  }
  function splitFixtureButton(old){
+  const actionLabel=old.getAttribute('aria-label')||'Apri partita: '+old.textContent.trim();
   const box=d.createElement('div');for(const a of old.attributes)if(!['type','aria-label'].includes(a.name))box.setAttribute(a.name,a.value);box.setAttribute('role','group');box.classList.add('bl-linked-card');
   while(old.firstChild)box.append(old.firstChild);
-  const action=d.createElement('button');action.type='button';action.className='bl-card-open';action.setAttribute('aria-label',old.getAttribute('aria-label')||'Apri partita: '+old.textContent.trim());action.addEventListener('click',()=>old.click());box.append(action);box.addEventListener('click',e=>{if(!e.target.closest('a,button'))old.click();});old.replaceWith(box);
+  const action=d.createElement('button');action.type='button';action.className='bl-card-open';action.setAttribute('aria-label',actionLabel);action.addEventListener('click',()=>old.click());box.append(action);box.addEventListener('click',e=>{if(!e.target.closest('a,button'))old.click();});old.replaceWith(box);
  }
  function enhance(root){
   if(root.nodeType===3)root=root.parentElement;if(!root?.querySelectorAll||root.closest?.('script,style,svg,canvas,select'))return;
