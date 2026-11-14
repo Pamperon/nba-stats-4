@@ -16,7 +16,6 @@ import scan_tracking
 import audience
 import player_stats
 from cachetools import TTLCache
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1504,8 +1503,6 @@ def calibration_settle():
     processed = []
     # Rotate through the backlog: two permanently unverifiable days must not
     # starve every other historical date on each scheduled run.
-    from datetime import date as _date
-    from datetime import timedelta as _timedelta
     # Exclude today's unfinished games; a completed game day is eligible.
     for day in candidates[:14]:
         try:
@@ -1985,19 +1982,30 @@ def index(request: Request):
     path = request.url.path
     if path == '/statistiche':
         return RedirectResponse('/giocatori' + ('?' + request.url.query if request.url.query else ''), status_code=301)
+    if path == '/partite':
+        return RedirectResponse('/nba' + ('?' + request.url.query if request.url.query else ''), status_code=301)
     if path.startswith('/squadre/'):
         import nba_teams
         match = re.fullmatch(r'/squadre/[a-z0-9-]+-([0-9]{1,8})', path)
         if not match or match[1] not in nba_teams.TEAMS:
             raise HTTPException(404, 'Squadra NBA non trovata')
+        canonical_path = '/squadre/' + seo.player_slug(nba_teams.TEAMS[match[1]], match[1])
+        if path != canonical_path:
+            return RedirectResponse(canonical_path + ('?' + request.url.query if request.url.query else ''), status_code=301)
     players = None
     if path.startswith('/giocatori/'):
         match = re.fullmatch(r'/giocatori/[a-z0-9-]+-([0-9]{1,12})', path)
         if not match:
             raise HTTPException(404, 'Giocatore non trovato')
         players = seo.saved_players()
-        if players and not any(str(p['id']) == match[1] for p in players):
+        if not players:
+            raise HTTPException(503, 'Catalogo giocatori temporaneamente non disponibile', headers={'Retry-After': '300'})
+        player = next((p for p in players if str(p['id']) == match[1]), None)
+        if player is None:
             raise HTTPException(404, 'Giocatore non trovato')
+        canonical_path = '/giocatori/' + seo.player_slug(player['name'], player['id'])
+        if path != canonical_path:
+            return RedirectResponse(canonical_path + ('?' + request.url.query if request.url.query else ''), status_code=301)
     headers = {'Cache-Control': 'no-cache'}
     if path in ('/', '/pronostici'):
         links = ['</api/picks/session?compact=true>; rel=preload; as=fetch; crossorigin=anonymous']

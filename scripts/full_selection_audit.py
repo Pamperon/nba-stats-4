@@ -3,7 +3,7 @@ No bookmaker calls, DB writes, or automatic production policy changes.
 """
 import sys,json,math,collections,hashlib,concurrent.futures,uuid
 from pathlib import Path
-from datetime import datetime,timezone
+from datetime import datetime
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import settle_espn,recommendations,engine
 ROOT=Path(__file__).resolve().parents[1]

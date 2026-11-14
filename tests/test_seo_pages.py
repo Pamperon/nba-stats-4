@@ -31,6 +31,20 @@ class SeoPagesTests(unittest.TestCase):
         self.assertIn('https://basketlab.it/giocatori/alex-test-22', urls)
         self.assertEqual(len(urls), len(set(urls)))
         self.assertTrue(all('?' not in u and '#' not in u for u in urls))
+        self.assertNotIn('https://basketlab.it/partite', urls)
+
+    def test_bundle_and_lazy_urls_change_when_their_sources_change(self):
+        document = seo.render('/', ())
+        bundle = re.search(r'/static/site-app.js\?v=([a-f0-9]{12})', document)[1]
+        with patch.object(seo, '_asset_version', return_value='changed-source'):
+            changed = seo.render('/', ())
+        self.assertNotIn('/static/site-app.js?v=' + bundle, changed)
+        self.assertNotEqual(
+            json.loads(re.search(r'id="bl-asset-versions">(.*?)</script>', document)[1]),
+            json.loads(re.search(r'id="bl-asset-versions">(.*?)</script>', changed)[1]))
+        self.assertEqual(document.count('/static/site-app.js?v=' + bundle), 2)
+        self.assertIn('rel="preload" as="image" href="/static/home-lab-', document)
+        self.assertNotIn('rel="preload" as="image" href="/static/home-lab-', seo.render('/nba', ()))
 
     def test_metadata_is_escaped_and_transient_match_pages_not_indexed(self):
         document = seo.render('/giocatori/alex-test-22', [{'id':'22','name':'Alex </script><script>bad</script>'}])
@@ -59,8 +73,9 @@ class SeoPagesTests(unittest.TestCase):
             with patch.object(main.storage, 'cache_read', side_effect=AssertionError('No database access for static pages')):
                 for path in seo.PAGES:
                     response = client.get(path + '?utm_source=test')
+                    canonical = '/nba' if path == '/partite' else path
                     self.assertEqual(response.status_code, 200)
-                    self.assertIn('href="https://basketlab.it' + path + '"', response.text)
+                    self.assertIn('href="https://basketlab.it' + canonical + '"', response.text)
                     self.assertEqual(response.headers['cache-control'], 'no-cache')
             alias = client.get('/statistiche?mercato=PTS', follow_redirects=False)
             self.assertEqual(alias.status_code, 301)
@@ -70,6 +85,17 @@ class SeoPagesTests(unittest.TestCase):
                 self.assertEqual(client.get('/giocatori/missing-23').status_code, 404)
                 self.assertEqual(client.get('/giocatori/invalid').status_code, 404)
                 self.assertIn('/giocatori/alex-test-22', client.get('/sitemap.xml').text)
+                redirect = client.get('/giocatori/wrong-name-22?mercato=REB', follow_redirects=False)
+                self.assertEqual(redirect.status_code, 301)
+                self.assertEqual(redirect.headers['location'], '/giocatori/alex-test-22?mercato=REB')
+            redirect = client.get('/squadre/wrong-name-2', follow_redirects=False)
+            self.assertEqual(redirect.status_code, 301)
+            self.assertEqual(redirect.headers['location'], '/squadre/boston-celtics-2')
+            redirect = client.get('/partite?data=2026-11-14', follow_redirects=False)
+            self.assertEqual(redirect.status_code, 301)
+            self.assertEqual(redirect.headers['location'], '/nba?data=2026-11-14')
+            with patch.object(seo, 'saved_players', return_value=()):
+                self.assertEqual(client.get('/giocatori/fake-22').status_code, 503)
             for path in ('/api/missing', '/static/missing.js', '/missing'):
                 self.assertEqual(client.get(path).status_code, 404)
             self.assertEqual(client.get('/static/modules/router.js?v=seo-pages-1').headers['cache-control'], 'public, max-age=86400')

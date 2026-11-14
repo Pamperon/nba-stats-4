@@ -5,14 +5,13 @@ examined before and are NOT an independent holdout or a promotion criterion.
 """
 import argparse
 import json
-import math
 from pathlib import Path
 import requests
 import model_candidates as models
 import recommendations
 import settle_espn
 
-from shadow_study import CONFIGS, identity, line_key, policy_select, score, choose_panel
+from shadow_study import CONFIGS, line_key, policy_select, score, choose_panel
 
 
 def compare(archive, verified):

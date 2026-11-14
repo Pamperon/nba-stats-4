@@ -1,5 +1,5 @@
-const CACHE = 'nba-stats-4-shell-v73';
-const ASSETS = ['/static/site-core.css','/static/site-app.js','/static/modules/team-links.js', '/static/team-links.css', '/static/modules/insights.js', '/static/insights.css', '/', '/static/style.css', '/static/app.js', '/static/features.js', '/static/hub-nav.js', '/static/modules/router.js', '/static/modules/sections.js', '/static/modules/assets.js', '/static/modules/design.js', '/static/design-system.css', '/static/modules/calendar-data.js', '/static/modules/match-charts.js', '/static/modules/match-data.js', '/static/icon.svg', '/static/icon-192.png', '/static/icon-512.png', '/static/icon-maskable-192.png', '/static/icon-maskable-512.png', '/static/favicon-32.png', '/static/favicon.ico', '/static/apple-touch-icon.png', '/static/manifest.webmanifest'];
+const CACHE = 'nba-stats-4-shell-v74';
+const ASSETS = ["/", "/static/site-core.css", "/static/site-app.js", "/static/nba-hub.css", "/static/share.css", "/static/insights.css", "/static/team-links.css", "/static/modules/single-analysis.js", "/static/modules/archive-view.js", "/static/modules/boxscore-view.js", "/static/modules/match-players.js", "/static/icon.svg", "/static/icon-192.png", "/static/icon-512.png", "/static/icon-maskable-192.png", "/static/icon-maskable-512.png", "/static/favicon-32.png", "/static/favicon.ico", "/static/apple-touch-icon.png", "/static/manifest.webmanifest"];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));

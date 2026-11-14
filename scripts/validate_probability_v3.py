@@ -1,5 +1,5 @@
 """Chronological replay of the fixed v3 candidate; no database writes or paid calls."""
-import sys,json,collections,math
+import sys,json,collections
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import probability_model_v3 as model

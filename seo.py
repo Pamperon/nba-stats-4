@@ -90,11 +90,26 @@ def _asset_version(asset, modified, size):
     return hashlib.sha256((Path('web') / asset).read_bytes()).hexdigest()[:12]
 
 
+def asset_version(asset):
+    """Fingerprint virtual bundles too, including ordered source membership."""
+    root = Path('web')
+    manifest = json.loads((root / 'bundles.json').read_text())
+    sources = manifest.get(asset, [asset])
+    versions = []
+    for source in sources:
+        file = root / source
+        stat = file.stat()
+        versions.append(source + ':' + _asset_version(source, stat.st_mtime_ns, stat.st_size))
+    return hashlib.sha256('\n'.join(versions).encode()).hexdigest()[:12]
+
+
 @lru_cache(maxsize=128)
 def _saved_log(team_id, athlete_id, season, bucket):
     try:
         import storage
-        payload = storage.cache_read('nba:log:final-v4:' + team_id + ':' + athlete_id + ':' + season, max_age_hours=24)
+        # These are dated historical results, not live values. Retain a saved
+        # table between player visits; the interactive app still refreshes it.
+        payload = storage.cache_read('nba:log:final-v4:' + team_id + ':' + athlete_id + ':' + season, max_age_hours=168)
         return payload.get('games', []) if isinstance(payload, dict) else []
     except Exception:
         return []
@@ -127,6 +142,9 @@ def initial_content(path, players):
                 body += '<tr>' + ''.join('<td>' + esc(game.get(key, '—')) + '</td>' for key in ('GAME_DATE', 'MATCHUP', 'PTS', 'REB', 'AST')) + '</tr>'
             body += '</tbody></table>'
         body += '<p>' + link('/giocatori', 'Tutti i giocatori NBA') + '</p>'
+        teammates = [p for p in players if str(p.get('team_id', '')) == tid and p['id'] != player['id']][:8]
+        if teammates:
+            body += '<h2>Altri giocatori della squadra</h2><ul>' + ''.join('<li>' + link('/giocatori/' + player_slug(p['name'], p['id']), p['name']) + '</li>' for p in teammates) + '</ul>'
     elif team_match:
         tid = team_match[1]
         roster = [p for p in players if str(p.get('team_id', '')) == tid]
@@ -163,6 +181,9 @@ def render(path, players=None):
     page = {'@context':'https://schema.org', '@type':'WebPage', '@id':canonical+'#webpage', 'url':canonical, 'name':title, 'description':description, 'inLanguage':'it-IT', 'isPartOf':{'@type':'WebSite','name':'Basket Lab','url':SITE+'/'}}
     safe_json = lambda obj: json.dumps(obj, ensure_ascii=False).replace('<', '\\u003c')
     extra = '<meta name="robots" content="' + robots + '"><script type="application/ld+json" id="bl-page-schema">' + safe_json(page) + '</script><script type="application/json" id="bl-seo-routes">' + safe_json(PAGES) + '</script>'
+    lazy = {name: '/static/modules/' + name + '.js?v=' + asset_version('modules/' + name + '.js')
+            for name in ('single-analysis', 'archive-view', 'boxscore-view', 'match-players')}
+    extra += '<script type="application/json" id="bl-asset-versions">' + safe_json(lazy) + '</script>'
     document = document.replace('</head>', extra + '</head>', 1)
     document = crawlable_navigation(document)
     if path != '/':
@@ -172,17 +193,23 @@ def render(path, players=None):
         document = document.replace('</head>', '<style id="bl-initial-style">main > :not(#bl-initial-content){display:none!important}#bl-initial-content{padding:24px}#bl-initial-content a{color:inherit}</style></head>', 1)
     def versioned(match):
         asset = match[2]
-        file = Path('web') / asset
-        if not file.is_file():
+        try:
+            version = asset_version(asset)
+        except FileNotFoundError:
             return match[0]
-        stat = file.stat()
-        return match[1] + '?v=' + _asset_version(asset, stat.st_mtime_ns, stat.st_size)
+        return match[1] + '?v=' + version
     document = re.sub(r'(/static/([^"?\s]+\.(?:css|js)))\?v=[^"\s]+', versioned, document)
+    if path != '/':
+        # The hero belongs to Home; preloading it on every deep link competes
+        # with the player's image and the selected page's data.
+        document = re.sub(r'<link rel="preload" as="image" href="/static/home-lab-[^>]+>', '', document, count=1)
+        document = document.replace('<img fetchpriority="high" decoding="async" src="/static/home-lab-',
+                                    '<img loading="lazy" fetchpriority="low" decoding="async" src="/static/home-lab-', 1)
     return document
 
 
 def sitemap(players=()):
-    paths = [p for p in PAGES if p != '/analisi-singola']
+    paths = [p for p in PAGES if p not in ('/analisi-singola', '/partite')]
     from nba_teams import TEAMS
     paths += ['/squadre/' + player_slug(name, tid) for tid, name in TEAMS.items()]
     paths += ['/giocatori/' + player_slug(p['name'], p['id']) for p in players]

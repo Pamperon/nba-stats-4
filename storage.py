@@ -1,5 +1,4 @@
 """Persistent scan snapshots stored in Supabase PostgreSQL (server-side only)."""
-import json
 import math
 import logging
 import os
@@ -7,8 +6,6 @@ import uuid
 import time
 import threading
 from functools import lru_cache
-from datetime import datetime, timezone, timedelta
-from zoneinfo import ZoneInfo
 
 import psycopg
 from psycopg.types.json import Jsonb
