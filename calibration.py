@@ -2,10 +2,7 @@
 
 Safety: only finalized games, idempotent per date/snapshot, no automatic deletion.
 """
-from datetime import datetime, timezone
 import math
-import psycopg
-from psycopg.types.json import Jsonb
 import storage
 
 BINS = tuple(range(0, 100, 10))

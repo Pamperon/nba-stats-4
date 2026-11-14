@@ -3,7 +3,6 @@ Model is a non-calibrated heuristic, not a verified prediction.
 """
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from functools import lru_cache
 from cachetools import TTLCache, cached
 import os, re, requests, pandas as pd
 import json, time, threading
