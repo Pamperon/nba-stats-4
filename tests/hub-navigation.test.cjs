@@ -456,7 +456,7 @@ test('team result returns to its team instead of the calendar and preserves orig
  test('team name navigation clears match state and browser Back restores its match URL',async()=>{
  const {window,doc}=setup('analisi-partita?data=2026-11-05&trasferta=Boston+Celtics&casa=Atlanta+Hawks');
  window.fetch=async()=>({ok:true,json:async()=>({conferences:[],players:[],team:{name:'Boston Celtics',color:'008348'},upcoming:[],recent:[],teams:[]})});
- const node=doc.createElement('span');node.className='player-profile-team';node.textContent='Boston Celtics';doc.querySelector('main').append(node);window.BasketLabTeamLinks.enhance(node);node.querySelector('a').click();await new Promise(r=>setImmediate(r));
+ const node=doc.createElement('span');node.className='hub-match-team';node.textContent='Boston Celtics';doc.querySelector('main').append(node);window.BasketLabTeamLinks.enhance(node);node.querySelector('a').click();await new Promise(r=>setImmediate(r));
  assert.equal(window.location.pathname,'/squadre/boston-celtics-2');assert.equal(doc.body.dataset.hubView,'calendar');assert.equal(doc.body.classList.contains('hub-match-open'),false);
  window.history.back();await new Promise(r=>setTimeout(r,25));assert.equal(window.location.pathname,'/analisi-partita');assert.equal(doc.body.classList.contains('hub-match-open'),true);
  });
