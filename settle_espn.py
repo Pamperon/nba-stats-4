@@ -100,6 +100,13 @@ def recap_confirms_absence(summary, athlete_id, team):
     for name in names:
         city = name.rsplit(' ', 1)[0]
         for sentence in re.split(r'[.!?\n]+', text):
+            # Recaps also refer to the team by nickname and can insert
+            # "starters" or "their entire usual starting lineup" before IDs.
+            team_names = '|'.join(re.escape(label) for label in (name, city, name.rsplit(' ', 1)[-1]))
+            if (re.match(r'^\s*(?:The\s+)?(?:' + team_names +
+                         r')\s+(?:was|were|played) without\b', sentence, re.I)
+                    and '[espn:' + athlete_id + ']' in sentence):
+                return True
             if re.match(r'^\s*(?:' + re.escape(name) + '|' + re.escape(city) + r')\s+(?:was|were) without\b', sentence, re.I):
                 if '[espn:' + athlete_id + ']' in sentence:
                     return True

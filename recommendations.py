@@ -128,7 +128,7 @@ def select_single(rows):
             probability = float(row['Prob. stimata %'])
         except (KeyError, TypeError, ValueError):
             continue
-        if not (1.70 <= price <= 1.90 and probability > 70
+        if not (1.66 <= price <= 1.90 and probability > 70
                 and probability - 100 / price >= 5):
             continue
         modern = row.get('Modello probabilità') == 'minutes-role-calibrated-v3'

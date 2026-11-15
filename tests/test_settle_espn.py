@@ -5,6 +5,19 @@ import settle_espn
 
 
 class RecapDNPTests(unittest.TestCase):
+    def test_nickname_and_starting_lineup_absences(self):
+        for team, athlete, story in [
+            ('Memphis Grizzlies', '4065733', 'The Grizzlies were without starters <a href="https://www.espn.com/nba/player/_/id/4065733/ty-jerome">Ty Jerome</a> and Zach Edey.'),
+            ('Cleveland Cavaliers', '3992', 'The Cavaliers played without their entire usual starting lineup as <a href="https://www.espn.com/nba/player/_/id/3992/james-harden">James Harden</a> was sidelined with an injury.'),
+        ]:
+            recap = {'boxscore': {'players': [{'team': {'displayName': team}}]}, 'article': {'story': story}}
+            key = settle_espn.engine.normalized_name(team)
+            self.assertTrue(settle_espn.recap_confirms_absence(recap, athlete, key))
+            self.assertFalse(settle_espn.recap_confirms_absence(recap, '123', key))
+            self.assertFalse(settle_espn.recap_confirms_absence(recap, athlete, 'boston celtics'))
+            recap['article']['story'] = story.replace('were without', 'will be without').replace('played without', 'will play without')
+            self.assertFalse(settle_espn.recap_confirms_absence(recap, athlete, key))
+
     def test_linked_player_rest_confirmed_only_for_exact_team_and_athlete(self):
         recap={'boxscore':{'players':[{'team':{'displayName':'New Orleans Pelicans'},'statistics':[]}]},
                'article':{'story':'New Orleans rested Zion Williamson and '

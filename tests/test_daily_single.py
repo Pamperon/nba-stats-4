@@ -23,6 +23,12 @@ class DailySingleTests(unittest.TestCase):
             chosen = recommendations.select_single([row('B', 1.80, 71)])
             self.assertEqual(chosen['Giocatore'], 'B')
 
+    def test_minimum_odds_is_inclusive(self):
+        with patch.object(recommendations, 'rejection_reasons', return_value=[]):
+            self.assertIsNone(recommendations.select_single([row('A', 1.659, 75)]))
+            self.assertEqual(recommendations.select_single([row('B', 1.66, 75)])['Giocatore'], 'B')
+            self.assertIsNone(recommendations.select_single([row('C', 1.901, 75)]))
+
     def test_select_by_expected_return(self):
         with patch.object(recommendations, 'rejection_reasons', return_value=[]):
             chosen = recommendations.select_single([
