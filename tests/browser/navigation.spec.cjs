@@ -125,3 +125,38 @@ test('Home fixtures without calendar_date use the Italian tipoff day',async({pag
  expect(new URL(page.url()).searchParams.get('data')).toBe(expectedDay);
  await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
 });
+
+
+test('NBA compact fixtures, Live marker, standings and page alignment',async({page})=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Compact NBA layout is checked on the current candidate');
+ const games=[
+  {event_id:'1',away:'Boston Celtics',home:'Atlanta Hawks',state:'post',upcoming:false,away_score:123,home_score:117},
+  {event_id:'2',away:'Chicago Bulls',home:'Miami Heat',state:'in',upcoming:false,away_score:0,home_score:0},
+  {event_id:'3',away:'Denver Nuggets',home:'Phoenix Suns',state:'pre',upcoming:true},
+  {event_id:'4',away:'Dallas Mavericks',home:'Houston Rockets',state:'pre',upcoming:false,status:'Postponed'}
+ ].map(game=>({...game,start_at:'2026-11-05T01:00:00Z',calendar_date:'2026-11-05'}));
+ await page.route('**/api/nba/fixtures**',route=>route.fulfill({json:{games}}));
+ await page.route('**/api/nba/standings',route=>route.fulfill({json:{conferences:[{name:'Eastern Conference',teams:[{id:'2',name:'Boston Celtics',rank:1,wins:10,losses:2,win_percent:10/12}]},{name:'Western Conference',teams:[{id:'7',name:'Denver Nuggets',rank:1,wins:9,losses:3,win_percent:.75}]}]}}));
+ await page.goto('/pronostici');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
+ const picksTop=await page.locator('.hub-single-section').evaluate(el=>el.getBoundingClientRect().top+window.scrollY);
+ await page.goto('/nba?data=2026-11-05');
+ await expect(page.locator('.hub-calendar-match')).toHaveCount(4);
+ const calendarTop=await page.locator('#hub-calendar').evaluate(el=>el.getBoundingClientRect().top+window.scrollY);
+ expect(Math.abs(calendarTop-picksTop)).toBeLessThanOrEqual(2);
+ await expect(page.locator('.hub-calendar-odds')).toHaveCount(0);
+ await expect(page.locator('.hub-calendar-state')).toHaveCount(1);
+ await expect(page.locator('.hub-calendar-state')).toHaveText('Live');
+ expect(await page.locator('.hub-calendar-state').evaluate(el=>getComputedStyle(el,'::before').backgroundColor)).toBe('rgb(255, 78, 102)');
+ expect(await page.locator('.hub-calendar-match').evaluateAll(rows=>rows.every(el=>el.getBoundingClientRect().height<=96))).toBe(true);
+ await expect(page.locator('.hub-calendar-match').first().locator('.is-winner')).toHaveText('123');
+ await expect(page.locator('.hub-calendar-match').nth(1).locator('.hub-score-value')).toHaveText(['0','0']);
+ expect(api).not.toContain('/api/nba/quote-coverage');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:'test-results/nba-calendar-compact-'+page.viewportSize().width+'.png',fullPage:true});
+ await page.locator('[data-nba-tab=standings]').click();
+ await expect(page.locator('.nba-conference')).toHaveCount(2);
+ await expect(page.locator('.nba-standings').first()).toContainText('Boston Celtics');
+ expect(await page.locator('#hub-calendar').evaluate(el=>el.getBoundingClientRect().top+window.scrollY)).toBe(calendarTop);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:'test-results/nba-standings-'+page.viewportSize().width+'.png',fullPage:true});
+});

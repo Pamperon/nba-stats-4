@@ -726,13 +726,11 @@ body.player-personal-view #player .player-profile>.player-season-stats{max-width
 /* Keep venue marks next to the team name and tighten fixture cards. */
 .bl-venue-icon{color:#fff!important;width:15px;height:15px;flex-basis:15px;opacity:1!important;filter:drop-shadow(0 1px 2px #0008)}
 .bl-venue-icon svg{width:15px!important;height:15px!important;stroke-width:2}
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient{height:122px;min-height:122px;max-height:122px;padding:29px 10px 24px}
 .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team{gap:3px}
 .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team img{width:32px;height:32px;flex-basis:32px}
 .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team>span{display:block;min-height:0;max-height:2.5em;line-height:1.25}
 .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .bl-venue-icon{display:inline-flex!important;min-height:15px!important;max-height:15px!important;overflow:visible;margin:0 0 0 4px;vertical-align:-2px}
 .hub-calendar-games .hub-calendar-gradient .hub-calendar-match-arrow{bottom:5px}
-.hub-calendar-games .hub-calendar-gradient:has(.hub-calendar-final-score){padding-bottom:32px;height:130px;min-height:130px;max-height:130px}
 .hub-games-section .hub-games-showcase{gap:7px}
 .hub-games-section .hub-premium-fixture{min-height:50px}
 .hub-games-section .hub-premium-fixture .hub-premium-matchup{min-height:50px;padding:5px 10px;grid-template-columns:28px minmax(0,1fr) 28px 10px;gap:6px}
@@ -801,13 +799,6 @@ body.player-personal-view .bl-window-tabs button[data-hit-rate=unknown] small{co
 .pe-quote-options::-webkit-scrollbar-thumb{background:#6aa6c8;border-radius:8px}
 
 /* Completed games reserve an actual grid row for score and tip-off time. */
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient:has(.hub-calendar-final-score){height:auto;min-height:142px;max-height:none;grid-template-rows:auto auto;padding:30px 10px 9px;row-gap:9px;align-items:center}
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient:has(.hub-calendar-final-score)>.hub-calendar-team{grid-row:1;grid-column:3}
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient:has(.hub-calendar-final-score)>.hub-calendar-team:first-child{grid-column:1}
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient:has(.hub-calendar-final-score)>.hub-calendar-versus{grid-row:1;grid-column:2}
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient:has(.hub-calendar-final-score) .hub-calendar-match-arrow{position:static;grid-row:2;grid-column:1/-1;display:flex;flex-direction:column;gap:4px;margin:0;padding:0;width:100%}
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient:has(.hub-calendar-final-score) .hub-calendar-final-score{display:block;font-size:24px;line-height:1.15;letter-spacing:.025em}
-.hub-calendar-games .hub-calendar-match.hub-calendar-gradient:has(.hub-calendar-final-score) .hub-calendar-time{display:block;line-height:1.25;font-size:12px}
 
 /* Compact, shared empty selection state in Home and Pronostici. */
 .hub-featured.is-suppressed{display:none!important}
@@ -864,3 +855,25 @@ body:has(section[aria-label="Preferenze statistiche"]:not([hidden])) #single-ana
 /* Keep all four outcome labels on one line on narrow screens. */
 @media(max-width:600px){.bl-results-card dl div{flex-direction:column;justify-content:center;gap:4px;min-height:44px}.bl-results-card dt{white-space:nowrap}.bl-results-card dd{min-width:28px}}
 @media(max-width:340px){.bl-results-card dl{font-size:12px}}
+
+/* Compact fixture rows: scores and tipoff share the center column. */
+#hub-calendar{margin-top:0;border-radius:16px;background:linear-gradient(145deg,#102b40,#091d2f)}
+#picks-showcase>.hub-single-section{margin-top:0}
+.hub-home-banner[hidden]{display:none!important}
+.hub-calendar-games{gap:8px}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient{grid-template-columns:minmax(0,1fr) 108px minmax(0,1fr);grid-template-rows:auto;gap:6px;min-height:88px;height:auto;max-height:none;padding:8px 10px;border-radius:12px;box-shadow:0 3px 12px #0002,inset 0 1px 0 #ffffff0b!important}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient>.hub-calendar-team{grid-row:1;grid-column:1;gap:4px;min-width:0;font-size:12px;line-height:1.25}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient>.hub-calendar-team~.hub-calendar-team{grid-column:3}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-team img{width:28px;height:28px;flex-basis:28px}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-match-arrow{position:static;grid-row:1;grid-column:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;margin:0;padding:0;width:auto}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-final-score{display:flex;align-items:center;justify-content:center;gap:5px;margin:0;font-size:23px;line-height:1.2;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:#b0c4d7}
+.hub-score-value{min-width:1.8em;text-align:center}
+.hub-score-value.is-winner{color:#fff;font-weight:900;text-shadow:0 1px 10px #ffffff26}
+.hub-score-divider{font-size:15px;color:#9bb3c7;font-weight:500}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-time{font-size:11px;line-height:1.3;color:#c3d4e2;opacity:1}
+.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-state.live{position:static;display:inline-flex;gap:5px;padding:0;border:0;background:none;color:#ff8191;font-size:11px;line-height:1.2;box-shadow:none}
+.hub-calendar-state.live::before{content:'';width:6px;height:6px;border-radius:50%;background:#ff4e66;flex-shrink:0}
+@media(max-width:380px){.hub-calendar-games .hub-calendar-match.hub-calendar-gradient{grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);padding:8px 7px;gap:4px}.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-final-score{font-size:21px;gap:3px}.hub-calendar-games .hub-calendar-match.hub-calendar-gradient>.hub-calendar-team{font-size:11px}}
+
+/* Auto block margins must not vertically center short pages in the desktop grid. */
+.hub-shell>main{margin:0;align-self:start}

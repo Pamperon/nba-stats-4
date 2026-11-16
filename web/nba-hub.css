@@ -6,3 +6,23 @@
 .nba-tabs[hidden]{display:none!important}
 .hub-calendar-view .hub-calendar-quick-days button.active{background:#f59e0b;border-color:#f59e0b;color:#142033;font-weight:800;box-shadow:0 3px 12px #f59e0b26}
 body[data-hub-view=home] .hub-single-section.is-empty,body[data-hub-view=home] .hub-single-section[hidden]{display:none!important}
+
+/* Shared NBA navigation and standings presentation. */
+.nba-tabs{gap:4px;padding:4px;margin-bottom:16px!important;background:#0b2032;border-color:#35516a;border-radius:11px}
+.nba-tabs a{padding:10px 12px;min-height:42px;font-size:14px;font-weight:650}
+.nba-tabs a.active{background:linear-gradient(120deg,#174e79,#12649a);box-shadow:0 2px 8px #0003;color:#fff}
+.nba-conferences{gap:14px}
+.nba-conference{border-radius:13px;border-color:#314d65;background:#0b2032;box-shadow:0 5px 18px #0002}
+.nba-conference h2{padding:14px 15px;font-size:16px;font-weight:700;letter-spacing:.2px;background:linear-gradient(110deg,#193a53,#10283d);border-color:#314d65}
+.nba-legend{gap:7px;margin-bottom:14px;font-size:11px;color:#a9c0d2}
+.nba-standings{font-variant-numeric:tabular-nums}
+.nba-standings td,.nba-standings th{padding:9px 7px;border-bottom-color:#294257}
+.nba-standings thead{background:#0c2234;color:#a9c4d7;font-size:11px;letter-spacing:.4px}
+.nba-standings tbody tr:nth-child(even){background:#ffffff03}
+.nba-standings tbody tr:hover{background:#1b3a52}
+.nba-standings tbody td:first-child{font-size:14px;font-weight:750;color:#d9e8f3}
+.nba-standings tbody td:nth-child(3){color:#87dfb9;font-weight:650}
+.nba-standings tbody td:nth-child(5){color:#eef6ff;font-weight:700}
+.nba-standings a{gap:7px;min-height:30px;font-size:12px}
+.nba-standings a img{width:26px;height:26px}
+@media(max-width:600px){.nba-standings td,.nba-standings th{padding:8px 5px}.nba-standings a span{max-width:120px}.nba-standings a{font-size:12px}.nba-note{font-size:11px}}
