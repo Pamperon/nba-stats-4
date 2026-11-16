@@ -860,3 +860,6 @@ body.player-personal-view #player .player-avatar{width:240px;height:164px}
 @media(min-width:1100px){body[data-hub-view=home] .hub-shell>main{display:block}}
 
 .bl-lab-word{color:#ff9638!important}
+
+/* Keep the final return action reachable while consent overlays the viewport. */
+body:has(section[aria-label="Preferenze statistiche"]:not([hidden])) #single-analysis-page{padding-bottom:max(360px,50vh)}
