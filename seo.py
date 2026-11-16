@@ -159,7 +159,7 @@ def initial_content(path, players):
     elif path == '/pronostici':
         body += '<p>Le selezioni sono in anteprima prima delle 18 e diventano ufficiali alla pubblicazione serale. Le probabilità sono stime del modello, non garanzie di risultato.</p><p>' + link('/archivio', 'Verifica gli esiti delle selezioni precedenti') + ' · ' + link('/come-funziona', 'Scopri il metodo del Lab') + '</p>'
     elif path == '/archivio':
-        body += '<p>Consulta le selezioni per giornata e confronta Singola e Top 10. Gli esiti distinguono le scelte centrate, non centrate, i giocatori che non hanno giocato e i risultati ancora da verificare.</p>'
+        body += '<p>Consulta le selezioni per giornata e consulta la singola del giorno e le selezioni del Lab. Gli esiti distinguono le scelte centrate, non centrate, i giocatori che non hanno giocato e i risultati ancora da verificare.</p>'
     elif path == '/come-funziona':
         body += '<p>Basket Lab confronta le prestazioni NBA attraverso punti, rimbalzi, assist e minuti giocati. Le frequenze storiche descrivono ciò che è accaduto nel campione selezionato; le probabilità del modello sono stime e possono differire dai risultati futuri.</p>'
     body += '<nav aria-label="Approfondimenti NBA">' + link('/giocatori', 'Statistiche giocatori') + ' · ' + link('/nba/classifica', 'Squadre e classifica') + ' · ' + link('/come-funziona', 'Come funziona Basket Lab') + '</nav>'

@@ -6,6 +6,8 @@ if(!landing||!tiles)return;
 // Share the actual presentation nodes so Home and Pronostici cannot drift.
 const singleHomeAnchor=document.createComment('home-single');
 const featuredHomeAnchor=document.createComment('home-featured');
+const performanceHomeAnchor=document.createComment('home-performance');
+performance?.before(performanceHomeAnchor);
 singleShowcase?.before(singleHomeAnchor);featured?.before(featuredHomeAnchor);
 const picksPresentation=document.createElement('section');
 picksPresentation.id='picks-showcase';picksPresentation.hidden=true;
@@ -166,12 +168,14 @@ function display(){
  if(picksView&&!picksPresentation.querySelector('.hub-picks-archive')){
   const link=document.createElement('button');
   link.type='button';link.className='bl-back hub-picks-archive';link.dataset.hub='history';link.textContent='Archivio esiti →';
-  picksPresentation.prepend(link);
+  picksPresentation.append(link);
  }
 
  if(picksView){
-  for(const panel of [singleShowcase,featured])if(panel&&panel.parentElement!==picksPresentation)picksPresentation.append(panel);
+  for(const panel of [singleShowcase,performance,featured])if(panel)picksPresentation.append(panel);
+  picksPresentation.append(picksPresentation.querySelector('.hub-picks-archive'));
  }else{
+  if(performance&&performance.previousSibling!==performanceHomeAnchor)performanceHomeAnchor.after(performance);
   if(singleShowcase&&singleShowcase.previousSibling!==singleHomeAnchor)singleHomeAnchor.after(singleShowcase);
   if(featured&&featured.previousSibling!==featuredHomeAnchor)featuredHomeAnchor.after(featured);
  }
@@ -187,9 +191,9 @@ function display(){
  if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra||(home&&!$('#picks .pick-group[aria-label="Scelta del giorno"] .pick-selection'));
  if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;
  if(nbaUpdatesPanel)nbaUpdatesPanel.hidden=!home||extra;
- if(performance)performance.hidden=!home||extra;if(methodLink)methodLink.hidden=!home||extra;
+ if(performance)performance.hidden=!(home||picksView)||extra;if(methodLink)methodLink.hidden=!home||extra;
  const singleAction=singleShowcase?.querySelector('.bl-broadcast-action');
- if(singleAction)singleAction.textContent='Apri analisi →';
+ if(singleAction)singleAction.textContent='Scopri l’analisi →';
 }
 function select(key){if(key==='stats'&&!playerReturn){const back=$('#back-to-picks');if(back){back.hidden=false;back.textContent='← Torna alla Home';}}calendar=key==='calendar';home=key==='home';if(key!=='finder')document.body.classList.remove('hub-match-open');mark(key==='single'?'picks':key);document.body.dataset.hubView=key;display();saveHubState();syncRoute();document.dispatchEvent(new CustomEvent('basketlab:view',{detail:{view:key}}));}
 
@@ -230,7 +234,7 @@ async function loadModelPerformance(){
   if(!response.ok)throw new Error('Performance unavailable');
   const stats=await response.json();
   body.setAttribute('aria-busy','false');
-  const groups=[['Scelta del giorno',stats.single],['Le migliori 10',stats]];
+  const groups=[['Singola del giorno',stats.single]];
   const number=value=>Number.isFinite(value)?value.toLocaleString('it-IT'):'—';
   body.innerHTML='<div class="bl-results-grid">'+groups.map(([label,group])=>{
    const rate=Number.isFinite(group?.success_pct)?group.success_pct:null;
@@ -238,7 +242,7 @@ async function loadModelPerformance(){
    return '<article class="bl-results-card">'+
     '<div class="bl-results-ring" style="--success:'+sweep+'%"><strong>'+
     (rate===null?'—':number(rate)+'%')+'</strong></div>'+
-    '<div class="bl-results-heading"><h3>'+label+'</h3><p><strong>'+number(group?.published)+'</strong> analisi pubblicate</p></div>'+
+    '<div class="bl-results-heading"><h3>'+label+'</h3><p><strong>'+number(group?.won)+'</strong> centrate su <strong>'+number(group?.verified)+'</strong> con esito · '+number(group?.published)+' pubblicate</p></div>'+
     '<dl><div data-outcome="won"><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
     '<div data-outcome="lost"><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
     '<div data-outcome="not-played"><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+
@@ -258,9 +262,9 @@ function hubCardPhoto(source){const image=source.querySelector('.pick-avatar img
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');if(!list||!picks)return;
  const heading=featured?.querySelector('h2');
- if(heading)heading.textContent='Le migliori 10';
+ if(heading)heading.textContent='Le selezioni del Lab';
  const badge=$('#hub-choices-state'),publication=picks.querySelector('#pick-giorno')?.dataset.publicationState;
- if(badge){badge.dataset.state=publication||'waiting';badge.textContent=publication==='official'?'Ufficiali':publication==='preview'?'Conferma alle 18:00':'In attesa';}
+ if(badge){badge.dataset.state=publication||'waiting';badge.textContent=publication==='official'?'Ufficiali':publication==='preview'?'Ufficialità alle 18:00':'In attesa';}
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,10);
  const selected=sources.length||picks.querySelector('#pick-giorno')?sources:[...picks.querySelectorAll('.pick-selection')].slice(0,10);
  list.replaceChildren();
@@ -877,10 +881,12 @@ function refreshShowcase(){
    }
    const probabilityValue=hubCardMetric(pick,/stima|probabilit/i);const percentage=Number(probabilityValue.replace('%','').replace(',','.'));
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
-   broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);single.append(broadcast);
-   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='Apri analisi →';action.addEventListener('click',openSingleAnalysis);single.append(action);
+   broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);
+   if(group?.dataset.selectionReason){const reason=document.createElement('p');reason.className='bl-broadcast-reason';reason.textContent=group.dataset.selectionReason;broadcast.append(reason);}
+   single.append(broadcast);
+   const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='Scopri l’analisi →';action.addEventListener('click',openSingleAnalysis);single.append(action);
   }else{single.append(emptyPicksCard())}
-  if(state){const publication=group?.dataset.publicationState||'waiting';state.classList.add('bl-publication-badge');state.dataset.state=publication;state.textContent=publication==='official'?'Ufficiale':publication==='preview'?'Conferma alle 18:00':'In attesa';state.title=publication==='preview'?(group.dataset.publicationLabel||'Selezione provvisoria: non ancora ufficiale'):'Stato della selezione';state.setAttribute('aria-label',state.textContent+(publication==='preview'?'. '+state.title:''));}
+  if(state){const publication=group?.dataset.publicationState||'waiting';state.classList.add('bl-publication-badge');state.dataset.state=publication;state.textContent=publication==='official'?'Ufficiale':publication==='preview'?'Ufficialità alle 18:00':'In attesa';state.title=publication==='preview'?(group.dataset.publicationLabel||'Selezione provvisoria: non ancora ufficiale'):'Stato della selezione';state.setAttribute('aria-label',state.textContent+(publication==='preview'?'. '+state.title:''));}
  }
  if(games&&(!window.BasketLabSections||window.BasketLabSections.wants('home'))){
   // Homepage always previews the next NBA session, not yesterday's overnight window.
@@ -985,7 +991,7 @@ if(window.BasketLabRouter){
  if(location.hash==='#archivio'){go.history();select('history')}
  else if(location.hash==='#come-funziona'){go.about();select('about')}
 }
-if(window.BasketLabSections)window.BasketLabSections.register('home',()=>{loadModelPerformance();refreshShowcase();});
+if(window.BasketLabSections){window.BasketLabSections.register('home',()=>{refreshShowcase();});window.BasketLabSections.register('performance',loadModelPerformance);}
 document.getElementById('bl-initial-content')?.remove();
 document.getElementById('bl-initial-style')?.remove();
 refresh();featuredPicks();updateInsights();refreshShowcase();

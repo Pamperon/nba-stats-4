@@ -3,7 +3,7 @@
  'use strict';
  const tasks=new Map();
  function view(){return document.body.dataset.hubView||root.BasketLabRouter?.read(root.location).view||'home';}
- const views={picks:['home','picks'],quotes:['finder'],home:['home']};
+ const views={picks:['home','picks'],quotes:['finder'],home:['home'],performance:['home','picks']};
  function wants(name){return (views[name]||[]).includes(view());}
  function run(name,force=false){
   const task=tasks.get(name);if(!task||(!force&&!wants(name)))return Promise.resolve();

@@ -7,6 +7,24 @@ test.beforeEach(async({page})=>{
  page.on('request',request=>{if(request.url().includes('/api/'))api.push(new URL(request.url()).pathname);});
  await page.route('**/*',route=>route.request().url().startsWith('http://127.0.0.1:4173')?route.continue():route.abort());
 });
+test('single results remain distinct from selections on Home and direct Pronostici',async({page},testInfo)=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Single-first presentation is verified on the candidate');
+ await page.route('**/api/history/performance',route=>route.fulfill({json:{success_pct:64.7,published:124,single:{success_pct:87.5,published:10,verified:8,won:7,lost:1,not_played:1,pending:1}}}));
+ await page.goto('/pronostici');
+ await expect(page.locator('#picks-showcase .hub-performance')).toContainText('87,5%');
+ await expect(page.locator('.hub-performance .bl-results-card')).toHaveCount(1);
+ await expect(page.locator('.hub-performance')).not.toContainText('64,7');
+ await expect(page.locator('.hub-performance')).toContainText('7 centrate su 8 con esito');
+ await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
+ await expect(page.locator('.hub-single-section h2')).toHaveText('Singola del giorno');
+ await expect(page.locator('.hub-picks-archive')).toBeVisible();
+ await expect(page.locator('.hub-featured h2')).toHaveText('Le selezioni del Lab');
+ await expect(page.locator('#picks-showcase > .hub-single-section + .hub-performance + .hub-featured + .hub-picks-archive')).toBeVisible();
+ await page.locator((testInfo.project.name==='mobile'?'.hub-mobile-bar':'.hub-sidebar')+' [data-hub="home"]').click();
+ await expect(page.locator('.hub-performance')).toBeVisible();
+ expect(await page.evaluate(()=>{const selectors=['.hub-performance','.hub-single-section','.hub-games-section','.hub-featured','#hub-nba-updates-panel'];return selectors.every((selector,i)=>!i||document.querySelector(selectors[i-1]).getBoundingClientRect().bottom<=document.querySelector(selector).getBoundingClientRect().top+1)})).toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
 test('home, calendar, match, archive and history preserve data',async({page},testInfo)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
@@ -57,12 +75,12 @@ test('approved coordinated design: player charts, contextual back and responsive
  await page.route('**/api/picks/session**',async route=>{const response=await route.fetch();const data=await response.json();data.preliminary_top5=Array.from({length:5},(_,i)=>({...data.preliminary_single,Giocatore:'Browser Fixture '+(i+1)}));await route.fulfill({response,json:data});});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
- await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(2);
+ await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(3);
  await expect(page.locator('.hub-trust-strip')).toBeVisible();
  await page.locator('.hub-featured-more').click();await expect(page).toHaveURL(/pronostici/);
  await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(5);
  await page.locator((testInfo.project.name==='mobile'?'.hub-mobile-bar':'.hub-sidebar')+' [data-hub="home"]').click();
- await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(2);
+ await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(3);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('home-redesign.png'),fullPage:true});
  await page.locator('.bl-broadcast-action').click();
