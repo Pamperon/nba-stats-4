@@ -13,7 +13,7 @@ const picksPresentation=document.createElement('section');
 picksPresentation.id='picks-showcase';picksPresentation.hidden=true;
 picksPresentation.setAttribute('aria-label','Pronostici del giorno');
 $('#app')?.before(picksPresentation);
-const singleAnalysisPage=document.createElement('section');singleAnalysisPage.id='single-analysis-page';singleAnalysisPage.hidden=true;singleAnalysisPage.setAttribute('aria-label','Analisi della La scelta del Lab');$('#app')?.before(singleAnalysisPage);
+const singleAnalysisPage=document.createElement('section');singleAnalysisPage.id='single-analysis-page';singleAnalysisPage.hidden=true;singleAnalysisPage.setAttribute('aria-label','Analisi della scelta del Lab');$('#app')?.before(singleAnalysisPage);
 let singleAnalysisReturn='picks';
 function loadSingleAnalysis(){
  singleAnalysisPage.innerHTML='<p class="status">Caricamento dell’analisi…</p>';
