@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 import engine
+from memory_cache import bounded_cache
 
 
 class OddsCacheTests(unittest.TestCase):
@@ -46,3 +47,15 @@ class OddsCacheTests(unittest.TestCase):
             payload, source, timestamp = engine._cache_read('fixture')
         self.assertEqual(source, 'memory')
         self.assertEqual(timestamp, 1000000000.0)
+
+    def test_oversized_refresh_never_serves_the_previous_in_memory_quote(self):
+        old = {'price': 1.8}
+        current = {'price': 1.9, 'lines': 'x' * 5000}
+        with patch.object(engine, 'odds_cache', bounded_cache(0.001, 60)):
+            engine._cache_write('fixture', old)
+            engine._cache_write('fixture', current)
+            payload, source, timestamp = engine._cache_read('fixture')
+            self.assertEqual(payload, current)
+            self.assertEqual(source, 'disk')
+            self.assertIsNotNone(timestamp)
+            self.assertNotIn('fixture', engine._odds_cache_fetched_at)

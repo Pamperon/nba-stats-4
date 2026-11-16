@@ -41,12 +41,12 @@ Una risposta oltre budget viene restituita integra senza conservarla in RAM. Il 
 - Test integrazione PostgreSQL isolato: migrazioni, conteggi audience aggregati, registro richieste a pagamento, coordinamento deploy e archivio giornaliero senza duplicati.
 - Database Render disponibile; campioni 12:00–13:30 UTC: 1–3 connessioni, memoria circa 95–111 MiB su 256 MiB. Disco configurato 1 GB, autoscaling disco disattivato, nessuna replica/HA. Non misurata l'occupazione disco effettiva tramite SQL.
 - Non modificati piani, numero istanze o impostazioni a pagamento. Non verificate fatture e soglie di spesa del provider quote.
-- `npm audit`: nessuna vulnerabilità segnalata sulle dipendenze risolte. Le verifiche dipendenze non escludono vulnerabilità sconosciute o problemi applicativi.
+- `npm audit`: nessuna vulnerabilità segnalata sulle dipendenze risolte. Dopo l’aggiornamento Pillow, `pip-audit -r requirements.txt`: zero vulnerabilità segnalate su 29 dipendenze risolte. Le verifiche dipendenze non escludono vulnerabilità sconosciute o problemi applicativi.
 - Analytics: i conteggi possono includere il proprietario; consenso e blocchi del browser influenzano la raccolta. Non acquisiti nuovi report GA4 in questa verifica.
 
 ## Validazione e limiti
 
-- Suite Python offline, rete vietata: 347 test passati, comprese nuove regressioni su memoria e immagini.
+- Suite Python offline, rete vietata: 348 test passati, comprese nuove regressioni su memoria e immagini.
 - Frontend: sintassi e 152 test Node passati.
 - Sicurezza DB e integrazione SQL eseguite in PGlite isolato.
 - Browser desktop/mobile: il relativo workflow della PR esegue Chromium con fixture, confronta budget con baseline. L'esito effettivo è nei check della PR; non è un test di carico sul sito live.

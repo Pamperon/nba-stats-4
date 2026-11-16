@@ -37,5 +37,8 @@ def remember(cache, key, value):
     try:
         cache[key] = value
     except ValueError:
+        # A replacement that exceeds the budget must not leave an older value
+        # under this key: callers must fall back to current persisted evidence.
+        cache.pop(key, None)
         return False
     return True
