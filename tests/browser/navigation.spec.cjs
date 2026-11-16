@@ -16,7 +16,8 @@ test('single results remain distinct from selections on Home and direct Pronosti
  await expect(page.locator('.hub-performance')).not.toContainText('64,7');
  await expect(page.locator('.hub-performance [data-hub=history]')).toHaveCount(0);
  await expect(page.locator('.hub-single-section .bl-broadcast-reason')).toHaveCount(0);
- await expect(page.locator('.hub-single-section h2 .bl-lab-word')).toHaveCSS('color','rgb(255, 150, 56)');
+ await expect(page.locator('.hub-single-section h2 .bl-lab-word')).toHaveCSS('color',await page.locator('.hub-single-section h2').evaluate(el=>getComputedStyle(el).color));
+ await expect(page.locator('.hub-performance h3, .hub-performance .bl-results-footer')).toHaveCount(0);
  await expect(page.locator('.hub-performance')).toContainText('7 centrate su 8 con esito');
  await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
  await expect(page.locator('.hub-single-section h2')).toHaveText('La scelta del Lab');

@@ -469,6 +469,8 @@ test('Home and Pronostici share only single results with explicit settled denomi
  await new Promise(r=>setImmediate(r));
  const results=doc.querySelector('.hub-performance');
  assert.equal(results.querySelectorAll('.bl-results-card').length,1);
+ assert.equal(results.querySelector('h3'),null);
+ assert.equal(results.querySelector('.bl-results-footer'),null);
  assert.match(results.textContent,/87,5%/);
  assert.doesNotMatch(results.textContent,/64,7|Le migliori|affidabilità/i);
  assert.match(results.querySelector('.bl-results-heading').textContent,/7 centrate su 8 con esito · 10 pubblicate/);
