@@ -16,6 +16,7 @@ import scan_tracking
 import audience
 import player_stats
 from cachetools import TTLCache
+from memory_cache import bounded_cache, remember
 import logging
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ if not engine.API_KEY:
 jobs = {}
 lock = threading.Lock()
 headshot_cache = TTLCache(maxsize=80, ttl=86400)
+headshot_decode_slots = threading.BoundedSemaphore(2)
 headshot_lock = threading.RLock()
 
 RENDER_INSTANCE_ID = os.getenv("RENDER_INSTANCE_ID")
@@ -275,7 +277,7 @@ def storage_self_test():
         logger.exception('Database self-test failed')
         raise HTTPException(503, 'Test database fallito; controlla i log Render')
 
-_schedule_scoreboards = TTLCache(maxsize=32, ttl=60)
+_schedule_scoreboards = bounded_cache(4, 60)
 _schedule_scoreboard_lock = threading.RLock()
 
 
@@ -290,7 +292,7 @@ def _schedule_scoreboard(us_day):
         payload = response.json()
         if not isinstance(payload.get('events'), list):
             raise ValueError('Invalid ESPN calendar')
-        _schedule_scoreboards[us_day] = payload
+        remember(_schedule_scoreboards, us_day, payload)
         return payload
 
 
@@ -1344,7 +1346,9 @@ def player_headshot(athlete_id: int):
             raise HTTPException(404, 'Fotografia ESPN non disponibile')
         if len(response.content) > 2000000:
             raise HTTPException(502, 'Immagine troppo grande')
-        with Image.open(io.BytesIO(response.content)) as original:
+        with headshot_decode_slots, Image.open(io.BytesIO(response.content), formats=("PNG",)) as original:
+            if original.width * original.height > 4_000_000:
+                raise HTTPException(502, 'Dimensioni immagine troppo grandi')
             original.thumbnail((180, 180), Image.Resampling.LANCZOS)
             output = io.BytesIO()
             original.convert('RGBA').save(output, format='WEBP', quality=76, method=3)
@@ -1356,7 +1360,7 @@ def player_headshot(athlete_id: int):
     except requests.RequestException:
         logger.warning('ESPN headshot unavailable for athlete %s', athlete_id, exc_info=True)
         raise HTTPException(503, 'Fotografia ESPN temporaneamente non disponibile')
-    except (OSError, ValueError):
+    except (OSError, ValueError, Image.DecompressionBombError):
         logger.warning('Invalid ESPN headshot for athlete %s', athlete_id, exc_info=True)
         raise HTTPException(502, 'Fotografia ESPN non elaborabile')
 

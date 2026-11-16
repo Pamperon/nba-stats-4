@@ -3,7 +3,8 @@ Model is a non-calibrated heuristic, not a verified prediction.
 """
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from cachetools import TTLCache, cached
+from cachetools import cached
+from memory_cache import bounded_cache, remember
 import os, re, requests, pandas as pd
 import json, time, threading
 from pathlib import Path
@@ -21,12 +22,23 @@ ESPN_SITE = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba"
 ESPN_WEB = "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba"
 # Fresh odds for each scheduled window; limit repeat requests within a window.
 ODDS_CACHE_TTL_SECONDS = 3 * 3600
-odds_cache = TTLCache(maxsize=200, ttl=ODDS_CACHE_TTL_SECONDS)
+odds_cache = bounded_cache(16, ODDS_CACHE_TTL_SECONDS)
 _odds_cache_fetched_at = {}
 # Store only usable responses; never cache a temporary empty or suspended feed.
 # Optional local disk cache survives application process restarts when storage persists.
 _CACHE_LOCK = threading.RLock()
 _CACHE_DIR = Path(os.getenv("NBA_ODDS_CACHE_DIR", "/tmp/nba_stats_4_odds"))
+
+def _remember_odds(fid, odds, fetched_at):
+    # Expiration/eviction must release timestamp metadata as well as payloads.
+    odds_cache.expire()
+    if remember(odds_cache, fid, odds):
+        _odds_cache_fetched_at[str(fid)] = fetched_at
+    retained = {str(key) for key in odds_cache}
+    for key in list(_odds_cache_fetched_at):
+        if key not in retained:
+            _odds_cache_fetched_at.pop(key, None)
+
 
 def _cache_read(fid):
     with _CACHE_LOCK:
@@ -43,8 +55,7 @@ def _cache_read(fid):
                 return None, "none", None
             obj = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(obj, dict):
-                odds_cache[fid] = obj
-                _odds_cache_fetched_at[str(fid)] = path.stat().st_mtime
+                _remember_odds(fid, obj, path.stat().st_mtime)
                 return obj, "disk", path.stat().st_mtime
         except (OSError, ValueError, TypeError):
             pass
@@ -52,8 +63,7 @@ def _cache_read(fid):
 
 def _cache_write(fid, odds):
     with _CACHE_LOCK:
-        odds_cache[fid] = odds
-        _odds_cache_fetched_at[str(fid)] = time.time()
+        _remember_odds(fid, odds, time.time())
         try:
             _CACHE_DIR.mkdir(parents=True, exist_ok=True)
             path = _CACHE_DIR / (re.sub(r"[^a-zA-Z0-9_-]", "", str(fid)) + ".json")
@@ -368,12 +378,12 @@ def espn_player_key(odds_name):
     key = normalized_name(odds_name)
     return normalized_name(PLAYER_NAME_ALIASES.get(key, key))
 
-@cached(TTLCache(maxsize=512,ttl=21600))
+@cached(bounded_cache(2, 21600), lock=threading.RLock())
 def espn_teams():
     data = espn_json(f"{ESPN_SITE}/teams", limit=50)
     return (data.get("sports") or [{}])[0].get("leagues", [{}])[0].get("teams", [])
 
-@cached(TTLCache(maxsize=512,ttl=21600))
+@cached(bounded_cache(6, 21600), lock=threading.RLock())
 def espn_roster(team_id, end_year=None):
     # ESPN's current roster does not need a season parameter. Some historical
     # season queries return HTTP 200 with an empty athletes list.
@@ -459,7 +469,7 @@ def _compact_espn_event(event):
     return result
 
 
-@cached(TTLCache(maxsize=128, ttl=300), lock=threading.RLock())
+@cached(bounded_cache(4, 300), lock=threading.RLock())
 def espn_season_schedule_payloads(team_id, end_year):
     """Share compact schedule evidence, without retaining full ESPN responses."""
     from concurrent.futures import ThreadPoolExecutor
@@ -494,7 +504,7 @@ def espn_event_completed(event):
     return False if False in states else True if True in states else None
 
 
-@cached(TTLCache(maxsize=1024, ttl=300), lock=threading.RLock())
+@cached(bounded_cache(2, 300), lock=threading.RLock())
 def espn_event_summary(event_id):
     # Full summaries can contain several MB of box scores, plays and media.
     # Caching hundreds of them exhausted Render Free's 512 MB during a scan.
@@ -547,7 +557,7 @@ def completed_game_log(games, team_id, season):
     return result
 
 
-@cached(TTLCache(maxsize=512,ttl=21600))
+@cached(bounded_cache(2, 21600), lock=threading.RLock())
 def espn_team_schedule(team_id, end_year, season_type=2):
     """One ESPN schedule request supplies game dates for an entire season."""
     payload = espn_json(f"{ESPN_SITE}/teams/{team_id}/schedule", season=end_year, seasontype=season_type)
@@ -677,7 +687,7 @@ def _espn_competition_type(event):
                 return 3
     return None
 
-@cached(TTLCache(maxsize=512,ttl=21600))
+@cached(bounded_cache(2, 21600), lock=threading.RLock())
 def espn_schedule_competition_ids(team_id, end_year):
     """Resolve event types from ESPN schedules; ignore season-type query if ESPN ignores it."""
     sources = {}
@@ -700,14 +710,14 @@ def espn_schedule_competition_ids(team_id, end_year):
             result[event_id] = next(iter(record["requests"]))
     return result
 
-@cached(TTLCache(maxsize=512,ttl=21600))
+@cached(bounded_cache(0.25, 21600), lock=threading.RLock())
 def espn_event_competition_type(event_id):
     """Fallback: one free ESPN event summary when schedule lacks type metadata."""
     payload = espn_event_summary(event_id)
     header = payload.get("header") or {}
     return _espn_competition_type(header) or _espn_competition_type(payload.get("gameInfo"))
 
-@cached(TTLCache(maxsize=512,ttl=300))
+@cached(bounded_cache(10, 300), lock=threading.RLock())
 def espn_classified_game_log(athlete_id, season, team_id):
     """Classify using ESPN game-log groups first, then independent evidence.
 
