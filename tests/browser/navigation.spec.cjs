@@ -138,10 +138,10 @@ test('NBA compact fixtures, Live marker, standings and page alignment',async({pa
  await page.route('**/api/nba/fixtures**',route=>route.fulfill({json:{games}}));
  await page.route('**/api/nba/standings',route=>route.fulfill({json:{conferences:[{name:'Eastern Conference',teams:[{id:'2',name:'Boston Celtics',rank:1,wins:10,losses:2,win_percent:10/12}]},{name:'Western Conference',teams:[{id:'7',name:'Denver Nuggets',rank:1,wins:9,losses:3,win_percent:.75}]}]}}));
  await page.goto('/pronostici');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
- const picksTop=await page.locator('.hub-single-section').evaluate(el=>el.getBoundingClientRect().top);
+ const picksTop=await page.locator('.hub-single-section').evaluate(el=>el.getBoundingClientRect().top+window.scrollY);
  await page.goto('/nba?data=2026-11-05');
  await expect(page.locator('.hub-calendar-match')).toHaveCount(4);
- const calendarTop=await page.locator('#hub-calendar').evaluate(el=>el.getBoundingClientRect().top);
+ const calendarTop=await page.locator('#hub-calendar').evaluate(el=>el.getBoundingClientRect().top+window.scrollY);
  expect(Math.abs(calendarTop-picksTop)).toBeLessThanOrEqual(2);
  await expect(page.locator('.hub-calendar-odds')).toHaveCount(0);
  await expect(page.locator('.hub-calendar-state')).toHaveCount(1);
@@ -156,7 +156,7 @@ test('NBA compact fixtures, Live marker, standings and page alignment',async({pa
  await page.locator('[data-nba-tab=standings]').click();
  await expect(page.locator('.nba-conference')).toHaveCount(2);
  await expect(page.locator('.nba-standings').first()).toContainText('Boston Celtics');
- expect(await page.locator('#hub-calendar').evaluate(el=>el.getBoundingClientRect().top)).toBe(calendarTop);
+ expect(await page.locator('#hub-calendar').evaluate(el=>el.getBoundingClientRect().top+window.scrollY)).toBe(calendarTop);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:'test-results/nba-standings-'+page.viewportSize().width+'.png',fullPage:true});
 });
