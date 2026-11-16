@@ -234,15 +234,15 @@ async function loadModelPerformance(){
   if(!response.ok)throw new Error('Performance unavailable');
   const stats=await response.json();
   body.setAttribute('aria-busy','false');
-  const groups=[['La scelta del <span class="bl-lab-word">Lab</span>',stats.single]];
+  const groups=[stats.single];
   const number=value=>Number.isFinite(value)?value.toLocaleString('it-IT'):'—';
-  body.innerHTML='<div class="bl-results-grid">'+groups.map(([label,group])=>{
+  body.innerHTML='<div class="bl-results-grid">'+groups.map(group=>{
    const rate=Number.isFinite(group?.success_pct)?group.success_pct:null;
    const sweep=Math.min(100,Math.max(0,rate??0));
    return '<article class="bl-results-card">'+
     '<div class="bl-results-ring" style="--success:'+sweep+'%"><strong>'+
     (rate===null?'—':number(rate)+'%')+'</strong></div>'+
-    '<div class="bl-results-heading"><h3>'+label+'</h3><p><strong>'+number(group?.won)+'</strong> centrate su <strong>'+number(group?.verified)+'</strong> con esito · '+number(group?.published)+' pubblicate</p></div>'+
+    '<div class="bl-results-heading"><p><strong>'+number(group?.won)+'</strong> centrate su <strong>'+number(group?.verified)+'</strong> con esito · '+number(group?.published)+' pubblicate</p></div>'+
     '<dl><div data-outcome="won"><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
     '<div data-outcome="lost"><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
     '<div data-outcome="not-played"><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+
