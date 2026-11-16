@@ -16,12 +16,12 @@ PAGES = {
     '/nba': ('NBA: calendario, risultati e classifiche | Basket Lab', 'Calendario e classifiche NBA, risultati delle partite e schede delle squadre con rose e statistiche.'),
     '/nba/classifica': ('Classifica NBA: Eastern e Western Conference | Basket Lab', 'Classifiche NBA aggiornate: vittorie, sconfitte, percentuali e schede di tutte le squadre.'),
     '/partite': ('Calendario e risultati NBA | Basket Lab', 'Consulta il calendario NBA, gli orari italiani, i risultati e le analisi delle partite con i dati delle squadre e dei giocatori.'),
-    '/pronostici': ('Pronostici NBA e Scelte del Lab | Basket Lab', 'Le Scelte del Lab e la Singola del giorno: analisi delle statistiche NBA, probabilità stimate e selezioni ufficializzate alle 18.'),
+    '/pronostici': ('Pronostici NBA e La scelta del Lab | Basket Lab', 'La scelta del Lab e Le altre analisi: analisi delle statistiche NBA, probabilità stimate e selezioni ufficializzate alle 18.'),
     '/analisi-quote': ('Quote giocatori NBA: punti, rimbalzi e assist | Basket Lab', 'Esplora linee e quote dei giocatori NBA per punti, rimbalzi e assist, con filtri per partita, giocatore e mercato.'),
     '/archivio': ('Archivio esiti dei pronostici NBA | Basket Lab', 'Consulta le selezioni NBA pubblicate da Basket Lab e i loro esiti verificati sui risultati delle partite.'),
     '/notizie': ('Notizie NBA e basket in italiano | Basket Lab', 'Le notizie NBA e di basket in italiano: aggiornamenti, titoli e collegamenti agli articoli delle fonti originali.'),
     '/come-funziona': ('Come funziona il modello statistico NBA | Basket Lab', 'Scopri il metodo Basket Lab: dati utilizzati, stime di probabilità, criteri di selezione, pubblicazione e verifica degli esiti.'),
-    '/analisi-singola': ('Analisi della Singola del giorno NBA | Basket Lab', 'Approfondisci la Singola del giorno con statistiche del giocatore, grafici delle prestazioni e motivazioni della selezione.'),
+    '/analisi-singola': ('Analisi della scelta del Lab NBA | Basket Lab', 'Approfondisci La scelta del Lab con statistiche del giocatore, grafici delle prestazioni e motivazioni della selezione.'),
 }
 NAV_PATHS = dict(home='/', picks='/pronostici', calendar='/nba', finder='/analisi-quote', stats='/giocatori', history='/archivio', about='/come-funziona', news='/notizie', single='/analisi-singola')
 
@@ -159,7 +159,7 @@ def initial_content(path, players):
     elif path == '/pronostici':
         body += '<p>Le selezioni sono in anteprima prima delle 18 e diventano ufficiali alla pubblicazione serale. Le probabilità sono stime del modello, non garanzie di risultato.</p><p>' + link('/archivio', 'Verifica gli esiti delle selezioni precedenti') + ' · ' + link('/come-funziona', 'Scopri il metodo del Lab') + '</p>'
     elif path == '/archivio':
-        body += '<p>Consulta le selezioni per giornata e consulta la singola del giorno e le selezioni del Lab. Gli esiti distinguono le scelte centrate, non centrate, i giocatori che non hanno giocato e i risultati ancora da verificare.</p>'
+        body += '<p>Consulta per giornata La scelta del Lab e Le altre analisi. Gli esiti distinguono le scelte centrate, non centrate, i giocatori che non hanno giocato e i risultati ancora da verificare.</p>'
     elif path == '/come-funziona':
         body += '<p>Basket Lab confronta le prestazioni NBA attraverso punti, rimbalzi, assist e minuti giocati. Le frequenze storiche descrivono ciò che è accaduto nel campione selezionato; le probabilità del modello sono stime e possono differire dai risultati futuri.</p>'
     body += '<nav aria-label="Approfondimenti NBA">' + link('/giocatori', 'Statistiche giocatori') + ' · ' + link('/nba/classifica', 'Squadre e classifica') + ' · ' + link('/come-funziona', 'Come funziona Basket Lab') + '</nav>'
