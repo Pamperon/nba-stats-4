@@ -473,7 +473,8 @@ test('Home and Pronostici share only single results with explicit settled denomi
  assert.equal(results.querySelector('.bl-results-footer'),null);
  assert.match(results.textContent,/87,5%/);
  assert.doesNotMatch(results.textContent,/64,7|Le migliori|affidabilità/i);
- assert.match(results.querySelector('.bl-results-heading').textContent,/7 centrate su 8 con esito · 10 pubblicate/);
+ assert.equal(results.querySelector('.bl-results-heading'),null);
+ assert.match(results.querySelector('h2').textContent,/Rendimento del Lab/);
  assert.equal(results.querySelector('[data-outcome=not-played] dd').textContent,'1');
  assert.equal(results.querySelector('[data-outcome=pending] dd').textContent,'1');
  const single=doc.querySelector('.hub-single-section'),games=doc.querySelector('.hub-games-section'),choices=doc.querySelector('.hub-featured'),news=doc.querySelector('#hub-nba-updates-panel');
