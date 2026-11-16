@@ -13,7 +13,7 @@ const picksPresentation=document.createElement('section');
 picksPresentation.id='picks-showcase';picksPresentation.hidden=true;
 picksPresentation.setAttribute('aria-label','Pronostici del giorno');
 $('#app')?.before(picksPresentation);
-const singleAnalysisPage=document.createElement('section');singleAnalysisPage.id='single-analysis-page';singleAnalysisPage.hidden=true;singleAnalysisPage.setAttribute('aria-label','Analisi della Scelta del giorno');$('#app')?.before(singleAnalysisPage);
+const singleAnalysisPage=document.createElement('section');singleAnalysisPage.id='single-analysis-page';singleAnalysisPage.hidden=true;singleAnalysisPage.setAttribute('aria-label','Analisi della scelta del Lab');$('#app')?.before(singleAnalysisPage);
 let singleAnalysisReturn='picks';
 function loadSingleAnalysis(){
  singleAnalysisPage.innerHTML='<p class="status">Caricamento dell’analisi…</p>';
@@ -188,7 +188,7 @@ function display(){
  landing.hidden=!home||extra;tiles.hidden=!home||extra;
  if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
  if(featured)featured.hidden=!(home||picksView)||extra;
- if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra||(home&&!$('#picks .pick-group[aria-label="Scelta del giorno"] .pick-selection'));
+ if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra||(home&&!$('#picks .pick-group[aria-label="La scelta del Lab"] .pick-selection'));
  if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;
  if(nbaUpdatesPanel)nbaUpdatesPanel.hidden=!home||extra;
  if(performance)performance.hidden=!(home||picksView)||extra;if(methodLink)methodLink.hidden=!home||extra;
@@ -234,7 +234,7 @@ async function loadModelPerformance(){
   if(!response.ok)throw new Error('Performance unavailable');
   const stats=await response.json();
   body.setAttribute('aria-busy','false');
-  const groups=[['Singola del giorno',stats.single]];
+  const groups=[['La scelta del <span class="bl-lab-word">Lab</span>',stats.single]];
   const number=value=>Number.isFinite(value)?value.toLocaleString('it-IT'):'—';
   body.innerHTML='<div class="bl-results-grid">'+groups.map(([label,group])=>{
    const rate=Number.isFinite(group?.success_pct)?group.success_pct:null;
@@ -262,7 +262,7 @@ function hubCardPhoto(source){const image=source.querySelector('.pick-avatar img
 function featuredPicks(){
  const list=$('#hub-featured-list'),picks=$('#picks');if(!list||!picks)return;
  const heading=featured?.querySelector('h2');
- if(heading)heading.textContent='Le selezioni del Lab';
+ if(heading)heading.textContent='Le altre analisi';
  const badge=$('#hub-choices-state'),publication=picks.querySelector('#pick-giorno')?.dataset.publicationState;
  if(badge){badge.dataset.state=publication||'waiting';badge.textContent=publication==='official'?'Ufficiali':publication==='preview'?'Ufficialità alle 18:00':'In attesa';}
  const sources=[...picks.querySelectorAll('#pick-giorno .pick-group-items > .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-group-items > .pick-selection')].slice(0,10);
@@ -818,7 +818,7 @@ calendarWeekStrip?.addEventListener('touchend',event=>{if(!calendarTouchStart)re
 function emptyPicksCard(){
  const card=document.createElement('div');card.className='bl-picks-empty is-partial';
  const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',hour:'2-digit',hourCycle:'h23'}).format(new Date()));
- card.innerHTML='<h3>Scelta del giorno</h3><p>Nessuna scelta del giorno disponibile per oggi. '+(hour<18?'Attendi le 18:00 per la pubblicazione ufficiale.':'Al momento nessuna selezione soddisfa i criteri del modello.')+'</p>';
+ card.innerHTML='<h3>La scelta del <span class="bl-lab-word">Lab</span></h3><p>Nessuna scelta del giorno disponibile per oggi. '+(hour<18?'Attendi le 18:00 per la pubblicazione ufficiale.':'Al momento nessuna selezione soddisfa i criteri del modello.')+'</p>';
  return card;
 }
 
@@ -827,7 +827,7 @@ function refreshShowcase(){
  const picks=$('#picks'),single=$('#hub-single-content'),state=$('#hub-single-state'),games=$('#hub-games-showcase');
  if(!picks)return;
  if(single){
-  const group=picks.querySelector('.pick-group[aria-label="Scelta del giorno"]');
+  const group=picks.querySelector('.pick-group[aria-label="La scelta del Lab"]');
   const pick=group?.querySelector('.pick-selection');
   const hasChoices=!!picks.querySelector('#pick-giorno .pick-selection, .pick-group-daily[aria-label="Analisi preliminari"] .pick-selection');
   singleShowcase?.classList.toggle('is-empty',!pick);
@@ -882,7 +882,6 @@ function refreshShowcase(){
    const probabilityValue=hubCardMetric(pick,/stima|probabilit/i);const percentage=Number(probabilityValue.replace('%','').replace(',','.'));
    if(Number.isFinite(percentage)){const target=metrics.querySelector('.bl-metric-green');if(target){const bar=document.createElement('div');bar.className='bl-classic-prob-track';const fill=document.createElement('span');fill.style.width=Math.max(0,Math.min(100,percentage))+'%';bar.append(fill);target.append(bar)}}
    broadcast.append(hero);if(teams.length)broadcast.append(matchup);broadcast.append(market,metrics);
-   if(group?.dataset.selectionReason){const reason=document.createElement('p');reason.className='bl-broadcast-reason';reason.textContent=group.dataset.selectionReason;broadcast.append(reason);}
    single.append(broadcast);
    const action=document.createElement('button');action.type='button';action.className='bl-broadcast-action';action.textContent='Scopri l’analisi →';action.addEventListener('click',openSingleAnalysis);single.append(action);
   }else{single.append(emptyPicksCard())}

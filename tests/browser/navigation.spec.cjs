@@ -14,11 +14,14 @@ test('single results remain distinct from selections on Home and direct Pronosti
  await expect(page.locator('#picks-showcase .hub-performance')).toContainText('87,5%');
  await expect(page.locator('.hub-performance .bl-results-card')).toHaveCount(1);
  await expect(page.locator('.hub-performance')).not.toContainText('64,7');
+ await expect(page.locator('.hub-performance [data-hub=history]')).toHaveCount(0);
+ await expect(page.locator('.hub-single-section .bl-broadcast-reason')).toHaveCount(0);
+ await expect(page.locator('.hub-single-section h2 .bl-lab-word')).toHaveCSS('color','rgb(255, 150, 56)');
  await expect(page.locator('.hub-performance')).toContainText('7 centrate su 8 con esito');
  await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
- await expect(page.locator('.hub-single-section h2')).toHaveText('Singola del giorno');
+ await expect(page.locator('.hub-single-section h2')).toHaveText('La scelta del Lab');
  await expect(page.locator('.hub-picks-archive')).toBeVisible();
- await expect(page.locator('.hub-featured h2')).toHaveText('Le selezioni del Lab');
+ await expect(page.locator('.hub-featured h2')).toHaveText('Le altre analisi');
  await expect(page.locator('#picks-showcase > .hub-single-section + .hub-performance + .hub-featured + .hub-picks-archive')).toBeVisible();
  await page.locator((testInfo.project.name==='mobile'?'.hub-mobile-bar':'.hub-sidebar')+' [data-hub="home"]').click();
  await expect(page.locator('.hub-performance')).toBeVisible();
@@ -87,6 +90,8 @@ test('approved coordinated design: player charts, contextual back and responsive
  await expect(page).toHaveURL(/analisi-singola/);
  await expect(page.locator('#single-analysis-page')).toContainText('Browser Fixture');
  await expect(page.locator('.sa-chart-scroll svg')).toBeVisible();
+ await expect(page.locator('.sa-heading h1, .sa-heading .sa-eyebrow')).toHaveCount(0);
+ await expect(page.locator('#single-analysis-page > .sa-heading:first-child .bl-publication-badge')).toBeVisible();
  await page.locator('.sa-back').click();await expect(page).toHaveURL('http://127.0.0.1:4173/');
  await page.locator('.hub-premium-fixture').click();await expect(page).toHaveURL(/analisi-partita\?data=2026-11-05/);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
  await page.screenshot({path:testInfo.outputPath('match-redesign.png'),fullPage:true});

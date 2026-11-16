@@ -411,20 +411,20 @@ function render(){
   const pendingPublication=isFixed && pickSource.official_top5_pending;
   $('picks').dataset.emptyState=pendingPublication?((pickSource.quote_count??(pickSource.results||[]).length)>0?'waiting-data':'waiting-odds'):'no-selection';
   const targetDay=String(pickSource.date||$('date')?.value||'');
-  const publicationNotice='Le selezioni del Lab del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
+  const publicationNotice='Le altre analisi del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' saranno pubblicate alle 18:00 (ora italiana).';
   const featured=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,10):chosen.slice(0,10),remaining=pendingPublication?[]:chosen.slice(10);
   const preliminary=pendingPublication&&Array.isArray(pickSource.preliminary_top5)?pickSource.preliminary_top5.slice(0,10):[];
   const preliminaryHtml=false
     ?'<section class="panel pick-group pick-group-daily" aria-label="Analisi preliminari"><div class="pick-group-heading"><h2>Analisi preliminari</h2></div>'+
-      '<p>In valutazione · aggiornate all’ultima scansione. Possono cambiare e non sono Le selezioni del Lab ufficiali.</p>'+
+      '<p>In valutazione · aggiornate all’ultima scansione. Possono cambiare e non sono Le altre analisi ufficiali.</p>'+
       (preliminary.length?'<div class="pick-group-items">'+preliminary.map(pickCard).join('')+'</div>':'<p>Nessuna analisi preliminare idonea disponibile al momento.</p>')+'</section>'
     :'';
   const singlePick=pendingPublication?pickSource.preliminary_single:pickSource.official_single;
-  const singleHeading='Scelta del giorno';
+  const singleHeading='La scelta del <span class="bl-lab-word">Lab</span>';
   const singleState=isFixed&&pickSource.official_top5_pending===false&&singlePick?'official':pendingPublication?'preview':'waiting';
   const singleLabel={official:'Ufficiale',preview:'Ufficialità alle 18:00',waiting:'In attesa'}[singleState];
   const publicationLabel='Anteprima · ufficiale il '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+' alle 18:00';
-  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="Scelta del giorno" data-publication-state="'+singleState+'" data-publication-label="'+esc(publicationLabel)+'" data-selection-reason="'+esc(singlePick?.Nota||'')+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2><span class="bl-publication-badge" data-state="'+singleState+'">'+singleLabel+'</span></div>'+
+  const singleSection='<section class="panel pick-group pick-group-daily" aria-label="La scelta del Lab" data-publication-state="'+singleState+'" data-publication-label="'+esc(publicationLabel)+'"><div class="pick-group-heading"><h2>'+singleHeading+'</h2><span class="bl-publication-badge" data-state="'+singleState+'">'+singleLabel+'</span></div>'+
     (pendingPublication?'<p>Analisi provvisoria: può cambiare fino alle 18:00 del '+targetDay.slice(8,10)+'/'+targetDay.slice(5,7)+'.</p>':'<p>Selezione ufficiale fissata alle 18:00, se idonea.</p>')+
     (singlePick?'<div class="pick-group-items">'+pickCard(singlePick)+'</div>':'<p>Nessuna scelta idonea disponibile per questa giornata.</p>')+'</section>';
   pending.push(singlePick?[singlePick]:[]);
@@ -432,7 +432,7 @@ function render(){
 
   const choicesState=isFixed&&pickSource.official_top5_pending===false&&chosen.length?'official':pendingPublication?'preview':'waiting';
   const choicesLabel={official:'Ufficiali',preview:'Ufficialità alle 18:00',waiting:'In attesa'}[choicesState];
-  $('picks').innerHTML=singleSection+'<section id="pick-giorno" data-publication-state="'+choicesState+'" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le selezioni del Lab</h2><span class="bl-publication-badge" data-state="'+choicesState+'">'+choicesLabel+'</span></div>'+
+  $('picks').innerHTML=singleSection+'<section id="pick-giorno" data-publication-state="'+choicesState+'" class="panel pick-group pick-group-daily" tabindex="-1"><div class="pick-group-heading"><h2>Le altre analisi</h2><span class="bl-publication-badge" data-state="'+choicesState+'">'+choicesLabel+'</span></div>'+
    (featured.length?'<p>'+(pendingPublication?'In aggiornamento: le selezioni possono cambiare fino alle 18:00.':'Le '+featured.length+' selezioni ufficiali sono bloccate e non cambiano dopo la pubblicazione.')+'</p><div class="pick-group-items">'+featured.map(pickCard).join('')+'</div>'+
    (remaining.length?'<details id="pick-more-lines"><summary>Mostra tutte le altre '+remaining.length+' previsioni idonee</summary><div class="pick-group-items">'+remaining.map(pickCard).join('')+'</div></details>':''):
    (pendingPublication?'<p>'+publicationNotice+' Le analisi restano consultabili nella sezione Statistiche.</p>':'<p>Nessuna linea supera i criteri di qualità per questa giornata.</p>'))+'</section>'+preliminaryHtml;

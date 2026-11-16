@@ -182,7 +182,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  const singlePanel=doc.querySelector('.hub-single-section'),topPanel=doc.querySelector('.hub-featured');
  const homeParent=singlePanel.parentElement;
  const source=(name)=>'<article class="pick-selection"><div class="pick-profile"><div class="pick-avatar"><span>NBA</span></div><button class="pick-player-link">'+name+'</button></div><div class="pick-market">OVER 4.5 REB</div><div class="pick-values"><div><small>QUOTA</small><strong>1,80</strong></div><div><small>STIMA DEL MODELLO</small><strong>75%</strong></div></div><button class="pick-stats-button">Statistiche</button></article>';
- doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Scelta del giorno"><h2>Scelta del giorno</h2><div class="pick-group-items">'+source('Single Player')+'</div></section><section id="pick-giorno"><div class="pick-group-items">'+source('Top Player')+'</div></section>';
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="La scelta del Lab"><h2>La scelta del Lab</h2><div class="pick-group-items">'+source('Single Player')+'</div></section><section id="pick-giorno"><div class="pick-group-items">'+source('Top Player')+'</div></section>';
  let singleClicks=0,topClicks=0;
  const actions=doc.querySelectorAll('#picks .pick-stats-button');
  actions[0].onclick=()=>singleClicks++;actions[1].onclick=()=>topClicks++;
@@ -219,7 +219,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
 
 test('an empty Top 5 does not repeat the Single as a ranked analysis',async()=>{
  const {doc}=setup();
- doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Scelta del giorno"><article class="pick-selection"><button class="pick-player-link">Only Single</button></article></section><section id="pick-giorno"><div class="pick-group-items"></div></section>';
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="La scelta del Lab"><article class="pick-selection"><button class="pick-player-link">Only Single</button></article></section><section id="pick-giorno"><div class="pick-group-items"></div></section>';
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(doc.querySelectorAll('#hub-featured-list .bl-datalab-card').length,0);
  assert.match(doc.querySelector('#hub-featured-list').textContent,/Nessuna analisi/);
@@ -408,7 +408,7 @@ test('venue icons appear only in calendar cards and not in home or daily picks',
  await new Promise(r=>setImmediate(r));
  window.fetch=async()=>({ok:true,json:async()=>({games:[{away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,start_at:new Date(Date.now()+3600000).toISOString()}]})});
  const team=name=>'<span class="fixture-team"><span class="fixture-team-name"><span class="fixture-name-full">'+name+'</span></span></span>';
- doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="Scelta del giorno"><article class="pick-selection"><button class="pick-player-link">Test Player</button><div class="pick-profile-info"><p>Atlanta Hawks</p></div><div class="pick-fixture" data-match="Atlanta Hawks - Boston Celtics">'+team('Atlanta Hawks')+team('Boston Celtics')+'</div></article></section>';
+ doc.querySelector('#picks').innerHTML='<section class="pick-group" aria-label="La scelta del Lab"><article class="pick-selection"><button class="pick-player-link">Test Player</button><div class="pick-profile-info"><p>Atlanta Hawks</p></div><div class="pick-fixture" data-match="Atlanta Hawks - Boston Celtics">'+team('Atlanta Hawks')+team('Boston Celtics')+'</div></article></section>';
  await new Promise(r=>setImmediate(r));
  const sides=doc.querySelectorAll('.bl-game-team');
  assert.equal(sides.length,2);
@@ -424,10 +424,10 @@ test('venue icons appear only in calendar cards and not in home or daily picks',
 });
 
 test('missing single stays hidden on Home and explains availability in Pronostici',async()=>{
- const {doc}=setup();const picks=doc.querySelector('#picks');picks.innerHTML='<section class="pick-group" aria-label="Scelta del giorno"></section><section id="pick-giorno"></section>';
+ const {doc}=setup();const picks=doc.querySelector('#picks');picks.innerHTML='<section class="pick-group" aria-label="La scelta del Lab"></section><section id="pick-giorno"></section>';
  await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('.hub-single-section').hidden,true);
  doc.querySelector('.hub-sidebar [data-hub=picks]').click();assert.equal(doc.querySelector('.hub-single-section').hidden,false);assert.match(doc.querySelector('.bl-picks-empty').textContent,/Nessuna scelta del giorno disponibile per oggi/);
- picks.innerHTML='<section class="pick-group" aria-label="Scelta del giorno"><article class="pick-selection"><button class="pick-player-link">Test Player</button></article></section>';
+ picks.innerHTML='<section class="pick-group" aria-label="La scelta del Lab"><article class="pick-selection"><button class="pick-player-link">Test Player</button></article></section>';
  await new Promise(r=>setImmediate(r));doc.querySelector('.hub-mobile-bar [data-hub=home]').click();assert.equal(doc.querySelector('.hub-single-section').hidden,false);
  picks.innerHTML='';await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('.hub-single-section').hidden,true);
 });
@@ -485,7 +485,8 @@ test('Home and Pronostici share only single results with explicit settled denomi
  assert.ok(before(results,single)&&before(games,choices));
  assert.equal(doc.querySelectorAll('.hub-performance').length,1);
  assert.equal(calls,1);
- results.querySelector('[data-hub=history]').click();
+ assert.equal(results.querySelector('[data-hub=history]'),null);
+ doc.querySelector('.hub-sidebar [data-hub=history]').click();
  assert.equal(doc.body.dataset.hubView,'history');
  assert.equal(results.hidden,true);
 });

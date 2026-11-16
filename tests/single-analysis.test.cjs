@@ -7,6 +7,7 @@ test('one analysis container replaces the previous player and keeps saved prices
  const dom=new JSDOM('<main id="analysis"></main>',{runScripts:'outside-only'});try{
   dom.window.eval(script);const panel=dom.window.document.querySelector('main');
   dom.window.BasketLabSingleAnalysis.render(panel,single('James, LeBron'),()=>{});
+  assert.equal(panel.firstElementChild.className,'sa-heading');assert.equal(panel.querySelector('.sa-heading h1'),null);assert.equal(panel.querySelector('.sa-heading .sa-eyebrow'),null);assert.equal(panel.querySelector('.sa-heading').textContent,'Conferma alle 18:00');assert.equal(panel.lastElementChild.classList.contains('sa-back'),true);assert.equal(panel.querySelector('.bl-lab-word').textContent,'Lab');
   assert.match(panel.textContent,/LeBron James/);assert.match(panel.textContent,/1,9/);assert.ok(panel.querySelector('svg'));assert.match(panel.querySelector('.sa-history-summary').textContent,/1\/2/);
   const next=single('Castle, Stephon');next.state='official';dom.window.BasketLabSingleAnalysis.render(panel,next,()=>{});
   assert.doesNotMatch(panel.textContent,/LeBron/);assert.match(panel.textContent,/Stephon Castle/);assert.equal(panel.querySelector('.bl-publication-badge').textContent,'Ufficiale');
