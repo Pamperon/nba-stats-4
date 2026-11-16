@@ -185,7 +185,7 @@ function display(){
  const explorer=$('#players-explorer');if(explorer)explorer.hidden=!playerDirectory;
  document.body.classList.toggle('player-personal-view',view==='stats'&&!playerDirectory);
  const shell=$('#app');if(shell)shell.hidden=extra||calendar||picksView||newsView||view==='single'||!!playerDirectory;
- landing.hidden=!home||extra;tiles.hidden=!home||extra;
+ landing.hidden=!home||extra;tiles.hidden=!home||extra;const homeBanner=landing.closest('.hub-home-banner');if(homeBanner)homeBanner.hidden=!home||extra;
  if(metrics)metrics.hidden=!home||extra;if(trust)trust.hidden=!home||extra;
  if(featured)featured.hidden=!(home||picksView)||extra;
  if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra||(home&&!$('#picks .pick-group[aria-label="La scelta del Lab"] .pick-selection'));
@@ -642,58 +642,47 @@ function renderCalendar(){
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
  if(isEspnCalendar){
-  // Paint the fixture list as soon as ESPN responds; quote coverage is an independent enhancement.
-  const coveragePromise=fetch('/api/nba/quote-coverage?date='+encodeURIComponent(requestedDate))
-   .then(r=>r.ok?r.json():{fixtures:[]}).catch(()=>({fixtures:[]}));
+  // The calendar needs ESPN fixtures only; quote badges have been removed.
   fetchNbaFixtures(requestedDate).then(fixtures=>{
-   const coverage={fixtures:[]};
 
 
    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
-   const quoted=new Set((coverage.fixtures||[]).map(fixtureKey));
    games.replaceChildren();
    if(summary){const count=summary.querySelector('span');if(count)count.textContent=fixtures.length+' '+(fixtures.length===1?'partita':'partite')}
    if(!fixtures.length){games.textContent='Nessuna partita NBA in programma per questa data.';return}
    for(const [gameIndex,game] of fixtures.entries()){
-    const match=fixtureName(game),hasOdds=quoted.has(fixtureKey(match));
-    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.fixtureKey=fixtureKey(match);row.dataset.theme=String(gameIndex%4);fixtureTeamGradient(row,game.away,game.home);
-    const names=[game.away,game.home];
-    names.forEach((team,i)=>{
-     if(i){const vs=document.createElement('span');vs.className='hub-calendar-versus';vs.textContent='VS';row.append(vs)}
+    const match=fixtureName(game);
+    const finished=game.state==='post'||(!game.upcoming&&/final|terminat|conclus|finished|completed/i.test(String(game.status||'')));
+    const live=!finished&&game.state==='in';
+    const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.fixtureKey=fixtureKey(match);row.dataset.theme=String(gameIndex%4);row.dataset.state=finished?'post':live?'in':'pre';fixtureTeamGradient(row,game.away,game.home);
+    [game.away,game.home].forEach((team,i)=>{
      const side=document.createElement('span');side.className='hub-calendar-team';
      const code=matchTeamCodes[team];
      if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';side.append(img)}
-     const label=document.createElement('span');label.textContent=team||'NBA';if(i===0)label.prepend(venueIcon(false));else label.append(venueIcon(true));side.append(label);row.append(side)
+     const label=document.createElement('span');label.textContent=team||'NBA';if(i===0)label.prepend(venueIcon(false));else label.append(venueIcon(true));side.append(label);row.append(side);
     });
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
-    const time=document.createElement('span');time.className='hub-calendar-time';time.textContent=fixtureTime(game);
-    const state=document.createElement('span');state.className='hub-calendar-state';const finished=game.state==='post'||(!game.upcoming&&/final|terminat|conclus|finished|completed/i.test(String(game.status||'')));state.textContent=game.upcoming?'Da giocare':finished?'Terminata':'Live';if(!game.upcoming&&!finished)state.classList.add('live');
-    // Display only actual scores provided by the NBA fixture feed; never infer them.
-    const scorePair=Array.isArray(game.scores)?game.scores:null;
-    const awayScore=game.away_score??game.awayScore??scorePair?.[0];
-    const homeScore=game.home_score??game.homeScore??scorePair?.[1];
-    const hasFinalScore=!game.upcoming&&awayScore!=null&&homeScore!=null&&String(awayScore)!==''&&String(homeScore)!=='';
-    if(hasFinalScore){
+    if(live){const state=document.createElement('span');state.className='hub-calendar-state live';state.textContent='Live';info.append(state)}
+    const pair=Array.isArray(game.scores)?game.scores:null;
+    const awayScore=game.away_score??game.awayScore??pair?.[0],homeScore=game.home_score??game.homeScore??pair?.[1];
+    const hasScore=(finished||live)&&awayScore!=null&&homeScore!=null&&String(awayScore)!==''&&String(homeScore)!=='';
+    if(hasScore){
      const score=document.createElement('strong');score.className='hub-calendar-final-score';
-     score.textContent=String(awayScore)+' – '+String(homeScore);
+     for(const [i,value] of [awayScore,homeScore].entries()){
+      if(i){const divider=document.createElement('span');divider.className='hub-score-divider';divider.textContent='–';score.append(divider)}
+      const number=document.createElement('span');number.className='hub-score-value';number.textContent=String(value);
+      if(finished&&Number.isFinite(Number(value))&&Number.isFinite(Number(i?awayScore:homeScore))&&Number(value)>Number(i?awayScore:homeScore))number.classList.add('is-winner');
+      score.append(number);
+     }
      info.append(score);
-    }
-    if(hasOdds&&!finished){const odds=document.createElement('span');odds.className='hub-calendar-odds';odds.textContent='Quote disponibili';row.append(odds)}
-    row.dataset.finished=String(finished);row.append(state);
-    info.append(time);row.append(info);
-    row.addEventListener('click',()=>game.upcoming?openFixtureDetails(match):game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));row.setAttribute('aria-label',match+(!game.upcoming?' · Apri tabellino partita':' · Apri dettagli partita'));
-    games.append(row)
+    }else{const vs=document.createElement('span');vs.className='hub-calendar-versus';vs.textContent='VS';info.append(vs)}
+    const time=document.createElement('span');time.className='hub-calendar-time';
+    const start=new Date(game.start_at||'');time.textContent=Number.isNaN(start.getTime())?game.time||'':new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',hour:'2-digit',minute:'2-digit'}).format(start);time.title=fixtureTime(game);info.append(time);
+    row.insertBefore(info,row.children[1]);
+    row.addEventListener('click',()=>game.upcoming?openFixtureDetails(match):game.event_id?openCalendarBoxscore(game):openFixtureDetails(match));
+    row.setAttribute('aria-label',match+(hasScore?' · '+awayScore+' a '+homeScore:'')+(live?' · Live':'')+(!game.upcoming?' · Apri tabellino partita':' · Apri dettagli partita'));
+    games.append(row);
    }
-   coveragePromise.then(latest=>{
-    if(calendarToken!==calendarRequest||!calendar||calendarSelectedDate!==requestedDate)return;
-    const quoted=new Set((latest.fixtures||[]).map(fixtureKey));
-    games.querySelectorAll('.hub-calendar-match[data-fixture-key]').forEach(row=>{
-     const hasOdds=quoted.has(row.dataset.fixtureKey)&&row.dataset.finished!=='true';
-     let badge=row.querySelector('.hub-calendar-odds');
-     if(hasOdds&&!badge){badge=document.createElement('span');badge.className='hub-calendar-odds';badge.textContent='Quote disponibili';row.append(badge)}
-     else if(!hasOdds&&badge)badge.remove();
-    });
-   });
   }).catch(()=>{if(calendarToken===calendarRequest&&calendar)games.dataset.fixtureFallback='true'});
  }
 
@@ -758,7 +747,6 @@ function renderCalendar(){
    fixtureTeamGradient(row,teams[0],teams[1]);
    const venueEntries=[];
    teams.forEach((team,i)=>{
-    if(i){const center=document.createElement('span');center.className='hub-calendar-versus';center.textContent='VS';row.append(center)}
     const side=document.createElement('span');side.className='hub-calendar-team';
     const code=matchTeamCodes[team]||matchTeamCodes[team.replace(/^LA /,'Los Angeles ')];
     if(code){const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';logo.alt='';logo.loading='lazy';logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)}

@@ -493,3 +493,27 @@ test('Home and Pronostici share only single results with explicit settled denomi
  assert.equal(doc.body.dataset.hubView,'history');
  assert.equal(results.hidden,true);
 });
+
+
+test('calendar displays only explicit Live, preserves score ordering and drops quote coverage requests',async()=>{
+ const calls=[];
+ const fixtures=[
+  {event_id:'1',away:'Boston Celtics',home:'Atlanta Hawks',state:'post',upcoming:false,away_score:123,home_score:117},
+  {event_id:'2',away:'Chicago Bulls',home:'Miami Heat',state:'in',upcoming:false,away_score:0,home_score:0},
+  {event_id:'3',away:'Denver Nuggets',home:'Phoenix Suns',state:'pre',upcoming:true},
+  {event_id:'4',away:'Dallas Mavericks',home:'Houston Rockets',state:'pre',upcoming:false,status:'Postponed'}
+ ].map(game=>({...game,start_at:'2026-11-05T01:00:00Z',calendar_date:'2026-11-05'}));
+ const {doc}=setup('nba?data=2026-11-05',async url=>{calls.push(String(url));return {ok:true,json:async()=>({games:fixtures})};});
+ for(let n=0;n<4;n++)await new Promise(r=>setImmediate(r));
+ const cards=doc.querySelectorAll('.hub-calendar-match');assert.equal(cards.length,4);
+ assert.equal(doc.querySelectorAll('.hub-calendar-odds').length,0);
+ assert.equal(doc.querySelectorAll('.hub-calendar-state').length,1);
+ assert.equal(doc.querySelector('.hub-calendar-state').textContent,'Live');
+ assert.deepEqual([...cards[0].querySelectorAll('.hub-score-value')].map(x=>x.textContent),['123','117']);
+ assert.equal(cards[0].querySelector('.is-winner').textContent,'123');
+ assert.deepEqual([...cards[1].querySelectorAll('.hub-score-value')].map(x=>x.textContent),['0','0']);
+ assert.equal(cards[2].querySelector('.hub-calendar-final-score'),null);
+ assert.equal(cards[3].querySelector('.hub-calendar-state'),null);
+ assert.ok(!calls.some(url=>url.includes('quote-coverage')));
+ assert.equal(doc.querySelector('.hub-home-banner').hidden,true);
+});
