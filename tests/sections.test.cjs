@@ -36,3 +36,15 @@ test('visible pages refresh expired data without polling hidden sections',async(
   w.document.body.dataset.hubView='history';now=4;timer();await tick();assert.equal(calls,2);
  }finally{dom.window.close();}
 });
+
+
+test('single results load on a direct Pronostici visit and stay shared across Home',async()=>{
+ const dom=new JSDOM('<body data-hub-view="picks">',{url:'https://basketlab.it/pronostici',runScripts:'outside-only'});
+ try{
+  const w=dom.window;w.eval(source);let calls=0;
+  w.BasketLabSections.register('performance',async()=>calls++);
+  await tick();assert.equal(calls,1);
+  w.document.body.dataset.hubView='home';w.document.dispatchEvent(new w.Event('basketlab:view'));await tick();assert.equal(calls,1);
+  w.document.body.dataset.hubView='stats';await w.BasketLabSections.run('performance');assert.equal(calls,1);
+ }finally{dom.window.close();}
+});

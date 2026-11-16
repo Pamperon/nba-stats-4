@@ -9,9 +9,10 @@ const html=fs.readFileSync(path.join(root,'web/index.html'),'utf8');
 const windows=[];
 test.afterEach(()=>{for(const window of windows.splice(0))window.close()});
 const script=fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8');
-function setup(hash=''){
+function setup(hash='',fetchImpl){
  const dom=new JSDOM(html,{url:'https://basketlab.it/'+hash,runScripts:'outside-only'});
  const {window}=dom,doc=window.document;windows.push(window);
+ if(fetchImpl)window.fetch=fetchImpl;
  window.scrollTo=()=>{};
  window.HTMLElement.prototype.scrollIntoView=function(){};
  for(const b of doc.querySelectorAll('#quote-tabs [data-tab]'))b.addEventListener('click',()=>{for(const x of doc.querySelectorAll('#quote-tabs [data-tab]'))x.classList.toggle('active',x===b)});
@@ -194,7 +195,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  assert.equal(doc.querySelector('#picks-showcase').hidden,false);
  assert.equal(doc.querySelector('#app').hidden,true);
  assert.equal(singlePanel.hidden,false);assert.equal(topPanel.hidden,false);
- assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/Apri analisi/);
+ assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/Scopri l’analisi/);
  singlePanel.querySelector('.bl-broadcast-action').click();
  assert.equal(doc.body.dataset.hubView,'single');
  assert.equal(doc.querySelector('#single-analysis-page').hidden,false);
@@ -211,7 +212,7 @@ test('Pronostici share Home cards and retain analysis actions across navigation'
  assert.equal(topPanel.parentElement,homeParent);
  assert.equal(doc.querySelector('#picks-showcase').hidden,true);
  assert.equal(doc.querySelectorAll('.hub-single-section').length,1);
- assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/Apri analisi/);
+ assert.match(singlePanel.querySelector('.bl-broadcast-action').textContent,/Scopri l’analisi/);
  doc.querySelector('.hub-sidebar [data-hub="stats"]').click();
  assert.equal(singlePanel.hidden,true);assert.equal(topPanel.hidden,true);
 });
@@ -460,3 +461,31 @@ test('team result returns to its team instead of the calendar and preserves orig
  assert.equal(window.location.pathname,'/squadre/boston-celtics-2');assert.equal(doc.body.dataset.hubView,'calendar');assert.equal(doc.body.classList.contains('hub-match-open'),false);
  window.history.back();await new Promise(r=>setTimeout(r,25));assert.equal(window.location.pathname,'/analisi-partita');assert.equal(doc.body.classList.contains('hub-match-open'),true);
  });
+
+
+test('Home and Pronostici share only single results with explicit settled denominator and preserve section order',async()=>{
+ let calls=0;
+ const {doc}=setup('',async url=>{if(String(url).includes('/api/history/performance')){calls++;return {ok:true,json:async()=>({success_pct:64.7,published:124,won:77,single:{success_pct:87.5,published:10,verified:8,won:7,lost:1,not_played:1,pending:1}})}}return {ok:true,json:async()=>({games:[]})};});
+ await new Promise(r=>setImmediate(r));
+ const results=doc.querySelector('.hub-performance');
+ assert.equal(results.querySelectorAll('.bl-results-card').length,1);
+ assert.match(results.textContent,/87,5%/);
+ assert.doesNotMatch(results.textContent,/64,7|Le migliori|affidabilità/i);
+ assert.match(results.querySelector('.bl-results-heading').textContent,/7 centrate su 8 con esito · 10 pubblicate/);
+ assert.equal(results.querySelector('[data-outcome=not-played] dd').textContent,'1');
+ assert.equal(results.querySelector('[data-outcome=pending] dd').textContent,'1');
+ const single=doc.querySelector('.hub-single-section'),games=doc.querySelector('.hub-games-section'),choices=doc.querySelector('.hub-featured'),news=doc.querySelector('#hub-nba-updates-panel');
+ const before=(a,b)=>!!(a.compareDocumentPosition(b)&4);
+ assert.ok(before(results,single)&&before(single,games)&&before(games,choices)&&before(choices,news));
+ doc.querySelector('.hub-sidebar [data-hub=picks]').click();
+ assert.equal(results.hidden,false);
+ assert.equal(results.parentElement.id,'picks-showcase');
+ assert.ok(before(single,results)&&before(results,choices)&&before(choices,doc.querySelector('.hub-picks-archive')));
+ doc.querySelector('.hub-sidebar [data-hub=home]').click();
+ assert.ok(before(results,single)&&before(games,choices));
+ assert.equal(doc.querySelectorAll('.hub-performance').length,1);
+ assert.equal(calls,1);
+ results.querySelector('[data-hub=history]').click();
+ assert.equal(doc.body.dataset.hubView,'history');
+ assert.equal(results.hidden,true);
+});
