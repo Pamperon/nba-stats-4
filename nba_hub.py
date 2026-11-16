@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 from concurrent.futures import Future
 import threading
 import requests
-from cachetools import TTLCache
+from memory_cache import bounded_cache, remember
 from fastapi import APIRouter, HTTPException
 from zoneinfo import ZoneInfo
 
 router = APIRouter(prefix='/api/nba')
-_cache = TTLCache(maxsize=40, ttl=300)
+_cache = bounded_cache(8, 300)
 _lock = threading.RLock()
 _pending = {}
 BASE = 'https://site.api.espn.com/apis'
@@ -29,7 +29,7 @@ def fetch(path):
         response.raise_for_status()
         result = response.json()
         with _lock:
-            _cache[path] = result
+            remember(_cache, path, result)
         pending.set_result(result)
         return result
     except Exception as exc:

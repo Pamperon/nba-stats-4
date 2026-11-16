@@ -1,7 +1,7 @@
 """Persistent OddsPapi response reuse, shared across dates and process restarts."""
 import threading
 import time
-from cachetools import TTLCache
+from memory_cache import bounded_cache, remember
 import storage
 
 
@@ -31,7 +31,7 @@ def stream_tournament(raw, market_ids):
     return builder.value
 
 _LOCK = threading.RLock()
-_MEMORY = TTLCache(maxsize=12, ttl=48 * 3600)
+_MEMORY = bounded_cache(24, 48 * 3600)
 
 
 def cached_payload(key, max_age_seconds, loader, *, empty_max_age_seconds=None):
@@ -54,14 +54,14 @@ def cached_payload(key, max_age_seconds, loader, *, empty_max_age_seconds=None):
             allowed_age = (empty_max_age_seconds if empty_max_age_seconds is not None
                            and envelope.get('data') == [] else max_age_seconds)
             if 0 <= age < allowed_age and "data" in envelope:
-                _MEMORY[persistent_key] = envelope
+                remember(_MEMORY, persistent_key, envelope)
                 return {**envelope, "source": "cache"}
         envelope = None  # Release any expired payload before decoding a new one.
         data = loader()  # Validators run inside the loader before persistence.
         envelope = {"data": data, "fetched_at": time.time(), "identity": key}
         if storage.configured():
             storage.cache_write(persistent_key, envelope)
-        _MEMORY[persistent_key] = envelope
+        remember(_MEMORY, persistent_key, envelope)
         return {**envelope, "source": "api"}
 
 

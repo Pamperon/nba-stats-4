@@ -5,5 +5,5 @@ requests>=2.31,<3
 cachetools>=5.5,<7
 psycopg[binary]>=3.2,<4
 psycopg_pool==3.3.3
-Pillow>=11,<13
+Pillow>=13.0.0,<14
 ijson>=3.3,<4

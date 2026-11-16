@@ -6,8 +6,67 @@ from datetime import date
 import match_history
 import storage
 import settle_espn
+import engine
+import odds_feed
+import nba_hub
+import pandas as pd
+from memory_cache import bounded_cache, payload_size, remember
 
 class MemoryBoundsTests(unittest.TestCase):
+    def test_nested_response_growth_evicts_before_byte_budget_is_exceeded(self):
+        cache = bounded_cache(0.01, 60)
+        for index in range(100):
+            payload = {'players': [{'name': str(index), 'data': 'x' * 2048}]}
+            self.assertTrue(remember(cache, index, payload))
+            self.assertLessEqual(cache.currsize, cache.maxsize)
+        self.assertLess(len(cache), 10)
+        self.assertEqual(cache[99], payload)
+        self.assertGreater(payload_size(pd.DataFrame({'name': ['x' * 5000]})), 5000)
+        cyclic = []
+        cyclic.append(cyclic)
+        self.assertGreater(payload_size(cyclic), 0)
+
+    def test_oversized_espn_roster_is_returned_intact_without_retention(self):
+        engine.espn_roster.cache_clear()
+        self.addCleanup(engine.espn_roster.cache_clear)
+        payload = {'athletes': [], 'large': 'x' * (7 * 1024 * 1024)}
+        with patch.object(engine, 'espn_json', return_value=payload):
+            self.assertIs(engine.espn_roster('1'), payload)
+        self.assertEqual(len(engine.espn_roster.cache), 0)
+
+    def test_oversized_paid_feed_reuses_persistence_without_another_download(self):
+        saved = {}
+        data = {'lines': 'x' * 5000}
+        loader = MagicMock(return_value=data)
+        with patch.object(odds_feed, '_MEMORY', bounded_cache(0.001, 60)), \
+             patch.object(odds_feed.storage, 'configured', return_value=True), \
+             patch.object(odds_feed.storage, 'cache_read', side_effect=lambda key, **kw: saved.get(key)), \
+             patch.object(odds_feed.storage, 'cache_write', side_effect=lambda key, value: saved.update({key: value})):
+            first = odds_feed.cached_payload('feed:v1:slot', 60, loader)
+            second = odds_feed.cached_payload('feed:v1:slot', 60, loader)
+        self.assertEqual(first['data'], data)
+        self.assertEqual(second['data'], data)
+        self.assertEqual(first['fetched_at'], second['fetched_at'])
+        self.assertEqual(second['source'], 'cache')
+        loader.assert_called_once()
+
+    def test_oversized_nba_response_does_not_fail_the_shared_request(self):
+        payload = {'events': [], 'large': 'x' * 5000}
+        response = MagicMock()
+        response.json.return_value = payload
+        with patch.object(nba_hub, '_cache', bounded_cache(0.001, 60)), \
+             patch.object(nba_hub.requests, 'get', return_value=response):
+            self.assertIs(nba_hub.fetch('/test'), payload)
+        self.assertNotIn('/test', nba_hub._pending)
+
+    def test_odds_timestamp_metadata_follows_byte_eviction(self):
+        with patch.object(engine, 'odds_cache', bounded_cache(0.001, 60)), \
+             patch.object(engine, '_odds_cache_fetched_at', {}):
+            for index in range(100):
+                engine._remember_odds(str(index), {'data': str(index) * 100}, 1000)
+            self.assertEqual(set(engine._odds_cache_fetched_at), set(engine.odds_cache))
+            self.assertLess(len(engine._odds_cache_fetched_at), 10)
+
     def test_quote_cache_does_not_retain_every_expired_time_bucket(self):
         storage._cached_fixture_coverage.cache_clear()
         self.addCleanup(storage._cached_fixture_coverage.cache_clear)
