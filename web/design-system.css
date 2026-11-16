@@ -860,3 +860,7 @@ body:has(section[aria-label="Preferenze statistiche"]:not([hidden])) #single-ana
 
 /* The choice title follows its contrasting text color on the accent panel. */
 .hub-single-section .hub-featured-heading .bl-lab-word,#picks .pick-group[aria-label="La scelta del Lab"] h2 .bl-lab-word{color:inherit!important}
+
+/* Keep all four outcome labels on one line on narrow screens. */
+@media(max-width:600px){.bl-results-card dl div{flex-direction:column;justify-content:center;gap:4px;min-height:44px}.bl-results-card dt{white-space:nowrap}.bl-results-card dd{min-width:28px}}
+@media(max-width:340px){.bl-results-card dl{font-size:12px}}
