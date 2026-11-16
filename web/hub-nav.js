@@ -242,7 +242,6 @@ async function loadModelPerformance(){
    return '<article class="bl-results-card">'+
     '<div class="bl-results-ring" style="--success:'+sweep+'%"><strong>'+
     (rate===null?'—':number(rate)+'%')+'</strong></div>'+
-    '<div class="bl-results-heading"><p><strong>'+number(group?.won)+'</strong> centrate su <strong>'+number(group?.verified)+'</strong> con esito · '+number(group?.published)+' pubblicate</p></div>'+
     '<dl><div data-outcome="won"><dt>Centrate</dt><dd>'+number(group?.won)+'</dd></div>'+
     '<div data-outcome="lost"><dt>Non centrate</dt><dd>'+number(group?.lost)+'</dd></div>'+
     '<div data-outcome="not-played"><dt>Non ha giocato</dt><dd>'+number(group?.not_played??0)+'</dd></div>'+

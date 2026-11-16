@@ -177,13 +177,10 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
   background:linear-gradient(120deg,#153448,#102736);
   text-align:left;
 }
-.bl-results-heading h3 {margin:0;font-size:18px;line-height:1.2;letter-spacing:-.35px}
-.hub-performance .bl-results-heading p {margin:3px 0 0;font-size:12px;line-height:1.35}
-.hub-performance .bl-results-heading p strong {font-size:inherit}
 .bl-results-ring {
   display:grid;
   grid-column:1;
-  grid-row:1/3;
+  grid-row:1;
   place-items:center;
   width:68px;
   aspect-ratio:1;
@@ -195,14 +192,14 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
   display:grid;
   grid-column:2;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:5px 14px;
+  gap:8px 14px;
   margin:0;
-  font-size:12px;
-  line-height:1.35;
+  font-size:14px;
+  line-height:1.4;
 }
-.bl-results-card dl div {display:flex;justify-content:space-between;gap:5px;min-width:0}
+.bl-results-card dl div {display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:38px}
 .bl-results-card dt {color:#b3c9d8}
-.bl-results-card dd {margin:0;font-weight:700;color:#f2f7fb}
+.bl-results-card dd {margin:0;font-weight:750;font-size:18px;color:#f2f7fb;flex-shrink:0}
 .bl-results-card [data-outcome=won]{--outcome-color:#51e0a0}
 .bl-results-card [data-outcome=lost]{--outcome-color:#ff8b91}
 .bl-results-card [data-outcome=not-played]{--outcome-color:#adb8c6}
@@ -210,7 +207,6 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
 .bl-results-card [data-outcome] dt{color:var(--outcome-color)}
 .bl-results-card [data-outcome] dd{color:var(--outcome-color);font-variant-numeric:tabular-nums;min-width:20px;text-align:center;border-radius:5px;background:color-mix(in srgb,var(--outcome-color) 10%,transparent)}
 .bl-results-card{box-shadow:inset 0 1px 0 #ffffff09,0 4px 14px #020d1720}
-.bl-results-heading h3{font-weight:650}
 .bl-results-ring{box-shadow:0 0 18px #30ce8809}
 .bl-results-card .bl-results-ring strong{font-variant-numeric:tabular-nums}
 .hub-performance{background:radial-gradient(ellipse at top right,#19394e66,transparent 70%),#0b2030;border-color:#355064}
@@ -222,7 +218,7 @@ body[data-hub-view=home] .hub-featured-more{display:block;width:100%;min-height:
  .bl-results-card{grid-template-columns:56px minmax(0,1fr);gap:7px 10px;padding:11px 9px}
  .bl-results-ring{width:56px}
  .hub-performance .bl-results-ring strong{font-size:13px}
- .bl-results-card dl{font-size:11px;column-gap:10px}
+ .bl-results-card dl{font-size:13px;column-gap:10px}
 }
 
 #player .player-profile {
@@ -853,7 +849,7 @@ body.player-personal-view #player .player-avatar{width:240px;height:164px}
 
 /* Single results are shared by Home and Pronostici; selection cards retain estimates. */
 #picks-showcase>.hub-picks-archive{display:block;margin:20px auto 4px;min-height:44px}
-@media(min-width:760px){.bl-results-card{grid-template-columns:78px minmax(0,1fr) minmax(260px,1fr)}.bl-results-ring{grid-row:1/3}.bl-results-card dl{grid-column:3;grid-row:1/3}.bl-results-heading{grid-column:2;grid-row:1/3}body[data-hub-view=home] #hub-featured-list{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important}body[data-hub-view=home] #hub-featured-list>.bl-datalab-card{grid-template-columns:20px 54px minmax(0,1fr) 10px;gap:7px;padding:10px}body[data-hub-view=home] #hub-featured-list .bl-player-photo{width:54px;height:86px}body[data-hub-view=home] #hub-featured-list .bl-data-name{font-size:15px}}
+@media(min-width:760px){.bl-results-card{grid-template-columns:78px minmax(0,1fr)}.bl-results-card dl{grid-column:2;grid-row:1}body[data-hub-view=home] #hub-featured-list{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important}body[data-hub-view=home] #hub-featured-list>.bl-datalab-card{grid-template-columns:20px 54px minmax(0,1fr) 10px;gap:7px;padding:10px}body[data-hub-view=home] #hub-featured-list .bl-player-photo{width:54px;height:86px}body[data-hub-view=home] #hub-featured-list .bl-data-name{font-size:15px}}
 
 @media(min-width:1100px){body[data-hub-view=home] .hub-shell>main{display:block}}
 
