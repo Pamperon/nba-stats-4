@@ -874,3 +874,6 @@ body:has(section[aria-label="Preferenze statistiche"]:not([hidden])) #single-ana
 .hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-state.live{position:static;display:inline-flex;gap:5px;padding:0;border:0;background:none;color:#ff8191;font-size:11px;line-height:1.2;box-shadow:none}
 .hub-calendar-state.live::before{content:'';width:6px;height:6px;border-radius:50%;background:#ff4e66;flex-shrink:0}
 @media(max-width:380px){.hub-calendar-games .hub-calendar-match.hub-calendar-gradient{grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);padding:8px 7px;gap:4px}.hub-calendar-games .hub-calendar-match.hub-calendar-gradient .hub-calendar-final-score{font-size:21px;gap:3px}.hub-calendar-games .hub-calendar-match.hub-calendar-gradient>.hub-calendar-team{font-size:11px}}
+
+/* Auto block margins must not vertically center short pages in the desktop grid. */
+.hub-shell>main{margin:0;align-self:start}
