@@ -86,6 +86,13 @@ def init_storage():
     from match_prewarm import run as warm_match_history
     threading.Thread(target=warm_match_history, args=(shutdown_event, schedule),
                      daemon=True, name='nba-match-history-warmup').start()
+    import player_form as form
+    def scans_busy():
+        with lock:
+            return any(job['state'] in ('queued', 'running') for job in jobs.values())
+    threading.Thread(target=form.run, args=(shutdown_event, scans_busy),
+                     daemon=True, name='nba-league-form-refresh').start()
+
 
 
 def _archive_settlement_loop():
@@ -255,6 +262,7 @@ def audience_admin():
 @app.get('/api/health')
 def health():
     import match_prewarm
+    import player_form as form
     with lock:
         active = sum(job['state'] in ('queued','running') for job in jobs.values())
     return {'status': 'ok', 'version': '4.0-optimized', 'odds_download_method': 'tournament-v1',
@@ -263,7 +271,8 @@ def health():
             'scheduler_revision': 'rome-five-prepublication-slots-v1',
             'scan_slots_italy': ['09:00', '12:00', '14:30', '16:30', '17:30'],
             'runtime_instance': RUNTIME_ID, 'scan_tracking_ready': tracking_ready,
-            'active_scans': active, 'history_warmup': match_prewarm.status()}
+            'active_scans': active, 'history_warmup': match_prewarm.status(),
+            'player_form': form.status()}
 
 @app.get('/api/session', dependencies=[Depends(auth)])
 def session():

@@ -29,11 +29,8 @@
 .pf-delta-label{font-size:10px;font-weight:500}
 .pf-card-arrow{color:#8dabc0;font-size:22px}
 .pf-coverage{font-size:10px;color:#91aabd;line-height:1.6;margin:13px 0 5px}
-.pf-method{border-top:1px solid #31516a;margin-top:10px;padding-top:10px;color:#9db7ca}
-.pf-method summary{font-size:11px;cursor:pointer;padding:4px 0}
-.pf-method p{font-size:11px;line-height:1.65;margin:9px 0}
 .pf-message{font-size:13px;line-height:1.6;color:#abc4d5;padding:10px 0;margin:0}
 .pf-retry{justify-self:start;min-height:38px;padding:7px 16px;background:#23465d;color:#fff;border:1px solid #426b86;border-radius:9px}
-.pf-panel button:focus-visible,.pf-player:focus-visible,.pf-method summary:focus-visible{outline:2px solid #ffab47;outline-offset:3px}
+.pf-panel button:focus-visible,.pf-player:focus-visible{outline:2px solid #ffab47;outline-offset:3px}
 @media(max-width:600px){.pf-panel{padding:15px 12px;margin-bottom:20px}.pf-heading h2{font-size:20px}.pf-heading>span{font-size:9px;letter-spacing:1px}.pf-player{grid-template-columns:44px minmax(0,1fr) auto;gap:9px;padding:12px 9px}.pf-avatar{width:44px;height:52px}.pf-identity>strong{font-size:14px}.pf-baseline{font-size:10px}.pf-figures>strong{font-size:23px}.pf-card-arrow{display:none}.pf-delta-label{display:block;text-align:right}.pf-intro{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.pf-player{transition:none}}
