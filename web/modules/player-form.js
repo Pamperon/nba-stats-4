@@ -7,7 +7,7 @@
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const num=n=>Number(n).toLocaleString('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1});
  const slug=(name,id)=>name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+id;
- let market='PTS',direction='up',data=null,pending=null,loadedAt=0;
+ let market='PTS',direction='up',data=null,pending=null,loadedAt=0,refreshTimer=null;
  function render(){
   panel.dataset.direction=direction;
   for(const b of panel.querySelectorAll('[data-pf-market]'))b.setAttribute('aria-pressed',String(b.dataset.pfMarket===market));
@@ -26,11 +26,13 @@
   });
   const stamp=new Date(data.generated_at);
   const time=Number.isFinite(stamp.getTime())?' · '+new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}).format(stamp):'';
-  coverage.textContent='ESPN · '+data.season+' · '+data.eligible_players+' giocatori confrontabili'+time;
+  const checked=data.checked_players??data.eligible_players,roster=data.roster_players;
+  const scope=roster?(data.coverage_complete?checked+' giocatori analizzati':checked+'/'+roster+' analizzati'):'';
+  coverage.textContent='NBA'+(scope?' · '+scope:'')+' · '+data.eligible_players+' confrontabili'+time+(data.coverage_complete===false?(data.refreshing?' · Aggiornamento in corso':' · Alcuni dati in aggiornamento'):'');
  }
  async function load(){
   if(pending)return pending;
-  if(data&&Date.now()-loadedAt<300000){render();return;}
+  if(data&&Date.now()-loadedAt<(data.coverage_complete===false?30000:300000)){render();return;}
   results.setAttribute('aria-busy','true');
   pending=(async()=>{
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
@@ -40,7 +42,7 @@
    }catch{
     if(data){render();coverage.textContent+=' · Aggiornamento temporaneamente non disponibile';}
     else{results.innerHTML='<p class="pf-message">Trend temporaneamente non disponibili.</p><button type="button" class="pf-retry">Riprova</button>';results.querySelector('button').onclick=()=>load();}
-   }finally{clearTimeout(timer);results.setAttribute('aria-busy','false');pending=null;}
+   }finally{clearTimeout(timer);results.setAttribute('aria-busy','false');pending=null;clearTimeout(refreshTimer);if(data?.coverage_complete===false&&!panel.hidden)refreshTimer=setTimeout(()=>{if(!panel.hidden)load();},60000);}
   })();return pending;
  }
  panel.addEventListener('click',e=>{
