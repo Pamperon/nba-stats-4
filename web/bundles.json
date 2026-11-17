@@ -3,7 +3,8 @@
     "style.css",
     "hub.css",
     "archive-redesign.css",
-    "design-system.css"
+    "design-system.css",
+    "player-form.css"
   ],
   "site-app.js": [
     "modules/router.js",
@@ -22,6 +23,7 @@
     "hub-nav.js",
     "analytics.js",
     "modules/share.js",
-    "modules/team-links.js"
+    "modules/team-links.js",
+    "modules/player-form.js"
   ]
 }

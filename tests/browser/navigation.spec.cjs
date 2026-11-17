@@ -160,3 +160,28 @@ test('NBA compact fixtures, Live marker, standings and page alignment',async({pa
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:'test-results/nba-standings-'+page.viewportSize().width+'.png',fullPage:true});
 });
+
+test('Home player form filters and player links stay compact and independent of predictions',async({page},testInfo)=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Player form is verified on the candidate');
+ const players=[{id:'123',name:'Browser Fixture',team:'Boston Celtics',team_id:'2'},{id:'124',name:'Second Player',team:'Atlanta Hawks',team_id:'1'},{id:'125',name:'Third Player',team:'Denver Nuggets',team_id:'7'}];
+ const rows=(delta,market)=>players.map((p,i)=>({...p,games:14,recent_average:(market==='PTS'?28:8)-i,season_average:(market==='PTS'?28:8)-i-delta,delta,last_played:'2026-11-16'}));
+ await page.route('**/api/players/form',route=>route.fulfill({json:{season:'2026–27',generated_at:'2026-11-17T18:00:00+01:00',eligible_players:42,markets:{PTS:{up:rows(5,'PTS'),down:rows(-4,'PTS')},REB:{up:rows(2,'REB'),down:[]},AST:{up:[],down:[]}}}}));
+ await page.route('**/api/players/directory',route=>route.fulfill({json:{players}}));
+ await page.goto('/');
+ await page.locator('#player-form').scrollIntoViewIfNeeded();
+ await expect(page.locator('.pf-player')).toHaveCount(3);
+ await expect(page.locator('.pf-figures>strong').first()).toHaveText('28,0');
+ await page.locator('[data-pf-market=REB]').click();
+ await expect(page.locator('.pf-figures>strong').first()).toHaveText('8,0');
+ await expect(page.locator('.pf-player').first()).toHaveAttribute('href',/mercato=REB/);
+ await page.locator('[data-pf-direction=down]').click();await expect(page.locator('.pf-player')).toHaveCount(0);
+ await page.locator('[data-pf-market=PTS]').click();await expect(page.locator('.pf-player')).toHaveCount(3);
+ await expect(page.locator('.pf-delta').first()).toContainText('−4,0');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.locator('[data-pf-direction=up]').click();
+ await page.locator('#player-form').screenshot({path:'test-results/player-form-'+testInfo.project.name+'.png'});
+ const formCalls=api.filter(x=>x==='/api/players/form');expect(formCalls.length).toBe(1);
+ await page.locator('.pf-player').first().click();await expect(page).toHaveURL(/\/giocatori\/browser-fixture-123/);
+ await expect(page.locator('#player-form')).toBeHidden();
+ await expect(page.locator('#stat')).toHaveValue('PTS');
+});
