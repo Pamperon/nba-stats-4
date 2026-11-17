@@ -20,15 +20,19 @@
    if(!/^\d{1,12}$/.test(String(player.id)))return;
    const link=d.createElement('a');link.className='pf-player';link.dataset.pfPlayer=slug(player.name,player.id);link.href='/giocatori/'+link.dataset.pfPlayer+'?mercato='+market+'&periodo=5&competizione=2';
    const initials=String(player.name).split(/\s+/).map(x=>x[0]).slice(0,2).join('');
-   link.innerHTML='<span class="pf-avatar"><span aria-hidden="true">'+esc(initials)+'</span><img loading="lazy" decoding="async" src="/api/players/headshot/'+player.id+'" alt=""></span><span class="pf-identity"><strong>'+esc(player.name)+'</strong><small>'+esc(player.team)+'</small><span class="pf-baseline">Stagione <b>'+num(player.season_average)+'</b> · '+esc(player.games)+' presenze</span></span><span class="pf-figures"><strong>'+num(player.recent_average)+'</strong><small>'+labels[market]+' · ultime 5</small><span class="pf-delta">'+(player.delta>0?'+':'−')+num(Math.abs(player.delta))+' <span class="pf-delta-label">sulla media</span></span></span><span class="pf-card-arrow" aria-hidden="true">›</span>';
-   link.querySelector('img').addEventListener('error',e=>{e.target.hidden=true;});
+   const change=(player.delta>0?'+':'−')+num(Math.abs(player.delta));
+   link.innerHTML='<span class="pf-avatar"><span class="pf-initials" aria-hidden="true">'+esc(initials)+'</span><img loading="lazy" decoding="async" src="/api/players/headshot/'+player.id+'" alt=""><span class="pf-rank" aria-hidden="true">'+String(index+1).padStart(2,'0')+'</span></span><span class="pf-identity"><strong>'+esc(player.name)+'</strong><small>'+esc(player.team)+'</small></span><span class="pf-delta" aria-label="'+esc(change+' '+labels[market]+' rispetto alla media stagionale')+'"><span aria-hidden="true">'+(direction==='up'?'↗':'↘')+'</span> '+change+'</span><span class="pf-comparison"><span class="pf-season" aria-label="Media stagionale su '+esc(player.games)+' presenze"><small>Stagione</small><strong>'+num(player.season_average)+'</strong></span><svg class="pf-compare-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 12h16m-5-5 5 5-5 5"/></svg><span class="pf-figures"><small>Ultime 5 · '+labels[market]+'</small><strong>'+num(player.recent_average)+'</strong></span></span>';
+   const photo=link.querySelector('img');
+   photo.addEventListener('load',()=>{link.querySelector('.pf-initials').hidden=true;});
+   photo.addEventListener('error',()=>{photo.hidden=true;});
    results.append(link);
   });
   const stamp=new Date(data.generated_at);
-  const time=Number.isFinite(stamp.getTime())?' · '+new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}).format(stamp):'';
+  const time=Number.isFinite(stamp.getTime())?new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}).format(stamp):'';
   const checked=data.checked_players??data.eligible_players,roster=data.roster_players;
   const scope=roster?(data.coverage_complete?checked+' giocatori analizzati':checked+'/'+roster+' analizzati'):'';
-  coverage.textContent='NBA'+(scope?' · '+scope:'')+' · '+data.eligible_players+' confrontabili'+time+(data.coverage_complete===false?(data.refreshing?' · Aggiornamento in corso':' · Alcuni dati in aggiornamento'):'');
+  coverage.innerHTML='<span class="pf-scope"><span class="pf-source">NBA</span> '+esc(scope)+(scope?' · ':'')+esc(data.eligible_players)+' confrontabili</span>'+(time?'<time>'+esc(time)+'</time>':'')+(data.coverage_complete===false?'<span class="pf-update">'+(data.refreshing?'Aggiornamento in corso':'Alcuni dati in aggiornamento')+'</span>':'');
+
  }
  async function load(){
   if(pending)return pending;
