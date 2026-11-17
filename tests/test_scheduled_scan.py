@@ -9,6 +9,42 @@ from scripts import scheduled_scan as scheduler
 ROOT = Path(__file__).resolve().parents[1]
 
 class SchedulerTests(unittest.TestCase):
+    def test_poll_recovers_timeout_and_503_without_resubmitting_scan(self):
+        transient = scheduler.urllib.error.HTTPError('https://example.test', 503, 'busy', {}, None)
+        outcomes = [TimeoutError('slow read'), transient, {'state': 'running'},
+                    {'state': 'partial', 'quote_lines_scan': 321}]
+        with patch.object(scheduler, 'call', side_effect=outcomes) as call, \
+             patch.object(scheduler.time, 'sleep'):
+            status = scheduler.wait_for_scan('existing', '2026-11-18')
+        self.assertEqual(status['quote_lines_scan'], 321)
+        self.assertEqual(call.call_count, 4)
+        for args in call.call_args_list:
+            self.assertEqual(args.args[0], '/api/scan/existing?summary=true')
+            self.assertNotIn('method', args.kwargs)
+
+    def test_poll_does_not_retry_authentication_or_real_scan_failure(self):
+        for error in (scheduler.urllib.error.HTTPError('https://example.test', 401, 'unauthorized', {}, None),
+                      {'state': 'error', 'stage': 'provider unavailable'}):
+            with patch.object(scheduler, 'call', side_effect=[error] if isinstance(error, Exception) else None,
+                              return_value=error) as call, patch.object(scheduler.time, 'sleep'):
+                with self.assertRaises((RuntimeError, scheduler.urllib.error.HTTPError)):
+                    scheduler.wait_for_scan('existing', '2026-11-18')
+            call.assert_called_once()
+
+    def test_repeated_poll_failure_is_bounded_without_new_paid_work(self):
+        with patch.object(scheduler, 'call', side_effect=TimeoutError('slow read')) as call, \
+             patch.object(scheduler.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'existing job existing'):
+                scheduler.wait_for_scan('existing', '2026-11-18')
+        self.assertEqual(call.call_count, 6)
+
+    def test_poll_deadline_does_not_start_a_late_status_request(self):
+        with patch.object(scheduler.time, 'monotonic', side_effect=[0, 0, 0, 1801]), \
+             patch.object(scheduler.time, 'sleep'), patch.object(scheduler, 'call') as call:
+            with self.assertRaises(TimeoutError):
+                scheduler.wait_for_scan('existing', '2026-11-18')
+        call.assert_not_called()
+
     def test_rome_slots_across_summer_winter_and_dst_changes(self):
         for date in ('2026-01-15', '2026-07-15', '2026-03-29', '2026-10-25'):
             for hour, minute in scheduler.SLOTS:

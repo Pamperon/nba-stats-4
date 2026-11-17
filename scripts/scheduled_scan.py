@@ -134,6 +134,37 @@ def load_schedules(scan_day):
     return scan_schedules(scan_day, lambda date: call('/api/schedule?date=' + date))
 
 
+def wait_for_scan(job_id, date, timeout=1800):
+    """Retry only status reads; never resubmit paid work after a lost response."""
+    deadline = time.monotonic() + timeout
+    failures = 0
+    while time.monotonic() < deadline:
+        time.sleep(min(20, max(0, deadline - time.monotonic())))
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        try:
+            status = call('/api/scan/' + urllib.parse.quote(job_id) + '?summary=true',
+                          timeout=min(45, remaining))
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            if isinstance(exc, urllib.error.HTTPError) and exc.code not in (408, 429, 500, 502, 503, 504):
+                raise
+            failures += 1
+            print('Scan status temporarily unavailable:', date, job_id,
+                  type(exc).__name__, 'retry', failures, 'of 6; existing job retained', flush=True)
+            if failures >= 6:
+                raise RuntimeError('Scan status unavailable after 6 reads; inspect existing job ' + job_id) from exc
+            continue
+        failures = 0
+        state = status.get('state')
+        if state in ('done', 'partial'):
+            print(date, state, 'lines:', status.get('quote_lines_scan', len(status.get('results', []))), flush=True)
+            return status
+        if state in ('error', 'save_failed', 'interrupted'):
+            raise RuntimeError(date + ': ' + str(status.get('stage')))
+    raise TimeoutError('Scan exceeded 30 minutes: ' + date + '; existing job ' + job_id)
+
+
 def execute_scan(now, slot, manual, source, schedules=None):
     if schedules is None:
         schedules = load_schedules(now.date() if manual else slot.date())
@@ -161,18 +192,7 @@ def execute_scan(now, slot, manual, source, schedules=None):
             job = call(path, method="POST")
             job_id = job["job_id"]
             print("Job", job_id, "reused:", job.get("reused"), flush=True)
-            deadline = time.monotonic() + 1800
-            while time.monotonic() < deadline:
-                time.sleep(20)  # Keep Render Free awake during long scans.
-                status = call("/api/scan/" + urllib.parse.quote(job_id))
-                state = status.get("state")
-                if state in ("done", "partial"):
-                    print(date, state, "lines:", len(status.get("results", [])), flush=True)
-                    break
-                if state in ("error", "save_failed", "interrupted"):
-                    raise RuntimeError(date + ": " + str(status.get("stage")))
-            else:
-                raise TimeoutError("Scan exceeded 30 minutes: " + date)
+            wait_for_scan(job_id, date)
         except Exception as exc:
             print("Scan failed:", exc, flush=True)
             raise

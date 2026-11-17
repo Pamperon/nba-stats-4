@@ -62,6 +62,9 @@ non ricostruisce gli arresti precedenti né richieste effettuate fuori dall'app.
 
 Le quote NBA Bet365 Italia dei tre mercati giocatore vengono recuperate insieme
 con `odds-by-tournaments` (torneo 132), senza ripiego a chiamate per partita.
+Questo endpoint richiede il parametro singolare `bookmaker=bet365.it` (diverso
+da `bookmakers` dell'endpoint per singola partita). La cache distingue la
+richiesta corretta dai vecchi download per evitare di riusare un feed vuoto.
 Oggi e domani condividono il download della fascia; calendario e catalogo vengono
 scaricati una volta per giornata italiana. La validità delle quote resta di tre
 ore, ma una nuova fascia richiede dati nuovi anche prima della scadenza. Le
@@ -75,6 +78,10 @@ e richieste aggiuntive possono aumentare il consumo.
 snapshot salvato. L'interfaccia controlla lo stato in sottofondo con sole letture
 per caricare i nuovi dati salvati, senza mostrare un riquadro tecnico. Un errore
 non aggiorna l'orario delle quote precedenti.
+GitHub controlla il job con `GET /api/scan/{job_id}?summary=true`: una proiezione
+SQL che non trasferisce risultati e storici completi. Timeout e risposte HTTP
+temporanee vengono ritentati fino a sei letture consecutive entro i 30 minuti
+del job, senza ripetere il POST di avvio o le richieste al fornitore quote.
 La pagina ricontrolla lo snapshot anche all'inizio annunciato delle partite,
 senza richieste OddsPapi, e riprova le letture fallite. Al ritorno su una scheda
 rimasta in sottofondo verifica subito se la visibilità delle selezioni è scaduta.

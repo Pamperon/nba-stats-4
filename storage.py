@@ -159,6 +159,24 @@ def cache_read(key, max_age_hours, *, identity=None):
     return row[0] if row else None
 
 
+def scan_summary(job_id):
+    """Project polling metadata in PostgreSQL; never decode full player history."""
+    with connection() as conn:
+        row = conn.execute("""
+            SELECT scan_date,state,created_at,payload->>'quote_lines_scan',
+                payload->>'fixture_count',payload->>'scan_finished_at'
+            FROM nba_scan_snapshots WHERE job_id=%s
+        """, (job_id,)).fetchone()
+    if row is None:
+        return None
+    day, state, saved_at, lines, fixtures, finished_at = row
+    return {'job_id': job_id, 'date': day.isoformat(), 'state': state,
+            'progress': 100, 'stage': 'Parziale' if state == 'partial' else 'Completata',
+            'saved_at': saved_at.isoformat(), 'scan_finished_at': finished_at,
+            'quote_lines_scan': int(lines) if lines is not None else None,
+            'fixture_count': int(fixtures) if fixtures is not None else None}
+
+
 def cache_read_many(keys, max_age_hours):
     """Read one team's saved logs in one connection; never contact providers."""
     if not configured() or not keys:
