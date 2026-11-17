@@ -84,6 +84,8 @@ class CollectiveOddsTests(unittest.TestCase):
             third = engine.get_tournament_odds("2026-10-28T17:00", catalog)
         self.assertEqual(paid.call_count, 2)
         self.assertEqual(paid.call_args.args[0], "odds-by-tournaments")
+        self.assertEqual(paid.call_args.kwargs['bookmaker'], 'bet365.it')
+        self.assertNotIn('bookmakers', paid.call_args.kwargs)
         self.assertEqual(set(first["data"]), {"today", "tomorrow"})
         self.assertEqual(set(first["data"]["today"]["bookmakerOdds"]["bet365.it"]["markets"]), {"m"})
         self.assertEqual(second["source"], "cache")
@@ -99,6 +101,25 @@ class CollectiveOddsTests(unittest.TestCase):
             result = engine.finder_scan([fixture], {}, "2026-27", 15, 1.01, 20, -100, odds_batch=batch)
         self.assertEqual(result[-1][0]["stato"], "vuota")
         self.assertEqual(result[-1][0]["origine"], "tournament")
+
+    def test_empty_bulk_feed_skips_roster_discovery(self):
+        fixture = {'fixtureId': 'missing', 'startTime': '2026-11-18T01:00:00Z'}
+        with patch.object(engine, 'finder_player_index', side_effect=AssertionError('Unneeded ESPN lookup')):
+            result = engine.finder_scan([fixture], {}, '2026-27', 15, 1.01, 20, -100,
+                odds_batch={'data': {}, 'source': 'api', 'fetched_at': 1000})
+        self.assertEqual(result[2], 0)
+        self.assertEqual(result[-1][0]['stato'], 'vuota')
+
+    def test_old_plural_parameter_cache_cannot_hide_corrected_feed(self):
+        old = {'identity': 'odds:nba:bet365.it:v1:2026-11-17T12:00',
+               'fetched_at': 1000, 'data': {}}
+        with patch.object(odds_feed.storage, 'configured', return_value=True), \
+             patch.object(odds_feed.storage, 'cache_read', return_value=old), \
+             patch.object(odds_feed.storage, 'cache_write'), \
+             patch.object(odds_feed.time, 'time', return_value=1001), \
+             patch.object(engine, 'get_json', return_value=[]) as paid:
+            engine.get_tournament_odds('2026-11-17T12:00', {'m': {'marketType': 'players-points'}})
+        paid.assert_called_once()
 
     def test_bulk_slimming_preserves_existing_player_parser(self):
         catalog = {"m": {"marketType": "players-points", "outcomes": [{"outcomeId": "o", "outcomeName": "10+"}]}}

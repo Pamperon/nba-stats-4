@@ -886,7 +886,8 @@ def do_scan(job_id, date):
             # up to 16 full copies in the 512 MiB Render instance.
             jobs[job_id].update({key: snapshot[key] for key in (
                 'date', 'state', 'progress', 'stage', 'scan_started_at',
-                'scan_finished_at', 'odds_api_http_requests_scan')}, cloud_saved=True)
+                'scan_finished_at', 'odds_api_http_requests_scan', 'quote_lines_scan',
+                'fixture_count')}, cloud_saved=True)
     except Exception as exc:
         logger.exception('Scan %s failed for %s', job_id, date)
         with lock: jobs[job_id].update(state='error',stage=f'Analisi non completata ({type(exc).__name__})')
@@ -1918,14 +1919,19 @@ def scan(date: str = Query(pattern=r'^\d{4}-\d{2}-\d{2}$'),
     return {'job_id':job_id,'reused':False}
 
 @app.get('/api/scan/{job_id}', dependencies=[Depends(auth)])
-def scan_result(job_id: str):
+def scan_result(job_id: str, summary: bool = False):
     with lock:
         job = dict(jobs[job_id]) if job_id in jobs else None
     if job is not None and not job.get('cloud_saved'):
+        if summary:
+            return {key: value for key, value in job.items()
+                    if key in ('date', 'state', 'progress', 'stage', 'scan_source',
+                               'scan_started_at', 'scan_finished_at', 'quote_lines_scan',
+                               'fixture_count', 'odds_api_http_requests_scan')}
         return job
     if storage.configured():
         try:
-            saved = storage.by_job_id(job_id)
+            saved = storage.scan_summary(job_id) if summary else storage.by_job_id(job_id)
             if saved:
                 return saved
             attempt = scan_tracking.attempt(job_id=job_id)

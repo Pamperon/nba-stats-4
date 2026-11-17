@@ -1,0 +1,32 @@
+name: Verify NBA scan recovery
+on:
+  push:
+    branches: [main]
+    # One incident recovery when this workflow is introduced or explicitly edited.
+    paths: ['.github/workflows/scan-recovery.yml']
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Data italiana delle partite da verificare (YYYY-MM-DD)'
+        required: true
+        default: '2026-11-18'
+permissions:
+  contents: read
+concurrency:
+  group: basketlab-scan-recovery
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify deployment and run one recovery scan
+        env:
+          NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+          RECOVERY_DATE: ${{ inputs.date || '2026-11-18' }}
+        run: python scripts/verify_scan_recovery.py

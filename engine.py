@@ -259,9 +259,10 @@ def get_tournament_odds(slot_key=None, catalog=None):
     key = slot_key or datetime.now(ROME_TZ).strftime("%Y-%m-%dT%H:manual")
     def download():
         payload = get_json("odds-by-tournaments", tournamentIds="132",
-                           bookmakers="bet365.it", verbosity=3, _market_ids=market_ids)
+                           bookmaker="bet365.it", verbosity=3, _market_ids=market_ids)
         return odds_feed.slim_tournament(payload, market_ids)
-    return odds_feed.cached_payload("odds:nba:bet365.it:v1:" + key,
+    # Do not reuse responses downloaded with the former plural parameter.
+    return odds_feed.cached_payload("odds:nba:bet365.it:v1:bookmaker-v2:" + key,
                                     ODDS_CACHE_TTL_SECONDS, download)
 
 def fixture_is_completed(fixture):
@@ -1026,7 +1027,6 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
     starts = [start for start in starts if start is not None]
     history_cutoff = min(starts) if starts else datetime.now(timezone.utc)
     history_cutoff = pd.Timestamp(history_cutoff).tz_convert("UTC")
-    index = finder_player_index(int(season[:4]) + 1)
     props_by_player = {}
     player_logs = {}
     quote_count = 0
@@ -1104,6 +1104,8 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             issues.append(f"{match_name}: {report['dettaglio']}")
     from concurrent.futures import ThreadPoolExecutor
     player_items = list(props_by_player.items())
+    # An empty bookmaker feed needs no expensive ESPN roster discovery.
+    index = finder_player_index(int(season[:4]) + 1) if player_items else {}
     missing_names = [name for name,_ in player_items
                      if normalized_name(name) not in index
                      and espn_player_key(name) not in index]

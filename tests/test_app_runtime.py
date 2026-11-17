@@ -121,6 +121,40 @@ class AppRuntimeTests(unittest.TestCase):
         self.assertEqual(response.json()['job_id'], 'older')
         read.assert_called_once_with('older')
 
+    def test_poll_summary_never_restores_large_saved_payload(self):
+        summary = {'job_id': 'older', 'state': 'partial', 'quote_lines_scan': 0}
+        with patch.object(main.storage, 'configured', return_value=True), \
+             patch.object(main.storage, 'scan_summary', return_value=summary) as read, \
+             patch.object(main.storage, 'by_job_id', side_effect=AssertionError('Full history decoded')):
+            response = self.client.get('/api/scan/older?summary=true',
+                headers={'Authorization': 'Bearer ' + main.TOKEN})
+        self.assertEqual(response.json(), summary)
+        read.assert_called_once_with('older')
+
+    def test_unsaved_poll_summary_omits_results_but_export_keeps_them(self):
+        main.jobs['unsaved'] = {'state': 'save_failed', 'results': [{'Giocatore': 'A'}],
+                               'player_logs': {'A': []}, 'quote_lines_scan': 1}
+        headers = {'Authorization': 'Bearer ' + main.TOKEN}
+        compact = self.client.get('/api/scan/unsaved?summary=true', headers=headers).json()
+        full = self.client.get('/api/scan/unsaved', headers=headers).json()
+        self.assertNotIn('results', compact)
+        self.assertNotIn('player_logs', compact)
+        self.assertEqual(compact['quote_lines_scan'], 1)
+        self.assertEqual(full['results'], [{'Giocatore': 'A'}])
+
+    def test_storage_poll_summary_projects_only_metadata_for_exact_job(self):
+        connection = MagicMock()
+        connection.return_value.__enter__.return_value.execute.return_value.fetchone.return_value = (
+            dt.date(2026, 11, 18), 'partial', dt.datetime(2026, 11, 17, tzinfo=dt.timezone.utc),
+            '0', '5', '2026-11-17T12:41:05+01:00')
+        with patch.object(main.storage, 'connection', connection):
+            summary = main.storage.scan_summary('existing')
+        self.assertEqual(summary['quote_lines_scan'], 0)
+        self.assertEqual(summary['fixture_count'], 5)
+        execute = connection.return_value.__enter__.return_value.execute
+        self.assertEqual(execute.call_args.args[1], ('existing',))
+        self.assertNotIn('SELECT payload ', execute.call_args.args[0])
+
     def test_storage_lookup_uses_requested_job(self):
         connection = MagicMock()
         connection.return_value.__enter__.return_value.execute.return_value.fetchone.return_value = (
