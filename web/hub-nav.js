@@ -636,7 +636,7 @@ function renderCalendar(){
  const compactDate=$('#hub-calendar-compact-date');if(compactDate&&requestedDate){const d=new Date(requestedDate+'T12:00:00Z');compactDate.textContent=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric',timeZone:'UTC'}).format(d)}
  if(requestedDate)calendarSelectedDate=requestedDate;
  const relativeToday=italyDay(new Date());
- for(const [id,offset] of [['hub-calendar-yesterday',-1],['hub-calendar-today',0],['hub-calendar-tomorrow',1]]){const button=$('#'+id);if(button){const active=requestedDate===calendarIsoOffset(relativeToday,offset);button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}
+
  if(!calendarWeekStart&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarWeekStart=calendarMonday(requestedDate);
  if(!calendarVisibleMonth&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarVisibleMonth=requestedDate.slice(0,7);
  const calendarToken=++calendarRequest;
@@ -787,13 +787,6 @@ calendarToggle?.addEventListener('click',()=>{
 });
 $('#hub-calendar-month-prev')?.addEventListener('click',()=>shiftCalendarMonth(-1));
 $('#hub-calendar-month-next')?.addEventListener('click',()=>shiftCalendarMonth(1));
-for(const [id,offset] of [['hub-calendar-yesterday',-1],['hub-calendar-today',0],['hub-calendar-tomorrow',1]]){
- $('#'+id)?.addEventListener('click',()=>{
-  const today=italyDay(new Date());
-  const date=new Date(today+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+offset);
-  calendarSelectDate(date.toISOString().slice(0,10));
- });
-}
 function shiftCalendarWeek(delta){calendarSelectDate(calendarIsoOffset(calendarSelectedDate||italyDay(new Date()),delta*7))}
 $('#hub-calendar-prev')?.addEventListener('click',()=>shiftCalendarWeek(-1));
 $('#hub-calendar-next')?.addEventListener('click',()=>shiftCalendarWeek(1));

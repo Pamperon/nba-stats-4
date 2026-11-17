@@ -428,13 +428,13 @@ test('missing single stays hidden on Home and explains availability in Pronostic
  await new Promise(r=>setImmediate(r));doc.querySelector('.hub-mobile-bar [data-hub=home]').click();assert.equal(doc.querySelector('.hub-single-section').hidden,false);
  picks.innerHTML='';await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('.hub-single-section').hidden,true);
 });
-test('NBA week keeps its days stable, highlights today and returns with Oggi',async()=>{
+test('NBA week keeps its days stable and highlights today without an Oggi shortcut',async()=>{
  const {window,doc}=setup();window.fetch=async()=>({ok:true,json:async()=>({games:[],fixtures:[]})});doc.querySelector('.hub-sidebar [data-hub=calendar]').click();
  const today=doc.querySelector('.hub-calendar-date.today');assert.equal(today.getAttribute('aria-current'),'date');
  const dates=()=>[...doc.querySelectorAll('.hub-calendar-date')].map(b=>b.getAttribute('aria-label'));
  const week=dates();doc.querySelectorAll('.hub-calendar-date')[0].click();assert.deepEqual(dates(),week);
  doc.querySelector('#hub-calendar-next').click();assert.notDeepEqual(dates(),week);
- doc.querySelector('#hub-calendar-today').click();assert.equal(doc.querySelector('.hub-calendar-date.today').getAttribute('aria-pressed'),'true');
+ assert.equal(doc.querySelector('#hub-calendar-today'),null);
  assert.match(doc.querySelector('#hub-calendar-compact-date').textContent,/^[a-z]+ \d{4}$/);
  const toggle=doc.querySelector('#hub-calendar-collapse-toggle');toggle.click();assert.equal(doc.querySelector('#hub-calendar-picker').hidden,false);
  doc.querySelector('#hub-calendar-month-grid .hub-month-day').click();assert.equal(doc.querySelector('#hub-calendar-picker').hidden,true);
