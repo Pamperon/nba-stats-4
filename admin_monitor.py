@@ -19,11 +19,18 @@ def report():
             GROUP BY d.market,d.probability_bin ORDER BY d.market,d.probability_bin
         ''').fetchall()
         scans = conn.execute('''
-            SELECT scan_date,state,created_at,
-              payload->>'odds_feed_fetched_at',payload->>'odds_feed_source',
-              payload->'odds_api_http_requests_scan',payload->'quote_lines_scan',
-              payload->'issues',payload->'timings',payload->'minutes_audit'
-            FROM nba_scan_snapshots ORDER BY created_at DESC LIMIT 12
+            SELECT recent.scan_date,recent.state,recent.created_at,
+              meta.odds_feed_fetched_at,meta.odds_feed_source,
+              meta.odds_api_http_requests_scan,meta.quote_lines_scan,
+              meta.issues,meta.timings,meta.minutes_audit
+            FROM (
+                SELECT scan_date,state,created_at,payload FROM nba_scan_snapshots
+                ORDER BY created_at DESC LIMIT 12
+            ) recent
+            CROSS JOIN LATERAL jsonb_to_record(recent.payload) AS meta(
+                odds_feed_fetched_at TEXT,odds_feed_source TEXT,
+                odds_api_http_requests_scan JSONB,quote_lines_scan JSONB,
+                issues JSONB,timings JSONB,minutes_audit JSONB)
         ''').fetchall()
         attempts = conn.execute('''
             SELECT scan_date,state,stage,updated_at,heartbeat_at
