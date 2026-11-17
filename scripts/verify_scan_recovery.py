@@ -28,6 +28,12 @@ def main():
         raise RuntimeError('Expected deployment unavailable; no scan requested')
     assert health['scan_tracking_ready'] and health['status'] == 'ok'
     print('Verified deployment:', expected, flush=True)
+    if os.environ.get('RECOVERY_ACTION') == 'diagnose':
+        report = scheduler.call('/api/diagnostics/odds-coverage?date=' + date, method='POST', timeout=90)
+        print(json.dumps(report, ensure_ascii=False), flush=True)
+        if report.get('state') != 'done':
+            raise RuntimeError('Diagnostic incomplete; inspect saved report before retrying')
+        return
     # POST is sent exactly once. A timeout must be investigated using durable
     # status, never replayed automatically because the scan may already exist.
     job = scheduler.call('/api/scan?date=' + date + '&source=github', method='POST')
@@ -35,10 +41,13 @@ def main():
     scheduler.wait_for_scan(job['job_id'], date)
     result = scheduler.call('/api/saved/time?date=' + date)
     print(json.dumps(result, ensure_ascii=False), flush=True)
-    monitor = scheduler.call('/api/admin/monitor')
-    print(json.dumps({'database_pool': monitor['database_pool'],
-                      'recent_scans': monitor['scans'][:4],
-                      'odds_requests_24h': monitor['odds_requests_24h']}, ensure_ascii=False), flush=True)
+    try:
+        monitor = scheduler.call('/api/admin/monitor')
+        print(json.dumps({'database_pool': monitor['database_pool'],
+                          'recent_scans': monitor['scans'][:4],
+                          'odds_requests_24h': monitor['odds_requests_24h']}, ensure_ascii=False), flush=True)
+    except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+        print('Optional monitoring unavailable:', type(exc).__name__, flush=True)
     if not result.get('quote_lines_scan'):
         raise RuntimeError('Recovery completed but provider coverage is still empty; inspect report before another paid scan')
 
