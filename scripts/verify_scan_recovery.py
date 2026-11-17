@@ -28,6 +28,13 @@ def main():
         raise RuntimeError('Expected deployment unavailable; no scan requested')
     assert health['scan_tracking_ready'] and health['status'] == 'ok'
     print('Verified deployment:', expected, flush=True)
+    if os.environ.get('RECOVERY_ACTION') == 'monitor':
+        monitor = scheduler.call('/api/admin/monitor')
+        print(json.dumps({'read_only': monitor['read_only'], 'odds_api_calls': monitor['odds_api_calls'],
+            'database_pool': monitor['database_pool'], 'coverage_days': len(monitor['coverage']),
+            'recent_scans': monitor['scans'][:4],
+            'odds_requests_24h': monitor['odds_requests_24h']}, ensure_ascii=False), flush=True)
+        return
     if os.environ.get('RECOVERY_ACTION') == 'diagnose':
         report = scheduler.call('/api/diagnostics/odds-coverage?date=' + date, method='POST', timeout=90)
         print(json.dumps(report, ensure_ascii=False), flush=True)

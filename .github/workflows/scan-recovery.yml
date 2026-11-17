@@ -2,16 +2,16 @@ name: Verify NBA scan recovery
 on:
   push:
     branches: [main]
-    # Explicit incident diagnosis; one reserved comparison, never an automatic rescan.
+    # Verify monitoring after this incident fix, without requesting new odds.
     paths: ['.github/workflows/scan-recovery.yml']
   workflow_dispatch:
     inputs:
       action:
-        description: 'Diagnostica singola (massimo 1 richiesta) oppure scansione'
+        description: 'Monitoraggio, diagnostica singola oppure scansione'
         required: true
         type: choice
-        default: diagnose
-        options: [diagnose, scan]
+        default: monitor
+        options: [monitor, diagnose, scan]
       date:
         description: 'Data italiana delle partite da verificare (YYYY-MM-DD)'
         required: true
@@ -35,5 +35,5 @@ jobs:
           NBA_STATS_ACCESS_TOKEN: ${{ secrets.NBA_STATS_ACCESS_TOKEN }}
           EXPECTED_COMMIT: ${{ github.sha }}
           RECOVERY_DATE: ${{ inputs.date || '2026-11-18' }}
-          RECOVERY_ACTION: ${{ inputs.action || 'diagnose' }}
+          RECOVERY_ACTION: ${{ inputs.action || 'monitor' }}
         run: python scripts/verify_scan_recovery.py
