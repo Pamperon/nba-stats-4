@@ -13,6 +13,9 @@ for(const profile of ['desktop','mobile']){
   assert.ok(now<=old*1.25+250,`${profile} ${metric}: ${now} exceeds baseline ${old} + budget`);
   results.push({profile,metric,baseline:old,candidate:now});
  }
- assert.ok(after.every(x=>x.apiRequests.length<=4),'Unexpected Home API fanout');
+ // Discovery may add one compact read when its panel enters the viewport.
+ // Keep the original core budget and reject duplicate discovery requests.
+ assert.ok(after.every(x=>x.apiRequests.filter(path=>path!=='/api/players/form').length<=4),'Unexpected core Home API fanout');
+ assert.ok(after.every(x=>x.apiRequests.filter(path=>path==='/api/players/form').length<=1),'Duplicate player-form requests');
 }
 console.log('BASKETLAB_BUDGET '+JSON.stringify(results));

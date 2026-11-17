@@ -1291,6 +1291,15 @@ def player_teams():
         logger.exception('NBA teams unavailable')
         raise HTTPException(503, 'Squadre ESPN temporaneamente non disponibili')
 
+@app.get('/api/players/form')
+def player_form():
+    import player_form as form
+    try:
+        return form.read()
+    except Exception:
+        logger.exception('Player form unavailable')
+        raise HTTPException(503, 'Forma giocatori temporaneamente non disponibile')
+
 @app.get('/api/players/directory')
 def player_directory():
     try: return {'players': player_stats.directory_with_previews(), 'odds_api_calls': 0}

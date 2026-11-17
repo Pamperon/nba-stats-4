@@ -191,6 +191,7 @@ function display(){
  if(singleShowcase)singleShowcase.hidden=!(home||picksView)||extra||(home&&!$('#picks .pick-group[aria-label="La scelta del Lab"] .pick-selection'));
  if(insights)insights.hidden=!home||extra;if(gamesShowcase)gamesShowcase.hidden=!home||extra;
  if(nbaUpdatesPanel)nbaUpdatesPanel.hidden=!home||extra;
+ const formPanel=$('#player-form');if(formPanel)formPanel.hidden=!home||extra;
  if(performance)performance.hidden=!(home||picksView)||extra;if(methodLink)methodLink.hidden=!home||extra;
  const singleAction=singleShowcase?.querySelector('.bl-broadcast-action');
  if(singleAction)singleAction.textContent='Scopri l’analisi →';
