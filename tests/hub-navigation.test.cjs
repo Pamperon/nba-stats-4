@@ -403,7 +403,7 @@ test('brand link returns to home and closes the menu from another view',()=>{
  assert.equal(doc.querySelector('#hub-menu-drawer').hidden,true);
 });
 
-test('venue icons appear only in calendar cards and not in home or daily picks',async()=>{
+test('calendar, home and daily picks omit venue icons',async()=>{
  const {window,doc}=setup();
  await new Promise(r=>setImmediate(r));
  window.fetch=async()=>({ok:true,json:async()=>({games:[{away:'Boston Celtics',home:'Atlanta Hawks',upcoming:true,start_at:new Date(Date.now()+3600000).toISOString()}]})});
@@ -416,11 +416,8 @@ test('venue icons appear only in calendar cards and not in home or daily picks',
  doc.querySelector('.hub-sidebar [data-hub=calendar]').click();
  await new Promise(r=>setImmediate(r));
  const icons=doc.querySelectorAll('.hub-calendar-match .bl-venue-icon');
- assert.equal(icons.length,2);
- assert.equal(icons[0].getAttribute('aria-label'),'In trasferta');
- assert.equal(icons[0].parentElement.firstChild,icons[0]);
- assert.equal(icons[1].parentElement.lastChild,icons[1]);
- assert.equal(icons[1].getAttribute('aria-label'),'In casa');
+ assert.equal(icons.length,0);
+ window.close();
 });
 
 test('missing single stays hidden on Home and explains availability in Pronostici',async()=>{
@@ -431,10 +428,17 @@ test('missing single stays hidden on Home and explains availability in Pronostic
  await new Promise(r=>setImmediate(r));doc.querySelector('.hub-mobile-bar [data-hub=home]').click();assert.equal(doc.querySelector('.hub-single-section').hidden,false);
  picks.innerHTML='';await new Promise(r=>setImmediate(r));assert.equal(doc.querySelector('.hub-single-section').hidden,true);
 });
-test('relative calendar day highlights follow yesterday, today, tomorrow and other dates',async()=>{
+test('NBA week keeps its days stable, highlights today and returns with Oggi',async()=>{
  const {window,doc}=setup();window.fetch=async()=>({ok:true,json:async()=>({games:[],fixtures:[]})});doc.querySelector('.hub-sidebar [data-hub=calendar]').click();
- for(const id of ['yesterday','today','tomorrow']){doc.querySelector('#hub-calendar-'+id).click();for(const other of ['yesterday','today','tomorrow'])assert.equal(doc.querySelector('#hub-calendar-'+other).getAttribute('aria-pressed'),String(id===other));}
- doc.querySelector('#hub-calendar-next').click();assert.equal(doc.querySelectorAll('.hub-calendar-quick-days button.active').length,0);await new Promise(r=>setImmediate(r));
+ const today=doc.querySelector('.hub-calendar-date.today');assert.equal(today.getAttribute('aria-current'),'date');
+ const dates=()=>[...doc.querySelectorAll('.hub-calendar-date')].map(b=>b.getAttribute('aria-label'));
+ const week=dates();doc.querySelectorAll('.hub-calendar-date')[0].click();assert.deepEqual(dates(),week);
+ doc.querySelector('#hub-calendar-next').click();assert.notDeepEqual(dates(),week);
+ doc.querySelector('#hub-calendar-today').click();assert.equal(doc.querySelector('.hub-calendar-date.today').getAttribute('aria-pressed'),'true');
+ assert.match(doc.querySelector('#hub-calendar-compact-date').textContent,/^[a-z]+ \d{4}$/);
+ const toggle=doc.querySelector('#hub-calendar-collapse-toggle');toggle.click();assert.equal(doc.querySelector('#hub-calendar-picker').hidden,false);
+ doc.querySelector('#hub-calendar-month-grid .hub-month-day').click();assert.equal(doc.querySelector('#hub-calendar-picker').hidden,true);
+ window.close();
 });
 test('completed game URL restores its boxscore and contextual back removes only the game parameter',async()=>{
  const {window,doc}=setup();await new Promise(r=>setImmediate(r));

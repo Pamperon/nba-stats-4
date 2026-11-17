@@ -1619,3 +1619,22 @@ body.hub-match-open #app #date-loading{display:none!important}
 
 /* Native links preserve navigation appearance and open-in-new-tab support. */
 .hub-menu-drawer a[data-hub],.hub-mobile-bar a[data-hub]{text-decoration:none;box-sizing:border-box;font-family:inherit}
+
+/* NBA-style calendar navigation: a month picker and a stable seven-day week. */
+.hub-calendar-view .hub-calendar-collapse-toggle{justify-content:center;gap:9px;padding:12px 6px;margin:0 0 12px;background:transparent;border:0;box-shadow:none;color:#f5f8ff}
+.hub-calendar-month-title{display:flex;align-items:center;gap:9px;font-size:20px;font-weight:700;text-transform:capitalize}
+.hub-calendar-view .hub-calendar-nav{gap:2px;margin:0 0 10px}
+.hub-calendar-view .hub-calendar-nav>button{flex:0 0 24px;min-height:44px;border:0;background:transparent;color:#91a8bf;border-radius:50%}
+.hub-calendar-view .hub-calendar-dates{gap:0}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date{gap:9px;min-height:78px;max-width:none;padding:4px 0;background:transparent;border:0;border-radius:0;box-shadow:none;color:#f4f7fb}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date small{color:#91a8bf;font-size:12px;font-weight:500}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date strong{display:flex;align-items:center;justify-content:center;width:40px;height:40px;max-width:100%;border-radius:50%;font-size:20px;font-weight:500;line-height:1}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date.today strong{color:#ffab47}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date.active{background:transparent;border:0;color:#fff;box-shadow:none}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date.active strong{background:#3a4656;color:#fff;font-weight:800;box-shadow:inset 0 0 0 1px #ffffff10}
+.hub-calendar-view .hub-calendar-dates .hub-calendar-date.active small{color:#d4dfeb}
+.hub-calendar-view .hub-calendar-quick-days{display:flex;justify-content:center;margin:0 0 14px}
+.hub-calendar-view .hub-calendar-quick-days button{flex:0 0 auto;min-height:32px;padding:5px 20px;border-radius:20px;font-size:13px}
+.hub-calendar-view .hub-calendar-day-summary{margin-top:0}
+.hub-calendar-collapse-toggle:focus-visible,.hub-calendar-nav button:focus-visible{outline:2px solid #ffab47;outline-offset:3px}
+@media(max-width:380px){.hub-calendar-view .hub-calendar-nav>button{flex-basis:19px}.hub-calendar-view .hub-calendar-dates .hub-calendar-date strong{width:34px;height:34px;font-size:18px}.hub-calendar-month-title{font-size:18px}}
