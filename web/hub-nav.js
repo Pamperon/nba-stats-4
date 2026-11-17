@@ -581,7 +581,7 @@ let calendarWeekStart='';
 let calendarVisibleMonth='';
 function calendarIsoOffset(iso,days){const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)}
 function calendarMonday(iso){return calendarIsoOffset(iso,-((new Date(iso+'T12:00:00Z').getUTCDay()+6)%7))}
-function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=calendarIsoOffset(iso,-3);calendarVisibleMonth=iso.slice(0,7);renderCalendar();saveHubState();syncRoute()}
+function calendarSelectDate(iso){calendarSelectedDate=iso;calendarWeekStart=calendarMonday(iso);calendarVisibleMonth=iso.slice(0,7);renderCalendar();saveHubState();syncRoute()}
 
 let activeCalendarBoxscore=null;
 let boxscoreReturnTeam='';
@@ -633,11 +633,11 @@ function renderCalendar(){
  if(index<0)index=0;
  const matches=[...new Set([...(fixture?.options||[])].map(o=>o.value).filter(Boolean))];
  const requestedDate=calendarSelectedDate||options[index]?.value||selectedValue;
- const compactDate=$('#hub-calendar-compact-date');if(compactDate&&requestedDate){const d=new Date(requestedDate+'T12:00:00Z');compactDate.textContent=new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(d)}
+ const compactDate=$('#hub-calendar-compact-date');if(compactDate&&requestedDate){const d=new Date(requestedDate+'T12:00:00Z');compactDate.textContent=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric',timeZone:'UTC'}).format(d)}
  if(requestedDate)calendarSelectedDate=requestedDate;
  const relativeToday=italyDay(new Date());
  for(const [id,offset] of [['hub-calendar-yesterday',-1],['hub-calendar-today',0],['hub-calendar-tomorrow',1]]){const button=$('#'+id);if(button){const active=requestedDate===calendarIsoOffset(relativeToday,offset);button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}
- if(!calendarWeekStart&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarWeekStart=calendarIsoOffset(requestedDate,-3);
+ if(!calendarWeekStart&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarWeekStart=calendarMonday(requestedDate);
  if(!calendarVisibleMonth&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))calendarVisibleMonth=requestedDate.slice(0,7);
  const calendarToken=++calendarRequest;
  const isEspnCalendar=!!(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate));
@@ -655,11 +655,11 @@ function renderCalendar(){
     const finished=game.state==='post'||(!game.upcoming&&/final|terminat|conclus|finished|completed/i.test(String(game.status||'')));
     const live=!finished&&game.state==='in';
     const row=document.createElement('button');row.type='button';row.className='hub-calendar-match hub-calendar-gradient';row.dataset.fixtureKey=fixtureKey(match);row.dataset.theme=String(gameIndex%4);row.dataset.state=finished?'post':live?'in':'pre';fixtureTeamGradient(row,game.away,game.home);
-    [game.away,game.home].forEach((team,i)=>{
+    [game.away,game.home].forEach(team=>{
      const side=document.createElement('span');side.className='hub-calendar-team';
      const code=matchTeamCodes[team];
      if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';side.append(img)}
-     const label=document.createElement('span');label.textContent=team||'NBA';if(i===0)label.prepend(venueIcon(false));else label.append(venueIcon(true));side.append(label);row.append(side);
+     const label=document.createElement('span');label.textContent=team||'NBA';side.append(label);row.append(side);
     });
     const info=document.createElement('div');info.className='hub-calendar-match-arrow';
     if(live){const state=document.createElement('span');state.className='hub-calendar-state live';state.textContent='Live';info.append(state)}
@@ -713,11 +713,11 @@ function renderCalendar(){
   const dateValue=calendarIsoOffset(weekStart,i);
   const dayDate=new Date(dateValue+'T12:00:00Z');
   const button=document.createElement('button');button.type='button';
-  const weekday=new Intl.DateTimeFormat('it-IT',{weekday:'short',timeZone:'UTC'}).format(dayDate).replace('.','').toUpperCase();
+  const weekday=new Intl.DateTimeFormat('it-IT',{weekday:'short',timeZone:'UTC'}).format(dayDate).replace('.','').slice(0,1).toUpperCase();
   const top=document.createElement('small');top.textContent=weekday;button.append(top);
   const number=document.createElement('strong');number.textContent=String(dayDate.getUTCDate());button.append(number);
-  const dot=document.createElement('span');dot.className='hub-calendar-date-dot';dot.setAttribute('aria-hidden','true');button.append(dot);
-  button.className='hub-calendar-date'+(dateValue===requestedDate?' active':'');
+  button.className='hub-calendar-date'+(dateValue===requestedDate?' active':'')+(dateValue===relativeToday?' today':'');
+  if(dateValue===relativeToday)button.setAttribute('aria-current','date');
   button.setAttribute('aria-pressed',String(dateValue===requestedDate));
   button.setAttribute('aria-label',new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(dayDate));
   button.addEventListener('click',()=>calendarSelectDate(dateValue));
@@ -745,14 +745,12 @@ function renderCalendar(){
   const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
   if(teams.length===2){
    fixtureTeamGradient(row,teams[0],teams[1]);
-   const venueEntries=[];
    teams.forEach((team,i)=>{
     const side=document.createElement('span');side.className='hub-calendar-team';
     const code=matchTeamCodes[team]||matchTeamCodes[team.replace(/^LA /,'Los Angeles ')];
     if(code){const logo=document.createElement('img');logo.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';logo.alt='';logo.loading='lazy';logo.addEventListener('error',()=>{logo.hidden=true});side.append(logo)}
-    const label=document.createElement('span');label.textContent=team;side.append(label);row.append(side);venueEntries.push([label,team])
+    const label=document.createElement('span');label.textContent=team;side.append(label);row.append(side)
    });
-   markFixtureVenues(venueEntries,match,requestedDate||italyDay(new Date()),false);
   }else{const label=document.createElement('strong');label.textContent=match;row.append(label)}
   const arrow=document.createElement('span');arrow.className='hub-calendar-match-arrow';arrow.textContent='›';row.append(arrow);
   row.setAttribute('aria-label',match+' · Apri analisi e quote');
@@ -938,7 +936,7 @@ if($('#picks'))new MutationObserver(()=>{featuredPicks();updateInsights();refres
 try{
  const saved=JSON.parse(sessionStorage.getItem(HUB_STATE_KEY)||'null');
  if(location.pathname==='/'&&!location.hash&&saved&&['home','calendar','picks','stats','finder','history','about'].includes(saved.view)){
-  if(/^\d{4}-\d{2}-\d{2}$/.test(saved.date||'')){calendarSelectedDate=saved.date;calendarWeekStart=calendarIsoOffset(saved.date,-3);calendarVisibleMonth=saved.date.slice(0,7)}
+  if(/^\d{4}-\d{2}-\d{2}$/.test(saved.date||'')){calendarSelectedDate=saved.date;calendarWeekStart=calendarMonday(saved.date);calendarVisibleMonth=saved.date.slice(0,7)}
   if(saved.view==='calendar'){select('calendar');renderCalendar()}
   else if(saved.match&&saved.view==='finder'){openMatchQuotes(saved.match)}
   else if(saved.view==='home')select('home');
@@ -957,7 +955,7 @@ function applyRoute(){
  applyingRoute=true;
  try{
   if(route.view==='calendar')window.BasketLabNBA?.apply(route);
-  if(route.date){calendarSelectedDate=route.date;calendarWeekStart=calendarIsoOffset(route.date,-3);calendarVisibleMonth=route.date.slice(0,7)}
+  if(route.date){calendarSelectedDate=route.date;calendarWeekStart=calendarMonday(route.date);calendarVisibleMonth=route.date.slice(0,7)}
   if(route.player&&window.BasketLabPlayers){window.BasketLabPlayers.openRoute(route);select('stats');}
   else if(route.match){
    const picker=$('#date');
