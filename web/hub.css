@@ -1098,9 +1098,9 @@ body:not(.statistics-area):has(#dashboard:not([hidden])) #date-area .quote-summa
 .hub-calendar-games .hub-calendar-final-score{font-size:calc(16px + var(--bl-text-step,0px));color:#fff;font-weight:850;letter-spacing:.03em}
 
 /* Full-season NBA date picker, independent from prediction dates. */
-.hub-calendar-month-navigation{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 9px}
-.hub-calendar-month-navigation strong{font-size:calc(16px + var(--bl-text-step,0px));color:#f5f8ff;text-transform:capitalize}
-.hub-calendar-month-navigation button{width:35px;height:35px;border:1px solid #456985;border-radius:10px;background:#102d45;color:#ffad62;font-size:25px;cursor:pointer}
+.hub-calendar-month-navigation{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;align-items:center;gap:8px;width:100%;min-width:0;padding:4px;margin:14px 0 9px}
+.hub-calendar-month-navigation strong{min-width:0;text-align:center;font-size:calc(16px + var(--bl-text-step,0px));color:#f5f8ff;text-transform:capitalize}
+.hub-calendar-month-navigation button{display:flex;align-items:center;justify-content:center;width:36px;height:36px;min-width:0;min-height:36px;padding:0;line-height:1;border:1px solid #456985;border-radius:10px;background:#102d45;color:#ffad62;font-size:25px;cursor:pointer}
 .hub-calendar-month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:12px}
 .hub-calendar-month-grid .hub-month-weekday{font-size:calc(11px + var(--bl-text-step,0px));color:#8faac0;text-align:center;padding:6px 0}
 .hub-calendar-month-grid .hub-month-day{min-width:0;min-height:35px;padding:5px 0;border:1px solid transparent;border-radius:9px;background:#14334c;color:#d9e7f3;font-size:calc(12px + var(--bl-text-step,0px));cursor:pointer}
@@ -1633,8 +1633,6 @@ body.hub-match-open #app #date-loading{display:none!important}
 .hub-calendar-view .hub-calendar-dates .hub-calendar-date.active{background:transparent;border:0;color:#fff;box-shadow:none}
 .hub-calendar-view .hub-calendar-dates .hub-calendar-date.active strong{background:#3a4656;color:#fff;font-weight:800;box-shadow:inset 0 0 0 1px #ffffff10}
 .hub-calendar-view .hub-calendar-dates .hub-calendar-date.active small{color:#d4dfeb}
-.hub-calendar-view .hub-calendar-quick-days{display:flex;justify-content:center;margin:0 0 14px}
-.hub-calendar-view .hub-calendar-quick-days button{flex:0 0 auto;min-height:32px;padding:5px 20px;border-radius:20px;font-size:13px}
 .hub-calendar-view .hub-calendar-day-summary{margin-top:0}
 .hub-calendar-collapse-toggle:focus-visible,.hub-calendar-nav button:focus-visible{outline:2px solid #ffab47;outline-offset:3px}
 @media(max-width:380px){.hub-calendar-view .hub-calendar-nav>button{flex-basis:19px}.hub-calendar-view .hub-calendar-dates .hub-calendar-date strong{width:34px;height:34px;font-size:18px}.hub-calendar-month-title{font-size:18px}}
