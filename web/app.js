@@ -909,9 +909,10 @@ function renderPlayerSeason(){
  const mode=$('playermode').value;
  const games=playerGames.filter(g=>mode==='all'||String(g.SEASON_TYPE)===mode);
  const avg=stat=>games.length?(games.reduce((total,g)=>total+playerNum(g[stat]),0)/games.length).toFixed(1):'—';
- $('player-season-stats').innerHTML=[['PARTITE',games.length],['PTS',avg('PTS')],['REB',avg('REB')],['AST',avg('AST')]].map(([label,value])=>'<div class="season-stat"><small>'+label+'</small><strong>'+value+'</strong></div>').join('');
+ $('player-season-stats').innerHTML=[['PARTITE',games.length],['PUNTI',avg('PTS')],['RIMBALZI',avg('REB')],['ASSIST',avg('AST')]].map(([label,value])=>'<div class="season-stat" title="'+(label==='PARTITE'?'Partite giocate':'Media a partita')+'"><small>'+label+'</small><strong>'+value+'</strong></div>').join('');
 }
 async function loadPlayerProfile(request,team,id){
+ window.BasketLabAssets?.style?.('detail-sheets');
  const selected=$('playername').selectedOptions[0];
  const name=selected?.textContent||'Giocatore NBA';
  $('player-profile').hidden=false;
@@ -1046,7 +1047,7 @@ function drawPlayer(){
   const ordered=games.slice().reverse();
   $('chart').querySelectorAll('.player-game').forEach((details,index)=>{details.addEventListener('toggle',()=>{if(details.open)loadPlayerGameResult(details,ordered[index]);});});
  }
- document.dispatchEvent(new CustomEvent('basketlab:player-state',{detail:{id:$('playername').value,name:$('playername').selectedOptions[0]?.textContent||'',team:$('team').selectedOptions[0]?.textContent||'',windows:Object.fromEntries([5,10,20,'all'].map(n=>{const sample=n==='all'?dated:dated.slice(0,n);return [n,{hits:sample.filter(g=>Number(g[stat])>line).length,total:sample.length}]}))}}));
+ document.dispatchEvent(new CustomEvent('basketlab:player-state',{detail:{id:$('playername').value,teamId:$('team').value,name:$('playername').selectedOptions[0]?.textContent||'',team:$('team').selectedOptions[0]?.textContent||'',windows:Object.fromEntries([5,10,20,'all'].map(n=>{const sample=n==='all'?dated:dated.slice(0,n);return [n,{hits:sample.filter(g=>Number(g[stat])>line).length,total:sample.length}]}))}}));
 }
 $('team').onchange=()=>{closePlayerPicker();++pickNavigationRequest;changeTeam()};$('playername').onchange=()=>{++pickNavigationRequest;changePlayer()};$('playerseason').onchange=()=>{++pickNavigationRequest;changePlayer(null,true)};$('stat').onchange=()=>changeLine();$('line').onchange=drawPlayer;$('playermode').onchange=drawPlayer;$('playerwindow').onchange=drawPlayer;$('player-venue').onchange=drawPlayer;
 

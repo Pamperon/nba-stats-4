@@ -316,6 +316,7 @@ let activeMatch='',matchMarket='PTS',matchFormRequest=0,matchTeamFilter='';
 const cleanName=name=>String(name||'').split(',').reverse().map(x=>x.trim()).filter(Boolean).join(' ')||String(name||'');
 const displayNum=value=>{const n=Number(String(value??'').replace(',','.'));return Number.isFinite(n)?n.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'};
 function openMatchQuotes(match){
+ window.BasketLabAssets?.style?.('detail-sheets');
  activeMatch=match;calendar=false;
  go.finder();select('finder');document.body.classList.add('hub-match-open');
  const panel=$('#hub-match-detail');if(panel)panel.hidden=false;
@@ -327,8 +328,18 @@ function openMatchQuotes(match){
    const code=matchTeamCodes[team.trim()];
    if(code){const img=document.createElement('img');img.src='https://a.espncdn.com/i/teamlogos/nba/500/'+code+'.png';img.alt='';img.loading='lazy';img.onerror=()=>{img.hidden=true};wrap.append(img)}
    const name=document.createElement('strong');name.textContent=team;wrap.append(name);title.append(wrap);
+   const colors=nbaTeamPalette[code];if(colors)wrap.style.setProperty('--sheet-team',colors[0]);
   });
  }
+ const matchDate=$('#date')?.value;
+ if(matchDate>=italyDay(new Date()))window.BasketLabNBA?.standingsData?.().then(data=>{
+  if(activeMatch!==match||$('#date')?.value!==matchDate)return;
+  const teams=(data.conferences||[]).flatMap(conf=>conf.teams||[]);
+  for(const side of title?.querySelectorAll('.hub-match-team')||[]){
+   const name=side.querySelector('strong')?.textContent;const team=teams.find(t=>matchTeamCodes[t.name]&&matchTeamCodes[t.name]===matchTeamCodes[name]);
+   if(team&&!side.querySelector('.sheet-team-record')&&Number.isFinite(team.wins)&&Number.isFinite(team.losses)){const record=document.createElement('small');record.className='sheet-team-record';record.textContent='Stagione · '+team.wins+' V / '+team.losses+' P';side.append(record);}
+  }
+ }).catch(()=>{});
  const fixture=$('#finder-fixture');
  if(fixture){const available=[...fixture.options].map(option=>option.value);const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');fixture.value=available.find(v=>v===match)||available.find(v=>norm(v)===norm(match))||'';fixture.dispatchEvent(new Event('change',{bubbles:true}))}
  matchTeamFilter='';
@@ -353,14 +364,9 @@ async function loadMatchForm(match){
 
  const teams=match.split(/\s+-\s+|\s+vs\.?\s+/i).map(x=>x.trim());
  const panel=$('#hub-match-analysis');if(!panel||teams.length!==2)return;
- const boxes=panel.querySelectorAll('.hub-match-data-block');
- const facts=panel.querySelectorAll('.hub-match-facts>div');
- const summary=panel.querySelector('.hub-match-summary p');
- let insights=$('#hub-match-insights');if(!insights){insights=document.createElement('section');insights.id='hub-match-insights';$('#hub-match-charts')?.insertAdjacentElement('beforebegin',insights);}insights.hidden=true;insights.replaceChildren();
+ let insights=$('#hub-match-insights');if(!insights){insights=document.createElement('section');insights.id='hub-match-insights';$('#hub-match-h2h-chart')?.insertAdjacentElement('afterend',insights);}insights.hidden=true;insights.replaceChildren();
  const chart=$('#hub-match-charts');if(chart)chart.textContent='Caricamento delle statistiche verificate…';
  $('#hub-match-h2h-chart')?.replaceChildren();
- for(const block of boxes){block.querySelector('strong').textContent='Caricamento…';block.querySelector('p').textContent='Consultazione risultati ESPN verificati'}
- for(const fact of facts)fact.querySelector('small').textContent='Caricamento…';
  try{
   const date=$('#date')?.value;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))throw new Error('Data non disponibile');
@@ -378,46 +384,11 @@ async function loadMatchForm(match){
   renderMatchCharts(teams,a,b,data.window_days,data.moneyline_odds);
   if(window.BasketLabInsights){insights.hidden=false;window.BasketLabInsights.render(insights,'Le chiavi della partita',window.BasketLabInsights.match(teams,data,date),'Dati ESPN precedenti alla data selezionata · '+(data.history_complete===false?'Storico parziale · ':'')+'Confronti descrittivi, non previsioni.');}
   panel.dataset.historyComplete=String(data.history_complete!==false);
-  boxes[0].querySelector('small').textContent='Forma recente · ultime 5 disponibili';
-  boxes[0].querySelector('strong').textContent=teams[0]+': '+a.wins+'V / '+a.losses+'P';
-  boxes[0].querySelector('p').textContent=teams[1]+': '+b.wins+'V / '+b.losses+'P · Campione: '+a.games+' e '+b.games+' partite negli ultimi '+data.window_days+' giorni';
-  boxes[1].querySelector('small').textContent='Media punti segnati · ultime 5';
-  boxes[1].querySelector('strong').textContent=(a.avg_points??'—')+' vs '+(b.avg_points??'—');
-  boxes[1].querySelector('p').textContent='Medie osservate, non previsioni del risultato finale';
-  facts[0].querySelector('small').textContent=a.games&&b.games?teams[0]+': '+a.wins+'/'+a.games+' · '+teams[1]+': '+b.wins+'/'+b.games:'Campione storico insufficiente';
-  const h2h=data.h2h||[];
-  renderMatchH2H(teams,h2h);
-  facts[1].querySelector('small').textContent=h2h.length?h2h.length+' scontri diretti analizzati':'Nessuno scontro diretto';
-  facts[2].querySelector('small').textContent=a.avg_points!=null&&b.avg_points!=null?'Medie segnate: '+a.avg_points+' / '+b.avg_points:'Dati insufficienti';
-  if(summary){
-   const lines=[];
-   const gamesA=Number(a.games)||0,gamesB=Number(b.games)||0;
-   const winsA=Number(a.wins)||0,winsB=Number(b.wins)||0;
-   if(gamesA&&gamesB){
-    if(winsA===winsB)lines.push('Forma recente equilibrata: '+winsA+' vittorie a testa nelle gare disponibili.');
-    else{const leader=winsA>winsB?0:1;lines.push(teams[leader]+' ha un bilancio recente migliore ('+winsA+'-'+(gamesA-winsA)+' contro '+winsB+'-'+(gamesB-winsB)+' in ordine '+teams[0]+' / '+teams[1]+').')}
-   }else lines.push('Forma recente: campione insufficiente per confrontare le squadre.');
-   if(a.avg_points!=null&&b.avg_points!=null){
-    const diff=Math.abs(Number(a.avg_points)-Number(b.avg_points));
-    if(diff<0.05)lines.push('Le medie punti segnati sono sostanzialmente uguali.');
-    else lines.push(teams[Number(a.avg_points)>Number(b.avg_points)?0:1]+' segna in media '+diff.toLocaleString('it-IT',{maximumFractionDigits:1})+' punti in più nelle gare osservate.');
-   }
-   if(h2h.length){
-    const h2hWins=teams.map(team=>h2h.filter(game=>{const index=game.teams.indexOf(team);return index>=0&&Number(game.scores[index])>Number(game.scores[1-index])}).length);
-    if(h2hWins[0]!==h2hWins[1])lines.push('Scontri diretti nel periodo: '+teams[h2hWins[0]>h2hWins[1]?0:1]+' avanti '+Math.max(...h2hWins)+'-'+Math.min(...h2hWins)+'.');
-    else lines.push('Scontri diretti nel periodo: parità '+h2hWins[0]+'-'+h2hWins[1]+'.');
-   }
-   if(data.history_complete===false)lines.push('Storico ESPN parzialmente disponibile: riprova per completare il campione.');
-   summary.textContent=lines.join(' ')+' Dati descrittivi, non una previsione del risultato.';
-  }
+  renderMatchH2H(teams,data.h2h||[],data.window_days);
  }catch(error){
   if(request!==matchFormRequest)return;
   $('#hub-match-charts')?.replaceChildren();
-  boxes[0].querySelector('strong').textContent='Dati non disponibili';
-  boxes[0].querySelector('p').textContent='Risultati ESPN non accessibili in questo momento';
-  boxes[1].querySelector('strong').textContent='—';
-  boxes[1].querySelector('p').textContent='Nessuna stima inventata';
-  for(const fact of facts)fact.querySelector('small').textContent='Dati temporaneamente non disponibili';
+  const errorMessage=document.createElement('p');errorMessage.className='sheet-empty';errorMessage.textContent='Statistiche ESPN temporaneamente non disponibili. Riapri la partita per riprovare.';$('#hub-match-charts')?.append(errorMessage);
  }
 }
 function renderMatchMarketStats(){
@@ -595,6 +566,7 @@ function livePeriod(game){
  return ['Live',label,game.display_clock||''].filter(Boolean).join(' · ');
 }
 async function openCalendarBoxscore(game,refresh=false,returnTeam=''){
+ window.BasketLabAssets?.style?.('detail-sheets');
  if(refresh&&calendarBoxscoreLoading?.event===game.event_id)return;
  if(!refresh){boxscoreReturnTeam=returnTeam;activeCalendarBoxscore={...game};document.body.classList.add('hub-boxscore-open');saveHubState();syncRoute();}
  const request=++calendarBoxscoreRequest;
@@ -629,14 +601,15 @@ async function openCalendarBoxscore(game,refresh=false,returnTeam=''){
   if(request!==calendarBoxscoreRequest||activeCalendarBoxscore?.event_id!==game.event_id||document.body.dataset.hubView!=='calendar')return;
   activeCalendarBoxscore={...activeCalendarBoxscore,...data.game,...(data.state?{state:data.state}:{})};
   panel.querySelector('.hub-boxscore-headline').textContent=String(activeCalendarBoxscore.away_score??'—')+' – '+String(activeCalendarBoxscore.home_score??'—');
-  status.textContent=livePeriod(activeCalendarBoxscore);
+  status.textContent=livePeriod(activeCalendarBoxscore);status.dataset.state=activeCalendarBoxscore.state||'';
   const next=document.createElement('div');window.BasketLabBoxscoreView(document,next,activeCalendarBoxscore,data);
   if(content.innerHTML!==next.innerHTML){
    const scrolls=[...content.querySelectorAll('.hub-boxscore-scroll,.hub-boxscore-period-scroll')].map(el=>el.scrollLeft);
-   const focus=content.contains(document.activeElement)?document.activeElement.getAttribute('href'):null,top=window.scrollY;
+   const focus=content.contains(document.activeElement)?document.activeElement.getAttribute('href'):null,sortFocus=content.contains(document.activeElement)?document.activeElement.dataset.boxscoreSort:null,sortTeam=document.activeElement.closest?.('.hub-boxscore-team')?.dataset.team,top=window.scrollY;
    content.replaceChildren(...next.childNodes);
    content.querySelectorAll('.hub-boxscore-scroll,.hub-boxscore-period-scroll').forEach((el,index)=>{el.scrollLeft=scrolls[index]||0;});
    if(focus)[...content.querySelectorAll('a[href]')].find(a=>a.getAttribute('href')===focus)?.focus({preventScroll:true});
+   if(sortFocus)[...content.querySelectorAll('[data-boxscore-sort]')].find(b=>b.dataset.boxscoreSort===sortFocus&&b.closest('.hub-boxscore-team')?.dataset.team===sortTeam)?.focus({preventScroll:true});
    if(refresh&&window.scrollY!==top)window.scrollTo({top,behavior:'instant'});
   }
  }catch(error){

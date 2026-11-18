@@ -16,6 +16,7 @@ const payload=url=>{
  if(url.pathname==='/api/history/dates')return {dates:[{date:'2026-11-03'}]};
  if(url.pathname==='/api/history/performance')return {published:0};
  if(url.pathname==='/api/history')return {official_lines:[{...row,status:'won',actual:22}],other_lines:[],single_archive:{published:false}};
+ if(url.pathname==='/api/nba/teams/2')return {team:{name:'Boston Celtics'},upcoming:[game]};
  if(url.pathname==='/api/players/teams')return {teams:[{id:'2',name:'Boston Celtics'}]};
  if(url.pathname==='/api/players/roster')return {players:[{id:'123',name:'Browser Fixture',position:'Ala',jersey:'0'}]};
  if(url.pathname==='/api/players/log')return {athlete_id:'123',season:url.searchParams.get('season'),games:Array.from({length:10},(_,i)=>({GAME_ID:String(400+i),GAME_DATE:new Date(Date.UTC(2026,10,2-i)).toISOString().slice(0,10),PTS:[28,22,31,26,24,33,27,19,30,29][i],REB:5+i%4,AST:3+i%3,MIN:32,SEASON_TYPE:2,MATCHUP:'vs ATL'}))};

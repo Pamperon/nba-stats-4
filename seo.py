@@ -183,6 +183,7 @@ def render(path, players=None):
     extra = '<meta name="robots" content="' + robots + '"><script type="application/ld+json" id="bl-page-schema">' + safe_json(page) + '</script><script type="application/json" id="bl-seo-routes">' + safe_json(PAGES) + '</script>'
     lazy = {name: '/static/modules/' + name + '.js?v=' + asset_version('modules/' + name + '.js')
             for name in ('single-analysis', 'archive-view', 'boxscore-view', 'match-players')}
+    lazy['detail-sheets'] = '/static/detail-sheets.css?v=' + asset_version('detail-sheets.css')
     extra += '<script type="application/json" id="bl-asset-versions">' + safe_json(lazy) + '</script>'
     document = document.replace('</head>', extra + '</head>', 1)
     document = crawlable_navigation(document)

@@ -1,4 +1,4 @@
-const CACHE = 'nba-stats-4-shell-v81';
+const CACHE = 'nba-stats-4-shell-v82';
 const ASSETS = ["/", "/static/site-core.css", "/static/site-app.js", "/static/nba-hub.css", "/static/share.css", "/static/insights.css", "/static/team-links.css", "/static/modules/single-analysis.js", "/static/modules/archive-view.js", "/static/modules/boxscore-view.js", "/static/modules/match-players.js", "/static/icon.svg", "/static/icon-192.png", "/static/icon-512.png", "/static/icon-maskable-192.png", "/static/icon-maskable-512.png", "/static/favicon-32.png", "/static/favicon.ico", "/static/apple-touch-icon.png", "/static/manifest.webmanifest"];
 
 self.addEventListener('install', event => {
