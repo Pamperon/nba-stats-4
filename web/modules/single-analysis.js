@@ -15,9 +15,9 @@
   const bars=rows.map((g,i)=>{const v=Number(g[market]),x=left+step*(i+.5),hit=under?v<line:v>line;const color=v===line?'#dcb54c':hit?'#1dc987':'#bf6d87';return '<g><title>'+escape(date(g.GAME_DATE)+': '+fmt(v)+' '+unit[market]+(g.MATCHUP?' · '+g.MATCHUP:''))+'</title><rect x="'+(x-bw/2)+'" y="'+y(v)+'" width="'+bw+'" height="'+(bottom-y(v))+'" rx="4" fill="'+color+'"/><text x="'+x+'" y="'+(y(v)-7)+'" text-anchor="middle" class="sa-chart-value">'+fmt(v)+'</text>'+(rows.length<=10||i%3===0||i===rows.length-1?'<text x="'+x+'" y="210" text-anchor="middle" class="sa-chart-date">'+escape(date(g.GAME_DATE))+'</text>':'')+'</g>';}).join('');
   return '<svg viewBox="0 0 '+w+' '+h+'" style="min-width:'+w+'px" role="img" aria-label="'+escape('Ultime '+rows.length+' prestazioni: '+unit[market]+', linea '+fmt(line))+'"><line x1="'+left+'" y1="'+bottom+'" x2="'+right+'" y2="'+bottom+'" stroke="#385668"/>'+bars+'<line x1="'+left+'" y1="'+y(line)+'" x2="'+right+'" y2="'+y(line)+'" stroke="#ffab58" stroke-width="2" stroke-dasharray="5 4"/><text x="'+right+'" y="'+(y(line)-7)+'" text-anchor="end" class="sa-chart-line">Linea '+fmt(line)+'</text></svg>';
  }
- function render(panel,payload,back,backLabel='← Torna ai pronostici'){
+ function render(panel,payload,back,backLabel='Torna ai pronostici'){
   const r=payload.selection;
-  panel.innerHTML='<button type="button" class="bl-back sa-back">← Torna ai pronostici</button>';
+  panel.innerHTML='<button type="button" class="bl-back bl-nav-back sa-back">Torna ai pronostici</button>';
   panel.querySelector('.sa-back').textContent=backLabel;
   panel.querySelector('.sa-back').onclick=back;
   if(!r){panel.insertAdjacentHTML('beforeend','<div class="sa-card"><h1>Analisi della scelta del Lab</h1><p>Nessuna scelta idonea disponibile per questa giornata.</p></div>');return;}
