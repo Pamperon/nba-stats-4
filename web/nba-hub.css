@@ -26,3 +26,5 @@ body[data-hub-view=home] .hub-single-section.is-empty,body[data-hub-view=home] .
 .nba-standings a{gap:7px;min-height:30px;font-size:12px}
 .nba-standings a img{width:26px;height:26px}
 @media(max-width:600px){.nba-standings td,.nba-standings th{padding:8px 5px}.nba-standings a span{max-width:120px}.nba-standings a{font-size:12px}.nba-note{font-size:11px}}
+
+.hub-boxscore-live-status{font-size:12px;color:#9fbacf;text-align:center;min-height:18px;margin:8px 0 14px}

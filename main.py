@@ -286,7 +286,7 @@ def storage_self_test():
         logger.exception('Database self-test failed')
         raise HTTPException(503, 'Test database fallito; controlla i log Render')
 
-_schedule_scoreboards = bounded_cache(4, 60)
+_schedule_scoreboards = bounded_cache(4, 20)
 _schedule_scoreboard_lock = threading.RLock()
 
 
@@ -333,6 +333,8 @@ def schedule(date: str):
                         'status': event.get('status', {}).get('type', {}).get('description', ''),
                         'upcoming': status_state == 'pre',
                         'state': status_state,
+                        'period': event.get('status', {}).get('period'),
+                        'display_clock': event.get('status', {}).get('displayClock', ''),
                         'carried_live': rome.strftime('%Y-%m-%d') != date,
                         'home_score': home.get('score'),
                         'away_score': away.get('score')
@@ -372,9 +374,13 @@ def nba_publication_session(day: str):
             'source': 'ESPN', 'odds_api_calls': 0}
 
 
-@app.get('/api/nba/boxscore')
-def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
-    """ESPN final-game player box score, without bookmaker requests."""
+_boxscore_cache = bounded_cache(4, 20)
+_boxscore_cache_lock = threading.RLock()
+_boxscore_locks = [threading.Lock() for _ in range(32)]
+
+
+def _load_nba_boxscore(event_id):
+    """Scores, state and player statistics from the same ESPN summary."""
     try:
         response = requests.get(
             'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary',
@@ -419,12 +425,34 @@ def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
                                     'minutes': value('MIN'), 'points': value('PTS'),
                                     'rebounds': value('REB'), 'assists': value('AST')})
             teams.append({'team': team, 'players': players})
-        return {'event_id': event_id, 'teams': teams, 'quarters': quarters, 'state': state, 'source': 'ESPN', 'odds_api_calls': 0}
+        status = competition.get('status') or {}
+        game = {'event_id': event_id, 'state': state, 'upcoming': False,
+                'period': status.get('period'), 'display_clock': status.get('displayClock', ''),
+                'status': status.get('type', {}).get('description', '')}
+        for side in ('away', 'home'):
+            competitor = by_side.get(side, {})
+            if competitor.get('score') is not None:
+                game[side + '_score'] = competitor['score']
+        return {'event_id': event_id, 'teams': teams, 'quarters': quarters, 'state': state,
+                'game': game, 'source': 'ESPN', 'odds_api_calls': 0}
     except HTTPException:
         raise
     except Exception:
         logger.exception('ESPN boxscore unavailable for %s', event_id)
         raise HTTPException(502, 'Tabellino ESPN temporaneamente non disponibile')
+
+
+@app.get('/api/nba/boxscore')
+def public_nba_boxscore(event_id: str = Query(..., pattern=r'^\d{5,15}$')):
+    # Visitors share one compact response per event; provider errors are retryable.
+    with _boxscore_locks[hash(event_id) % len(_boxscore_locks)]:
+        with _boxscore_cache_lock:
+            if event_id in _boxscore_cache:
+                return _boxscore_cache[event_id]
+        result = _load_nba_boxscore(event_id)
+        with _boxscore_cache_lock:
+            remember(_boxscore_cache, event_id, result)
+        return result
 
 
 @app.get('/api/nba/quote-coverage')
