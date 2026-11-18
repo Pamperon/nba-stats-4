@@ -51,3 +51,31 @@ test('prematch shows missing statistics as unavailable and H2H scores in their o
   const result=w.document.querySelector('.sheet-h2h-result');assert.equal(result.textContent,'01/11/2026B110A100');
  }finally{w.close();}
 });
+test('game player panel uses loaded stats, updates in place and restores focus after row replacement',()=>{
+ const dom=new JSDOM('<div id="panel"></div>',{url:'https://basketlab.it/nba?partita=123',runScripts:'outside-only'}),w=dom.window;
+ try{
+  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
+  w.eval(fs.readFileSync('web/modules/boxscore-view.js','utf8'));
+  const panel=w.document.getElementById('panel'),game={event_id:'123',away:'A',home:'B',state:'in',period:2,display_clock:'5:00'};
+  const data=points=>({teams:[{team:'A',players:[{id:'22',name:'Alex Test',minutes:'20',points,rebounds:7,assists:4}]}]});
+  w.BasketLabBoxscoreView(w.document,panel,game,data(10));const link=panel.querySelector('.hub-boxscore-player-link');
+  link.dispatchEvent(new w.MouseEvent('click',{bubbles:true,cancelable:true}));const drawer=w.document.querySelector('dialog');
+  assert.equal(drawer.open,true);assert.equal(drawer.querySelector('[data-game-player-stat=points]').textContent,'10');assert.match(drawer.textContent,/Live · Q2/);assert.equal(w.location.search,'?partita=123');
+  drawer.querySelector('img').dispatchEvent(new w.Event('error'));assert.equal(drawer.querySelector('img').hidden,true);assert.equal(drawer.querySelector('.bl-game-player-initials').textContent,'AT');
+  const close=drawer.querySelector('button');close.focus();panel.replaceChildren();w.BasketLabBoxscoreView(w.document,panel,game,data(16));
+  assert.equal(drawer.open,true);assert.equal(drawer.querySelector('[data-game-player-stat=points]').textContent,'16');assert.equal(w.document.activeElement,close);assert.equal(drawer.querySelector('.bl-game-player-profile').getAttribute('href'),'/giocatori/alex-test-22');
+  close.click();assert.equal(drawer.open,false);assert.equal(w.document.documentElement.classList.contains('bl-game-player-open'),false);assert.equal(w.document.activeElement,panel.querySelector('.hub-boxscore-player-link'));
+  panel.querySelector('.hub-boxscore-player-link').click();w.document.dispatchEvent(new w.CustomEvent('basketlab:view',{detail:{view:'home'}}));assert.equal(drawer.open,false);
+ }finally{w.close();}
+});
+test('game player panel preserves native modified links and never treats missing stats as zero',()=>{
+ const dom=new JSDOM('<div id="panel"></div>',{url:'https://basketlab.it/nba',runScripts:'outside-only'}),w=dom.window;
+ try{
+  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
+  w.eval(fs.readFileSync('web/modules/boxscore-view.js','utf8'));const panel=w.document.getElementById('panel');
+  w.BasketLabBoxscoreView(w.document,panel,{event_id:'123',state:'post'},{teams:[{team:'A',players:[{id:'22',name:'Alex Test',points:null,minutes:'—'}]}]});
+  const link=panel.querySelector('.hub-boxscore-player-link'),event=new w.MouseEvent('click',{ctrlKey:true,cancelable:true});link.dispatchEvent(event);assert.equal(event.defaultPrevented,false);assert.equal(w.document.querySelector('dialog'),null);
+  link.click();const drawer=w.document.querySelector('dialog');assert.equal(drawer.querySelector('[data-game-player-stat=points]').textContent,'—');assert.equal(drawer.querySelector('.bl-game-player-unavailable').hidden,false);assert.match(drawer.textContent,/Finale/);
+  panel.replaceChildren();w.BasketLabBoxscoreView(w.document,panel,{event_id:'456'},{teams:[]});assert.equal(drawer.open,false);
+ }finally{w.close();}
+});

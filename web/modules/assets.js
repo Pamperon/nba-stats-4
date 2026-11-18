@@ -1,7 +1,7 @@
 /* Named local UI modules. One download per asset; failures remain retryable. */
 (function(root){
  'use strict';
- const files={'single-analysis':'single-analysis.js?v=lab-names-18','archive-view':'archive-view.js?v=lab-names-18','boxscore-view':'boxscore-view.js?v=detail-sheets-1','match-players':'match-players.js?v=3'};
+ const files={'single-analysis':'single-analysis.js?v=lab-names-18','archive-view':'archive-view.js?v=lab-names-18','boxscore-view':'boxscore-view.js?v=player-panel-1','match-players':'match-players.js?v=3'};
  let versions={};try{versions=JSON.parse(document.getElementById('bl-asset-versions')?.textContent||'{}');}catch{}
  const pending=new Map();
  function load(name){
