@@ -18,9 +18,9 @@ function renderMatchCharts(teams,a,b,windowDays,matchOdds){
   pct.forEach((n,i)=>{const seg=make('span','');seg.style.width=n+'%';seg.style.background=colors[i];bar.append(seg)});
   win.append(labels,bar);
   win.append(make('small','bl-match-v2-note','Probabilità implicite normalizzate dalle quote disponibili'));
- }else win.append(make('p','hub-match-win-unavailable','Quote vincente partita non disponibili'));
- card.append(win);
- area.append(card);
+ }
+ area.classList.toggle('has-win-odds',validOdds);
+ if(validOdds){card.append(win);area.append(card);}
  const comparison=make('section','sheet-comparison');
  comparison.append(make('h3','','Il confronto'),make('p','sheet-caption','Ultime 5 disponibili · risultati precedenti alla partita · finestra di '+windowDays+' giorni'));
  const table=make('div','sheet-comparison-table');
@@ -46,7 +46,7 @@ function renderMatchH2H(teams,games,windowDays=21){
  if(!area)return;
  let widget=$('#hub-match-h2h-chart');
  if(!widget){widget=document.createElement('div');widget.id='hub-match-h2h-chart';widget.className='hub-match-h2h-chart';area.append(widget)}
- widget.replaceChildren();
+ widget.replaceChildren();widget.classList.toggle('is-empty',!games.length);
  const heading=document.createElement('strong');heading.textContent='Scontri diretti';widget.append(heading);
  if(!games.length){const empty=document.createElement('p');empty.textContent='Nessuno scontro diretto nel periodo esaminato';widget.append(empty);return}
  const wins=teams.map(team=>games.filter(game=>{const index=game.teams.indexOf(team);return index>=0&&Number(game.scores[index])>Number(game.scores[1-index])}).length);

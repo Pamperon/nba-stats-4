@@ -11,7 +11,7 @@ function discoveryRank(card){return featuredRank.get(fameKey(card.querySelector(
 const panel=d.createElement('section');panel.id='players-explorer';panel.hidden=true;
 panel.innerHTML='<div class="pe-controls"><label class="pe-search">Cerca un giocatore<input id="pe-search" type="search" placeholder="Nome del giocatore…" autocomplete="off"></label><div class="bl-segments" role="group" aria-label="Mercato giocatori">'+Object.entries(labels).map(([k,v])=>'<button type="button" data-pe-market="'+k+'" aria-pressed="'+(k==='PTS')+'">'+v+'</button>').join('')+'</div><div class="pe-filter-row"><label>Partita<select id="pe-match"><option value="">Tutte le partite</option></select></label><label>Squadra<select id="pe-team"><option value="">Tutte le squadre</option></select></label></div></div><div class="pe-list-heading"><p id="pe-status" role="status"></p><button id="pe-reset" type="button">Ripristina</button></div><div id="pe-list"></div><button id="pe-more" type="button" hidden>Mostra altri giocatori</button>';
 $('app')?.before(panel);
-const personal=d.createElement('div');personal.id='pe-personal-heading';personal.innerHTML='<a href="/giocatori" data-hub="stats" class="bl-back">‹ Tutti i giocatori</a><button id="pe-share" type="button" class="bl-back" data-share-page>Condividi</button><p id="pe-share-status" role="status"></p>';
+const personal=d.createElement('div');personal.id='pe-personal-heading';personal.innerHTML='<a href="/giocatori" data-hub="stats" class="bl-back">‹ Tutti i giocatori</a>';const contextBack=$('back-to-picks');if(contextBack)personal.prepend(contextBack);
 $('player')?.prepend(personal);
 const quotes=d.createElement('section');quotes.id='pe-player-quotes';quotes.className='pe-quotes';quotes.setAttribute('aria-label','Quote del giocatore');
 $('player-visual')?.after(quotes);
@@ -35,7 +35,7 @@ async function renderNextGame(player){
  }catch{if(token===nextRequest){nextTeam='';nextGame.textContent='Calendario della squadra temporaneamente non disponibile.';nextGame.hidden=false;}}
 }
 const periods=d.querySelector('.bl-window-tabs'),advanced=d.querySelector('.bl-player-advanced');
-if(periods&&advanced){$('player-chart-title').before(periods);$('player-visual').after(advanced);advanced.after(quotes);}
+if(periods&&advanced){d.querySelector('.bl-player-market').after(periods);periods.after(advanced);$('player-visual').after(quotes);}
 
 let payload=null,pending=null,loadedAt=0,market='PTS',limit=30,request=0,selected=null,restoring=false,directoryScroll=0,catalog=null,quotesUnavailable=false;
 const api={detailOpen:false,get restoring(){return restoring;},route:()=>selected?{player:slug(selected.name,selected.id),filters:filters()}: {},show:showDirectory,openRoute};w.BasketLabPlayers=api;
@@ -58,7 +58,7 @@ function updateOptions(){
  node.value=teams.find(t=>teamKey(t)===teamKey(previous))||'';
 }
 async function showDirectory(){
- api.detailOpen=false;selected=null;panel.hidden=false;$('pe-share-status').textContent='';const token=++request;
+ api.detailOpen=false;selected=null;panel.hidden=false;const token=++request;
  try{$('pe-status').textContent='Caricamento giocatori…';await load();if(token!==request||api.detailOpen)return;await render();w.scrollTo(0,directoryScroll);}
  catch{if(token!==request)return;quotesUnavailable=true;payload=payload||{rows:[],logs:{}};updateOptions();await render();}
 }

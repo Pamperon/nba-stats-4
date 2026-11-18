@@ -386,7 +386,7 @@ test('team batch makes a nonadjacent player available without a log request', as
     const before=calls.length;
     d.getElementById('playername').value='3';await w.changePlayer();
     assert.equal(calls.length,before);
-    assert.match(d.getElementById('player-season-stats').textContent,/25\.0/);
+    assert.match(d.getElementById('player-season-stats').textContent,/25,0/);
     assert.equal(d.getElementById('player-loading').hidden,true);
   }finally{dom.window.close()}
 });
@@ -546,7 +546,7 @@ test('other seasons of the selected player preload once and switching years need
   assert.equal(d.getElementById('line').value,'9.5');
   assert.match(d.getElementById('player-summary').textContent,/Over 9.5/);
   assert.equal(d.getElementById('player-loading').hidden,true);
-  assert.ok(d.getElementById('player-season-stats').textContent.includes((Number(d.getElementById('playerseason').value)%100).toFixed(1)));
+  assert.ok(d.getElementById('player-season-stats').textContent.includes((Number(d.getElementById('playerseason').value)%100).toLocaleString('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1})));
  }finally{dom.window.close()}
 });
 

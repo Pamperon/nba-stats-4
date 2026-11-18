@@ -297,10 +297,9 @@ test('successful match data renders attack, defense and verified history without
  assert.match(doc.querySelector('.sheet-comparison').textContent,/Differenza punti/);
  assert.equal(doc.querySelector('.hub-match-summary'),null);
  assert.match(doc.querySelector('#hub-match-h2h-chart').textContent,/Nessuno scontro diretto/);
- assert.equal(doc.querySelectorAll('#hub-match-insights article').length,3);
- assert.match(doc.querySelector('#hub-match-insights').textContent,/Le chiavi della partita/);
- assert.match(doc.querySelector('#hub-match-insights').textContent,/Dati ESPN precedenti/);
- assert.equal(doc.querySelectorAll('#hub-match-insights details').length,0);
+ assert.equal(doc.querySelector('#hub-match-insights'),null);
+ assert.equal(doc.querySelector('#hub-match-market-distribution'),null);
+ assert.match(doc.querySelector('#hub-match-sample-note').textContent,/Fonte ESPN.*05\/11\/2026/);
 });
 
 test('invalid URL dates cannot crash calendar or open a match under a different day',()=>{

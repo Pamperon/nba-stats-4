@@ -98,6 +98,7 @@ test('approved coordinated design: player charts, contextual back and responsive
  await page.locator('.sa-back').click();await expect(page).toHaveURL('http://127.0.0.1:4173/');
  await page.locator('.hub-premium-fixture').click();await expect(page).toHaveURL(/analisi-partita\?data=2026-11-05/);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
  await expect(page.locator('.sheet-comparison')).toContainText('Media punti subiti');
+ await expect(page.locator('#hub-match-insights,#hub-match-market-distribution')).toHaveCount(0);
  await expect(page.locator('#bl-detail-styles')).toHaveCount(1);
  await expect.poll(()=>page.evaluate(()=>Boolean(document.getElementById('bl-detail-styles')?.sheet))).toBe(true);
  if(testInfo.project.name==='mobile')expect((await page.locator('.sheet-comparison').boundingBox()).y).toBeLessThan((await page.locator('.bl-match-v2').boundingBox()).y);
@@ -111,6 +112,10 @@ test('approved coordinated design: player charts, contextual back and responsive
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await expect(page.locator('#pe-next-match')).toContainText('Prossima partita della squadra');
  await expect(page.locator('#pe-next-match > a')).toHaveAttribute('href',/partita=123/);
+ await expect(page.locator('#pe-share')).toHaveCount(0);
+ await expect(page.locator('#player-summary .metric')).toHaveCount(2);
+ expect(await page.locator('.bl-player-controls').evaluate(el=>el.getBoundingClientRect().bottom<=document.getElementById('player-visual').getBoundingClientRect().top)).toBe(true);
+ await expect.poll(()=>page.locator('.bl-chart-scroll').evaluate(el=>Math.abs(el.scrollWidth-el.clientWidth-el.scrollLeft))).toBeLessThanOrEqual(1);
  await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
  await expect(page.locator('#back-to-picks')).toContainText('Torna all’analisi');
  await page.locator('#back-to-picks').click();await expect(page).toHaveURL(/analisi-partita/);
@@ -241,4 +246,19 @@ test('live calendar and open boxscore update automatically through the final whi
  const done=boxCalls;await page.clock.runFor(60000);expect(boxCalls).toBe(done);
  await playerLink.click();await expect(drawer.locator('[data-game-player-stat=points]')).toHaveText('28');await expect(drawer.locator('.bl-game-player-status')).toHaveText('Finale');
  await drawer.getByRole('link',{name:'Apri il profilo completo →'}).click();await expect(page).toHaveURL(/\/giocatori\/alex-test-22/);
+});
+
+test('prematch without win odds uses one full comparison and a compact history note',async({page},testInfo)=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Detail polish is verified on the candidate');
+ if(testInfo.project.name==='mobile')await page.setViewportSize({width:360,height:800});
+ await page.route('**/api/match/form**',async route=>{const response=await route.fetch(),data=await response.json();data.moneyline_odds=null;await route.fulfill({response,json:data});});
+ await page.goto(match);await page.locator('[data-choice=no]').click();
+ await expect(page.locator('.sheet-comparison')).toContainText('Media punti segnati');
+ await expect(page.locator('.hub-match-win-unavailable,.bl-match-v2')).toHaveCount(0);
+ await expect(page.locator('#hub-match-sample-note')).toContainText('Fonte ESPN');
+ await expect.poll(()=>page.evaluate(()=>Boolean(document.getElementById('bl-detail-styles')?.sheet))).toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ const widths=await page.locator('#hub-match-charts').evaluate(el=>({container:el.getBoundingClientRect().width,comparison:el.querySelector('.sheet-comparison').getBoundingClientRect().width}));
+ expect(Math.abs(widths.container-widths.comparison)).toBeLessThanOrEqual(1);
+ await page.screenshot({path:testInfo.outputPath('prematch-no-odds.png'),fullPage:true});
 });

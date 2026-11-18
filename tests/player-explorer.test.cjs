@@ -85,7 +85,7 @@ test('prepared directory charts need no individual history requests',async()=>{
  }finally{dom.window.close();}
 });
 test('opening a direct player URL replaces default filters without trapping browser Back',async()=>{
- const {dom,w,d}=setup('https://basketlab.it/giocatori/alex-test-22');try{const before=w.history.length;for(let n=0;n<18;n++)await tick();assert.equal(w.history.length,before);assert.equal(w.location.pathname,'/giocatori/alex-test-22');assert.equal(d.querySelector('#pe-share').textContent,'Condividi');assert.equal(d.querySelector('#pe-share').hasAttribute('data-share-page'),true);}finally{dom.window.close();}
+ const {dom,w,d}=setup('https://basketlab.it/giocatori/alex-test-22');try{const before=w.history.length;for(let n=0;n<18;n++)await tick();assert.equal(w.history.length,before);assert.equal(w.location.pathname,'/giocatori/alex-test-22');assert.equal(d.querySelector('#pe-share'),null);assert.equal(d.querySelector('#back-to-picks').parentElement.id,'pe-personal-heading');assert.equal(d.querySelector('.bl-window-tabs').parentElement.className,'bl-player-controls');}finally{dom.window.close();}
 });
 test('next team game is independent of odds, deduplicates filter changes and ignores older team responses',async()=>{
  const {dom,w,d}=setup();try{
