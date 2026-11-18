@@ -527,13 +527,13 @@ test('calendar displays only explicit Live, preserves score ordering and drops q
 test('live calendar polls scores in place, catches up on visibility and updates its match action',async()=>{
  let tick,clock=0,hidden=false,calls=0;
  let game={event_id:'123456',away:'Boston Celtics',home:'Atlanta Hawks',state:'in',upcoming:false,start_at:'2026-11-18T00:00:00Z',away_score:20,home_score:18,period:1,display_clock:'6:00'};
- const {window:w,doc}=setup('nba?data=2026-11-18',async()=>{calls++;return {ok:true,json:async()=>({games:[{...game}]})};},w=>{
+ const {window:w,doc}=setup('nba?data=2026-11-18',async()=>{calls++;return {ok:true,json:async()=>{if(calls===1)clock=5;return {games:[{...game}]};}};},w=>{
   Object.defineProperty(w.document,'hidden',{get:()=>hidden});w.Date.now=()=>clock;
   w.setInterval=(fn,ms)=>{if(ms===30000)tick=fn;return 1;};
  });
  await new Promise(r=>setImmediate(r));
  const row=doc.querySelector('.hub-calendar-match'),dateButton=doc.querySelector('.hub-calendar-date.active');row.focus();
- assert.match(row.textContent,/20/);game={...game,away_score:24,display_clock:'5:30'};clock=31000;tick();
+ assert.match(row.textContent,/20/);game={...game,away_score:24,display_clock:'5:30'};clock=30000;tick();
  await new Promise(r=>setImmediate(r));
  assert.equal(doc.querySelector('.hub-calendar-match'),row);assert.equal(doc.activeElement,row);assert.equal(doc.querySelector('.hub-calendar-date.active'),dateButton);
  assert.match(row.querySelector('.hub-calendar-final-score').textContent,/24/);assert.match(row.querySelector('.hub-calendar-time').textContent,/Q1 · 5:30/);
