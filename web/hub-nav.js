@@ -799,6 +799,9 @@ function refreshLiveCalendar(force=false){
  if(!calendar||document.hidden||document.body.dataset.hubView!=='calendar'||window.BasketLabNBA?.route().nbaTab==='standings')return;
  if(activeCalendarBoxscore){if(activeCalendarBoxscore.state==='in')openCalendarBoxscore(activeCalendarBoxscore,true);return;}
  const selected=calendarSelectedDate||$('#date')?.value||italyDay(new Date());
+ // Poll live fixtures on the interval even if their response arrived a few
+ // milliseconds after the previous tick and its cache has not quite expired.
+ force=force||fetchNbaFixtures.hasLive(selected);
  if(force||fetchNbaFixtures.isStale(selected))renderCalendar({quiet:true,force});
 }
 const calendarLiveTimer=setInterval(()=>refreshLiveCalendar(),30000);

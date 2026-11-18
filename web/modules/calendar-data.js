@@ -34,6 +34,7 @@ async function fetchNbaFixtures(date,session=false,force=false){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
  entry.promise=fetch(url+encodeURIComponent(date)+(session?'&upcoming=true':''),{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error('ESPN calendar unavailable');return r.json()}).then(d=>{
   const games=d.games||[];
+  entry.live=games.some(game=>game.state==='in');
   entry.expires=Date.now()+fixtureCacheTtl(games);
   return games;
  }).catch(error=>{if(nbaFixtureCache.get(key)===entry)nbaFixtureCache.delete(key);throw error}).finally(()=>{clearTimeout(timeout);entry.pending=false;});
@@ -42,5 +43,6 @@ async function fetchNbaFixtures(date,session=false,force=false){
  return entry.promise;
 }
 fetchNbaFixtures.isStale=function(date,session=false){const entry=nbaFixtureCache.get((session?'session:':'date:')+date);return !entry||(!entry.pending&&entry.expires<=Date.now());};
+fetchNbaFixtures.hasLive=function(date,session=false){return nbaFixtureCache.get((session?'session:':'date:')+date)?.live===true;};
 return fetchNbaFixtures;
 };
