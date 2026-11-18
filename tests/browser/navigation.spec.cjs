@@ -292,6 +292,7 @@ test('player charts fit 5, 10 and 20 games and scroll the complete season',async
  await page.route('**/api/players/log?*',route=>route.fulfill({json:{athlete_id:'123',season:'2026',games}}));
  if(testInfo.project.name==='mobile')await page.setViewportSize({width:360,height:800});
  await page.goto('/giocatori/browser-fixture-123?mercato=PTS&linea=19.5&periodo=20');
+ await page.getByRole('button',{name:'Rifiuta',exact:true}).click();
  for(const count of [5,10,20]){
   await page.locator('[data-player-window="'+count+'"]').click();
   await expect(page.locator('.bl-chart-column')).toHaveCount(count);
@@ -299,6 +300,7 @@ test('player charts fit 5, 10 and 20 games and scroll the complete season',async
   await expect(page.locator('.bl-chart-navigation')).toHaveCount(0);
  }
  await page.locator('.bl-chart-column').last().click();await expect(page.locator('.bl-chart-detail')).toContainText('10 punti');
+ expect(await page.locator('.bl-chart-scroll').evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
  await page.locator('#player-visual').screenshot({path:testInfo.outputPath('player-chart-20.png')});
  await page.locator('[data-player-window="all"]').click();
  await expect(page.locator('.bl-chart-column')).toHaveCount(35);

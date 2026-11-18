@@ -244,5 +244,7 @@ body.player-personal-view #pe-personal-heading:has(#back-to-picks[hidden])>a{mar
 @media(max-width:600px){
  #player .bl-chart-fit .bl-chart-date-secondary{display:none}
  #player .bl-chart-dense .bl-chart-bar>b{display:none}
+ #player .bl-chart-dense .bl-chart-column:first-of-type .bl-chart-bar>b{left:0;transform:none}
+ #player .bl-chart-dense .bl-chart-column:last-of-type .bl-chart-bar>b{left:auto;right:0;transform:none}
  #player .bl-chart-dense .bl-chart-column[aria-pressed=true] .bl-chart-bar>b{display:block;z-index:3;padding:1px 4px;background:#17384d;border-radius:4px}
 }
