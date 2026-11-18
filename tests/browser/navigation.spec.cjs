@@ -270,8 +270,14 @@ test('prematch without win odds uses one full comparison and a compact history n
  test('direct player has one return to the directory',async({page})=>{
  test.skip(!!process.env.BASKETLAB_BASELINE,'Refined profile navigation');
  await page.route('**/api/players/directory',route=>route.fulfill({json:{players:[{id:'123',name:'Browser Fixture',team:'Boston Celtics',team_id:'2'}]}}));
+ let releaseMetadata;const metadataGate=new Promise(r=>releaseMetadata=r);
+ await page.route('**/api/players/teams',async route=>{await metadataGate;await route.continue();});
+ await page.route('**/api/players/roster?*',async route=>{await metadataGate;await route.continue();});
  await page.goto('/giocatori/browser-fixture-123?mercato=PTS&linea=19.5&periodo=10');
  await expect(page.locator('#player-summary .metric')).toHaveCount(2);
+ expect(api.filter(p=>p==='/api/players/log')).toHaveLength(1);
+ expect(api).not.toContain('/api/players/directory');
+ releaseMetadata();
  await expect(page.locator('#player-summary')).not.toContainText('%');
  await expect(page.locator('#back-to-picks')).toBeHidden();
  await expect(page.locator('#pe-personal-heading .bl-nav-back:visible')).toHaveCount(1);

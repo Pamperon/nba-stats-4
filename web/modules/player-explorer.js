@@ -141,10 +141,7 @@ async function openRoute(route){
  api.detailOpen=true;panel.hidden=true;nextGame.hidden=true;nextTeam='';++nextRequest;const token=++request;restoring=true;
  for(const tab of d.querySelectorAll('.tab'))tab.hidden=tab.id!=='player';
  $('player-profile').hidden=true;$('player-summary').replaceChildren();$('chart').replaceChildren();$('player-trends').replaceChildren();$('player-visual').hidden=true;quotes.replaceChildren();$('player-status').textContent='Caricamento della scheda giocatore…';
- try{const id=route.player.match(/-(\d+)$/)?.[1];selected={id,name:route.player.replace(/-\d+$/,'').replace(/-/g,' ')};const directory=await w.BasketLabPlayerEngine.directory();if(token!==request)return;const player=directory.find(p=>String(p.id)===id);if(!player)throw Error('Giocatore non trovato');const f=route.filters||{};await w.BasketLabPlayerEngine.open({'ESPN ID':player.id,Giocatore:player.name,Squadra:player.team,Mercato:labels[f.market]?f.market:'PTS',...(f.line&&Number.isFinite(Number(f.line))&&Number(f.line)>=0&&Number(f.line)<=100?{Linea:Number(f.line)}:{})});
- // Selection loading uses its own cancellation checks. Only restore if this is still the URL's athlete.
- if(selected?.id!==id)return;
- for(const [key,control] of [['season','playerseason'],['window','playerwindow'],['venue','player-venue'],['mode','playermode']]){const node=$(control);if(f[key]&&[...node.options].some(o=>o.value===f[key])){node.value=f[key];node.dispatchEvent(new Event('change',{bubbles:true}));}}
+ try{const id=route.player.match(/-(\d+)$/)?.[1];selected={id,name:route.player.replace(/-\d+$/,'').replace(/-/g,' ')};const player=await w.BasketLabPlayerEngine.identity(id);if(token!==request)return;const f=route.filters||{};await w.BasketLabPlayerEngine.open({'ESPN ID':player.id,Giocatore:player.name,Squadra:player.team,Mercato:labels[f.market]?f.market:'PTS',...(f.line&&Number.isFinite(Number(f.line))&&Number(f.line)>=0&&Number(f.line)<=100?{Linea:Number(f.line)}:{})},{player,filters:f});
  }catch(error){$('player-status').textContent=error.message||'Scheda non disponibile';}
  finally{restoring=false;if(token===request&&api.detailOpen&&d.body.dataset.hubView==='stats')changed(true);}
 }

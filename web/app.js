@@ -622,7 +622,7 @@ $('csv').onclick=()=>{
  link.href=url;link.download='basketlab_salvato.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 let playerGames=[],playerRequest=0,rosterRequest=0,activeRoster=[];
-const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map();
+const playerLogCache=new Map(),playerLogPending=new Map(),rosterCache=new Map(),catalogPending=new Map();
 const PLAYER_CACHE_LIMIT=80;
 const PLAYER_CACHE_TTL=15*60*1000;
 function currentPlayerSeason(){const now=new Date();return now.getMonth()>=9?now.getFullYear():now.getFullYear()-1}
@@ -686,10 +686,13 @@ async function playerCatalog(path){
  if(item&&Number.isFinite(item.at)&&now>=item.at&&now-item.at<PLAYER_CACHE_TTL){
   rosterCache.set(path,item);return item.payload;
  }
- const payload=await(await api(path)).json();
- item={at:Date.now(),payload};rosterCache.set(path,item);
- try{sessionStorage.setItem(key,JSON.stringify(item))}catch(e){}
- return payload;
+ if(catalogPending.has(path))return catalogPending.get(path);
+ const task=api(path).then(r=>r.json()).then(payload=>{
+  const item={at:Date.now(),payload};rosterCache.set(path,item);
+  try{sessionStorage.setItem(key,JSON.stringify(item))}catch(e){}
+  return payload;
+ }).finally(()=>catalogPending.delete(path));
+ catalogPending.set(path,task);return task;
 }
 let playerDirectory=null,playerDirectoryPending=null,playerDirectoryAt=0,playerSearchRequest=0;
 async function getPlayerDirectory(){
@@ -699,6 +702,12 @@ async function getPlayerDirectory(){
   playerDirectory=payload.players;playerDirectoryAt=Date.now();return playerDirectory;
  }).finally(()=>{playerDirectoryPending=null;});
  return playerDirectoryPending;
+}
+async function playerIdentity(id){
+ const known=Date.now()-playerDirectoryAt<PLAYER_CACHE_TTL?playerDirectory?.find(p=>String(p.id)===String(id)):null;if(known)return known;
+ const payload=await playerCatalog('/api/players/identity?athlete_id='+encodeURIComponent(id));
+ if(String(payload.player?.id)!==String(id))throw Error('Giocatore non trovato');
+ return payload.player;
 }
 let playerGlobalSearch=false,playerTeamLabel=null;
 function endPlayerSearch(){
@@ -822,7 +831,7 @@ function preloadPlayerSeasons(team,id){
 }
 
 const playerNum=x=>Number(x)||0;
-async function openPickStats(row){
+async function openPickStats(row,options={}){
  document.dispatchEvent(new CustomEvent('basketlab:player-open',{detail:{origin:returnOrigin,row}}));
  const navigation=++pickNavigationRequest;
  rememberQuotePosition(document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab);
@@ -846,15 +855,46 @@ async function openPickStats(row){
    selection.id=String(profile.id||'');selection.team=profile.team||selection.team;
   }
   if(navigation!==pickNavigationRequest)return;
-  await initPlayers(selection);
+  const known=options.player||(Date.now()-playerDirectoryAt<PLAYER_CACHE_TTL?playerDirectory?.find(p=>String(p.id)===selection.id):null);
+  if(known&&String(known.id)===selection.id&&/^\d{1,8}$/.test(String(known.team_id))&&teamAbbrev(known.team)===teamAbbrev(selection.team)&&teamAbbrev(known.team)!=='—'){
+   await openKnownPlayer(selection,known,options.filters);
+  }else await initPlayers(selection);
  }catch(error){
   if(navigation===pickNavigationRequest){setPlayerLoading(false);$('player-status').textContent='Statistiche del giocatore non disponibili. Riprova dal pronostico.';}
  }
 }
-async function initPlayers(selection=null){
- const navigation=pickNavigationRequest;
+function playerSeasonOptions(selection,filters={}){
  const now=new Date(),year=now.getFullYear(),start=now.getMonth()>=9?year:year-1;
  $('playerseason').innerHTML=[start,start-1,start-2].map(y=>'<option value="'+y+'">'+y+'/'+String(y+1).slice(-2)+'</option>').join('');
+ if(selection){
+  const season=filters.season||selection.season;
+  if([...$('playerseason').options].some(o=>o.value===season))$('playerseason').value=season;
+  $('stat').value=selection.market;
+  for(const [node,value,fallback] of [['playermode',filters.mode,'2'],['playerwindow',filters.window,'20'],['player-venue',filters.venue,'all']]){
+   $(node).value=[...$(node).options].some(o=>o.value===value)?value:fallback;
+  }
+ }
+}
+async function openKnownPlayer(selection,known,filters){
+ playerSeasonOptions(selection,filters);
+ const team=String(known.team_id),id=selection.id;
+ const teams=rosterCache.get('/api/players/teams')?.payload.teams||[{id:team,name:known.team}];
+ $('team').innerHTML=teams.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('');$('team').value=team;
+ activeRoster=[{...known,id}];$('playername').innerHTML='<option value="'+esc(id)+'">'+esc(known.name)+'</option>';
+ // Statistics start immediately; selector metadata is optional enrichment.
+ const stats=changePlayer(selection),request=playerRequest;
+ Promise.all([playerCatalog('/api/players/teams'),playerCatalog('/api/players/roster?team_id='+encodeURIComponent(team))]).then(([catalog,roster])=>{
+  if(request!==playerRequest||selection.navigation!==pickNavigationRequest)return;
+  if(!catalog.teams?.some(t=>String(t.id)===team)||!roster.players?.some(p=>String(p.id)===id))return;
+  $('team').innerHTML=catalog.teams.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('');$('team').value=team;
+  activeRoster=roster.players;$('playername').innerHTML=activeRoster.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');$('playername').value=id;
+  renderPlayerRole(activeRoster.find(p=>String(p.id)===id));
+ }).catch(()=>{});
+ await stats;
+}
+async function initPlayers(selection=null){
+ const navigation=pickNavigationRequest;
+ playerSeasonOptions(selection);
  $('player-status').textContent='Caricamento delle 30 squadre NBA…';
  try{const payload=await playerCatalog('/api/players/teams');
  if(navigation!==pickNavigationRequest)return;
@@ -865,8 +905,7 @@ async function initPlayers(selection=null){
   const team=payload.teams.find(t=>t.name===selection.team||(abbreviation!=='—'&&teamAbbrev(t.name)===abbreviation));
   if(!team)throw Error('Squadra del pronostico non trovata');
   $('team').value=String(team.id);
-  if([...$('playerseason').options].some(o=>o.value===selection.season))$('playerseason').value=selection.season;
-  $('stat').value=selection.market;$('playermode').value='2';$('playerwindow').value='20';$('player-venue').value='all';
+  fetchPlayerLog(String(team.id),selection.id,$('playerseason').value).catch(()=>{});
  }
  await changeTeam(selection);
  }catch(e){if(navigation!==pickNavigationRequest)return;playerStatsInitialized=false;setPlayerLoading(false);$('player-status').textContent='Statistiche non disponibili ('+e.message+'). Riprova dal pronostico o riapri la scheda.';}
@@ -911,6 +950,11 @@ function renderPlayerSeason(){
  const avg=stat=>games.length?(games.reduce((total,g)=>total+playerNum(g[stat]),0)/games.length).toLocaleString('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1}):'—';
  $('player-season-stats').innerHTML=[['PARTITE',games.length],['PUNTI',avg('PTS')],['RIMBALZI',avg('REB')],['ASSIST',avg('AST')]].map(([label,value])=>'<div class="season-stat" title="'+(label==='PARTITE'?'Partite giocate':'Media a partita')+'"><small>'+label+'</small><strong>'+value+'</strong></div>').join('');
 }
+function renderPlayerRole(profile){
+ const role=document.querySelector('#player-meta .player-profile-role');if(!role)return;
+ const positions={Forward:'Ala',Guard:'Guardia',Center:'Centro','Forward-Center':'Ala / Centro','Guard-Forward':'Guardia / Ala','Point Guard':'Playmaker','Shooting Guard':'Guardia','Small Forward':'Ala piccola','Power Forward':'Ala grande'};
+ role.textContent=positions[profile?.position]||profile?.position||'';
+}
 async function loadPlayerProfile(request,team,id){
  window.BasketLabAssets?.style?.('detail-sheets');
  const selected=$('playername').selectedOptions[0];
@@ -934,11 +978,11 @@ async function loadPlayerProfile(request,team,id){
  avatar.classList.remove('has-photo');
  oldPhoto.replaceWith(photo);
  photo.fetchPriority='high';
- photo.src='https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png';
+ photo.src='/api/players/headshot/'+encodeURIComponent(id);
  const profile=activeRoster.find(p=>p.id===id);
  const teamLabel=document.createElement('span');teamLabel.className='player-profile-team';teamLabel.textContent=$('team').selectedOptions[0]?.textContent||'';
- const roleLabel=document.createElement('span');roleLabel.className='player-profile-role';const positions={Forward:'Ala',Guard:'Guardia',Center:'Centro','Forward-Center':'Ala / Centro','Guard-Forward':'Guardia / Ala','Point Guard':'Playmaker','Shooting Guard':'Guardia','Small Forward':'Ala piccola','Power Forward':'Ala grande'};roleLabel.textContent=positions[profile?.position]||profile?.position||'';
- $('player-meta').replaceChildren(teamLabel,roleLabel);
+ const roleLabel=document.createElement('span');roleLabel.className='player-profile-role';
+ $('player-meta').replaceChildren(teamLabel,roleLabel);renderPlayerRole(profile);
  renderPlayerSeason();
 }
 async function changePlayer(selection=null,preserveLine=false){
@@ -972,7 +1016,7 @@ async function changePlayer(selection=null,preserveLine=false){
   if(request===playerRequest)setPlayerLoading(false);
  }
 }
-window.BasketLabPlayerEngine={open:openPickStats,directory:getPlayerDirectory,fixture:fixtureCard,log:fetchPlayerLog};
+window.BasketLabPlayerEngine={open:openPickStats,directory:getPlayerDirectory,identity:playerIdentity,fixture:fixtureCard,log:fetchPlayerLog};
 function changeLine(preserveSelected=false){
  const selected=preserveSelected?$('line').value:null;
  const stat=$('stat').value,values=playerGames.map(g=>playerNum(g[stat])).sort((a,b)=>a-b);

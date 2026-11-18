@@ -60,6 +60,18 @@ class AppRuntimeTests(unittest.TestCase):
         with patch.object(main.player_stats, 'directory', side_effect=RuntimeError('ESPN unavailable')):
             self.assertEqual(self.client.get('/api/players/directory').status_code, 503)
 
+    def test_player_identity_avoids_previews_and_checks_id(self):
+        player = {'id': '22', 'name': 'Test Player', 'team_id': '2', 'team': 'Miami Heat'}
+        with patch.object(main.player_stats, 'directory', return_value=[player]), \
+             patch.object(main.player_stats, 'directory_with_previews', side_effect=AssertionError('No full previews')):
+            response = self.client.get('/api/players/identity?athlete_id=22')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), {'player': player, 'odds_api_calls': 0})
+            self.assertEqual(self.client.get('/api/players/identity?athlete_id=23').status_code, 404)
+            self.assertEqual(self.client.get('/api/players/identity?athlete_id=invalid').status_code, 422)
+        with patch.object(main.player_stats, 'directory', side_effect=RuntimeError('offline')):
+            self.assertEqual(self.client.get('/api/players/identity?athlete_id=22').status_code, 503)
+
     def test_scan_requires_authentication(self):
         with patch.object(main.engine, 'get_fixtures') as odds:
             self.assertEqual(self.client.post('/api/scan?date=2026-10-25').status_code, 401)
