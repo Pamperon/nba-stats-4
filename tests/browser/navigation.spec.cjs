@@ -115,7 +115,7 @@ test('approved coordinated design: player charts, contextual back and responsive
  await expect(page.locator('#pe-share')).toHaveCount(0);
  await expect(page.locator('#player-summary .metric')).toHaveCount(2);
  expect(await page.locator('.bl-player-controls').evaluate(el=>el.getBoundingClientRect().bottom<=document.getElementById('player-visual').getBoundingClientRect().top)).toBe(true);
- await expect.poll(()=>page.locator('.bl-chart-scroll').evaluate(el=>el.scrollLeft)).toBeGreaterThan(0);
+ await expect.poll(()=>page.locator('.bl-chart-scroll').evaluate(el=>Math.abs(el.scrollWidth-el.clientWidth-el.scrollLeft))).toBeLessThanOrEqual(1);
  await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
  await expect(page.locator('#back-to-picks')).toContainText('Torna all’analisi');
  await page.locator('#back-to-picks').click();await expect(page).toHaveURL(/analisi-partita/);

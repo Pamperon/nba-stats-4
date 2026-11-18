@@ -218,3 +218,5 @@ body.player-personal-view #pe-next-match{margin-bottom:14px;padding:12px 14px}
 #hub-match-h2h-chart.is-empty>p{font-size:11px;margin:0}
 body.hub-match-open .hub-nba-updates h3{font-size:16px;margin:0 0 12px}
 body.player-personal-view .bl-advanced-fields label:has(#playerwindow){display:none}
+
+body.player-personal-view #pe-personal-heading:has(#back-to-picks[hidden])>a{margin-left:0}
