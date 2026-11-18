@@ -885,3 +885,15 @@ body[data-hub-view=home] :is(.hub-single-section,.hub-featured,.hub-games-sectio
 .hub-shell .bl-back{box-sizing:border-box;min-height:40px;border-radius:11px;line-height:1.3}
 .hub-shell :is(.bl-back,.hub-match-tabs button,.bl-segments button,.hub-calendar-month-navigation button):focus-visible{outline:2px solid #ffb374;outline-offset:3px}
 @media(max-width:760px){.hub-mobile-bar :is(button,a[data-hub]){min-height:48px}.hub-menu-toggle{min-width:44px;min-height:44px}}
+
+/* Secondary navigation: one discreet, keyboard-accessible return control. */
+.hub-shell .bl-nav-back,.hub-shell #hub-match-back.hub-match-back,.hub-shell .hub-boxscore-back{
+ display:inline-flex;align-items:center;justify-content:flex-start;gap:10px;box-sizing:border-box;
+ min-height:44px;max-width:100%;width:fit-content;padding:10px 4px;margin:0 0 14px;
+ border:1px solid transparent;border-radius:8px;background:transparent;box-shadow:none;
+ color:#b7cede;font-size:calc(13px + var(--bl-text-step,0px));font-weight:600;line-height:1.4;text-decoration:none;cursor:pointer;
+}
+.hub-shell .bl-nav-back::before{content:"";display:block;flex:none;width:7px;height:7px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 2px}
+.hub-shell .bl-nav-back:hover,.hub-shell #hub-match-back.hub-match-back:hover,.hub-shell .hub-boxscore-back:hover{color:#fff;background:#183447;border-color:transparent}
+.hub-shell .bl-nav-back:focus-visible{outline:2px solid #ffb374;outline-offset:3px}
+body.player-personal-view #pe-personal-heading .bl-nav-back{min-height:44px;padding:10px 4px;font-size:calc(13px + var(--bl-text-step,0px))}

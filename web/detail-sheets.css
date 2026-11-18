@@ -182,7 +182,8 @@ body.hub-match-open .hub-match-data-note{font-size:11px;line-height:1.5;color:#9
 body.hub-match-open .hub-match-player-toolbar input{min-height:44px}
 body.player-personal-view #pe-personal-heading{margin:0 0 14px;align-items:center;gap:8px}
 body.player-personal-view #pe-personal-heading #back-to-picks{margin:0}
-body.player-personal-view #pe-personal-heading>a{margin-left:auto;font-size:12px;background:none;border-color:transparent;padding:8px 0;min-height:36px;display:flex;align-items:center}
+body.player-personal-view #pe-personal-heading>a{margin-left:auto}
+body.player-personal-view #pe-personal-heading:has(#back-to-picks:not([hidden]))>a::before{display:none}
 body.player-personal-view #player .bl-player-controls{display:block;padding:14px;border:1px solid #33536a;border-radius:16px;background:#0d2536;margin:14px 0}
 body.player-personal-view #player .bl-player-controls .bl-player-market{margin:0;padding:0;background:none;border:0;border-radius:0}
 body.player-personal-view #player .bl-player-market .bl-segments button.active{background:#244a63;color:#fff;box-shadow:none}
@@ -193,7 +194,6 @@ body.player-personal-view #player .bl-advanced-fields{padding:14px 0 0}
 body.player-personal-view #player #player-summary{grid-template-columns:repeat(2,minmax(0,1fr));margin:14px 0 18px}
 body.player-personal-view #player #player-summary .metric{position:relative;min-width:0;padding:13px 14px;gap:5px;justify-content:center}
 body.player-personal-view #player #player-summary .metric strong{font-size:28px}
-.player-summary-rate{font-size:11px;color:#9db9cd;line-height:1.4}
 body.player-personal-view #player-chart-title{margin:18px 0 5px;font-size:18px}
 #player-sample-note{margin:0 0 12px;font-size:11px;line-height:1.4;color:#9db9cd}
 body.player-personal-view #player .bl-chart-caption{display:none}

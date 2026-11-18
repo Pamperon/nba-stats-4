@@ -828,7 +828,7 @@ async function openPickStats(row){
  rememberQuotePosition(document.querySelector('#quote-tabs button[data-tab].active')?.dataset.tab);
  syncArea('player');
  window.scrollTo({top:0,behavior:'instant'});
- $('back-to-picks').textContent=returnOrigin==='finder'?'← Torna ad Analisi quote':'← Torna ai pronostici';
+ $('back-to-picks').textContent=returnOrigin==='finder'?'Torna ad Analisi quote':'Torna ai pronostici';
  $('back-to-picks').hidden=false;
  ++rosterRequest;++playerRequest;++seasonPrefetchGeneration;
  clearTimeout(seasonPrefetchTimer);
@@ -1030,8 +1030,7 @@ function drawPlayer(){
  const avg=games.length?games.reduce((n,g)=>n+Number(g[stat]),0)/games.length:0;
  const statName={PTS:'Punti',REB:'Rimbalzi',AST:'Assist'}[stat]||stat;
  $('player-chart-title').textContent=statName+' · '+games.length+(games.length===1?' partita':' partite');
- const percent=games.length?(100*hits/games.length).toLocaleString('it-IT',{maximumFractionDigits:1})+'%':'—';
- $('player-summary').innerHTML='<div class="metric"><small>Media '+esc(statName.toLowerCase())+'</small><strong>'+(games.length?avg.toLocaleString('it-IT',{maximumFractionDigits:1,minimumFractionDigits:1}):'—')+'</strong></div><div class="metric"><small>Over '+esc(line)+'</small><strong>'+hits+'/'+games.length+'</strong><span class="player-summary-rate">'+esc(percent)+' delle gare</span></div>';
+ $('player-summary').innerHTML='<div class="metric"><small>Media '+esc(statName.toLowerCase())+'</small><strong>'+(games.length?avg.toLocaleString('it-IT',{maximumFractionDigits:1,minimumFractionDigits:1}):'—')+'</strong></div><div class="metric"><small>Over '+esc(line)+'</small><strong>'+hits+'/'+games.length+'</strong></div>';
  let sampleNote=$('player-sample-note');if(!sampleNote){sampleNote=document.createElement('p');sampleNote.id='player-sample-note';sampleNote.className='sheet-caption';$('player-chart-title').after(sampleNote);}
  sampleNote.textContent=[$('playerseason').selectedOptions[0]?.textContent,$('playermode').selectedOptions[0]?.textContent,venue==='all'?'Tutti i campi':venue==='home'?'In casa':'In trasferta'].filter(Boolean).join(' · ');
  $('player-trends').innerHTML='<div class="player-trends-title">Over sulla linea · partite disponibili</div><div class="player-trends-list">'+[5,10,20].map(n=>{const subset=dated.slice(0,n);const count=subset.filter(g=>Number(g[stat])>line).length;return '<div><small>Ultime '+n+'</small><strong>'+(subset.length?count+'/'+subset.length:'—')+'</strong></div>';}).join('')+'</div>'+(undated?'<p class="player-unknown">'+undated+(undated===1?' partita senza data esclusa':' partite senza data escluse')+' dalle statistiche recenti.</p>':'')+(venue!=='all'&&unknownVenue?'<p class="player-unknown">'+unknownVenue+(unknownVenue===1?' partita esclusa: campo non verificato.':' partite escluse: campo non verificato.')+'</p>':'');

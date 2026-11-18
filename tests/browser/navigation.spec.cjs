@@ -114,6 +114,10 @@ test('approved coordinated design: player charts, contextual back and responsive
  await expect(page.locator('#pe-next-match > a')).toHaveAttribute('href',/partita=123/);
  await expect(page.locator('#pe-share')).toHaveCount(0);
  await expect(page.locator('#player-summary .metric')).toHaveCount(2);
+ await expect(page.locator('#player-summary')).not.toContainText('%');
+ await expect(page.locator('#back-to-picks')).toHaveClass(/bl-nav-back/);
+ await expect(page.locator('#back-to-picks')).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+ expect((await page.locator('#back-to-picks').boundingBox()).height).toBeGreaterThanOrEqual(44);
  expect(await page.locator('.bl-player-controls').evaluate(el=>el.getBoundingClientRect().bottom<=document.getElementById('player-visual').getBoundingClientRect().top)).toBe(true);
  await expect.poll(()=>page.locator('.bl-chart-scroll').evaluate(el=>Math.abs(el.scrollWidth-el.clientWidth-el.scrollLeft))).toBeLessThanOrEqual(1);
  await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
@@ -262,3 +266,15 @@ test('prematch without win odds uses one full comparison and a compact history n
  expect(Math.abs(widths.container-widths.comparison)).toBeLessThanOrEqual(1);
  await page.screenshot({path:testInfo.outputPath('prematch-no-odds.png'),fullPage:true});
 });
+
+ test('direct player has one return to the directory',async({page})=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Refined profile navigation');
+ await page.goto('/giocatori/browser-fixture-123?mercato=PTS&linea=19.5&periodo=10');
+ await expect(page.locator('#player-summary .metric')).toHaveCount(2);
+ await expect(page.locator('#player-summary')).not.toContainText('%');
+ await expect(page.locator('#back-to-picks')).toBeHidden();
+ await expect(page.locator('#pe-personal-heading .bl-nav-back:visible')).toHaveCount(1);
+ await page.locator('#pe-personal-heading [data-hub="stats"]').click();
+ await expect(page).toHaveURL('/giocatori');
+ await expect(page.locator('#players-explorer')).toBeVisible();
+ });
