@@ -187,3 +187,28 @@ test('Home player form filters and player links stay compact and independent of 
  await expect(page.locator('#player-form')).toBeHidden();
  await expect(page.locator('#stat')).toHaveValue('PTS');
 });
+
+test('live calendar and open boxscore update automatically through the final whistle',async({page})=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Live polling is verified on the candidate');
+ await page.clock.install({time:new Date('2026-11-18T01:00:00+01:00')});
+ let fixtureScore=20,away=24,home=22,points=10,state='in',boxCalls=0;
+ const game=()=>({event_id:'123456',away:'Boston Celtics',home:'Atlanta Hawks',state:'in',upcoming:false,start_at:'2026-11-18T00:00:00Z',away_score:fixtureScore,home_score:18,period:1,display_clock:'6:00'});
+ await page.route('**/api/nba/fixtures**',route=>route.fulfill({json:{games:[game()]}}));
+ await page.route('**/api/nba/boxscore**',route=>{boxCalls++;return route.fulfill({json:{event_id:'123456',state,game:{state,away_score:away,home_score:home,period:state==='post'?4:2,display_clock:'5:00'},quarters:[{label:'Q1',away:24,home:22}],teams:[{team:'Boston Celtics',players:[{id:'22',name:'Alex Test',minutes:'20',points,rebounds:7,assists:4}]}]}});});
+ await page.goto('/nba?data=2026-11-18');
+ await expect(page.locator('.hub-calendar-final-score')).toContainText('20');
+ fixtureScore=26;await page.clock.runFor(31000);
+ await expect(page.locator('.hub-calendar-final-score')).toContainText('26');
+ await page.locator('.hub-calendar-match').click();
+ await expect(page.locator('.hub-boxscore-headline')).toHaveText('24 – 22');
+ const url=page.url();away=30;home=26;points=16;
+ await page.clock.runFor(30000);
+ await expect(page.locator('.hub-boxscore-headline')).toHaveText('30 – 26');
+ await expect(page.locator('.hub-boxscore-table tbody tr').first()).toContainText('16');
+ await expect(page.locator('.hub-boxscore-period-table tbody tr').first().locator('td').last()).toHaveText('30');
+ await expect(page).toHaveURL(url);await expect(page.locator('.hub-boxscore-back')).toBeVisible();
+ state='post';away=110;home=100;points=28;await page.clock.runFor(30000);
+ await expect(page.locator('.hub-boxscore-headline')).toHaveText('110 – 100');
+ await expect(page.locator('.hub-boxscore-live-status')).toHaveText('Finale');
+ const done=boxCalls;await page.clock.runFor(60000);expect(boxCalls).toBe(done);
+});

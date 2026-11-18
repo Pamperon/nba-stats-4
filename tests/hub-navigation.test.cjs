@@ -9,10 +9,11 @@ const html=fs.readFileSync(path.join(root,'web/index.html'),'utf8');
 const windows=[];
 test.afterEach(()=>{for(const window of windows.splice(0))window.close()});
 const script=fs.readFileSync(path.join(root,'web/hub-nav.js'),'utf8');
-function setup(hash='',fetchImpl){
+function setup(hash='',fetchImpl,prepare){
  const dom=new JSDOM(html,{url:'https://basketlab.it/'+hash,runScripts:'outside-only'});
  const {window}=dom,doc=window.document;windows.push(window);
  if(fetchImpl)window.fetch=fetchImpl;
+ if(prepare)prepare(window);
  window.scrollTo=()=>{};
  window.HTMLElement.prototype.scrollIntoView=function(){};
  for(const b of doc.querySelectorAll('#quote-tabs [data-tab]'))b.addEventListener('click',()=>{for(const x of doc.querySelectorAll('#quote-tabs [data-tab]'))x.classList.toggle('active',x===b)});
@@ -520,4 +521,49 @@ test('calendar displays only explicit Live, preserves score ordering and drops q
  assert.equal(cards[3].querySelector('.hub-calendar-state'),null);
  assert.ok(!calls.some(url=>url.includes('quote-coverage')));
  assert.equal(doc.querySelector('.hub-home-banner').hidden,true);
+});
+
+
+test('live calendar polls scores in place, catches up on visibility and updates its match action',async()=>{
+ let tick,clock=0,hidden=false,calls=0;
+ let game={event_id:'123456',away:'Boston Celtics',home:'Atlanta Hawks',state:'in',upcoming:false,start_at:'2026-11-18T00:00:00Z',away_score:20,home_score:18,period:1,display_clock:'6:00'};
+ const {window:w,doc}=setup('nba?data=2026-11-18',async()=>{calls++;return {ok:true,json:async()=>({games:[{...game}]})};},w=>{
+  Object.defineProperty(w.document,'hidden',{get:()=>hidden});w.Date.now=()=>clock;
+  w.setInterval=(fn,ms)=>{if(ms===30000)tick=fn;return 1;};
+ });
+ await new Promise(r=>setImmediate(r));
+ const row=doc.querySelector('.hub-calendar-match'),dateButton=doc.querySelector('.hub-calendar-date.active');row.focus();
+ assert.match(row.textContent,/20/);game={...game,away_score:24,display_clock:'5:30'};clock=31000;tick();
+ await new Promise(r=>setImmediate(r));
+ assert.equal(doc.querySelector('.hub-calendar-match'),row);assert.equal(doc.activeElement,row);assert.equal(doc.querySelector('.hub-calendar-date.active'),dateButton);
+ assert.match(row.querySelector('.hub-calendar-final-score').textContent,/24/);assert.match(row.querySelector('.hub-calendar-time').textContent,/Q1 · 5:30/);
+ const before=calls;hidden=true;clock=62000;tick();await new Promise(r=>setImmediate(r));assert.equal(calls,before);
+ hidden=false;game={...game,state:'post',away_score:100,home_score:90};doc.dispatchEvent(new w.Event('visibilitychange'));await new Promise(r=>setImmediate(r));
+ assert.equal(row.dataset.state,'post');assert.match(row.querySelector('.hub-calendar-final-score').textContent,/100/);
+});
+
+test('live boxscore refreshes header, totals and players without closing or losing scroll, then stops at final',async()=>{
+ let tick,hidden=false,boxCalls=0,resolvePending;
+ const game={event_id:'123456',away:'Boston Celtics',home:'Atlanta Hawks',state:'in',upcoming:false,start_at:'2026-11-18T00:00:00Z',away_score:20,home_score:18};
+ let data={state:'in',game:{away_score:24,home_score:22,period:1,display_clock:'4:00'},quarters:[{label:'Q1',away:24,home:22}],teams:[{team:'Boston Celtics',players:[{id:'22',name:'Alex Test',points:10}]}]};
+ let delayed=false,failed=false;
+ const {window:w,doc}=setup('nba?data=2026-11-18&partita=123456',async url=>{
+  if(String(url).includes('boxscore')){boxCalls++;if(delayed)return new Promise(r=>{resolvePending=r;});if(failed)throw Error('offline');return {ok:true,json:async()=>data};}
+  return {ok:true,json:async()=>({games:[game]})};
+ },w=>{Object.defineProperty(w.document,'hidden',{get:()=>hidden});w.setInterval=(fn,ms)=>{if(ms===30000)tick=fn;return 1;};});
+ for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));
+ const panel=doc.querySelector('#hub-calendar-boxscore'),back=panel.querySelector('.hub-boxscore-back');
+ assert.equal(panel.hidden,false);assert.equal(panel.querySelector('.hub-boxscore-headline').textContent,'24 – 22');
+ const scroll=panel.querySelector('.hub-boxscore-scroll');scroll.scrollLeft=87;panel.querySelector('.hub-boxscore-player-link').focus();
+ data={...data,game:{away_score:30,home_score:26,period:2,display_clock:'10:00'},teams:[{team:'Boston Celtics',players:[{id:'22',name:'Alex Test',points:16}]}]};
+ delayed=true;tick();tick();assert.equal(boxCalls,2);assert.equal(panel.querySelector('.hub-boxscore-back'),back);assert.equal(panel.querySelector('.hub-boxscore-headline').textContent,'24 – 22');
+ resolvePending({ok:true,json:async()=>data});for(let i=0;i<3;i++)await new Promise(r=>setImmediate(r));delayed=false;
+ assert.equal(panel.querySelector('.hub-boxscore-headline').textContent,'30 – 26');assert.equal(panel.querySelector('.hub-boxscore-scroll').scrollLeft,87);assert.equal(doc.activeElement.getAttribute('href'),'/giocatori/alex-test-22');
+ assert.match(panel.querySelector('.hub-boxscore-table').textContent,/16/);assert.match(panel.querySelector('.hub-boxscore-period-table').textContent,/30/);
+ failed=true;tick();await new Promise(r=>setImmediate(r));assert.equal(panel.querySelector('.hub-boxscore-headline').textContent,'30 – 26');assert.match(panel.textContent,/Aggiornamento in attesa/);failed=false;
+ hidden=true;const before=boxCalls;tick();assert.equal(boxCalls,before);hidden=false;
+ data={...data,state:'post',game:{away_score:110,home_score:100,period:4,display_clock:'0:00'}};
+ doc.dispatchEvent(new w.Event('visibilitychange'));for(let i=0;i<3;i++)await new Promise(r=>setImmediate(r));
+ assert.equal(panel.querySelector('.hub-boxscore-headline').textContent,'110 – 100');assert.equal(panel.querySelector('.hub-boxscore-live-status').textContent,'Finale');
+ const finalCalls=boxCalls;tick();assert.equal(boxCalls,finalCalls);
 });
