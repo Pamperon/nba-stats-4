@@ -16,8 +16,26 @@ $('player')?.prepend(personal);
 const quotes=d.createElement('section');quotes.id='pe-player-quotes';quotes.className='pe-quotes';quotes.setAttribute('aria-label','Quote del giocatore');
 $('player-visual')?.after(quotes);
 const profile=$('player-profile'),averages=$('player-season-stats');if(profile&&averages)profile.append(averages);
+const nextGame=d.createElement('section');nextGame.id='pe-next-match';nextGame.hidden=true;nextGame.setAttribute('aria-label','Prossima partita della squadra');profile?.after(nextGame);
+let nextTeam='',nextRequest=0;
+async function renderNextGame(player){
+ const teamId=String(player.teamId||'');if(teamId===nextTeam)return;
+ nextTeam=teamId;const token=++nextRequest;nextGame.hidden=true;nextGame.replaceChildren();
+ if(!teamId||!w.BasketLabNBA?.teamData)return;
+ try{
+  const data=await w.BasketLabNBA.teamData(teamId);if(token!==nextRequest)return;
+  const game=(data.upcoming||[]).find(g=>g.state==='in'||g.state==='pre'&&new Date(g.start_at).getTime()>Date.now());
+  if(!game){nextGame.textContent='Nessuna prossima partita della squadra disponibile.';nextGame.hidden=false;return;}
+  const title=d.createElement('small');title.textContent=game.state==='in'?'Squadra in campo':'Prossima partita della squadra';
+  const teams=d.createElement('strong');teams.textContent=game.away+' · '+game.home;
+  const when=d.createElement('span');const date=new Date(game.start_at);when.textContent=game.state==='in'?'Live':date.toLocaleString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'})+(game.time_valid===false?' · Orario da definire':'');
+  nextGame.append(title,teams,when);
+  if(/^\d{1,12}$/.test(String(game.event_id||''))&&/^\d{4}-\d{2}-\d{2}$/.test(game.calendar_date||'')){const link=d.createElement('a');link.href='/nba?data='+game.calendar_date+'&partita='+game.event_id;link.textContent='Apri partita ›';nextGame.append(link);}
+  nextGame.hidden=false;
+ }catch{if(token===nextRequest){nextTeam='';nextGame.textContent='Calendario della squadra temporaneamente non disponibile.';nextGame.hidden=false;}}
+}
 const periods=d.querySelector('.bl-window-tabs'),advanced=d.querySelector('.bl-player-advanced');
-if(periods&&advanced){$('player-visual').after(periods);periods.after(advanced);advanced.after(quotes);}
+if(periods&&advanced){$('player-chart-title').before(periods);$('player-visual').after(advanced);advanced.after(quotes);}
 
 let payload=null,pending=null,loadedAt=0,market='PTS',limit=30,request=0,selected=null,restoring=false,directoryScroll=0,catalog=null,quotesUnavailable=false;
 const api={detailOpen:false,get restoring(){return restoring;},route:()=>selected?{player:slug(selected.name,selected.id),filters:filters()}: {},show:showDirectory,openRoute};w.BasketLabPlayers=api;
@@ -115,12 +133,12 @@ function renderQuotes(){
  if(!rows.length){quotes.innerHTML+='<p>Nessuna quota disponibile per questo mercato nelle prossime partite. Puoi comunque analizzare lo storico.</p>';return;}
  const table=d.createElement('div');table.className='pe-quote-options';for(const row of [...rows].sort((a,b)=>Number(a.Linea)-Number(b.Linea)||String(a.Scelta).localeCompare(String(b.Scelta)))){const button=d.createElement('button');button.type='button';const isOver=!/^under$/i.test(row.Scelta||'');button.className='pe-quote-option';button.setAttribute('aria-pressed',String(Number($('line').value)===Number(row.Linea)));button.innerHTML='<span>'+esc(row.Scelta)+' '+esc(row.Linea)+'</span><strong>'+Number(row.Quota).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>';button.onclick=()=>{const line=$('line'),val=String(row.Linea);if(![...line.options].some(o=>o.value===val))line.add(new Option(val,val));line.value=val;line.dispatchEvent(new Event('change',{bubbles:true}));};if(!isOver)button.title='Il grafico mostra il superamento della linea (Over).';table.append(button);}quotes.append(table);
 }
-d.addEventListener('basketlab:player-open',event=>{++request;api.detailOpen=true;panel.hidden=true;const row=event.detail?.row;if(row){selected={id:String(row['ESPN ID']||''),name:String(row.Giocatore||'').split(',').reverse().map(s=>s.trim()).join(' ')};}load().catch(()=>{quotes.innerHTML='<p>Quote temporaneamente non disponibili.</p>';});});
+d.addEventListener('basketlab:player-open',event=>{++request;api.detailOpen=true;panel.hidden=true;nextGame.hidden=true;nextTeam='';++nextRequest;const row=event.detail?.row;if(row){selected={id:String(row['ESPN ID']||''),name:String(row.Giocatore||'').split(',').reverse().map(s=>s.trim()).join(' ')};}load().catch(()=>{quotes.innerHTML='<p>Quote temporaneamente non disponibili.</p>';});});
 d.addEventListener('basketlab:player-state',event=>{const p=event.detail;if(!p?.id)return;selected={...p,id:String(p.id)};api.detailOpen=true;panel.hidden=true;
  for(const b of d.querySelectorAll('[data-player-window]')){const n=b.dataset.playerWindow,summary=p.windows?.[n];b.dataset.hitRate=summary?.total?(100*summary.hits/summary.total<50?'low':'high'):'unknown';b.innerHTML='<span>'+(n==='all'?'Stagione':'Ultime '+n)+'</span>'+(summary?'<small>'+(summary.total?Math.round(100*summary.hits/summary.total)+'%':'—')+'</small>':'');}
- renderQuotes();if(!restoring)changed();});
+ renderNextGame(p);renderQuotes();if(!restoring)changed();});
 async function openRoute(route){
- api.detailOpen=true;panel.hidden=true;const token=++request;restoring=true;
+ api.detailOpen=true;panel.hidden=true;nextGame.hidden=true;nextTeam='';++nextRequest;const token=++request;restoring=true;
  for(const tab of d.querySelectorAll('.tab'))tab.hidden=tab.id!=='player';
  $('player-profile').hidden=true;$('player-summary').replaceChildren();$('chart').replaceChildren();$('player-trends').replaceChildren();$('player-visual').hidden=true;quotes.replaceChildren();$('player-status').textContent='Caricamento della scheda giocatore…';
  try{const id=route.player.match(/-(\d+)$/)?.[1];selected={id,name:route.player.replace(/-\d+$/,'').replace(/-/g,' ')};const directory=await w.BasketLabPlayerEngine.directory();if(token!==request)return;const player=directory.find(p=>String(p.id)===id);if(!player)throw Error('Giocatore non trovato');const f=route.filters||{};await w.BasketLabPlayerEngine.open({'ESPN ID':player.id,Giocatore:player.name,Squadra:player.team,Mercato:labels[f.market]?f.market:'PTS',...(f.line&&Number.isFinite(Number(f.line))&&Number(f.line)>=0&&Number(f.line)<=100?{Linea:Number(f.line)}:{})});

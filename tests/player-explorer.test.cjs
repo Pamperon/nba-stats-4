@@ -87,3 +87,14 @@ test('prepared directory charts need no individual history requests',async()=>{
 test('opening a direct player URL replaces default filters without trapping browser Back',async()=>{
  const {dom,w,d}=setup('https://basketlab.it/giocatori/alex-test-22');try{const before=w.history.length;for(let n=0;n<18;n++)await tick();assert.equal(w.history.length,before);assert.equal(w.location.pathname,'/giocatori/alex-test-22');assert.equal(d.querySelector('#pe-share').textContent,'Condividi');assert.equal(d.querySelector('#pe-share').hasAttribute('data-share-page'),true);}finally{dom.window.close();}
 });
+test('next team game is independent of odds, deduplicates filter changes and ignores older team responses',async()=>{
+ const {dom,w,d}=setup();try{
+  for(let n=0;n<12;n++)await tick();
+  const pending=new Map();let calls=0;w.BasketLabNBA={teamData:id=>{calls++;return new Promise(resolve=>pending.set(id,resolve));}};
+  const state=(id,teamId)=>d.dispatchEvent(new w.CustomEvent('basketlab:player-state',{detail:{id,teamId,name:'Test',windows:{}}}));
+  state('22','2');state('33','3');state('33','3');assert.equal(calls,2);
+  const game={state:'pre',start_at:'2099-11-19T00:30:00Z',calendar_date:'2099-11-19',event_id:'456',away:'A',home:'B'};
+  pending.get('3')({upcoming:[game]});await tick();assert.equal(d.querySelector('#pe-next-match').hidden,false);assert.match(d.querySelector('#pe-next-match').textContent,/A · B/);assert.equal(d.querySelector('#pe-next-match a').getAttribute('href'),'/nba?data=2099-11-19&partita=456');
+  pending.get('2')({upcoming:[{...game,away:'Old team'}]});await tick();assert.doesNotMatch(d.querySelector('#pe-next-match').textContent,/Old team/);
+ }finally{w.close();}
+});
