@@ -8,7 +8,7 @@
 #hub-match-charts{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;margin:18px 0}
 #hub-match-charts>.sheet-comparison{order:0;grid-column:1;grid-row:1}
 #hub-match-charts>.bl-match-v2-form{order:1;grid-column:1/-1;margin:0}
-#hub-match-charts>.bl-match-v2{order:0;grid-column:2;grid-row:1;display:block;margin:0;padding:18px;background:#0d2536;border:1px solid #33536a;border-radius:16px;min-width:0}
+#hub-match-charts>.hub-match-chart-card.bl-match-v2{order:0;grid-column:2;grid-row:1;display:block;margin:0;padding:18px;background:#0d2536;border:1px solid #33536a;border-radius:16px;min-width:0}
 .sheet-comparison{min-width:0;padding:18px;border:1px solid #33536a;border-radius:16px;background:#0d2536}
 .sheet-comparison h3{font-size:19px;margin:0 0 5px;color:#f3f7fa}
 .sheet-caption{font-size:12px;line-height:1.5;color:#9db9cd;margin:0 0 16px}
@@ -96,8 +96,8 @@ body.player-personal-view .pe-quotes h3{font-size:18px}
  .hub-shell .hub-match-title-wrap,.hub-boxscore-match-header{padding:20px 10px;border-radius:16px}
  .hub-match-title-wrap .hub-match-team img{width:58px;height:58px}
  #hub-match-charts{grid-template-columns:1fr;gap:12px}
- #hub-match-charts>.sheet-comparison,#hub-match-charts>.bl-match-v2-form,#hub-match-charts>.bl-match-v2{grid-column:1;grid-row:auto}
- #hub-match-charts>.bl-match-v2{order:2}
+ #hub-match-charts>.sheet-comparison,#hub-match-charts>.bl-match-v2-form,#hub-match-charts>.hub-match-chart-card.bl-match-v2{grid-column:1;grid-row:auto}
+ #hub-match-charts>.hub-match-chart-card.bl-match-v2{order:2}
  .sheet-comparison{padding:16px 12px}
  .sheet-comparison-row{grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr)}
  .sheet-comparison-row b{font-size:24px}
@@ -126,7 +126,10 @@ body.player-personal-view #pe-next-match[hidden]{display:none}
 #pe-next-match>span{grid-column:1;font-size:12px;color:#a9c5d7}
 #pe-next-match>a{grid-column:2;grid-row:2/4;align-self:center;text-decoration:none;color:#ffb778;font-size:12px;white-space:nowrap;padding:10px 0 10px 8px}
 @media(max-width:380px){#pe-next-match>a{grid-column:1;grid-row:auto;padding-left:0}.sheet-leader p{gap:6px}.hub-boxscore-match-header .hub-boxscore-headline{font-size:28px}.hub-boxscore-match-team img{width:42px;height:42px}}
-#hub-match-charts>.bl-match-v2 .bl-match-v2-section{padding:0;border:0;background:transparent;border-radius:0}
+#hub-match-charts>.hub-match-chart-card.bl-match-v2 .bl-match-v2-section{padding:0;border:0;background:transparent;border-radius:0}
 #hub-match-charts .bl-match-v2-form-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #hub-match-charts .bl-match-v2-form-head>strong{margin:0;font-size:16px;color:#eef6fc}
 #hub-match-charts .bl-match-v2-form-head>small{display:block;font-size:11px;text-align:right;color:#a8c2d4}
+
+#hub-match-charts .bl-match-v2-results span{flex:0 0 30px;width:30px;height:30px;display:inline-flex}
+@media(max-width:600px){#hub-match-charts .bl-match-v2-results span{flex-basis:26px;width:26px;height:28px}}

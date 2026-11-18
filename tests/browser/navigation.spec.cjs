@@ -80,6 +80,7 @@ test('approved coordinated design: player charts, contextual back and responsive
  await page.route('**/api/picks/session**',async route=>{const response=await route.fetch();const data=await response.json();data.preliminary_top5=Array.from({length:5},(_,i)=>({...data.preliminary_single,Giocatore:'Browser Fixture '+(i+1)}));await route.fulfill({response,json:data});});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await expect(page.locator('#hub-single-content')).toContainText('Browser Fixture');
+ await page.locator('[data-choice=no]').click();
  await expect(page.locator('#hub-featured-list .bl-datalab-card:visible')).toHaveCount(3);
  await expect(page.locator('.hub-trust-strip')).toBeVisible();
  await page.locator('.hub-featured-more').click();await expect(page).toHaveURL(/pronostici/);
@@ -98,6 +99,8 @@ test('approved coordinated design: player charts, contextual back and responsive
  await page.locator('.hub-premium-fixture').click();await expect(page).toHaveURL(/analisi-partita\?data=2026-11-05/);await expect(page.locator('#hub-match-charts')).toContainText('Media punti segnati');
  await expect(page.locator('.sheet-comparison')).toContainText('Media punti subiti');
  await expect(page.locator('#bl-detail-styles')).toHaveCount(1);
+ await expect.poll(()=>page.evaluate(()=>Boolean(document.getElementById('bl-detail-styles')?.sheet))).toBe(true);
+ if(testInfo.project.name==='mobile')expect((await page.locator('.sheet-comparison').boundingBox()).y).toBeLessThan((await page.locator('.bl-match-v2').boundingBox()).y);
  await page.screenshot({path:testInfo.outputPath('match-redesign.png'),fullPage:true});
  await page.locator('[data-match-tab="players"]').click();await expect(page.locator('.hub-match-player-card')).toBeVisible();
  await page.locator('.hub-match-player-stats-link').click();await expect(page).toHaveURL(/\/giocatori\/browser-fixture-123\?/);
@@ -192,7 +195,7 @@ test('Home player form filters and player links stay compact and independent of 
  await expect(page.locator('#stat')).toHaveValue('PTS');
 });
 
-test('live calendar and open boxscore update automatically through the final whistle',async({page})=>{
+test('live calendar and open boxscore update automatically through the final whistle',async({page},testInfo)=>{
  test.skip(!!process.env.BASKETLAB_BASELINE,'Live polling is verified on the candidate');
  await page.clock.install({time:new Date('2026-11-18T01:00:00+01:00')});
  let fixtureScore=20,away=24,home=22,points=10,state='in',boxCalls=0;
@@ -200,6 +203,7 @@ test('live calendar and open boxscore update automatically through the final whi
  await page.route('**/api/nba/fixtures**',route=>route.fulfill({json:{games:[game()]}}));
  await page.route('**/api/nba/boxscore**',route=>{boxCalls++;return route.fulfill({json:{event_id:'123456',state,game:{state,away_score:away,home_score:home,period:state==='post'?4:2,display_clock:'5:00'},quarters:[{label:'Q1',away:24,home:22}],teams:[{team:'Boston Celtics',players:[{id:'22',name:'Alex Test',minutes:'20',points,rebounds:7,assists:4},{id:'23',name:'Second Player',minutes:'12',points:5,rebounds:2,assists:1}]}]}});});
  await page.goto('/nba?data=2026-11-18');
+ await page.locator('[data-choice=no]').click();
  await expect(page.locator('.hub-calendar-final-score')).toContainText('20');
  fixtureScore=26;await page.clock.runFor(31000);
  await expect(page.locator('.hub-calendar-final-score')).toContainText('26');
