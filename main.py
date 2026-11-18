@@ -1337,6 +1337,19 @@ def player_form():
         logger.exception('Player form unavailable')
         raise HTTPException(503, 'Forma giocatori temporaneamente non disponibile')
 
+@app.get('/api/players/identity')
+def player_identity(athlete_id: str = Query(pattern=r'^[0-9]{1,12}$')):
+    try:
+        player = next((p for p in player_stats.directory() if str(p['id']) == athlete_id), None)
+        if player is None:
+            raise HTTPException(404, 'Giocatore non trovato')
+        return {'player': player, 'odds_api_calls': 0}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('NBA player identity unavailable')
+        raise HTTPException(503, 'Profilo giocatore temporaneamente non disponibile')
+
 @app.get('/api/players/directory')
 def player_directory():
     try: return {'players': player_stats.directory_with_previews(), 'odds_api_calls': 0}

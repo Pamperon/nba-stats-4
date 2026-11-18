@@ -5,7 +5,8 @@ function setup(url='https://basketlab.it/giocatori',options={}){
  const dom=new JSDOM(html,{url,runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,d=w.document,calls=[];w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
  w.BasketLabSections={register(){},wants(){return false}};
  if(options.previews)w.IntersectionObserver=class{constructor(cb){this.cb=cb;}observe(target){Promise.resolve().then(()=>this.cb([{isIntersecting:true,target}]));}unobserve(){}disconnect(){}};
- w.fetch=async u=>{calls.push(String(u));let p={};if(u==='/api/players/explorer'&&options.quoteError)throw Error('Quotes offline');if(u==='/api/players/explorer')p={date:'2026-11-05',rows:options.rows||[row],logs:{'Test, Alex':[{GAME_DATE:'2026-11-01',PTS:20},{GAME_DATE:'2026-10-30',PTS:8}]}};
+ w.fetch=async u=>{calls.push(String(u));if(options.metadataGate&&(u==='/api/players/teams'||String(u).startsWith('/api/players/roster')))await options.metadataGate;let p={};if(u==='/api/players/explorer'&&options.quoteError)throw Error('Quotes offline');if(u==='/api/players/explorer')p={date:'2026-11-05',rows:options.rows||[row],logs:{'Test, Alex':[{GAME_DATE:'2026-11-01',PTS:20},{GAME_DATE:'2026-10-30',PTS:8}]}};
+ else if(String(u).startsWith('/api/players/identity?'))p={player:(options.players||[{id:'22',name:'Alex Test',team:'Boston Celtics',team_id:'2'}]).find(p=>String(p.id)===new URL(String(u),'https://basketlab.it').searchParams.get('athlete_id'))};
  else if(u==='/api/players/directory')p={players:options.players||[{id:'22',name:'Alex Test',team:'Boston Celtics',team_id:'2'},{id:'33',name:'Other Player',team:'Boston Celtics',team_id:'2'}]};
  else if(String(u).startsWith('/api/nba/fixtures'))p={games:[{home:'Boston Celtics',away:'Atlanta Hawks'}]};
  else if(u==='/api/players/teams')p={teams:[{id:'2',name:'Boston Celtics'}]};
@@ -97,4 +98,20 @@ test('next team game is independent of odds, deduplicates filter changes and ign
   pending.get('3')({upcoming:[game]});await tick();assert.equal(d.querySelector('#pe-next-match').hidden,false);assert.match(d.querySelector('#pe-next-match').textContent,/A · B/);assert.equal(d.querySelector('#pe-next-match a').getAttribute('href'),'/nba?data=2099-11-19&partita=456');
   pending.get('2')({upcoming:[{...game,away:'Old team'}]});await tick();assert.doesNotMatch(d.querySelector('#pe-next-match').textContent,/Old team/);
  }finally{w.close();}
+});
+
+test('verified direct player renders full stats before slow catalog and roster metadata',async()=>{
+ let release;const metadataGate=new Promise(r=>release=r);
+ const {dom,w,d,calls}=setup('https://basketlab.it/giocatori/alex-test-22?mercato=AST&linea=2.5&periodo=5&stagione=2025&campo=home&competizione=2',{metadataGate});
+ try{
+  for(let n=0;n<20;n++)await tick();
+  assert.match(d.querySelector('#player-summary').textContent,/Media assist/);
+  assert.equal(d.querySelector('#player-loading').hidden,true);
+  assert.equal(d.querySelector('#playerseason').value,'2025');assert.equal(d.querySelector('#player-venue').value,'home');
+  const logs=calls.filter(u=>u.startsWith('/api/players/log?'));
+  assert.equal(logs.length,1);assert.match(logs[0],/season=2025/);
+  assert.equal(calls.includes('/api/players/directory'),false);
+  release();for(let n=0;n<8;n++)await tick();
+  assert.equal(d.querySelector('#playername').value,'22');assert.equal(d.querySelector('#stat').value,'AST');
+ }finally{release();dom.window.close();}
 });
