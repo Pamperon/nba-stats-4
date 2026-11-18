@@ -299,7 +299,8 @@ test('successful match data renders attack, defense and verified history without
  assert.match(doc.querySelector('#hub-match-h2h-chart').textContent,/Nessuno scontro diretto/);
  assert.equal(doc.querySelectorAll('#hub-match-insights article').length,3);
  assert.match(doc.querySelector('#hub-match-insights').textContent,/Le chiavi della partita/);
- assert.match(doc.querySelector('#hub-match-insights').textContent,/05\/11\/2026/);
+ assert.match(doc.querySelector('#hub-match-insights').textContent,/Dati ESPN precedenti/);
+ assert.equal(doc.querySelectorAll('#hub-match-insights details').length,0);
 });
 
 test('invalid URL dates cannot crash calendar or open a match under a different day',()=>{

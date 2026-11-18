@@ -4,7 +4,55 @@ const preferences=new Map();
 const numeric=value=>value!==null&&value!==undefined&&String(value).trim()!==''&&Number.isFinite(Number(value))?Number(value):null;
 function minutes(value){if(/^\d+:\d{2}$/.test(String(value))){const [m,s]=String(value).split(':').map(Number);return m+s/60;}return numeric(value);}
 const fields=['name','minutes','points','rebounds','assists'];
+let drawer=null,selected=null,snapshot=null,returnFocus=null,returnScroll=0,restoreOnClose=true;
+const identity=game=>String(game.event_id||[game.away,game.home].join('|'));
+function ensureDrawer(document){
+ if(drawer)return drawer;
+ const make=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node;};
+ drawer=make('dialog','bl-game-player-dialog');drawer.id='bl-game-player-panel';drawer.setAttribute('aria-labelledby','bl-game-player-name');drawer.setAttribute('aria-describedby','bl-game-player-match');
+ const close=make('button','bl-game-player-close','×');close.type='button';close.setAttribute('aria-label','Chiudi statistiche giocatore');close.autofocus=true;close.onclick=closeDrawer;
+ const label=make('p','bl-game-player-eyebrow','Statistiche della partita');
+ const header=make('div','bl-game-player-header'),avatar=make('div','bl-game-player-avatar'),initials=make('span','bl-game-player-initials');initials.setAttribute('aria-hidden','true');
+ const photo=make('img','bl-game-player-photo');photo.alt='';photo.decoding='async';photo.onerror=()=>{photo.hidden=true;initials.hidden=false;};photo.onload=()=>{if(photo.naturalWidth){photo.hidden=false;initials.hidden=true;}};
+ avatar.append(initials,photo);
+ const bio=make('div','bl-game-player-bio'),name=make('h2','');name.id='bl-game-player-name';
+ const team=make('p','bl-game-player-team'),status=make('p','bl-game-player-status');bio.append(name,team,status);header.append(avatar,bio);
+ const match=make('p','bl-game-player-match');match.id='bl-game-player-match';
+ const stats=make('dl','bl-game-player-stats');
+ for(const [key,text] of [['points','Punti'],['rebounds','Rimbalzi'],['assists','Assist'],['minutes','Minuti']]){const item=make('div',''),term=make('dt','',text),value=make('dd','','—');value.dataset.gamePlayerStat=key;item.append(term,value);stats.append(item);}
+ const unavailable=make('p','bl-game-player-unavailable','Statistiche del giocatore non ancora disponibili.');unavailable.hidden=true;
+ const link=make('a','bl-game-player-profile','Apri il profilo completo →');link.onclick=event=>{if(!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey)closeDrawer(false);};
+ drawer.append(close,label,header,match,stats,unavailable,link);document.body.append(drawer);
+ drawer.addEventListener('click',event=>{if(event.target!==drawer)return;const rect=drawer.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closeDrawer();});
+ drawer.addEventListener('close',()=>{
+  selected=null;document.documentElement.classList.remove('bl-game-player-open');
+  const target=returnFocus&&[...document.querySelectorAll('.hub-boxscore-player-link')].find(a=>a.getAttribute('href')===returnFocus.href&&a.closest('.hub-boxscore-team')?.dataset.team===returnFocus.team);
+  if(restoreOnClose){target?.focus({preventScroll:true});if(window.scrollY!==returnScroll)window.scrollTo({top:returnScroll,behavior:'instant'});}returnFocus=null;
+ });
+ document.addEventListener('basketlab:view',()=>closeDrawer(false));window.addEventListener('popstate',()=>closeDrawer(false));window.addEventListener('pagehide',()=>closeDrawer(false));
+ return drawer;
+}
+function closeDrawer(restore=true){if(!drawer?.open)return;restoreOnClose=restore!==false;if(typeof drawer.close==='function')drawer.close();else{drawer.removeAttribute('open');drawer.dispatchEvent(new Event('close'));}}
+function paintDrawer(){
+ if(!selected||!snapshot)return;
+ const {game,data}=snapshot,team=(data.teams||[]).find(t=>t.team===selected.team),player=team?.players?.find(p=>String(p.id)===selected.id);
+ if(!player)return;
+ drawer.querySelector('#bl-game-player-name').textContent=player.name||'Giocatore';drawer.querySelector('.bl-game-player-team').textContent=team.team;
+ const period=Number(game.period)||0,state=data.state||game.state;
+ drawer.querySelector('.bl-game-player-status').textContent=state==='post'?'Finale':state==='in'?['Live',period>4?'OT '+(period-4):period?'Q'+period:'',game.display_clock||''].filter(Boolean).join(' · '):'Statistiche della gara';
+ drawer.querySelector('.bl-game-player-match').textContent=[game.away,game.home].filter(Boolean).join(' – ');
+ for(const field of fields.slice(1)){const value=player[field];drawer.querySelector('[data-game-player-stat='+field+']').textContent=value===null||value===undefined||String(value).trim()===''?'—':String(value);}
+ drawer.querySelector('.bl-game-player-unavailable').hidden=fields.slice(1).some(field=>numeric(player[field])!==null||field==='minutes'&&/^\d+:\d{2}$/.test(String(player[field])));
+ const photo=drawer.querySelector('img'),initials=drawer.querySelector('.bl-game-player-initials');initials.textContent=String(player.name||'').trim().split(/\s+/).slice(0,2).map(n=>n[0]||'').join('');
+ const src='/api/players/headshot/'+selected.id;if(photo.getAttribute('src')!==src){photo.hidden=false;initials.hidden=false;photo.src=src;}
+ drawer.querySelector('.bl-game-player-profile').href=selected.href;
+}
+function openDrawer(document,link,player,team){
+ ensureDrawer(document);selected={event:identity(snapshot.game),id:String(player.id),team,href:link.getAttribute('href')};returnFocus={href:selected.href,team};returnScroll=window.scrollY;restoreOnClose=true;
+ paintDrawer();document.documentElement.classList.add('bl-game-player-open');if(typeof drawer.showModal==='function')drawer.showModal();else drawer.setAttribute('open','');
+}
 window.BasketLabBoxscoreView=function(document,panel,game,data){
+  snapshot={game,data};if(drawer?.open){if(selected?.event!==identity(game))closeDrawer(false);else paintDrawer();}
   if(Array.isArray(data.quarters)&&data.quarters.length){
    const periods=document.createElement('section');periods.className='hub-boxscore-periods';
    const caption=document.createElement('h4');caption.textContent='Risultato per quarto';periods.append(caption);
@@ -52,7 +100,7 @@ window.BasketLabBoxscoreView=function(document,panel,game,data){
     const line=document.createElement('tr'),name=document.createElement('td');
     if(/^\d{1,12}$/.test(String(player.id||''))){
      const link=document.createElement('a');const slug=String(player.name||'giocatore').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'giocatore';
-     link.href='/giocatori/'+slug+'-'+player.id;link.className='hub-boxscore-player-link';link.textContent=player.name||'Giocatore';link.setAttribute('aria-label','Statistiche di '+(player.name||'questo giocatore'));name.append(link);
+     link.href='/giocatori/'+slug+'-'+player.id;link.className='hub-boxscore-player-link';link.textContent=player.name||'Giocatore';link.setAttribute('aria-label','Statistiche di '+(player.name||'questo giocatore'));link.setAttribute('aria-haspopup','dialog');link.setAttribute('aria-controls','bl-game-player-panel');link.onclick=event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button>0)return;event.preventDefault();openDrawer(document,link,player,team.team);};name.append(link);
     }else name.textContent=player.name||'—';
     line.append(name);[player.minutes,player.points,player.rebounds,player.assists].forEach(value=>{const cell=document.createElement('td');cell.textContent=value??'—';line.append(cell)});body.append(line);rows.push({line,player,index});
    }
