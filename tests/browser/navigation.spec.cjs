@@ -107,7 +107,7 @@ test('approved coordinated design: player charts, contextual back and responsive
  await expect(page.locator('[data-player-market="REB"]')).toHaveAttribute('aria-pressed','true');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await expect(page.locator('#pe-next-match')).toContainText('Prossima partita della squadra');
- await expect(page.locator('#pe-next-match a')).toHaveAttribute('href',/partita=123/);
+ await expect(page.locator('#pe-next-match > a')).toHaveAttribute('href',/partita=123/);
  await page.screenshot({path:testInfo.outputPath('player-redesign.png'),fullPage:true});
  await expect(page.locator('#back-to-picks')).toContainText('Torna all’analisi');
  await page.locator('#back-to-picks').click();await expect(page).toHaveURL(/analisi-partita/);
