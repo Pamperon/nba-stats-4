@@ -50,7 +50,7 @@
   const heading=el('h2','bl-insights-title',title);node.append(heading);
   if(!items.length){node.append(el('p','bl-insights-empty','Dati insufficienti per una lettura attendibile. Le osservazioni appariranno quando il campione sarà disponibile.'));return;}
   const list=el('div','bl-insights-list');
-  for(const item of items){const card=el('article','bl-insight bl-insight-'+item.kind);card.append(el('span','bl-insight-tag',item.tag),el('h3','',item.title));const metric=el('div','bl-insight-metric');metric.append(el('strong','',item.value),el('small','',item.unit));card.append(metric,el('p','',item.text));const details=el('details','');details.append(el('summary','','Da quali dati nasce'),el('p','',item.evidence));card.append(details);list.append(card);}
+  for(const item of items){const card=el('article','bl-insight bl-insight-'+item.kind);card.append(el('span','bl-insight-tag',item.tag),el('h3','',item.title));const metric=el('div','bl-insight-metric');metric.append(el('strong','',item.value),el('small','',item.unit));card.append(metric,el('p','',item.text));if(item.kind!=='match'){const details=el('details','');details.append(el('summary','','Da quali dati nasce'),el('p','',item.evidence));card.append(details);}list.append(card);}
   node.append(list,el('p','bl-insights-note',note));
  }
  w.BasketLabInsights={team,match,render};
