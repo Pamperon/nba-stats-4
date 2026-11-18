@@ -220,3 +220,31 @@ body.hub-match-open .hub-nba-updates h3{font-size:16px;margin:0 0 12px}
 body.player-personal-view .bl-advanced-fields label:has(#playerwindow){display:none}
 
 body.player-personal-view #pe-personal-heading:has(#back-to-picks[hidden])>a{margin-left:0}
+
+/* Fit short samples; preserve readable bars and a persistent scrubber for seasons. */
+#player .bl-chart-plot.bl-chart-fit{width:100%;gap:clamp(3px,1vw,8px)}
+#player .bl-chart-fit .bl-chart-column{padding:0;border:0;min-width:0}
+#player .bl-chart-fit:has(.bl-chart-date-secondary) .bl-chart-column:first-of-type>small{left:0;transform:none;text-align:left}
+#player .bl-chart-fit:has(.bl-chart-date-secondary) .bl-chart-column:last-of-type>small{left:auto;right:0;transform:none;text-align:right}
+#player .bl-chart-dense .bl-chart-date-secondary{display:none}
+#player .bl-chart-dense .pe-chart-opponent,#player .bl-chart-dense small>br{display:none}
+#player .bl-chart-dense .bl-chart-bar{border-radius:4px 4px 0 0}
+#player .bl-chart-scroll{overscroll-behavior-x:contain;scrollbar-width:auto;scrollbar-color:#f6a252 #17384d}
+#player .bl-chart-scroll::-webkit-scrollbar{height:10px}
+#player .bl-chart-scroll::-webkit-scrollbar-track{background:#17384d;border-radius:8px}
+#player .bl-chart-scroll::-webkit-scrollbar-thumb{background:#f6a252;border:2px solid #17384d;border-radius:8px}
+.bl-chart-navigation{margin:4px 0 14px;display:grid;gap:3px}
+.bl-chart-navigation label{font-size:11px;color:#aec8da;text-align:center}
+#player .bl-chart-navigation input{appearance:none;-webkit-appearance:none;display:block;width:100%;min-height:40px;margin:0;padding:0;background:transparent;cursor:ew-resize;border:0;box-shadow:none}
+.bl-chart-navigation input::-webkit-slider-runnable-track{height:8px;border-radius:8px;background:#254b63;border:1px solid #557d96}
+.bl-chart-navigation input::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:34px;height:18px;margin-top:-6px;border-radius:9px;background:#ffad60;border:2px solid #ffd2a5;box-shadow:0 1px 5px #0005}
+.bl-chart-navigation input::-moz-range-track{height:7px;border-radius:8px;background:#254b63;border:1px solid #557d96}
+.bl-chart-navigation input::-moz-range-thumb{width:30px;height:14px;border-radius:9px;background:#ffad60;border:2px solid #ffd2a5}
+.bl-chart-navigation input:focus-visible{outline:2px solid #ffb374;outline-offset:1px;border-radius:8px}
+@media(max-width:600px){
+ #player .bl-chart-fit .bl-chart-date-secondary{display:none}
+ #player .bl-chart-dense .bl-chart-bar>b{display:none}
+ #player .bl-chart-dense .bl-chart-column:first-of-type .bl-chart-bar>b{left:0;transform:none}
+ #player .bl-chart-dense .bl-chart-column:last-of-type .bl-chart-bar>b{left:auto;right:0;transform:none}
+ #player .bl-chart-dense .bl-chart-column[aria-pressed=true] .bl-chart-bar>b{display:block;z-index:3;padding:1px 4px;background:#17384d;border-radius:4px}
+}
