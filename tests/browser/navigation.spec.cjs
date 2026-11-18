@@ -285,3 +285,30 @@ test('prematch without win odds uses one full comparison and a compact history n
  await expect(page).toHaveURL('/giocatori');
  await expect(page.locator('#players-explorer')).toBeVisible();
  });
+
+test('player charts fit 5, 10 and 20 games and scroll the complete season',async({page},testInfo)=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Adaptive charts are verified on the candidate');
+ const games=Array.from({length:35},(_,i)=>({GAME_ID:String(400+i),GAME_DATE:new Date(Date.UTC(2026,10,18-i)).toISOString().slice(0,10),PTS:10+i%25,REB:5,AST:3,MIN:30,SEASON_TYPE:2,MATCHUP:'vs ATL'}));
+ await page.route('**/api/players/log?*',route=>route.fulfill({json:{athlete_id:'123',season:'2026',games}}));
+ if(testInfo.project.name==='mobile')await page.setViewportSize({width:360,height:800});
+ await page.goto('/giocatori/browser-fixture-123?mercato=PTS&linea=19.5&periodo=20');
+ for(const count of [5,10,20]){
+  await page.locator('[data-player-window="'+count+'"]').click();
+  await expect(page.locator('.bl-chart-column')).toHaveCount(count);
+  expect(await page.locator('.bl-chart-scroll').evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+  await expect(page.locator('.bl-chart-navigation')).toHaveCount(0);
+ }
+ await page.locator('.bl-chart-column').last().click();await expect(page.locator('.bl-chart-detail')).toContainText('10 punti');
+ await page.locator('#player-visual').screenshot({path:testInfo.outputPath('player-chart-20.png')});
+ await page.locator('[data-player-window="all"]').click();
+ await expect(page.locator('.bl-chart-column')).toHaveCount(35);
+ await expect(page.locator('#bl-chart-position')).toBeVisible();
+ await expect.poll(()=>page.locator('.bl-chart-scroll').evaluate(el=>el.scrollLeft>0)).toBe(true);
+ await page.locator('#bl-chart-position').focus();await page.locator('#bl-chart-position').press('Home');
+ await expect.poll(()=>page.locator('.bl-chart-scroll').evaluate(el=>el.scrollLeft)).toBe(0);
+ await page.locator('.bl-chart-column').first().click();await expect(page.locator('.bl-chart-detail')).toContainText('19 punti');
+ await page.locator('#bl-chart-position').focus();await page.locator('#bl-chart-position').press('End');
+ await expect.poll(()=>page.locator('.bl-chart-scroll').evaluate(el=>Math.abs(el.scrollWidth-el.clientWidth-el.scrollLeft))).toBeLessThanOrEqual(1);
+ await page.locator('#player-visual').screenshot({path:testInfo.outputPath('player-chart-season.png')});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

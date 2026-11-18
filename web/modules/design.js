@@ -15,20 +15,27 @@
   windowSelect.dispatchEvent(new Event('change',{bubbles:true}));
  });
  windowSelect?.addEventListener('change',syncWindow);syncWindow();
+ let chartResize=null;
  function playerChart(games,stat,line,max){
+  chartResize?.disconnect();chartResize=null;
   syncMarket();syncWindow();const area=byId('player-visual');if(!area)return;
   area.replaceChildren();area.hidden=!games.length;if(!games.length)return;
-  const title=d.createElement('p');title.className='bl-chart-caption';title.textContent=games.length>20?'Ultime 20 mostrate · Tutte le partite nel dettaglio sotto':'Prestazioni per partita · '+({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'}[stat]||stat);area.append(title);
-  const scroll=d.createElement('div');scroll.className='bl-chart-scroll';scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','Grafico prestazioni, scorri per vedere le partite');
+  const title=d.createElement('p');title.className='bl-chart-caption';title.textContent='Prestazioni per partita · '+({PTS:'Punti',REB:'Rimbalzi',AST:'Assist'}[stat]||stat);area.append(title);
+  const scroll=d.createElement('div');scroll.className='bl-chart-scroll';scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label',games.length>20?'Grafico prestazioni, scorri per vedere tutte le partite':'Grafico prestazioni, tutte le partite visibili');
   const plot=d.createElement('div');plot.className='bl-chart-plot';
-  const sample=games.slice(0,20).reverse();plot.style.minWidth=Math.max(280,sample.length*60)+'px';
+  const sample=games.slice().reverse(),fits=sample.length<=20;
+  plot.classList.add(fits?'bl-chart-fit':'bl-chart-wide');
+  if(fits&&sample.length>10)plot.classList.add('bl-chart-dense');
+  plot.style.minWidth=fits?'0':sample.length*48+'px';
+  const labelled=new Set(Array.from({length:5},(_,i)=>Math.round(i*(sample.length-1)/4)));
   const threshold=d.createElement('div');threshold.className='bl-chart-threshold';threshold.style.bottom=(100*line/max)+'%';const label=d.createElement('span');label.textContent='Linea '+line.toLocaleString('it-IT');threshold.append(label);plot.append(threshold);
   const detail=d.createElement('div');detail.className='bl-chart-detail';detail.setAttribute('aria-live','polite');detail.textContent='Tocca una barra per vedere i dettagli.';
-  for(const game of sample){
+  for(const [index,game] of sample.entries()){
    const value=Number(game[stat]),column=d.createElement('button');column.type='button';column.className='bl-chart-column';column.setAttribute('aria-pressed','false');
    const bar=d.createElement('div');bar.className='bl-chart-bar'+(value>line?' is-over':value<line?' is-under':'');bar.style.height=(100*value/max)+'%';
    const number=d.createElement('b');number.textContent=value.toLocaleString('it-IT');bar.append(number);
    const date=d.createElement('small');date.textContent=String(game.GAME_DATE).slice(5,10).split('-').reverse().join('/');const opponent=d.createElement('span');opponent.className='pe-chart-opponent';opponent.textContent=game.MATCHUP||'';date.append(d.createElement('br'),opponent);
+   if(fits&&sample.length>5&&!labelled.has(index))date.classList.add('bl-chart-date-secondary');
    column.addEventListener('click',()=>{
     plot.querySelectorAll('.bl-chart-column').forEach(b=>b.setAttribute('aria-pressed',String(b===column)));
     const names={ATL:'Atlanta Hawks',BOS:'Boston Celtics',BKN:'Brooklyn Nets',CHA:'Charlotte Hornets',CHI:'Chicago Bulls',CLE:'Cleveland Cavaliers',DAL:'Dallas Mavericks',DEN:'Denver Nuggets',DET:'Detroit Pistons',GS:'Golden State Warriors',GSW:'Golden State Warriors',HOU:'Houston Rockets',IND:'Indiana Pacers',LAC:'Los Angeles Clippers',LAL:'Los Angeles Lakers',MEM:'Memphis Grizzlies',MIA:'Miami Heat',MIL:'Milwaukee Bucks',MIN:'Minnesota Timberwolves',NO:'New Orleans Pelicans',NOP:'New Orleans Pelicans',NY:'New York Knicks',NYK:'New York Knicks',OKC:'Oklahoma City Thunder',ORL:'Orlando Magic',PHI:'Philadelphia 76ers',PHX:'Phoenix Suns',POR:'Portland Trail Blazers',SAC:'Sacramento Kings',SA:'San Antonio Spurs',SAS:'San Antonio Spurs',TOR:'Toronto Raptors',UTAH:'Utah Jazz',UTA:'Utah Jazz',WSH:'Washington Wizards',WAS:'Washington Wizards'};
@@ -47,8 +54,19 @@
    column.setAttribute('aria-label',String(game.GAME_DATE).slice(0,10)+': '+value+' '+stat);column.append(bar,date);plot.append(column);
   }
   scroll.append(plot);
-  area.append(scroll,detail);
-  root.requestAnimationFrame?.(()=>{if(scroll.isConnected)scroll.scrollLeft=scroll.scrollWidth;});
+  let syncScroll=()=>{};
+  if(!fits){
+   const navigation=d.createElement('div');navigation.className='bl-chart-navigation';navigation.hidden=true;
+   const hint=d.createElement('label');hint.htmlFor='bl-chart-position';hint.textContent='← Scorri le partite →';
+   const position=d.createElement('input');position.id='bl-chart-position';position.type='range';position.min='0';position.step='1';position.setAttribute('aria-label','Scorri il grafico delle partite');
+   navigation.append(hint,position);
+   syncScroll=()=>{if(!scroll.isConnected)return;const limit=Math.max(0,scroll.scrollWidth-scroll.clientWidth);navigation.hidden=limit<=1;position.disabled=limit<=1;position.max=String(limit);position.value=String(Math.round(scroll.scrollLeft));};
+   position.addEventListener('input',()=>{scroll.scrollLeft=Number(position.value);});
+   scroll.addEventListener('scroll',syncScroll,{passive:true});
+   area.append(scroll,navigation,detail);
+   if(root.ResizeObserver){chartResize=new root.ResizeObserver(syncScroll);chartResize.observe(scroll);}
+  }else area.append(scroll,detail);
+  root.requestAnimationFrame?.(()=>{if(scroll.isConnected){scroll.scrollLeft=fits?0:scroll.scrollWidth;syncScroll();}});
  }
  function playerTheme(code){const colors={BOS:'#006c40',ATL:'#812335',LAL:'#452a70',PHX:'#56301b',PHI:'#164f78',DET:'#66314b',NYK:'#234d76',GSW:'#1b4978',MIL:'#135343',DEN:'#203f63',CLE:'#683541',MIA:'#722c42',DAL:'#164f67',OKC:'#185478',SAS:'#35434c',SAC:'#4e326b',POR:'#702b3d',TOR:'#6c2839',MEM:'#314e70',MIN:'#1a4c66',NOP:'#344c56',UTA:'#3a3c60',WAS:'#344f6e',CHA:'#1e5863',CHI:'#702b3a',BKN:'#354454',IND:'#374a69',ORL:'#214f73',LAC:'#6c314c',HOU:'#742638'};const profile=byId('player-profile');if(!profile)return;profile.style.setProperty('--player-team-color',colors[code]||'#174b56');const secondary={ATL:'#fdb927',BOS:'#ba9653',BKN:'#808080',CHA:'#00788c',CHI:'#101820',CLE:'#ffb81c',DAL:'#8fbded',DEN:'#fec524',DET:'#1d42ba',GSW:'#ffc72c',HOU:'#aaaaaa',IND:'#fdbb30',LAC:'#1d428a',LAL:'#fdb927',MEM:'#7dbce8',MIA:'#f9a01b',MIL:'#eee1c6',MIN:'#78be20',NOP:'#c8102e',NYK:'#f58426',OKC:'#ef3b24',ORL:'#c4ced4',PHI:'#ed174c',PHX:'#e56020',POR:'#aaaaaa',SAC:'#a9a9b1',SAS:'#c4ced4',TOR:'#ce1141',UTA:'#6cace4',WAS:'#e31837'};profile.style.setProperty('--player-team-secondary',secondary[code]||'#347f9c');const aliases={GSW:'gs',NOP:'no',NYK:'ny',SAS:'sa',UTA:'utah',WAS:'wsh'};profile.style.setProperty('--player-team-emblem',colors[code]?'url("https://a.espncdn.com/i/teamlogos/nba/500/'+(aliases[code]||code.toLowerCase())+'.png")':'none');}
  root.BasketLabDesign={playerChart,syncMarket,playerTheme};

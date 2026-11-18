@@ -41,3 +41,21 @@ test('minutes stay in candle details without a separate chart',()=>{
  bars[1].click();assert.equal(d.querySelectorAll('.bl-chart-detail-metrics b')[1].textContent,'Non disponibili');
  }finally{dom.window.close();}
 });
+
+test('20 games fit as one sample while full seasons retain every game and scrolling controls',()=>{
+ const dom=new JSDOM('<div id="player-visual"></div>',{runScripts:'outside-only'});
+ try{
+  const w=dom.window,d=w.document;w.eval(fs.readFileSync('web/modules/design.js','utf8'));
+  const games=Array.from({length:30},(_,i)=>({GAME_DATE:new Date(Date.UTC(2026,10,18-i)).toISOString().slice(0,10),PTS:i+1,MIN:30,MATCHUP:'vs BOS'})),before=JSON.stringify(games);
+  w.BasketLabDesign.playerChart(games.slice(0,20),'PTS',15.5,31);
+  assert.equal(d.querySelectorAll('.bl-chart-column').length,20);assert.ok(d.querySelector('.bl-chart-fit.bl-chart-dense'));
+  assert.equal(d.querySelector('.bl-chart-plot').style.minWidth,'0px');assert.equal(d.querySelector('.bl-chart-navigation'),null);
+  assert.equal(d.querySelectorAll('.bl-chart-date-secondary').length,15);
+  w.BasketLabDesign.playerChart(games,'PTS',15.5,31);
+  assert.equal(d.querySelectorAll('.bl-chart-column').length,30);assert.ok(d.querySelector('.bl-chart-wide'));
+  assert.equal(d.querySelectorAll('.bl-chart-bar b')[0].textContent,'30');assert.equal(d.querySelectorAll('.bl-chart-bar b')[29].textContent,'1');
+  assert.equal(d.querySelector('#bl-chart-position').getAttribute('aria-label'),'Scorri il grafico delle partite');
+  d.querySelector('.bl-chart-column').click();assert.equal(d.querySelector('.bl-chart-detail-metrics b').textContent,'30 punti');
+  assert.equal(JSON.stringify(games),before);
+ }finally{dom.window.close();}
+});
