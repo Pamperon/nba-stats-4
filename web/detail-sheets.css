@@ -5,8 +5,9 @@
 .hub-match-title-wrap .hub-match-team strong{font-size:clamp(14px,2vw,19px);line-height:1.25;max-width:210px}
 .hub-shell .hub-match-title-wrap .hub-match-fixture-meta{font-variant-numeric:tabular-nums;color:#e0eaf2;font-size:13px;line-height:1.8}
 .sheet-team-record{font-size:11px;color:#a9c5d7}
-#hub-match-charts{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;margin:18px 0}
+#hub-match-charts{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:18px 0}
 #hub-match-charts>.sheet-comparison{order:0;grid-column:1;grid-row:1}
+#hub-match-charts.has-win-odds{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
 #hub-match-charts>.bl-match-v2-form{order:1;grid-column:1/-1;margin:0}
 #hub-match-charts>.hub-match-chart-card.bl-match-v2{order:0;grid-column:2;grid-row:1;display:block;margin:0;padding:18px;background:#0d2536;border:1px solid #33536a;border-radius:16px;min-width:0}
 .sheet-comparison{min-width:0;padding:18px;border:1px solid #33536a;border-radius:16px;background:#0d2536}
@@ -95,7 +96,7 @@ body.player-personal-view .pe-quotes h3{font-size:18px}
 @media(max-width:600px){
  .hub-shell .hub-match-title-wrap,.hub-boxscore-match-header{padding:20px 10px;border-radius:16px}
  .hub-match-title-wrap .hub-match-team img{width:58px;height:58px}
- #hub-match-charts{grid-template-columns:1fr;gap:12px}
+ #hub-match-charts,#hub-match-charts.has-win-odds{grid-template-columns:1fr;gap:12px}
  #hub-match-charts>.sheet-comparison,#hub-match-charts>.bl-match-v2-form,#hub-match-charts>.hub-match-chart-card.bl-match-v2{grid-column:1;grid-row:auto}
  #hub-match-charts>.hub-match-chart-card.bl-match-v2{order:2}
  .sheet-comparison{padding:16px 12px}
@@ -168,3 +169,52 @@ html.bl-game-player-open{overflow:hidden}
  .bl-game-player-stats>div{padding:12px}
  .bl-game-player-stats dd{font-size:30px}
 }
+
+/* One hierarchy for match data and player research, with no nested panel frames. */
+body.hub-match-open #finder>.finder-panel,body.hub-match-open #hub-match-analysis{padding:0;border:0;background:transparent;box-shadow:none}
+body.hub-match-open .hub-match-title-wrap{margin:8px 0 14px;padding:18px 12px;border-radius:16px}
+body.hub-match-open .hub-match-tabs{margin:0 0 16px;border-radius:12px;padding:4px;background:#0a2030;border-color:#33536a}
+body.hub-match-open .hub-match-tabs button{border-radius:9px;min-height:44px;padding:10px 6px;font-size:13px;color:#a9c2d5}
+body.hub-match-open .hub-match-tabs button.active{background:#244a63;color:#fff;box-shadow:none}
+#hub-match-sample-note{font-size:11px;line-height:1.5;margin:12px 2px;color:#91adbf}
+body.hub-match-open .hub-nba-updates{margin:16px 0 0;border-color:#33536a;border-radius:14px}
+body.hub-match-open .hub-match-data-note{font-size:11px;line-height:1.5;color:#91adbf}
+body.hub-match-open .hub-match-player-toolbar input{min-height:44px}
+body.player-personal-view #pe-personal-heading{margin:0 0 14px;align-items:center;gap:8px}
+body.player-personal-view #pe-personal-heading #back-to-picks{margin:0}
+body.player-personal-view #pe-personal-heading>a{margin-left:auto;font-size:12px;background:none;border-color:transparent;padding:8px 0;min-height:36px;display:flex;align-items:center}
+body.player-personal-view #player .bl-player-controls{display:block;padding:14px;border:1px solid #33536a;border-radius:16px;background:#0d2536;margin:14px 0}
+body.player-personal-view #player .bl-player-controls .bl-player-market{margin:0;padding:0;background:none;border:0;border-radius:0}
+body.player-personal-view #player .bl-player-market .bl-segments button.active{background:#244a63;color:#fff;box-shadow:none}
+body.player-personal-view #player .bl-player-controls .bl-window-tabs{margin:12px 0 0}
+body.player-personal-view #player .bl-player-controls .bl-player-advanced{margin:12px 0 0;border:0;border-top:1px solid #2b485c;border-radius:0;background:none}
+body.player-personal-view #player .bl-player-controls .bl-player-advanced>summary{padding:10px 0 0;min-height:30px}
+body.player-personal-view #player .bl-advanced-fields{padding:14px 0 0}
+body.player-personal-view #player #player-summary{grid-template-columns:repeat(2,minmax(0,1fr));margin:14px 0 18px}
+body.player-personal-view #player #player-summary .metric{position:relative;min-width:0;padding:13px 14px;gap:5px;justify-content:center}
+body.player-personal-view #player #player-summary .metric strong{font-size:28px}
+.player-summary-rate{font-size:11px;color:#9db9cd;line-height:1.4}
+body.player-personal-view #player-chart-title{margin:18px 0 5px;font-size:18px}
+#player-sample-note{margin:0 0 12px;font-size:11px;line-height:1.4;color:#9db9cd}
+body.player-personal-view #player .bl-chart-caption{display:none}
+body.player-personal-view #player .bl-chart-detail:not(.has-selection){font-size:11px;min-height:0}
+body.player-personal-view #player .player-profile{margin-bottom:14px}
+body.player-personal-view #pe-next-match{margin-bottom:14px;padding:12px 14px}
+.hub-boxscore-team .hub-boxscore-table th:first-child,.hub-boxscore-team .hub-boxscore-table td:first-child{position:sticky;left:0;z-index:1;background:#0d2536;box-shadow:4px 0 8px #04111a40}
+.hub-boxscore-team .hub-boxscore-table thead th:first-child{background:#102d40}
+.hub-boxscore-team .hub-boxscore-table .hub-boxscore-player-link{min-height:34px;display:inline-flex;align-items:center}
+@media(max-width:600px){
+ body.hub-match-open .hub-match-title-wrap{padding:16px 8px}
+ body.player-personal-view #player .bl-player-controls{padding:12px}
+ body.player-personal-view #player .bl-player-market{gap:8px}
+ body.player-personal-view #player .bl-player-market>label{min-width:76px;max-width:86px}
+ body.player-personal-view #player .bl-player-market .bl-segments button{font-size:12px;padding:10px 5px;min-height:44px}
+ body.player-personal-view #player .bl-window-tabs button{min-height:46px;padding:8px 3px}
+ body.player-personal-view #player .bl-window-tabs button small{font-size:13px}
+ body.player-personal-view #player .bl-player-visual{padding-top:16px}
+}
+#hub-match-h2h-chart.is-empty{display:flex;flex-wrap:wrap;gap:5px 10px;align-items:baseline;border:0;background:none;padding:10px 2px;margin:8px 0}
+#hub-match-h2h-chart.is-empty>strong{font-size:13px;color:#adc4d5}
+#hub-match-h2h-chart.is-empty>p{font-size:11px;margin:0}
+body.hub-match-open .hub-nba-updates h3{font-size:16px;margin:0 0 12px}
+body.player-personal-view .bl-advanced-fields label:has(#playerwindow){display:none}

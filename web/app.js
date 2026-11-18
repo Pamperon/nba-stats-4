@@ -908,7 +908,7 @@ async function changeTeam(selection=null){
 function renderPlayerSeason(){
  const mode=$('playermode').value;
  const games=playerGames.filter(g=>mode==='all'||String(g.SEASON_TYPE)===mode);
- const avg=stat=>games.length?(games.reduce((total,g)=>total+playerNum(g[stat]),0)/games.length).toFixed(1):'—';
+ const avg=stat=>games.length?(games.reduce((total,g)=>total+playerNum(g[stat]),0)/games.length).toLocaleString('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1}):'—';
  $('player-season-stats').innerHTML=[['PARTITE',games.length],['PUNTI',avg('PTS')],['RIMBALZI',avg('REB')],['ASSIST',avg('AST')]].map(([label,value])=>'<div class="season-stat" title="'+(label==='PARTITE'?'Partite giocate':'Media a partita')+'"><small>'+label+'</small><strong>'+value+'</strong></div>').join('');
 }
 async function loadPlayerProfile(request,team,id){
@@ -1028,8 +1028,12 @@ function drawPlayer(){
  let games=window==='all'?dated:dated.slice(0,Number(window));
  const hits=games.filter(g=>Number(g[stat])>line).length;
  const avg=games.length?games.reduce((n,g)=>n+Number(g[stat]),0)/games.length:0;
- $('player-chart-title').textContent='Prestazioni · '+(window==='all'?'stagione completa':'ultime '+window+' partite');
- $('player-summary').innerHTML=[['Over '+line,hits+'/'+games.length],['Frequenza Over',games.length?(100*hits/games.length).toFixed(1)+'%':'—'],['Media '+stat,games.length?avg.toFixed(1):'—']].map(([a,b])=>'<div class="metric"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join('');
+ const statName={PTS:'Punti',REB:'Rimbalzi',AST:'Assist'}[stat]||stat;
+ $('player-chart-title').textContent=statName+' · '+games.length+(games.length===1?' partita':' partite');
+ const percent=games.length?(100*hits/games.length).toLocaleString('it-IT',{maximumFractionDigits:1})+'%':'—';
+ $('player-summary').innerHTML='<div class="metric"><small>Media '+esc(statName.toLowerCase())+'</small><strong>'+(games.length?avg.toLocaleString('it-IT',{maximumFractionDigits:1,minimumFractionDigits:1}):'—')+'</strong></div><div class="metric"><small>Over '+esc(line)+'</small><strong>'+hits+'/'+games.length+'</strong><span class="player-summary-rate">'+esc(percent)+' delle gare</span></div>';
+ let sampleNote=$('player-sample-note');if(!sampleNote){sampleNote=document.createElement('p');sampleNote.id='player-sample-note';sampleNote.className='sheet-caption';$('player-chart-title').after(sampleNote);}
+ sampleNote.textContent=[$('playerseason').selectedOptions[0]?.textContent,$('playermode').selectedOptions[0]?.textContent,venue==='all'?'Tutti i campi':venue==='home'?'In casa':'In trasferta'].filter(Boolean).join(' · ');
  $('player-trends').innerHTML='<div class="player-trends-title">Over sulla linea · partite disponibili</div><div class="player-trends-list">'+[5,10,20].map(n=>{const subset=dated.slice(0,n);const count=subset.filter(g=>Number(g[stat])>line).length;return '<div><small>Ultime '+n+'</small><strong>'+(subset.length?count+'/'+subset.length:'—')+'</strong></div>';}).join('')+'</div>'+(undated?'<p class="player-unknown">'+undated+(undated===1?' partita senza data esclusa':' partite senza data escluse')+' dalle statistiche recenti.</p>':'')+(venue!=='all'&&unknownVenue?'<p class="player-unknown">'+unknownVenue+(unknownVenue===1?' partita esclusa: campo non verificato.':' partite escluse: campo non verificato.')+'</p>':'');
  const max=Math.max(line+1,...games.map(g=>Number(g[stat])),1);
  globalThis.BasketLabDesign?.playerChart(games,stat,line,max);
