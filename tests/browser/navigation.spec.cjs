@@ -29,6 +29,16 @@ test('single results remain distinct from selections on Home and direct Pronosti
  await expect(page.locator('.hub-performance')).toBeVisible();
  expect(await page.evaluate(()=>{const selectors=['.hub-performance','.hub-single-section','.hub-games-section','.hub-featured','#hub-nba-updates-panel'];return selectors.every((selector,i)=>!i||document.querySelector(selectors[i-1]).getBoundingClientRect().bottom<=document.querySelector(selector).getBoundingClientRect().top+1)})).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ if(testInfo.project.name==='mobile'){
+  for(const width of [320,360,393]){
+   await page.setViewportSize({width,height:800});
+   const title=page.locator('.hub-performance h2 .bl-performance-open');
+   const geometry=await title.evaluate(el=>{const r=document.createRange();r.selectNodeContents(el);const rects=[...r.getClientRects()].filter(r=>r.width>0);return {textHeight:Math.max(...rects.map(r=>r.bottom))-Math.min(...rects.map(r=>r.top)),lineHeight:parseFloat(getComputedStyle(el).lineHeight),fits:el.scrollWidth<=el.clientWidth+1};});
+   expect(geometry.textHeight).toBeLessThanOrEqual(geometry.lineHeight+1);expect(geometry.fits).toBe(true);
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+   await page.locator('.hub-performance').screenshot({path:testInfo.outputPath('home-performance-title-'+width+'.png')});
+  }
+ }
 });
 test('home, calendar, match, archive and history preserve data',async({page},testInfo)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
