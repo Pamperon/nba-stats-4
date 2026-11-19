@@ -11,7 +11,7 @@
   if(drawer)return;
   drawer=make('dialog','bl-performance-dialog');drawer.setAttribute('aria-labelledby','bl-performance-title');
   const header=make('header','bl-performance-header'),heading=make('h2',null,'Rendimento del Lab');heading.id='bl-performance-title';
-  const dismiss=make('button','bl-performance-close','×');dismiss.type='button';dismiss.setAttribute('aria-label','Chiudi il rendimento del Lab');dismiss.onclick=close;
+  const dismiss=make('button','bl-performance-close');dismiss.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 16 16M20 4 4 20"/></svg>';dismiss.type='button';dismiss.setAttribute('aria-label','Chiudi il rendimento del Lab');dismiss.onclick=close;
   header.append(heading,dismiss);
   const tabs=make('div','bl-performance-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Tipo di analisi');
   for(const [key,label] of [['single','Scelta del giorno'],['others','Altre selezioni']]){
@@ -44,7 +44,7 @@
    const button=make('button','bl-performance-retry','Riprova');button.type='button';button.onclick=()=>retry?.();panel.append(button);return;
   }
   const summary=make('div','bl-performance-summary'),percentage=make('strong',null,rate(group));
-  const description=make('div');description.append(make('p',null,number(group.won)+' centrate su '+number(group.verified)+' verificate'),make('small',null,number(group.published)+' analisi pubblicate'));
+  const description=make('div');const result=make('p');result.append(make('span',null,number(group.won)+' centrate'),d.createTextNode(' '),make('span',null,'su '+number(group.verified)+' verificate'));description.append(result,make('small',null,number(group.published)+' analisi pubblicate'));
   summary.append(percentage,description);panel.append(summary);
   if(!group.published)panel.append(make('p','bl-performance-message',tab==='single'?'Nessuna scelta del giorno pubblicata.':'Nessun’altra selezione pubblicata.'));
   const markets=make('div','bl-performance-markets');
