@@ -227,13 +227,22 @@ function refresh(){
  if(count)count.textContent=cards?String(cards):'0';
  if(last){const raw=(updated?.textContent||'').trim();const stamp=raw.match(/(?:\d{1,2}:\d{2})(?::\d{2})?/);last.textContent=stamp?stamp[0]:'—';last.title=raw;}
 }
+let performanceStats,performanceLoading=false;
+performance?.querySelector('.bl-performance-open')?.addEventListener('click',async event=>{
+ const button=event.currentTarget;performance.querySelector('.bl-performance-error')?.remove();
+ try{window.BasketLabAssets.style('performance-panel');await window.BasketLabAssets.load('performance-view');window.BasketLabPerformance.open(performanceStats,button,loadModelPerformance);}
+ catch{let note=performance.querySelector('.bl-performance-error');if(!note){note=document.createElement('p');note.className='bl-performance-error';note.setAttribute('role','status');performance.append(note);}note.textContent='Dettaglio temporaneamente non disponibile. Tocca per riprovare.';}
+});
 async function loadModelPerformance(){
+ if(performanceLoading)return;
  const body=performance?.querySelector('.hub-performance-body');
  if(!body)return;
+ performanceLoading=true;
+ if(!performanceStats)window.BasketLabPerformance?.update(undefined);
  try{
   const response=await fetch('/api/history/performance',{headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('Performance unavailable');
-  const stats=await response.json();
+  const stats=await response.json();performanceStats=stats;window.BasketLabPerformance?.update(stats);
   body.setAttribute('aria-busy','false');
   const groups=[stats.single];
   const number=value=>Number.isFinite(value)?value.toLocaleString('it-IT'):'—';
@@ -249,7 +258,8 @@ async function loadModelPerformance(){
     '<div data-outcome="pending"><dt>Da verificare</dt><dd>'+number(group?.pending)+'</dd></div></dl></article>';
   }).join('')+'</div>';
 
- }catch(_){body.setAttribute('aria-busy','false');body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
+ }catch(_){performanceStats=null;window.BasketLabPerformance?.update(null);body.setAttribute('aria-busy','false');body.innerHTML='<div><strong>Risultati temporaneamente non disponibili</strong><p>Consulta l’archivio per le singole giornate. Nessun dato viene stimato o inventato.</p></div>'}
+ finally{performanceLoading=false;}
 }
 if(!window.BasketLabSections)loadModelPerformance();
 if(metricTarget){new MutationObserver(refresh).observe(metricTarget,{childList:true,subtree:true,characterData:true})}

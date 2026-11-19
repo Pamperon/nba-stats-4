@@ -314,3 +314,34 @@ test('player charts fit 5, 10 and 20 games and scroll the complete season',async
  await page.locator('#player-visual').screenshot({path:testInfo.outputPath('player-chart-season.png')});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+
+test('Rendimento opens a compact market panel with separate samples and native keyboard closing',async({page},testInfo)=>{
+ test.skip(!!process.env.BASKETLAB_BASELINE,'Published performance breakdown is verified on the candidate');
+ const counts=(won,lost,dnp=0,pending=0)=>({published:won+lost+dnp+pending,verified:won+lost,won,lost,not_played:dnp,pending,success_pct:won+lost?100*won/(won+lost):null});
+ const group=(won,lost,dnp=1,pending=1)=>({...counts(won,lost,dnp,pending),unclassified:0,by_market:{PTS:counts(won,lost),REB:counts(0,0,dnp,pending),AST:counts(0,0)}});
+ await page.route('**/api/history/performance',route=>route.fulfill({json:{single:counts(3,1,1,1),breakdown:{single:group(3,1),others:group(2,3)}}}));
+ await page.goto('/');await expect(page.locator('.hub-performance')).toContainText('75%');
+ await page.getByRole('button',{name:'Rifiuta',exact:true}).click();
+ await expect(page.locator('#bl-performance-styles')).toHaveCount(0);
+ const calls=api.filter(p=>p==='/api/history/performance').length;
+ await page.locator('.hub-performance').click();
+ const dialog=page.getByRole('dialog',{name:'Rendimento del Lab',exact:true});await expect(dialog).toBeVisible();
+ await expect(dialog.locator('.bl-performance-summary')).toContainText('3 centrate su 4 verificate');
+ await expect(dialog.locator('.bl-performance-market')).toHaveCount(3);
+ await expect(dialog.locator('.bl-performance-market').nth(1)).toContainText('0 su 0 verificate');
+ await expect(dialog.locator('.bl-performance-market').nth(2)).toContainText('Nessuna analisi pubblicata');
+ await page.getByRole('tab',{name:'Altre selezioni',exact:true}).click();
+ await expect(dialog.locator('.bl-performance-summary')).toContainText('40%');
+ await expect(dialog.locator('.bl-performance-summary')).toContainText('2 centrate su 5 verificate');
+ await page.getByRole('tab',{name:'Altre selezioni',exact:true}).press('Home');
+ await expect(page.getByRole('tab',{name:'Scelta del giorno',exact:true})).toBeFocused();
+ await expect(dialog.locator('.bl-performance-summary')).toContainText('75%');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+ await dialog.screenshot({path:testInfo.outputPath('performance-panel.png')});
+ await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();
+ await expect(page.getByRole('button',{name:'Apri il dettaglio del Rendimento del Lab',exact:true})).toBeFocused();
+ expect(await page.evaluate(()=>document.documentElement.classList.contains('bl-performance-modal-open'))).toBe(false);
+ expect(api.filter(p=>p==='/api/history/performance')).toHaveLength(calls);
+ expect(api).not.toContain('/api/history');
+});

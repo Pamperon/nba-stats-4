@@ -1821,6 +1821,16 @@ def _performance_counts(states):
             'success_pct': round(won * 100 / verified, 1) if verified else None}
 
 
+def _performance_breakdown(rows):
+    markets = {market: _performance_counts([row.get('status') for row in rows
+                if str(row.get('Mercato', '')).strip().upper() == market])
+               for market in ('PTS', 'REB', 'AST')}
+    return {**_performance_counts([row.get('status') for row in rows]),
+            'by_market': markets,
+            'unclassified': sum(str(row.get('Mercato', '')).strip().upper() not in markets
+                                for row in rows)}
+
+
 _performance_cache = TTLCache(maxsize=1, ttl=3600)
 _performance_lock = threading.Lock()
 
@@ -1842,6 +1852,7 @@ def _build_history_performance():
     single_states = []
     review_top = []
     review_single = []
+    other_selections = []
     days = 0
     for entry in dates:
         date = entry['date']
@@ -1856,8 +1867,13 @@ def _build_history_performance():
         if single.get('published'):
             single_states.append((single.get('outcome') or {}).get('status'))
             review_single.append({**(single.get('selection') or {}), 'status': (single.get('outcome') or {}).get('status')})
+        chosen = single.get('selection') if single.get('published') else None
+        other_selections.extend(line for line in lines if not chosen
+                                or public_views.leg_identity(line) != public_views.leg_identity(chosen))
     from probability_review import summarize
     return {**_performance_counts(top5_states), 'single': _performance_counts(single_states),
+            'breakdown': {'single': _performance_breakdown(review_single),
+                          'others': _performance_breakdown(other_selections)},
             'probability_review': {'top10': summarize(review_top), 'single': summarize(review_single)},
             'days': days, 'odds_api_calls': 0}
 
