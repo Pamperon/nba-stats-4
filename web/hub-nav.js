@@ -230,7 +230,7 @@ function refresh(){
 let performanceStats,performanceLoading=false;
 performance?.querySelector('.bl-performance-open')?.addEventListener('click',async event=>{
  const button=event.currentTarget;performance.querySelector('.bl-performance-error')?.remove();
- try{await window.BasketLabAssets.load('performance-view');window.BasketLabPerformance.open(performanceStats,button,loadModelPerformance);}
+ try{window.BasketLabAssets.style('performance-panel');await window.BasketLabAssets.load('performance-view');window.BasketLabPerformance.open(performanceStats,button,loadModelPerformance);}
  catch{let note=performance.querySelector('.bl-performance-error');if(!note){note=document.createElement('p');note.className='bl-performance-error';note.setAttribute('role','status');performance.append(note);}note.textContent='Dettaglio temporaneamente non disponibile. Tocca per riprovare.';}
 });
 async function loadModelPerformance(){

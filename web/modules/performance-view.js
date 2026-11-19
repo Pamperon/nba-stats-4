@@ -9,7 +9,6 @@
  function close(){if(!drawer?.open)return;if(drawer.close)drawer.close();else{drawer.removeAttribute('open');drawer.dispatchEvent(new Event('close'));}}
  function ensure(){
   if(drawer)return;
-  root.BasketLabAssets?.style('performance-panel');
   drawer=make('dialog','bl-performance-dialog');drawer.setAttribute('aria-labelledby','bl-performance-title');
   const header=make('header','bl-performance-header'),heading=make('h2',null,'Rendimento del Lab');heading.id='bl-performance-title';
   const dismiss=make('button','bl-performance-close','×');dismiss.type='button';dismiss.setAttribute('aria-label','Chiudi il rendimento del Lab');dismiss.onclick=close;
@@ -61,5 +60,5 @@
   panel.append(make('p','bl-performance-note','Percentuali calcolate su centrate e non centrate. Chi non ha giocato e gli esiti da verificare sono esclusi dal calcolo.'));
   panel.append(make('p','bl-performance-period','Dal 1 novembre 2026 · '+(tab==='single'?'Scelte del giorno effettivamente pubblicate.':'Selezioni pubblicate, esclusa l’eventuale scelta del giorno già conteggiata.')));
  }
- root.BasketLabPerformance={open(stats,source,onRetry){ensure();data=stats;retry=onRetry;tab='single';render();if(!drawer.open){returnFocus=source;d.documentElement.classList.add('bl-performance-modal-open');if(drawer.showModal)drawer.showModal();else drawer.setAttribute('open','');}drawer.querySelector('.bl-performance-close').focus();},update(stats){data=stats;if(drawer?.open)render();}};
+ root.BasketLabPerformance={open(stats,source,onRetry){root.BasketLabAssets?.style('performance-panel');ensure();data=stats;retry=onRetry;tab='single';render();if(!drawer.open){returnFocus=source;d.documentElement.classList.add('bl-performance-modal-open');if(drawer.showModal)drawer.showModal();else drawer.setAttribute('open','');}drawer.querySelector('.bl-performance-close').focus();},update(stats){data=stats;if(drawer?.open)render();}};
 })(window);
