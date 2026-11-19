@@ -338,6 +338,21 @@ test('Rendimento opens a compact market panel with separate samples and native k
  await expect(dialog.locator('.bl-performance-summary')).toContainText('75%');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+ const widths=testInfo.project.name==='mobile'?[320,360,393]:[1440];
+ for(const width of widths){
+  await page.setViewportSize({width,height:800});
+  const layout=await dialog.evaluate(el=>{
+   const oneLine=node=>{const r=document.createRange();r.selectNodeContents(node);return r.getClientRects().length===1;};
+   const close=el.querySelector('.bl-performance-close').getBoundingClientRect(),icon=el.querySelector('.bl-performance-close svg').getBoundingClientRect();
+   const tabs=[...el.querySelectorAll('[role=tab]')].map(node=>({height:node.getBoundingClientRect().height,oneLine:oneLine(node),fits:node.scrollWidth<=node.clientWidth+1}));
+   return {labels:[...el.querySelectorAll('.bl-performance-counts dt')].every(node=>oneLine(node)&&node.scrollWidth<=node.clientWidth+1),heading:oneLine(el.querySelector('h2')),tabs,close:{width:close.width,height:close.height,dx:Math.abs(icon.x+icon.width/2-close.x-close.width/2),dy:Math.abs(icon.y+icon.height/2-close.y-close.height/2)},fits:el.scrollWidth<=el.clientWidth+1};
+  });
+  expect(layout.labels).toBe(true);expect(layout.heading).toBe(true);expect(layout.fits).toBe(true);
+  expect(layout.tabs.every(tab=>tab.oneLine&&tab.fits&&tab.height>=44)).toBe(true);
+  expect(Math.abs(layout.tabs[0].height-layout.tabs[1].height)).toBeLessThanOrEqual(1);
+  expect(layout.close.width).toBe(44);expect(layout.close.height).toBe(44);expect(layout.close.dx).toBeLessThanOrEqual(1);expect(layout.close.dy).toBeLessThanOrEqual(1);
+  await dialog.screenshot({path:testInfo.outputPath('performance-panel-'+width+'.png')});
+ }
  await dialog.screenshot({path:testInfo.outputPath('performance-panel.png')});
  await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();
  await expect(page.getByRole('button',{name:'Apri il dettaglio del Rendimento del Lab',exact:true})).toBeFocused();
