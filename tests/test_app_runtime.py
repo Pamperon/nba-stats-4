@@ -72,6 +72,42 @@ class AppRuntimeTests(unittest.TestCase):
         with patch.object(main.player_stats, 'directory', side_effect=RuntimeError('offline')):
             self.assertEqual(self.client.get('/api/players/identity?athlete_id=22').status_code, 503)
 
+    def test_performance_markets_keep_pending_and_dnp_outside_verified_denominator(self):
+        rows = [{'Mercato': 'PTS', 'status': state} for state in ('won', 'won', 'lost', 'not_played', 'unresolved')]
+        rows += [{'Mercato': 'REB', 'status': 'not_played'}, {'Mercato': '', 'status': 'unresolved'}]
+        result = main._performance_breakdown(rows)
+        self.assertEqual((result['published'], result['verified'], result['unclassified']), (7, 3, 1))
+        self.assertEqual(result['by_market']['PTS']['success_pct'], 66.7)
+        self.assertEqual(result['by_market']['PTS']['not_played'], 1)
+        self.assertEqual(result['by_market']['PTS']['pending'], 1)
+        self.assertIsNone(result['by_market']['REB']['success_pct'])
+        self.assertEqual(result['by_market']['AST']['published'], 0)
+
+    def test_performance_other_selections_exclude_only_same_day_single(self):
+        import public_views
+        def row(market, state, athlete='22'):
+            return {'Mercato': market, 'status': state, 'ESPN ID': athlete, 'Squadra': 'BOS',
+                    'Partita': 'Boston Celtics - Miami Heat', 'Linea': 10.5, 'Scelta': 'Over'}
+        chosen = row('PTS', 'won')
+        archives = {
+            '2026-11-01': {'top5_archive': {'lines': [chosen, row('REB', 'lost')]},
+                           'single_archive': {'published': True, 'selection': chosen, 'outcome': {'status': 'won'}}},
+            '2026-11-02': {'top5_archive': {'lines': [row('PTS', 'lost'), row('AST', 'unresolved')]},
+                           'single_archive': {'published': True, 'selection': row('REB', 'not_played', '33'), 'outcome': {'status': 'not_played'}}},
+        }
+        with patch.object(public_views, 'history_dates', return_value={'dates': [{'date': day} for day in ['2026-10-31', *archives]]}), \
+             patch.object(public_views, 'history', side_effect=lambda day: archives[day]), \
+             patch.object(main, '_published_history', side_effect=lambda day, archive: archive), \
+             patch('probability_review.summarize', return_value={}):
+            result = main._build_history_performance()
+        self.assertEqual(result['published'], 4)
+        single, others = result['breakdown']['single'], result['breakdown']['others']
+        self.assertEqual((single['published'], single['won'], single['not_played']), (2, 1, 1))
+        self.assertEqual(single['success_pct'], 100.0)
+        self.assertEqual((others['published'], others['lost'], others['pending']), (3, 2, 1))
+        self.assertEqual(others['by_market']['PTS']['lost'], 1)
+        self.assertEqual(result['odds_api_calls'], 0)
+
     def test_scan_requires_authentication(self):
         with patch.object(main.engine, 'get_fixtures') as odds:
             self.assertEqual(self.client.post('/api/scan?date=2026-10-25').status_code, 401)

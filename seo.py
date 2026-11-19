@@ -182,7 +182,8 @@ def render(path, players=None):
     safe_json = lambda obj: json.dumps(obj, ensure_ascii=False).replace('<', '\\u003c')
     extra = '<meta name="robots" content="' + robots + '"><script type="application/ld+json" id="bl-page-schema">' + safe_json(page) + '</script><script type="application/json" id="bl-seo-routes">' + safe_json(PAGES) + '</script>'
     lazy = {name: '/static/modules/' + name + '.js?v=' + asset_version('modules/' + name + '.js')
-            for name in ('single-analysis', 'archive-view', 'boxscore-view', 'match-players')}
+            for name in ('single-analysis', 'archive-view', 'boxscore-view', 'match-players', 'performance-view')}
+    lazy['performance-panel'] = '/static/performance-panel.css?v=' + asset_version('performance-panel.css')
     lazy['detail-sheets'] = '/static/detail-sheets.css?v=' + asset_version('detail-sheets.css')
     extra += '<script type="application/json" id="bl-asset-versions">' + safe_json(lazy) + '</script>'
     document = document.replace('</head>', extra + '</head>', 1)
