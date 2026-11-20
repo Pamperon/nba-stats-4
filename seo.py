@@ -115,7 +115,7 @@ def _saved_log(team_id, athlete_id, season, bucket):
         return []
 
 
-def initial_content(path, players):
+def initial_content(path, players, editorial=""):
     """Progressive HTML for people and crawlers; no remote provider requests."""
     from nba_teams import TEAMS
     esc = lambda value: html.escape(str(value), quote=True)
@@ -141,6 +141,8 @@ def initial_content(path, players):
             for game in sorted(games, key=lambda g: str(g.get('GAME_DATE', '')), reverse=True)[:10]:
                 body += '<tr>' + ''.join('<td>' + esc(game.get(key, '—')) + '</td>' for key in ('GAME_DATE', 'MATCHUP', 'PTS', 'REB', 'AST')) + '</tr>'
             body += '</tbody></table>'
+        if str(player['id']) == '4395723':
+            body += '<p>' + link('/come-funziona', 'Analisi del Lab sui rimbalzi contro Utah e Detroit') + '</p>'
         body += '<p>' + link('/giocatori', 'Tutti i giocatori NBA') + '</p>'
         teammates = [p for p in players if str(p.get('team_id', '')) == tid and p['id'] != player['id']][:8]
         if teammates:
@@ -162,6 +164,7 @@ def initial_content(path, players):
         body += '<p>Consulta per giornata La scelta del Lab e Le altre analisi. Gli esiti distinguono le scelte centrate, non centrate, i giocatori che non hanno giocato e i risultati ancora da verificare.</p>'
     elif path == '/come-funziona':
         body += '<p>Basket Lab confronta le prestazioni NBA attraverso punti, rimbalzi, assist e minuti giocati. Le frequenze storiche descrivono ciò che è accaduto nel campione selezionato; le probabilità del modello sono stime e possono differire dai risultati futuri.</p>'
+    body += editorial
     body += '<nav aria-label="Approfondimenti NBA">' + link('/giocatori', 'Statistiche giocatori') + ' · ' + link('/nba/classifica', 'Squadre e classifica') + ' · ' + link('/come-funziona', 'Come funziona Basket Lab') + '</nav>'
     return '<section id="bl-initial-content" class="bl-panel" aria-label="Contenuti della pagina">' + body + '</section>'
 
@@ -189,7 +192,14 @@ def render(path, players=None):
     document = document.replace('</head>', extra + '</head>', 1)
     document = crawlable_navigation(document)
     if path != '/':
-        document = document.replace('<main>', '<main>' + initial_content(path, players), 1)
+        editorial_id = {'/come-funziona': 'caso-keldon-johnson', '/archivio': 'bilancio-novembre-2026'}.get(path)
+        editorial = ''
+        if editorial_id:
+            # Reuse the visible article in the progressive HTML without duplicating its fragment ID.
+            article = re.search(r'<article class="bl-editorial" id="' + editorial_id + r'">(.*?)</article>', document, re.S)
+            if article:
+                editorial = '<article class="bl-editorial">' + article[1] + '</article>'
+        document = document.replace('<main>', '<main>' + initial_content(path, players, editorial), 1)
         # The same fallback is served to all visitors, and replaced by the app
         # once navigation initializes. It remains usable if JavaScript fails.
         document = document.replace('</head>', '<style id="bl-initial-style">main > :not(#bl-initial-content){display:none!important}#bl-initial-content{padding:24px}#bl-initial-content a{color:inherit}</style></head>', 1)

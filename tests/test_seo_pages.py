@@ -65,6 +65,19 @@ class SeoPagesTests(unittest.TestCase):
         self.assertIn('id="bl-initial-content"', team)
         self.assertNotIn('id="bl-initial-content"', seo.render('/', ()))
 
+    def test_original_analysis_is_available_in_progressive_html(self):
+        pages = {
+            '/come-funziona': ('76,4%', '77,4%', '10 · Centrata', '2 · Non centrata'),
+            '/archivio': ('96 su 145', '70,6%', 'Bilancio del modello al 20 novembre 2026'),
+        }
+        for path, evidence in pages.items():
+            with self.subTest(path=path):
+                document = seo.render(path, ())
+                fallback = document.split('id="bl-initial-content"', 1)[1].split('</section>', 1)[0]
+                for value in evidence:
+                    self.assertIn(value, fallback)
+                    self.assertIn(value, document.split('</section>', 1)[1])
+
     def test_http_routes_aliases_queries_and_unknown_ids(self):
         with patch.dict(os.environ, {'NBA_STATS_ACCESS_TOKEN':'offline-test-token','ODDSPAPI_API_KEY':'offline-test-key'}):
             main = importlib.import_module('main')

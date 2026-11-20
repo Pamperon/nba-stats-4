@@ -1636,3 +1636,11 @@ body.hub-match-open #app #date-loading{display:none!important}
 .hub-calendar-view .hub-calendar-day-summary{margin-top:0}
 .hub-calendar-collapse-toggle:focus-visible,.hub-calendar-nav button:focus-visible{outline:2px solid #ffab47;outline-offset:3px}
 @media(max-width:380px){.hub-calendar-view .hub-calendar-nav>button{flex-basis:19px}.hub-calendar-view .hub-calendar-dates .hub-calendar-date strong{width:34px;height:34px;font-size:18px}.hub-calendar-month-title{font-size:18px}}
+
+.hub-method-link a,.bl-editorial a,.bl-player-study a{color:#8bc7ff}
+.bl-editorial{margin:24px 0}
+.bl-editorial p{max-width:72ch;line-height:1.65}
+.bl-editorial-table{overflow-x:auto}
+.bl-editorial table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.bl-editorial caption{text-align:left;padding-bottom:8px;color:#b8cee2}
+.bl-editorial th,.bl-editorial td{padding:8px;text-align:left;border-bottom:1px solid #355777}
