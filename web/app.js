@@ -961,6 +961,8 @@ async function loadPlayerProfile(request,team,id){
  const name=selected?.textContent||'Giocatore NBA';
  $('player-profile').hidden=false;
  $('player-display-name').textContent=name;
+ const study=$('player-lab-study');
+ if(study)study.hidden=String(id)!=='4395723';
  $('player-meta').textContent=$('team').selectedOptions[0]?.textContent||'';
  globalThis.BasketLabDesign?.playerTheme(teamAbbrev($('team').selectedOptions[0]?.textContent));
  $('player-initials').textContent=name.trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
