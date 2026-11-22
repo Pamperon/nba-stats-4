@@ -110,6 +110,23 @@ class CollectiveOddsTests(unittest.TestCase):
         self.assertEqual(result[2], 0)
         self.assertEqual(result[-1][0]['stato'], 'vuota')
 
+    def test_inactive_bookmaker_prices_are_visible_in_diagnostics_only(self):
+        fixture = {'fixtureId': 'night', 'startTime': '2026-11-23T01:00:00+01:00'}
+        catalog = {'m': {'marketType': 'players-points',
+                         'outcomes': [{'outcomeId': 'o', 'outcomeName': '10+'}]}}
+        market = {'marketActive': True, 'outcomes': {'o': {'players': {
+            'p': {'playerName': 'Player', 'active': True, 'price': 1.8},
+        }}}}
+        book = {'bookmakerIsActive': False, 'suspended': False, 'markets': {'m': market}}
+        batch = {'data': {'night': {'bookmakerOdds': {'bet365.it': book}}},
+                 'source': 'api', 'fetched_at': 1000}
+        result = engine.finder_scan([fixture], catalog, '2026-27', 15, 1.01, 20, -100,
+                                    odds_batch=batch, collect_audit=False)
+        report = result[-1][0]
+        self.assertEqual(result[2], 0)
+        self.assertEqual(report['diagnostica']['quote_valide'], 1)
+        self.assertIn("senza confermarne l'aggiornamento", report['dettaglio'])
+
     def test_old_plural_parameter_cache_cannot_hide_corrected_feed(self):
         old = {'identity': 'odds:nba:bet365.it:v1:2026-11-17T12:00',
                'fetched_at': 1000, 'data': {}}
