@@ -1084,11 +1084,16 @@ def finder_scan(fixtures, catalog, season, min_games, odds_min, odds_max,
             report["stato"] = "ok" if report["linee"] else "vuota"
             if not report["linee"]:
                 d = report["diagnostica"]
-                report["dettaglio"] = (f"Feed: {d['mercati_totali']} mercati, "
-                                     f"{d['mercati_player_props']} props, "
-                                     f"{d['mercati_attivi']} attivi; "
-                                     f"bookmaker attivo={d['bookmaker_attivo']}, "
-                                     f"sospeso={d['bookmaker_sospeso']}")
+                if d["bookmaker_sospeso"] is True:
+                    report["dettaglio"] = "Bet365 Italia segnalato come sospeso dal feed"
+                elif d["bookmaker_attivo"] is False and d["quote_valide"]:
+                    report["dettaglio"] = "OddsPapi restituisce prezzi per Bet365 Italia senza confermarne l'aggiornamento"
+                else:
+                    report["dettaglio"] = (f"Feed: {d['mercati_totali']} mercati, "
+                                          f"{d['mercati_player_props']} props, "
+                                          f"{d['mercati_attivi']} attivi; "
+                                          f"bookmaker attivo={d['bookmaker_attivo']}, "
+                                          f"sospeso={d['bookmaker_sospeso']}")
                 issues.append(f"{match_name}: nessuna linea Bet365 elaborabile")
             elif source == "none":
                 _cache_write(fid, odds)

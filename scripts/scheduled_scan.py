@@ -23,6 +23,11 @@ ROME = ZoneInfo("Europe/Rome")
 SLOTS = ((9, 0), (12, 0), (14, 30), (16, 30), (17, 30))
 MAX_DELAY = dt.timedelta(hours=2)
 
+
+class ScanJobFailed(RuntimeError):
+    """The server confirmed the job has stopped without saving a scan."""
+
+
 def valid_slot(value):
     try:
         parsed = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M")
@@ -161,7 +166,7 @@ def wait_for_scan(job_id, date, timeout=1800):
             print(date, state, 'lines:', status.get('quote_lines_scan', len(status.get('results', []))), flush=True)
             return status
         if state in ('error', 'save_failed', 'interrupted'):
-            raise RuntimeError(date + ': ' + str(status.get('stage')))
+            raise ScanJobFailed(date + ': ' + str(status.get('stage')))
     raise TimeoutError('Scan exceeded 30 minutes: ' + date + '; existing job ' + job_id)
 
 
@@ -177,6 +182,7 @@ def execute_scan(now, slot, manual, source, schedules=None):
         print("Archive cleanup failed (scans continue):", exc, flush=True)
     # Archive verification and the calibration workflow run independently.
     # Loading historical snapshots here leaves less RAM for the fresh feed.
+    failures = []
     for date, schedule in schedules:
         print("Checking", date, flush=True)
         upcoming = [g for g in schedule.get("games", []) if g.get("upcoming")]
@@ -193,9 +199,12 @@ def execute_scan(now, slot, manual, source, schedules=None):
             job_id = job["job_id"]
             print("Job", job_id, "reused:", job.get("reused"), flush=True)
             wait_for_scan(job_id, date)
-        except Exception as exc:
+        except ScanJobFailed as exc:
+            # The other date can still finish. Slot recovery reuses any saved date.
             print("Scan failed:", exc, flush=True)
-            raise
+            failures.append(str(exc))
+    if failures:
+        raise ScanJobFailed("; ".join(failures))
 
 if __name__ == "__main__":
     run()

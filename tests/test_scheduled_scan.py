@@ -9,6 +9,32 @@ from scripts import scheduled_scan as scheduler
 ROOT = Path(__file__).resolve().parents[1]
 
 class SchedulerTests(unittest.TestCase):
+    def test_confirmed_evening_failure_still_scans_the_overnight_games(self):
+        slot = dt.datetime(2026, 11, 22, 12, tzinfo=scheduler.ROME)
+        schedules = [(day, {'games': [{'upcoming': True}]})
+                     for day in ('2026-11-22', '2026-11-23')]
+        responses = [{}, {'job_id': 'evening'}, {'state': 'error', 'stage': 'failed'},
+                     {'job_id': 'night'}, {'state': 'done', 'quote_lines_scan': 160}]
+        with patch.object(scheduler, 'call', side_effect=responses) as call, \
+             patch.object(scheduler.time, 'sleep'):
+            with self.assertRaisesRegex(scheduler.ScanJobFailed, '2026-11-22: failed'):
+                scheduler.execute_scan(slot, slot, False, 'render', schedules=schedules)
+        posts = [args.args[0] for args in call.call_args_list if args.kwargs.get('method') == 'POST']
+        self.assertEqual(posts[1:], [
+            '/api/scan?date=2026-11-22&source=render&slot=2026-11-22T12%3A00',
+            '/api/scan?date=2026-11-23&source=render&slot=2026-11-22T12%3A00',
+        ])
+
+    def test_uncertain_evening_job_does_not_start_another_scan(self):
+        slot = dt.datetime(2026, 11, 22, 12, tzinfo=scheduler.ROME)
+        schedules = [(day, {'games': [{'upcoming': True}]})
+                     for day in ('2026-11-22', '2026-11-23')]
+        with patch.object(scheduler, 'call', side_effect=[{}, {'job_id': 'evening'}]) as call, \
+             patch.object(scheduler, 'wait_for_scan', side_effect=TimeoutError('still running')):
+            with self.assertRaises(TimeoutError):
+                scheduler.execute_scan(slot, slot, False, 'render', schedules=schedules)
+        self.assertEqual(call.call_count, 2)
+
     def test_poll_recovers_timeout_and_503_without_resubmitting_scan(self):
         transient = scheduler.urllib.error.HTTPError('https://example.test', 503, 'busy', {}, None)
         outcomes = [TimeoutError('slow read'), transient, {'state': 'running'},
